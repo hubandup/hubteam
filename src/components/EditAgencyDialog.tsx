@@ -43,10 +43,11 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
     active: agency.active,
   });
 
-  // Reset form when dialog opens
+  // Reset form when dialog opens or when agency changes
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     if (newOpen) {
+      // Reset all states
       setLogoFile(null);
       setLogoPreview(agency.logo_url || null);
       setFormData({
@@ -56,6 +57,11 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
         revenue: agency.revenue,
         active: agency.active,
       });
+      // Reset file input
+      setTimeout(() => {
+        const fileInput = document.getElementById('logo-input-edit') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
+      }, 0);
     }
   };
 
@@ -74,7 +80,6 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
   const handleRemoveLogo = () => {
     setLogoFile(null);
     setLogoPreview(null);
-    // Reset file input
     const fileInput = document.getElementById('logo-input-edit') as HTMLInputElement;
     if (fileInput) fileInput.value = '';
   };
@@ -90,20 +95,19 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
       if (logoFile) {
         const fileExt = logoFile.name.split('.').pop();
         const fileName = `${agency.id}-${Date.now()}.${fileExt}`;
-        const filePath = `${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from('agency-logos')
-          .upload(filePath, logoFile, { upsert: true });
+          .upload(fileName, logoFile, { upsert: true });
 
         if (uploadError) throw uploadError;
 
         const { data: { publicUrl } } = supabase.storage
           .from('agency-logos')
-          .getPublicUrl(filePath);
+          .getPublicUrl(fileName);
 
         logoUrl = publicUrl;
-      } else if (logoPreview === null && agency.logo_url) {
+      } else if (logoPreview === null) {
         // Logo was removed
         logoUrl = null;
       }
