@@ -36,11 +36,10 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
             )}
             <div className="min-w-0 flex-1">
               <CardTitle className="text-lg">
-                {client.first_name} {client.last_name}
+                {client.company}
               </CardTitle>
-              <CardDescription className="flex items-center gap-1 mt-1">
-                <Building2 className="h-3 w-3 flex-shrink-0" />
-                <span className="truncate">{client.company}</span>
+              <CardDescription className="mt-1 truncate">
+                {client.first_name} {client.last_name}
               </CardDescription>
             </div>
           </div>
