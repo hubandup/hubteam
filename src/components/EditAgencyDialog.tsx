@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -42,6 +42,7 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
     revenue: agency.revenue,
     active: agency.active,
   });
+  const formRef = useRef<HTMLFormElement>(null);
 
   // Reset form when dialog opens or when agency changes
   const handleOpenChange = (newOpen: boolean) => {
@@ -146,7 +147,7 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Modifier l'agence</DialogTitle>
             <DialogDescription>
@@ -241,7 +242,7 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Annuler
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="button" disabled={loading} onClick={() => formRef.current?.requestSubmit()}>
               {loading ? 'Enregistrement...' : 'Enregistrer'}
             </Button>
           </DialogFooter>
