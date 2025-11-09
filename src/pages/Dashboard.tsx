@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ClientCard } from '@/components/ClientCard';
 import { AddClientDialog } from '@/components/AddClientDialog';
 import { toast } from 'sonner';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -56,7 +58,7 @@ export default function Dashboard() {
             <ClientCard
               key={client.id}
               client={client}
-              onClick={() => toast.info('Détails du client à venir')}
+              onClick={() => navigate(`/client/${client.id}`)}
             />
           ))}
         </div>
