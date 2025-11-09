@@ -11,6 +11,8 @@ import { Calendar, Users, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ProjectTeamTab } from '@/components/project-details/ProjectTeamTab';
+import { ProjectTasksTab } from '@/components/project-details/ProjectTasksTab';
+import { ProjectAttachmentsTab } from '@/components/project-details/ProjectAttachmentsTab';
 
 export default function ProjectDetails() {
   const { id } = useParams<{ id: string }>();
@@ -103,10 +105,11 @@ export default function ProjectDetails() {
       </div>
 
       <Tabs defaultValue="info" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="info">Informations</TabsTrigger>
           <TabsTrigger value="tasks">Tâches</TabsTrigger>
           <TabsTrigger value="team">Équipe</TabsTrigger>
+          <TabsTrigger value="attachments">Pièces jointes</TabsTrigger>
         </TabsList>
 
         <TabsContent value="info" className="mt-6">
@@ -189,20 +192,15 @@ export default function ProjectDetails() {
         </TabsContent>
 
         <TabsContent value="tasks" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Tâches du projet</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Section tâches à développer
-              </p>
-            </CardContent>
-          </Card>
+          <ProjectTasksTab projectId={id!} />
         </TabsContent>
 
         <TabsContent value="team" className="mt-6">
           <ProjectTeamTab projectId={id!} />
+        </TabsContent>
+
+        <TabsContent value="attachments" className="mt-6">
+          <ProjectAttachmentsTab projectId={id!} />
         </TabsContent>
       </Tabs>
     </div>
