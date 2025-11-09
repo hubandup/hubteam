@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Mail, Phone, DollarSign, Calendar, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { EditClientDialog } from '@/components/EditClientDialog';
 
 interface ClientInfoTabProps {
   client: {
@@ -21,9 +22,14 @@ interface ClientInfoTabProps {
   onUpdate: () => void;
 }
 
-export function ClientInfoTab({ client }: ClientInfoTabProps) {
+export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
   return (
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <EditClientDialog client={client} onClientUpdated={onUpdate} />
+      </div>
+      
+      <div className="grid gap-6 md:grid-cols-2">
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Informations générales</CardTitle>
@@ -102,6 +108,7 @@ export function ClientInfoTab({ client }: ClientInfoTabProps) {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
