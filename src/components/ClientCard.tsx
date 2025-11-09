@@ -45,7 +45,7 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
           </div>
           <Badge 
             variant={client.active ? 'default' : 'secondary'} 
-            className={`flex-shrink-0 ${client.active ? 'bg-success hover:bg-success text-success-foreground' : ''}`}
+            className={`flex-shrink-0 ${client.active ? 'bg-green-500 hover:bg-green-600 text-white' : ''}`}
           >
             {client.active ? 'Actif' : 'Inactif'}
           </Badge>
