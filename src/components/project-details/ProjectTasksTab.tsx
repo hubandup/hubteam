@@ -74,7 +74,7 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
 
   const statusConfig = {
     todo: { label: 'À faire', variant: 'secondary' as const },
-    'in-progress': { label: 'En cours', variant: 'default' as const },
+    in_progress: { label: 'En cours', variant: 'default' as const },
     done: { label: 'Terminé', variant: 'outline' as const },
   };
 

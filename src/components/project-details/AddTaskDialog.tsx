@@ -149,7 +149,7 @@ export function AddTaskDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todo">À faire</SelectItem>
-                  <SelectItem value="in-progress">En cours</SelectItem>
+                  <SelectItem value="in_progress">En cours</SelectItem>
                   <SelectItem value="done">Terminé</SelectItem>
                 </SelectContent>
               </Select>
