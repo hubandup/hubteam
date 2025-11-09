@@ -16,7 +16,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, X } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const agencySchema = z.object({
   name: z.string().trim().min(1, "Le nom de l'agence est requis").max(200),
@@ -35,6 +36,8 @@ interface AddAgencyDialogProps {
 export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   const {
     register,
@@ -53,21 +56,70 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
 
   const active = watch('active');
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLogoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoFile(null);
+    setLogoPreview(null);
+  };
+
   const onSubmit = async (data: AgencyFormData) => {
     setLoading(true);
     try {
-      const { error } = await supabase.from('agencies').insert({
-        name: data.name,
-        contact_email: data.contact_email || null,
-        contact_phone: data.contact_phone || null,
-        revenue: data.revenue,
-        active: data.active,
-      });
+      // First insert the agency
+      const { data: newAgency, error: insertError } = await supabase
+        .from('agencies')
+        .insert({
+          name: data.name,
+          contact_email: data.contact_email || null,
+          contact_phone: data.contact_phone || null,
+          revenue: data.revenue,
+          active: data.active,
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (insertError) throw insertError;
+
+      // Upload logo if provided
+      if (logoFile && newAgency) {
+        const fileExt = logoFile.name.split('.').pop();
+        const fileName = `${newAgency.id}-${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('agency-logos')
+          .upload(filePath, logoFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('agency-logos')
+          .getPublicUrl(filePath);
+
+        // Update agency with logo URL
+        const { error: updateError } = await supabase
+          .from('agencies')
+          .update({ logo_url: publicUrl })
+          .eq('id', newAgency.id);
+
+        if (updateError) throw updateError;
+      }
 
       toast.success('Agence ajoutée avec succès');
       reset();
+      setLogoFile(null);
+      setLogoPreview(null);
       setOpen(false);
       onAgencyAdded();
     } catch (error) {
@@ -95,6 +147,44 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-2">
+            <Label>Logo de l'agence</Label>
+            <div className="flex items-center gap-4">
+              {logoPreview ? (
+                <div className="relative">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={logoPreview} alt="Logo" />
+                    <AvatarFallback>Logo</AvatarFallback>
+                  </Avatar>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute -top-2 -right-2 h-6 w-6"
+                    onClick={handleRemoveLogo}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Avatar className="h-20 w-20">
+                  <AvatarFallback>Logo</AvatarFallback>
+                </Avatar>
+              )}
+              <div>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  className="cursor-pointer"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  PNG, JPG jusqu'à 5MB
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="name">Nom de l'agence *</Label>
             <Input

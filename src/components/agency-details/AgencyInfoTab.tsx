@@ -4,6 +4,8 @@ import { Mail, Phone, DollarSign, Calendar, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { EditAgencyDialog } from '@/components/EditAgencyDialog';
+import { AgencyContactsManager } from './AgencyContactsManager';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface AgencyInfoTabProps {
   agency: {
@@ -14,6 +16,7 @@ interface AgencyInfoTabProps {
     revenue: number;
     active: boolean;
     created_at: string;
+    logo_url?: string;
   };
   onUpdate: () => void;
 }
@@ -31,6 +34,15 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
             <CardTitle className="text-lg">Informations générales</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {agency.logo_url && (
+              <div className="flex items-center gap-3">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={agency.logo_url} alt={agency.name} />
+                  <AvatarFallback>{agency.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+              </div>
+            )}
+            
             <div className="flex items-start gap-3">
               <Building2 className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div>
@@ -95,6 +107,8 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
           </CardContent>
         </Card>
       </div>
+
+      <AgencyContactsManager agencyId={agency.id} />
     </div>
   );
 }

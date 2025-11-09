@@ -21,6 +21,7 @@ export type Database = {
           contact_phone: string | null
           created_at: string
           id: string
+          logo_url: string | null
           name: string
           revenue: number | null
           updated_at: string
@@ -31,6 +32,7 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string
           id?: string
+          logo_url?: string | null
           name: string
           revenue?: number | null
           updated_at?: string
@@ -41,11 +43,50 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string
           id?: string
+          logo_url?: string | null
           name?: string
           revenue?: number | null
           updated_at?: string
         }
         Relationships: []
+      }
+      agency_contacts: {
+        Row: {
+          agency_id: string
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_contacts_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clients: {
         Row: {
