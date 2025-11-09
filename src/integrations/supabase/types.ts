@@ -314,6 +314,38 @@ export type Database = {
           },
         ]
       }
+      project_team_members: {
+        Row: {
+          created_at: string
+          id: string
+          member_id: string
+          member_type: Database["public"]["Enums"]["team_member_type"]
+          project_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_id: string
+          member_type: Database["public"]["Enums"]["team_member_type"]
+          project_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_id?: string
+          member_type?: Database["public"]["Enums"]["team_member_type"]
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_team_members_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           created_at: string
@@ -551,6 +583,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "team" | "client"
+      team_member_type: "profile" | "agency_contact" | "client"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -679,6 +712,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "team", "client"],
+      team_member_type: ["profile", "agency_contact", "client"],
     },
   },
 } as const

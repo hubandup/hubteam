@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Users, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { ProjectTeamTab } from '@/components/project-details/ProjectTeamTab';
 
 export default function ProjectDetails() {
   const { id } = useParams<{ id: string }>();
@@ -65,12 +66,15 @@ export default function ProjectDetails() {
   }
 
   const statusConfig = {
-    active: { label: 'Actif', variant: 'default' as const },
-    pending: { label: 'En attente', variant: 'secondary' as const },
-    completed: { label: 'Terminé', variant: 'outline' as const },
+    'avant-projet': { label: 'Avant projet', variant: 'secondary' as const },
+    'valide': { label: 'Validé', variant: 'default' as const },
+    'en-cours': { label: 'En cours', variant: 'default' as const },
+    'termine': { label: 'Terminé', variant: 'outline' as const },
+    'abandonne': { label: 'Abandonné', variant: 'destructive' as const },
+    'refuse': { label: 'Refusé', variant: 'destructive' as const },
   };
 
-  const statusInfo = statusConfig[project.status as keyof typeof statusConfig] || statusConfig.active;
+  const statusInfo = statusConfig[project.status as keyof typeof statusConfig] || statusConfig['en-cours'];
   const client = project.project_clients?.[0]?.clients;
 
   return (
@@ -198,16 +202,7 @@ export default function ProjectDetails() {
         </TabsContent>
 
         <TabsContent value="team" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Équipe du projet</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Section équipe à développer
-              </p>
-            </CardContent>
-          </Card>
+          <ProjectTeamTab projectId={id!} />
         </TabsContent>
       </Tabs>
     </div>
