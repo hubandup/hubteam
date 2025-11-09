@@ -85,13 +85,13 @@ export default function Dashboard() {
 
       if (tasksError) throw tasksError;
 
-      // Fetch top 3 clients by revenue
+      // Fetch top 5 clients by revenue
       const { data: topClientsData, error: topClientsError } = await supabase
         .from('clients')
         .select('*')
         .eq('active', true)
         .order('revenue', { ascending: false })
-        .limit(3);
+        .limit(5);
 
       if (topClientsError) throw topClientsError;
 
@@ -429,7 +429,7 @@ export default function Dashboard() {
               </p>
             ) : (
               <div className="space-y-4">
-                {projectsWithProgress.map((project) => (
+                {projectsWithProgress.slice(0, 5).map((project) => (
                   <div key={project.id} className="space-y-2">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium">{project.clientName} - {project.name}</p>
@@ -451,7 +451,7 @@ export default function Dashboard() {
         {/* Top Clients */}
         <Card>
           <CardHeader>
-            <CardTitle>Top 3 Clients</CardTitle>
+            <CardTitle>Top 5 Clients</CardTitle>
           </CardHeader>
           <CardContent>
             {topClients.length === 0 ? (
