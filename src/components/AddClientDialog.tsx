@@ -4,32 +4,38 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Upload, Loader2 } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 
 const clientSchema = z.object({
   first_name: z.string().trim().min(1, 'Le prénom est requis').max(100),
   last_name: z.string().trim().min(1, 'Le nom est requis').max(100),
-  company: z.string().trim().min(1, 'L\'entreprise est requise').max(200),
+  company: z.string().trim().min(1, "L'entreprise est requise").max(200),
   email: z.string().trim().email('Email invalide').max(255),
   phone: z.string().trim().max(20).optional(),
-  revenue: z.coerce.number().min(0, 'Le CA doit être positif'),
+  revenue: z.number().min(0, 'Le CA doit être positif'),
   active: z.boolean(),
 });
 
 type ClientFormData = z.infer<typeof clientSchema>;
 
 interface AddClientDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   onClientAdded: () => void;
 }
 
-export function AddClientDialog({ open, onOpenChange, onClientAdded }: AddClientDialogProps) {
+export function AddClientDialog({ onClientAdded }: AddClientDialogProps) {
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -55,100 +61,86 @@ export function AddClientDialog({ open, onOpenChange, onClientAdded }: AddClient
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('Le fichier ne doit pas dépasser 5 MB');
+        toast.error('Le fichier doit faire moins de 5MB');
         return;
       }
       if (!file.type.startsWith('image/')) {
-        toast.error('Veuillez sélectionner une image');
+        toast.error('Le fichier doit être une image');
         return;
       }
       setLogoFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setLogoPreview(URL.createObjectURL(file));
     }
   };
 
-  const uploadLogo = async (clientId: string): Promise<string | null> => {
+  const uploadLogo = async (): Promise<string | null> => {
     if (!logoFile) return null;
 
     const fileExt = logoFile.name.split('.').pop();
-    const fileName = `${clientId}-${Date.now()}.${fileExt}`;
-    const filePath = `${fileName}`;
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-    const { error: uploadError } = await supabase.storage
+    const { data, error } = await supabase.storage
       .from('client-logos')
-      .upload(filePath, logoFile);
+      .upload(fileName, logoFile);
 
-    if (uploadError) {
-      console.error('Erreur upload logo:', uploadError);
-      toast.error('Erreur lors de l\'upload du logo');
+    if (error) {
+      console.error('Error uploading logo:', error);
+      toast.error("Erreur lors de l'upload du logo");
       return null;
     }
 
-    const { data } = supabase.storage
+    const { data: { publicUrl } } = supabase.storage
       .from('client-logos')
-      .getPublicUrl(filePath);
+      .getPublicUrl(data.path);
 
-    return data.publicUrl;
+    return publicUrl;
   };
 
   const onSubmit = async (data: ClientFormData) => {
     setLoading(true);
     try {
-      const { data: client, error: insertError } = await supabase
-        .from('clients')
-        .insert({
-          first_name: data.first_name,
-          last_name: data.last_name,
-          company: data.company,
-          email: data.email,
-          phone: data.phone || null,
-          revenue: data.revenue,
-          active: data.active,
-        })
-        .select()
-        .single();
+      const logoUrl = await uploadLogo();
 
-      if (insertError) throw insertError;
+      const { error } = await supabase.from('clients').insert({
+        first_name: data.first_name,
+        last_name: data.last_name,
+        company: data.company,
+        email: data.email,
+        phone: data.phone || null,
+        revenue: data.revenue,
+        active: data.active,
+        logo_url: logoUrl,
+      });
 
-      if (logoFile && client) {
-        const logoUrl = await uploadLogo(client.id);
-        if (logoUrl) {
-          const { error: updateError } = await supabase
-            .from('clients')
-            .update({ logo_url: logoUrl })
-            .eq('id', client.id);
-
-          if (updateError) {
-            console.error('Erreur mise à jour logo:', updateError);
-          }
-        }
-      }
+      if (error) throw error;
 
       toast.success('Client ajouté avec succès');
       reset();
       setLogoFile(null);
       setLogoPreview(null);
+      setOpen(false);
       onClientAdded();
-      onOpenChange(false);
     } catch (error) {
-      console.error('Erreur:', error);
-      toast.error('Erreur lors de l\'ajout du client');
+      console.error('Error adding client:', error);
+      toast.error("Erreur lors de l'ajout du client");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="mr-2 h-4 w-4" />
+          Nouveau client
+        </Button>
+      </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nouveau client</DialogTitle>
+          <DialogTitle>Ajouter un nouveau client</DialogTitle>
           <DialogDescription>
-            Ajoutez un nouveau client à votre base de données
+            Remplissez les informations du client pour l'ajouter à votre base.
           </DialogDescription>
         </DialogHeader>
 
@@ -224,7 +216,7 @@ export function AddClientDialog({ open, onOpenChange, onClientAdded }: AddClient
               id="revenue"
               type="number"
               step="0.01"
-              {...register('revenue')}
+              {...register('revenue', { valueAsNumber: true })}
               placeholder="50000"
             />
             {errors.revenue && (
@@ -235,13 +227,6 @@ export function AddClientDialog({ open, onOpenChange, onClientAdded }: AddClient
           <div className="space-y-2">
             <Label htmlFor="logo">Logo de l'entreprise</Label>
             <div className="flex items-center gap-4">
-              {logoPreview && (
-                <img
-                  src={logoPreview}
-                  alt="Aperçu logo"
-                  className="w-16 h-16 rounded-lg object-cover"
-                />
-              )}
               <div className="flex-1">
                 <Input
                   id="logo"
@@ -251,17 +236,24 @@ export function AddClientDialog({ open, onOpenChange, onClientAdded }: AddClient
                   className="cursor-pointer"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Max 5 MB - JPG, PNG, WebP
+                  PNG, JPG ou WEBP - Max 5MB
                 </p>
               </div>
+              {logoPreview && (
+                <img
+                  src={logoPreview}
+                  alt="Aperçu du logo"
+                  className="w-16 h-16 object-cover rounded-lg border"
+                />
+              )}
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div className="space-y-0.5">
-              <Label htmlFor="active">Client actif</Label>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label htmlFor="active">Statut</Label>
               <p className="text-sm text-muted-foreground">
-                Le client est actuellement actif dans votre système
+                Le client est-il actuellement actif ?
               </p>
             </div>
             <Switch
@@ -279,7 +271,7 @@ export function AddClientDialog({ open, onOpenChange, onClientAdded }: AddClient
                 reset();
                 setLogoFile(null);
                 setLogoPreview(null);
-                onOpenChange(false);
+                setOpen(false);
               }}
               disabled={loading}
             >

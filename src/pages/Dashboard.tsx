@@ -2,14 +2,11 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ClientCard } from '@/components/ClientCard';
 import { AddClientDialog } from '@/components/AddClientDialog';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Dashboard() {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchClients();
@@ -45,10 +42,7 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold text-foreground">Clients</h1>
           <p className="text-muted-foreground">Gérez vos clients et leurs projets</p>
         </div>
-        <Button onClick={() => setAddDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nouveau client
-        </Button>
+        <AddClientDialog onClientAdded={fetchClients} />
       </div>
 
       {clients.length === 0 ? (
@@ -67,12 +61,6 @@ export default function Dashboard() {
           ))}
         </div>
       )}
-
-      <AddClientDialog
-        open={addDialogOpen}
-        onOpenChange={setAddDialogOpen}
-        onClientAdded={fetchClients}
-      />
     </div>
   );
 }
