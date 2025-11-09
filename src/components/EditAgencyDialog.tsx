@@ -34,7 +34,7 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(agency.logo_url || null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: agency.name,
     contact_email: agency.contact_email || '',
@@ -42,6 +42,22 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
     revenue: agency.revenue,
     active: agency.active,
   });
+
+  // Reset form when dialog opens
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (newOpen) {
+      setLogoFile(null);
+      setLogoPreview(agency.logo_url || null);
+      setFormData({
+        name: agency.name,
+        contact_email: agency.contact_email || '',
+        contact_phone: agency.contact_phone || '',
+        revenue: agency.revenue,
+        active: agency.active,
+      });
+    }
+  };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -58,6 +74,9 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
   const handleRemoveLogo = () => {
     setLogoFile(null);
     setLogoPreview(null);
+    // Reset file input
+    const fileInput = document.getElementById('logo-input-edit') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,7 +134,7 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Pencil className="h-4 w-4 mr-2" />
@@ -157,6 +176,7 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
                 )}
                 <div>
                   <Input
+                    id="logo-input-edit"
                     type="file"
                     accept="image/*"
                     onChange={handleLogoChange}
