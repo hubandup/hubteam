@@ -1,4 +1,4 @@
-import { LayoutDashboard, FolderKanban, CheckSquare, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, CheckSquare, Settings, LogOut, Building2 } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -21,6 +21,7 @@ export function Sidebar() {
 
   const mainItems = [
     { title: 'CRM', url: '/', icon: LayoutDashboard },
+    { title: 'Agences', url: '/agencies', icon: Building2 },
     { title: 'Projets', url: '/projects', icon: FolderKanban },
     { title: 'Tâches', url: '/tasks', icon: CheckSquare },
   ];
