@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCheck, FolderKanban, CheckSquare, DollarSign, Loader2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -17,6 +18,9 @@ export default function Dashboard() {
   const [projectsWithProgress, setProjectsWithProgress] = useState<any[]>([]);
   const [topClients, setTopClients] = useState<any[]>([]);
   const [recentComments, setRecentComments] = useState<any[]>([]);
+  const [revenueData, setRevenueData] = useState<any[]>([]);
+  const [projectStatusData, setProjectStatusData] = useState<any[]>([]);
+  const [monthlyPerformance, setMonthlyPerformance] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -183,9 +187,53 @@ export default function Dashboard() {
         totalRevenue,
       });
 
+      // Mock revenue evolution data (last 6 months)
+      const revenueEvolution = [
+        { month: 'Juillet', revenue: 45000 },
+        { month: 'Août', revenue: 52000 },
+        { month: 'Septembre', revenue: 48000 },
+        { month: 'Octobre', revenue: 61000 },
+        { month: 'Novembre', revenue: 58000 },
+        { month: 'Décembre', revenue: totalRevenue },
+      ];
+
+      // Calculate project status distribution
+      const statusCounts = projects?.reduce((acc: any, project: any) => {
+        const status = project.status;
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {}) || {};
+
+      const projectsStatus = [
+        { name: 'Actif', value: statusCounts['active'] || 0 },
+        { name: 'En attente', value: statusCounts['pending'] || 0 },
+        { name: 'Terminé', value: statusCounts['completed'] || 0 },
+      ];
+
+      // Mock monthly performance data
+      const performance = [
+        { month: 'Juil', projets: 8, taches: 45, revenue: 45000 },
+        { month: 'Août', projets: 10, taches: 52, revenue: 52000 },
+        { month: 'Sept', projets: 9, taches: 48, revenue: 48000 },
+        { month: 'Oct', projets: 12, taches: 61, revenue: 61000 },
+        { month: 'Nov', projets: 11, taches: 58, revenue: 58000 },
+        { month: 'Déc', projets: projects?.length || 0, taches: tasks?.length || 0, revenue: totalRevenue },
+      ];
+
+      setStats({
+        leads,
+        clients: activeClients,
+        openProjects: projects?.length || 0,
+        tasksInProgress: tasks?.length || 0,
+        totalRevenue,
+      });
+
       setProjectsWithProgress(projectsProgress);
       setTopClients(topClientsData || []);
       setRecentComments(comments || []);
+      setRevenueData(revenueEvolution);
+      setProjectStatusData(projectsStatus);
+      setMonthlyPerformance(performance);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast.error('Erreur lors du chargement du tableau de bord');
@@ -263,6 +311,107 @@ export default function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalRevenue.toLocaleString('fr-FR')} €</div>
             <p className="text-xs text-muted-foreground">Tous clients</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Row */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Revenue Evolution Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Évolution du CA</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={revenueData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="month" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px'
+                  }}
+                  formatter={(value: any) => `${value.toLocaleString('fr-FR')} €`}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="revenue" 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={2}
+                  dot={{ fill: 'hsl(var(--primary))' }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Project Status Distribution */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Répartition des projets</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie
+                  data={projectStatusData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={60}
+                  fill="hsl(var(--primary))"
+                  dataKey="value"
+                >
+                  {projectStatusData.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={
+                        index === 0 ? 'hsl(var(--primary))' : 
+                        index === 1 ? 'hsl(var(--warning))' : 
+                        'hsl(var(--success))'
+                      } 
+                    />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px'
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Monthly Performance */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Performance mensuelle</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={monthlyPerformance}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="month" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px'
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="projets" fill="hsl(var(--primary))" name="Projets" />
+                <Bar dataKey="taches" fill="hsl(var(--secondary))" name="Tâches" />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
