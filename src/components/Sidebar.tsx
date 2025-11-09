@@ -20,7 +20,7 @@ export function Sidebar() {
   const { role } = useUserRole();
 
   const mainItems = [
-    { title: 'Dashboard', url: '/', icon: LayoutDashboard },
+    { title: 'CRM', url: '/', icon: LayoutDashboard },
     { title: 'Projets', url: '/projects', icon: FolderKanban },
     { title: 'Tâches', url: '/tasks', icon: CheckSquare },
   ];
