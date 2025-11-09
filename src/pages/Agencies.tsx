@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AgencyCard } from '@/components/AgencyCard';
 import { AddAgencyDialog } from '@/components/AddAgencyDialog';
 import { toast } from 'sonner';
 
 export default function Agencies() {
+  const navigate = useNavigate();
   const [agencies, setAgencies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -58,7 +60,7 @@ export default function Agencies() {
             <AgencyCard
               key={agency.id}
               agency={agency}
-              onClick={() => toast.info("Détails de l'agence à venir")}
+              onClick={() => navigate(`/agency/${agency.id}`)}
             />
           ))}
         </div>
