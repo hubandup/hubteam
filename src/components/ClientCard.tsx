@@ -25,7 +25,7 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
   return (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={onClick}>
       <CardHeader>
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3 flex-1 min-w-0">
             {client.logo_url && (
               <img 
@@ -34,13 +34,13 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
                 className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
               />
             )}
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
               <CardTitle className="text-lg">
                 {client.first_name} {client.last_name}
               </CardTitle>
               <CardDescription className="flex items-center gap-1 mt-1">
-                <Building2 className="h-3 w-3" />
-                {client.company}
+                <Building2 className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">{client.company}</span>
               </CardDescription>
             </div>
           </div>
