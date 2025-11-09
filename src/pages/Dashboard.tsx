@@ -84,26 +84,79 @@ export default function Dashboard() {
 
       if (topClientsError) throw topClientsError;
 
-      // Fetch recent comments
-      const { data: comments, error: commentsError } = await supabase
-        .from('task_comments')
-        .select(`
-          id,
-          content,
-          created_at,
-          user_id,
-          profiles (
-            first_name,
-            last_name
-          ),
-          tasks (
-            title
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (commentsError) throw commentsError;
+      // Mock comments data
+      const comments = [
+        {
+          id: '1',
+          content: 'Le design de la page d\'accueil est validé par le client',
+          created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+          profiles: { first_name: 'Marie', last_name: 'Dubois' },
+          tasks: { title: 'Design homepage' }
+        },
+        {
+          id: '2',
+          content: 'Intégration responsive terminée, en attente de review',
+          created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+          profiles: { first_name: 'Pierre', last_name: 'Martin' },
+          tasks: { title: 'Responsive integration' }
+        },
+        {
+          id: '3',
+          content: 'Bug corrigé sur le formulaire de contact',
+          created_at: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
+          profiles: { first_name: 'Sophie', last_name: 'Laurent' },
+          tasks: { title: 'Fix contact form' }
+        },
+        {
+          id: '4',
+          content: 'Tests unitaires ajoutés pour le module authentification',
+          created_at: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
+          profiles: { first_name: 'Thomas', last_name: 'Petit' },
+          tasks: { title: 'Auth module testing' }
+        },
+        {
+          id: '5',
+          content: 'Optimisation des performances sur mobile effectuée',
+          created_at: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
+          profiles: { first_name: 'Julie', last_name: 'Rousseau' },
+          tasks: { title: 'Mobile optimization' }
+        },
+        {
+          id: '6',
+          content: 'Documentation API mise à jour avec les nouveaux endpoints',
+          created_at: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
+          profiles: { first_name: 'Marc', last_name: 'Bernard' },
+          tasks: { title: 'API documentation' }
+        },
+        {
+          id: '7',
+          content: 'Migration base de données réussie sans incident',
+          created_at: new Date(Date.now() - 1000 * 60 * 60 * 16).toISOString(),
+          profiles: { first_name: 'Laura', last_name: 'Simon' },
+          tasks: { title: 'Database migration' }
+        },
+        {
+          id: '8',
+          content: 'Nouveau système de notifications push opérationnel',
+          created_at: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
+          profiles: { first_name: 'David', last_name: 'Michel' },
+          tasks: { title: 'Push notifications' }
+        },
+        {
+          id: '9',
+          content: 'Refactoring du code legacy terminé, prêt pour déploiement',
+          created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+          profiles: { first_name: 'Emma', last_name: 'Leroy' },
+          tasks: { title: 'Code refactoring' }
+        },
+        {
+          id: '10',
+          content: 'Réunion client plannifiée pour présenter les maquettes finales',
+          created_at: new Date(Date.now() - 1000 * 60 * 60 * 28).toISOString(),
+          profiles: { first_name: 'Nicolas', last_name: 'Moreau' },
+          tasks: { title: 'Client presentation' }
+        }
+      ];
 
       setStats({
         leads,
