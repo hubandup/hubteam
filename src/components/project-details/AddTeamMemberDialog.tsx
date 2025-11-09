@@ -80,6 +80,35 @@ export function AddTeamMemberDialog({
 
     setLoading(true);
     try {
+      // If adding an agency contact, also add the agency to project_agencies if not already added
+      if (memberType === 'agency_contact') {
+        const { data: contactData } = await supabase
+          .from('agency_contacts')
+          .select('agency_id')
+          .eq('id', memberId)
+          .single();
+
+        if (contactData?.agency_id) {
+          // Check if agency is already linked to project
+          const { data: existingLink } = await supabase
+            .from('project_agencies')
+            .select('id')
+            .eq('project_id', projectId)
+            .eq('agency_id', contactData.agency_id)
+            .maybeSingle();
+
+          // If not linked, add it
+          if (!existingLink) {
+            await supabase
+              .from('project_agencies')
+              .insert({
+                project_id: projectId,
+                agency_id: contactData.agency_id,
+              });
+          }
+        }
+      }
+
       const { error } = await supabase
         .from('project_team_members')
         .insert({
