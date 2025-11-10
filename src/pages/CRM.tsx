@@ -158,12 +158,16 @@ export default function CRM() {
             <p className="text-sm text-muted-foreground mt-2">Essayez une autre recherche</p>
           </div>
         ) : viewMode === 'kanban' ? (
-          <div className="h-full overflow-x-auto overflow-y-hidden px-6 pb-6">
-            <ClientKanbanView
-              clients={filteredClients}
-              onClientClick={(clientId) => navigate(`/client/${clientId}`)}
-              onStageChange={handleStageChange}
-            />
+          <div className="h-full px-6 pb-6">
+            <div className="h-full overflow-x-auto overflow-y-hidden">
+              <div className="min-w-max">
+                <ClientKanbanView
+                  clients={filteredClients}
+                  onClientClick={(clientId) => navigate(`/client/${clientId}`)}
+                  onStageChange={handleStageChange}
+                />
+              </div>
+            </div>
           </div>
         ) : (
           <div className="overflow-y-auto h-full px-6 pb-6">
