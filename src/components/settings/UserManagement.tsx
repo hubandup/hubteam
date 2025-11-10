@@ -4,9 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, Edit, Loader2, Trash2 } from 'lucide-react';
+import { Users, Edit, Loader2, Trash2, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { EditUserRoleDialog } from './EditUserRoleDialog';
+import { InviteUserDialog } from './InviteUserDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +34,7 @@ export function UserManagement() {
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserWithRole | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -153,13 +155,21 @@ export function UserManagement() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Gestion des utilisateurs
-          </CardTitle>
-          <CardDescription>
-            Gérez les rôles et permissions des utilisateurs de l'application
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Gestion des utilisateurs
+              </CardTitle>
+              <CardDescription>
+                Gérez les rôles et permissions des utilisateurs de l'application
+              </CardDescription>
+            </div>
+            <Button onClick={() => setInviteDialogOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Inviter un utilisateur
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
@@ -226,6 +236,12 @@ export function UserManagement() {
           user={selectedUser}
         />
       )}
+
+      <InviteUserDialog
+        open={inviteDialogOpen}
+        onOpenChange={setInviteDialogOpen}
+        onSuccess={fetchUsers}
+      />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
