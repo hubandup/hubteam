@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Trash2, Loader2, Database, AlertTriangle } from 'lucide-react';
+import { Trash2, Loader2, Database, AlertTriangle, Download, FileJson, FileSpreadsheet } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +17,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import Papa from 'papaparse';
 
 interface DataItem {
   id: string;
@@ -169,6 +176,138 @@ export function DataManagementTab() {
     setDeleteDialogOpen(true);
   };
 
+  const exportToCSV = async (category: 'crm' | 'agencies' | 'projects' | 'users') => {
+    try {
+      let data: any[] = [];
+      let filename = '';
+
+      // Fetch full data with all fields
+      if (category === 'crm') {
+        const { data: clients, error } = await supabase
+          .from('clients')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        data = clients || [];
+        filename = 'clients_crm';
+      } else if (category === 'agencies') {
+        const { data: agencies, error } = await supabase
+          .from('agencies')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        data = agencies || [];
+        filename = 'agences';
+      } else if (category === 'projects') {
+        const { data: projects, error } = await supabase
+          .from('projects')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        data = projects || [];
+        filename = 'projets';
+      } else if (category === 'users') {
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        data = profiles || [];
+        filename = 'utilisateurs';
+      }
+
+      if (data.length === 0) {
+        toast.error('Aucune donnée à exporter');
+        return;
+      }
+
+      // Convert to CSV
+      const csv = Papa.unparse(data);
+      
+      // Create download
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success('Export CSV réussi');
+    } catch (error: any) {
+      console.error('Error exporting to CSV:', error);
+      toast.error('Erreur lors de l\'export CSV');
+    }
+  };
+
+  const exportToJSON = async (category: 'crm' | 'agencies' | 'projects' | 'users') => {
+    try {
+      let data: any[] = [];
+      let filename = '';
+
+      // Fetch full data with all fields
+      if (category === 'crm') {
+        const { data: clients, error } = await supabase
+          .from('clients')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        data = clients || [];
+        filename = 'clients_crm';
+      } else if (category === 'agencies') {
+        const { data: agencies, error } = await supabase
+          .from('agencies')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        data = agencies || [];
+        filename = 'agences';
+      } else if (category === 'projects') {
+        const { data: projects, error } = await supabase
+          .from('projects')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        data = projects || [];
+        filename = 'projets';
+      } else if (category === 'users') {
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        data = profiles || [];
+        filename = 'utilisateurs';
+      }
+
+      if (data.length === 0) {
+        toast.error('Aucune donnée à exporter');
+        return;
+      }
+
+      // Convert to JSON
+      const json = JSON.stringify(data, null, 2);
+      
+      // Create download
+      const blob = new Blob([json], { type: 'application/json' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.json`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success('Export JSON réussi');
+    } catch (error: any) {
+      console.error('Error exporting to JSON:', error);
+      toast.error('Erreur lors de l\'export JSON');
+    }
+  };
+
   const handleDelete = async () => {
     if (!deleteCategory) return;
 
@@ -263,16 +402,36 @@ export function DataManagementTab() {
                 {data.length} élément(s) • {selectedCount} sélectionné(s)
               </CardDescription>
             </div>
-            {selectedCount > 0 && (
-              <Button
-                variant="destructive"
-                onClick={() => confirmDelete(category)}
-                disabled={deleting}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Supprimer ({selectedCount})
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" disabled={data.length === 0}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Exporter
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => exportToCSV(category)}>
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Exporter en CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportToJSON(category)}>
+                    <FileJson className="h-4 w-4 mr-2" />
+                    Exporter en JSON
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {selectedCount > 0 && (
+                <Button
+                  variant="destructive"
+                  onClick={() => confirmDelete(category)}
+                  disabled={deleting}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Supprimer ({selectedCount})
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
