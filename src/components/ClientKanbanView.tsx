@@ -8,6 +8,7 @@ import {
   useSensor,
   useSensors,
   DragOverEvent,
+  useDroppable,
 } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -83,9 +84,21 @@ function DroppableColumn({
   onClientClick: (clientId: string) => void;
 }) {
   const clientIds = clients.map((c) => c.id);
+  const { setNodeRef, isOver } = useDroppable({
+    id: `column-${stage.id}`,
+    data: {
+      type: 'column',
+      stageId: stage.id,
+    },
+  });
 
   return (
-    <div className={`flex flex-col min-w-[320px] max-w-[320px] rounded-lg ${stage.color} p-4`}>
+    <div 
+      ref={setNodeRef}
+      className={`flex flex-col min-w-[320px] max-w-[320px] rounded-lg ${stage.color} p-4 transition-all ${
+        isOver ? 'ring-2 ring-primary ring-offset-2' : ''
+      }`}
+    >
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-sm text-foreground">{stage.label}</h3>
         <Badge variant="secondary" className="text-xs">
@@ -101,6 +114,11 @@ function DroppableColumn({
               onClick={() => onClientClick(client.id)}
             />
           ))}
+          {clients.length === 0 && (
+            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+              Déposez une carte ici
+            </div>
+          )}
         </SortableContext>
       </div>
     </div>
@@ -154,22 +172,29 @@ export function ClientKanbanView({ clients, onClientClick, onStageChange }: Clie
     }
 
     const activeClient = clients.find((c) => c.id === active.id);
-    const overClient = clients.find((c) => c.id === over.id);
+    
+    if (!activeClient) {
+      setActiveId(null);
+      setOverId(null);
+      return;
+    }
 
-    if (activeClient && overClient) {
-      const targetStage = overClient.kanban_stage || 'prospect';
-      if (activeClient.kanban_stage !== targetStage) {
-        onStageChange(activeClient.id, targetStage);
-      }
-    } else if (activeClient) {
-      // Dropped on empty column
-      stageColumns.forEach((stage) => {
-        const stageClients = clientsByStage[stage.id];
-        if (stageClients.length === 0 && overId === null) {
-          // Could be empty column - we need better detection
-          // For now, maintain current stage
-        }
-      });
+    let targetStage: string | null = null;
+
+    // Check if dropped on another client card
+    const overClient = clients.find((c) => c.id === over.id);
+    if (overClient) {
+      targetStage = overClient.kanban_stage || 'prospect';
+    }
+    
+    // Check if dropped on a column directly
+    if (!targetStage && over.data.current?.type === 'column') {
+      targetStage = over.data.current.stageId;
+    }
+
+    // Update stage if it changed
+    if (targetStage && activeClient.kanban_stage !== targetStage) {
+      onStageChange(activeClient.id, targetStage);
     }
 
     setActiveId(null);
