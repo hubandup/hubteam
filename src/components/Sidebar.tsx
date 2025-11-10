@@ -39,7 +39,7 @@ export function Sidebar() {
     <ShadcnSidebar>
       <SidebarHeader className="border-b p-4">
         <div className="flex items-center justify-between">
-          <img src={logo} alt="HubandUp" className="h-8" />
+          <img src={logo} alt="HubandUp" className="h-7 w-auto" />
           <NotificationBell />
         </div>
       </SidebarHeader>

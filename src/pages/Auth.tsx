@@ -85,8 +85,8 @@ export default function Auth() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-light to-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <div className="flex justify-center mb-4">
-            <img src={logo} alt="HubandUp" className="h-12" />
+          <div className="flex justify-center mb-2">
+            <img src={logo} alt="HubandUp" className="h-16 w-auto" />
           </div>
           <CardDescription className="text-center">
             Gérez vos clients, projets et tâches en un seul endroit
