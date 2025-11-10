@@ -10,9 +10,12 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Search, LayoutGrid, List, Kanban } from 'lucide-react';
+import { ProtectedAction } from '@/components/ProtectedAction';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function Projects() {
   const navigate = useNavigate();
+  const { canRead } = usePermissions();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
@@ -100,6 +103,17 @@ export default function Projects() {
     );
   }
 
+  if (!canRead('projects')) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <p className="text-lg font-semibold text-foreground">Accès refusé</p>
+          <p className="text-muted-foreground">Vous n'avez pas les permissions pour accéder aux projets</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -107,7 +121,9 @@ export default function Projects() {
           <h1 className="text-3xl font-bold text-foreground">Projets</h1>
           <p className="text-muted-foreground">Gérez tous vos projets</p>
         </div>
-        <AddProjectDialog onProjectAdded={fetchProjects} />
+        <ProtectedAction module="projects" action="create">
+          <AddProjectDialog onProjectAdded={fetchProjects} />
+        </ProtectedAction>
       </div>
 
       {projects.length > 0 && (

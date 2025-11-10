@@ -4,9 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { AgencyCard } from '@/components/AgencyCard';
 import { AddAgencyDialog } from '@/components/AddAgencyDialog';
 import { toast } from 'sonner';
+import { ProtectedAction } from '@/components/ProtectedAction';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function Agencies() {
   const navigate = useNavigate();
+  const { canRead } = usePermissions();
   const [agencies, setAgencies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,6 +42,17 @@ export default function Agencies() {
     );
   }
 
+  if (!canRead('agencies')) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <p className="text-lg font-semibold text-foreground">Accès refusé</p>
+          <p className="text-muted-foreground">Vous n'avez pas les permissions pour accéder aux agences</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -46,7 +60,9 @@ export default function Agencies() {
           <h1 className="text-3xl font-bold text-foreground">Agences</h1>
           <p className="text-muted-foreground">Gérez vos agences partenaires</p>
         </div>
-        <AddAgencyDialog onAgencyAdded={fetchAgencies} />
+        <ProtectedAction module="agencies" action="create">
+          <AddAgencyDialog onAgencyAdded={fetchAgencies} />
+        </ProtectedAction>
       </div>
 
       {agencies.length === 0 ? (

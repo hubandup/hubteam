@@ -7,9 +7,12 @@ import { ImportClientsDialog } from '@/components/ImportClientsDialog';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { toast } from 'sonner';
+import { ProtectedAction } from '@/components/ProtectedAction';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function CRM() {
   const navigate = useNavigate();
+  const { canRead } = usePermissions();
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,6 +58,17 @@ export default function CRM() {
     );
   }
 
+  if (!canRead('crm')) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <p className="text-lg font-semibold text-foreground">Accès refusé</p>
+          <p className="text-muted-foreground">Vous n'avez pas les permissions pour accéder au CRM</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -63,8 +77,12 @@ export default function CRM() {
           <p className="text-muted-foreground">Gérez vos clients et leurs projets</p>
         </div>
         <div className="flex gap-2">
-          <ImportClientsDialog onClientsImported={fetchClients} />
-          <AddClientDialog onClientAdded={fetchClients} />
+          <ProtectedAction module="crm" action="create">
+            <ImportClientsDialog onClientsImported={fetchClients} />
+          </ProtectedAction>
+          <ProtectedAction module="crm" action="create">
+            <AddClientDialog onClientAdded={fetchClients} />
+          </ProtectedAction>
         </div>
       </div>
 

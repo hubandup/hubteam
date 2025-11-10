@@ -1,7 +1,8 @@
-import { LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
+import { usePermissions } from '@/hooks/usePermissions';
 import {
   Sidebar as ShadcnSidebar,
   SidebarContent,
@@ -18,12 +19,14 @@ import { Button } from './ui/button';
 export function Sidebar() {
   const { signOut } = useAuth();
   const { role } = useUserRole();
+  const { canRead } = usePermissions();
 
   const mainItems = [
-    { title: 'Tableau de bord', url: '/', icon: LayoutDashboard },
-    { title: 'CRM', url: '/crm', icon: Users },
-    { title: 'Agences', url: '/agencies', icon: Building2 },
-    { title: 'Projets', url: '/projects', icon: FolderKanban },
+    { title: 'Tableau de bord', url: '/', icon: LayoutDashboard, module: 'dashboard' as const },
+    { title: 'CRM', url: '/crm', icon: Users, module: 'crm' as const },
+    { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const },
+    { title: 'Projets', url: '/projects', icon: FolderKanban, module: 'projects' as const },
+    { title: 'Tâches', url: '/tasks', icon: ListTodo, module: 'tasks' as const },
   ];
 
   const showSettings = role === 'admin' || role === 'team';
@@ -35,16 +38,18 @@ export function Sidebar() {
           <SidebarGroupLabel className="text-lg font-bold text-primary">HubTeam</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end className="hover:bg-muted/50" activeClassName="bg-primary/10 text-primary font-medium">
-                      <item.icon className="mr-2 h-4 w-4" />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {mainItems.map((item) => 
+                canRead(item.module) ? (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink to={item.url} end className="hover:bg-muted/50" activeClassName="bg-primary/10 text-primary font-medium">
+                        <item.icon className="mr-2 h-4 w-4" />
+                        <span>{item.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ) : null
+              )}
               {showSettings && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>

@@ -9,9 +9,11 @@ import { Loader2, Search, Calendar, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { EditTaskDialog } from '@/components/project-details/EditTaskDialog';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function Tasks() {
   const navigate = useNavigate();
+  const { canRead } = usePermissions();
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -88,6 +90,17 @@ export default function Tasks() {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!canRead('tasks')) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <p className="text-lg font-semibold text-foreground">Accès refusé</p>
+          <p className="text-muted-foreground">Vous n'avez pas les permissions pour accéder aux tâches</p>
+        </div>
       </div>
     );
   }

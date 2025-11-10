@@ -7,8 +7,10 @@ import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { WeeklySchedule } from '@/components/dashboard/WeeklySchedule';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function Dashboard() {
+  const { canRead, loading: permissionsLoading } = usePermissions();
   const [stats, setStats] = useState({
     leads: 0,
     clients: 0,
@@ -283,10 +285,21 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) {
+  if (loading || permissionsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!canRead('dashboard')) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <p className="text-lg font-semibold text-foreground">Accès refusé</p>
+          <p className="text-muted-foreground">Vous n'avez pas les permissions pour accéder au tableau de bord</p>
+        </div>
       </div>
     );
   }
