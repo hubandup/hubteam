@@ -9,8 +9,10 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { WeeklySchedule } from '@/components/dashboard/WeeklySchedule';
 import { usePermissions } from '@/hooks/usePermissions';
 import { RolePermissionsIndicator } from '@/components/dashboard/RolePermissionsIndicator';
+import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { canRead, loading: permissionsLoading } = usePermissions();
   const [stats, setStats] = useState({
     leads: 0,
@@ -153,12 +155,12 @@ export default function Dashboard() {
 
       if (commentsError) console.error('Error fetching comments:', commentsError);
 
-      // Fetch profiles and tasks separately for each comment
       const commentsWithDetails = await Promise.all(
         (commentsData || []).map(async (comment) => {
           let profile = null;
           let task = null;
           let project = 'Projet inconnu';
+          let projectId = comment.project_id; // Start with comment's project_id
 
           if (comment.user_id) {
             const { data: profileData } = await supabase
@@ -174,17 +176,18 @@ export default function Dashboard() {
               .from('tasks')
               .select('title, project_id')
               .eq('id', comment.task_id)
-              .single();
+              .maybeSingle();
             
             if (taskData) {
               task = { title: taskData.title };
+              projectId = projectId || taskData.project_id; // Use task's project_id if comment doesn't have one
               
               if (taskData.project_id) {
                 const { data: projectData } = await supabase
                   .from('projects')
                   .select('name')
                   .eq('id', taskData.project_id)
-                  .single();
+                  .maybeSingle();
                 
                 if (projectData) {
                   project = projectData.name;
@@ -197,7 +200,7 @@ export default function Dashboard() {
               .from('projects')
               .select('name')
               .eq('id', comment.project_id)
-              .single();
+              .maybeSingle();
             
             if (projectData) {
               project = projectData.name;
@@ -210,7 +213,9 @@ export default function Dashboard() {
             created_at: comment.created_at,
             profiles: profile,
             tasks: task,
-            project
+            project,
+            project_id: projectId,
+            task_id: comment.task_id
           };
         })
       );
@@ -564,8 +569,16 @@ export default function Dashboard() {
           ) : (
             <div className="space-y-4">
               {recentComments.map((comment: any) => (
-                <div key={comment.id} className="flex gap-3 pb-4 border-b last:border-0">
-                  <Avatar className="h-10 w-10">
+                <div 
+                  key={comment.id} 
+                  className="flex gap-3 pb-4 border-b last:border-0 cursor-pointer hover:bg-muted/50 rounded-lg p-2 -m-2 transition-colors"
+                  onClick={() => {
+                    if (comment.project_id) {
+                      navigate(`/project/${comment.project_id}`);
+                    }
+                  }}
+                >
+                  <Avatar className="h-10 w-10 flex-shrink-0">
                     {comment.profiles?.avatar_url && (
                       <AvatarImage 
                         src={comment.profiles.avatar_url} 
@@ -576,16 +589,21 @@ export default function Dashboard() {
                       {comment.profiles?.first_name?.[0]}{comment.profiles?.last_name?.[0]}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
+                  <div className="flex-1 space-y-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-medium">
                         {comment.profiles?.first_name} {comment.profiles?.last_name}
                       </p>
                       <span className="text-xs text-muted-foreground">
                         dans {comment.project}
                       </span>
+                      {comment.tasks && (
+                        <span className="text-xs text-muted-foreground">
+                          · {comment.tasks.title}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-sm text-muted-foreground">{comment.content}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{comment.content}</p>
                     <p className="text-xs text-muted-foreground">
                       {new Date(comment.created_at).toLocaleDateString('fr-FR', {
                         day: 'numeric',
