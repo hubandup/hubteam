@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, Plus } from 'lucide-react';
+import { ArrowLeft, Loader2, Plus, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,14 +15,18 @@ import { ProjectTeamTab } from '@/components/project-details/ProjectTeamTab';
 import { ProjectTasksTab } from '@/components/project-details/ProjectTasksTab';
 import { ProjectAttachmentsTab } from '@/components/project-details/ProjectAttachmentsTab';
 import { SelectClientDialog } from '@/components/project-details/SelectClientDialog';
+import { EditProjectInfoDialog } from '@/components/project-details/EditProjectInfoDialog';
+import { useUserRole } from '@/hooks/useUserRole';
 
 export default function ProjectDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { isAdmin } = useUserRole();
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [projectProgress, setProjectProgress] = useState({ completed: 0, total: 0, percentage: 0 });
   const [showSelectClientDialog, setShowSelectClientDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -117,6 +121,16 @@ export default function ProjectDetails() {
             <Badge variant={statusInfo.variant}>
               {statusInfo.label}
             </Badge>
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowEditDialog(true)}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Modifier
+              </Button>
+            )}
           </div>
           {client && (
             <p className="text-muted-foreground mt-1">
@@ -267,6 +281,15 @@ export default function ProjectDetails() {
         projectId={id!}
         onClientSelected={handleClientSelected}
       />
+
+      {isAdmin && (
+        <EditProjectInfoDialog
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          project={project}
+          onSuccess={fetchProjectDetails}
+        />
+      )}
     </div>
   );
 }
