@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCheck, FolderKanban, CheckSquare, DollarSign, Loader2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { WeeklySchedule } from '@/components/dashboard/WeeklySchedule';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -163,9 +163,9 @@ export default function Dashboard() {
           if (comment.user_id) {
             const { data: profileData } = await supabase
               .from('profiles')
-              .select('first_name, last_name')
+              .select('first_name, last_name, avatar_url')
               .eq('id', comment.user_id)
-              .single();
+              .maybeSingle();
             profile = profileData;
           }
 
@@ -565,8 +565,14 @@ export default function Dashboard() {
             <div className="space-y-4">
               {recentComments.map((comment: any) => (
                 <div key={comment.id} className="flex gap-3 pb-4 border-b last:border-0">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback>
+                  <Avatar className="h-10 w-10">
+                    {comment.profiles?.avatar_url && (
+                      <AvatarImage 
+                        src={comment.profiles.avatar_url} 
+                        alt={`${comment.profiles?.first_name} ${comment.profiles?.last_name}`} 
+                      />
+                    )}
+                    <AvatarFallback className="bg-primary/10 text-primary text-sm">
                       {comment.profiles?.first_name?.[0]}{comment.profiles?.last_name?.[0]}
                     </AvatarFallback>
                   </Avatar>
