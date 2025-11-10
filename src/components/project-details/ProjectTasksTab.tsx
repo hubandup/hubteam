@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Loader2, Calendar, User } from 'lucide-react';
 import { AddTaskDialog } from './AddTaskDialog';
+import { EditTaskDialog } from './EditTaskDialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -32,6 +33,8 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   useEffect(() => {
     fetchTasks();
@@ -84,6 +87,11 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
     high: { label: 'Haute', variant: 'destructive' as const },
   };
 
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task);
+    setShowEditDialog(true);
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -104,7 +112,8 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
               {tasks.map((task) => (
                 <div
                   key={task.id}
-                  className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                  className="p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                  onClick={() => handleTaskClick(task)}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 space-y-2">
@@ -160,6 +169,15 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
         projectId={projectId}
         onSuccess={fetchTasks}
       />
+
+      {selectedTask && (
+        <EditTaskDialog
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          task={selectedTask}
+          onSuccess={fetchTasks}
+        />
+      )}
     </div>
   );
 }

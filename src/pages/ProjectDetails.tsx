@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Calendar, Users, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -19,6 +20,7 @@ export default function ProjectDetails() {
   const navigate = useNavigate();
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [projectProgress, setProjectProgress] = useState({ completed: 0, total: 0, percentage: 0 });
 
   useEffect(() => {
     if (id) {
@@ -39,12 +41,29 @@ export default function ProjectDetails() {
               first_name,
               last_name
             )
+          ),
+          tasks (
+            id,
+            status
           )
         `)
         .eq('id', id)
         .single();
 
       if (error) throw error;
+      
+      // Calculate progress
+      const tasks = data.tasks || [];
+      const totalTasks = tasks.length;
+      const completedTasks = tasks.filter((t: any) => t.status === 'done').length;
+      const percentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      
+      setProjectProgress({
+        completed: completedTasks,
+        total: totalTasks,
+        percentage
+      });
+      
       setProject(data);
     } catch (error) {
       console.error('Error fetching project:', error);
@@ -103,6 +122,26 @@ export default function ProjectDetails() {
           )}
         </div>
       </div>
+
+      {/* Progress Bar */}
+      {projectProgress.total > 0 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">Progression du projet</span>
+                <span className="text-muted-foreground">
+                  {projectProgress.completed}/{projectProgress.total} tâches terminées
+                </span>
+              </div>
+              <Progress value={projectProgress.percentage} className="h-3" />
+              <p className="text-xs text-muted-foreground text-right">
+                {projectProgress.percentage}% complété
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue="info" className="w-full">
         <TabsList className="grid w-full grid-cols-4">

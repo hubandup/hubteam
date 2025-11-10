@@ -1,17 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ProjectCard } from '@/components/ProjectCard';
 import { AddProjectDialog } from '@/components/AddProjectDialog';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 
 export default function Projects() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchProjects();
@@ -41,10 +43,26 @@ export default function Projects() {
     }
   };
 
-  const filteredProjects = projects.filter(project => {
-    if (activeTab === 'all') return true;
-    return project.status === activeTab;
-  });
+  const filteredProjects = useMemo(() => {
+    let filtered = projects;
+    
+    // Filter by tab
+    if (activeTab !== 'all') {
+      filtered = filtered.filter(project => project.status === activeTab);
+    }
+    
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(project =>
+        project.name?.toLowerCase().includes(query) ||
+        project.description?.toLowerCase().includes(query) ||
+        project.project_clients?.[0]?.clients?.company?.toLowerCase().includes(query)
+      );
+    }
+    
+    return filtered;
+  }, [projects, activeTab, searchQuery]);
 
   if (loading) {
     return (
@@ -63,6 +81,18 @@ export default function Projects() {
         </div>
         <AddProjectDialog onProjectAdded={fetchProjects} />
       </div>
+
+      {projects.length > 0 && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher un projet..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
