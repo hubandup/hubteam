@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { PermissionsGuide } from './PermissionsGuide';
 
 type UserRole = 'admin' | 'team' | 'client' | 'agency';
 type AppModule = 'dashboard' | 'crm' | 'agencies' | 'projects' | 'tasks' | 'settings';
@@ -225,8 +224,6 @@ export function PermissionsTab() {
         </div>
       </CardContent>
     </Card>
-    
-    <PermissionsGuide />
     </>
   );
 }
