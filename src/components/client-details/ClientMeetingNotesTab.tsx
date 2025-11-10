@@ -99,31 +99,30 @@ export function ClientMeetingNotesTab({ clientId }: ClientMeetingNotesTabProps) 
                 <CardContent className="pt-6">
                   <div className="flex gap-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarFallback>{initials}</AvatarFallback>
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                        {initials}
+                      </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm">{fullName}</span>
                         <span className="text-xs text-muted-foreground">
                           {format(new Date(note.created_at), "d MMM yyyy 'à' HH:mm", { locale: fr })}
                         </span>
                       </div>
-                      <p className="text-sm whitespace-pre-wrap">{note.content}</p>
+                      <p className="text-sm whitespace-pre-wrap text-foreground">{note.content}</p>
                       {note.attachment_url && (
-                        <div className="flex items-center gap-2 pt-2">
-                          <Paperclip className="h-4 w-4 text-muted-foreground" />
-                          <Button
-                            variant="link"
-                            size="sm"
-                            className="p-0 h-auto text-xs"
-                            asChild
-                          >
-                            <a href={note.attachment_url} target="_blank" rel="noopener noreferrer">
-                              <Download className="h-3 w-3 mr-1" />
-                              Télécharger la pièce jointe
-                            </a>
-                          </Button>
-                        </div>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="p-0 h-auto text-xs"
+                          asChild
+                        >
+                          <a href={note.attachment_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1">
+                            <Paperclip className="h-3 w-3" />
+                            Télécharger la pièce jointe
+                          </a>
+                        </Button>
                       )}
                     </div>
                   </div>

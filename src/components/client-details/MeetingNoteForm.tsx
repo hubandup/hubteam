@@ -100,42 +100,42 @@ export function MeetingNoteForm({ clientId, onNoteAdded }: MeetingNoteFormProps)
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <div className="flex gap-2">
+      <div className="flex items-start gap-2 p-4 border border-input rounded-lg bg-background">
         <Textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Ajouter un commentaire..."
-          rows={2}
-          className="flex-1 resize-none"
+          rows={1}
+          className="flex-1 resize-none border-0 p-0 focus-visible:ring-0 shadow-none bg-transparent min-h-[40px]"
           disabled={loading}
         />
-        <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="ghost"
             size="icon"
             onClick={() => setShowAttachmentInput(!showAttachmentInput)}
-            className="shrink-0"
+            className="h-10 w-10 shrink-0 text-muted-foreground hover:text-foreground"
           >
-            <Paperclip className="h-4 w-4" />
+            <Paperclip className="h-5 w-5" />
           </Button>
           <Button
             type="submit"
             size="icon"
             disabled={loading || !content.trim()}
-            className="shrink-0"
+            className="h-10 w-10 shrink-0 rounded-lg bg-primary hover:bg-primary/90"
           >
             {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              <Send className="h-4 w-4" />
+              <Send className="h-5 w-5" />
             )}
           </Button>
         </div>
       </div>
 
       {showAttachmentInput && (
-        <div className="space-y-2">
+        <div className="space-y-2 px-4">
           <div className="flex items-center gap-2">
             <input
               type="file"

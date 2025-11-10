@@ -232,13 +232,12 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Add comment form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Tâche (optionnel)</label>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          {tasks.length > 0 && (
             <select
               value={selectedTaskId || ''}
               onChange={(e) => setSelectedTaskId(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md bg-background"
+              className="w-full px-3 py-2 text-sm border border-input rounded-md bg-background"
             >
               <option value="">Commentaire libre</option>
               {tasks.map((task) => (
@@ -247,55 +246,67 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
                 </option>
               ))}
             </select>
-          </div>
+          )}
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Commentaire</label>
+          <div className="flex items-start gap-2 p-4 border border-input rounded-lg bg-background">
             <Textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Ajoutez un commentaire..."
-              rows={3}
+              placeholder="Ajouter un commentaire..."
+              rows={1}
+              className="flex-1 resize-none border-0 p-0 focus-visible:ring-0 shadow-none bg-transparent min-h-[40px]"
+              disabled={submitting}
             />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium flex items-center gap-2">
-              <Paperclip className="h-4 w-4" />
-              Pièce jointe (optionnel)
-            </label>
             <div className="flex items-center gap-2">
-              <Input
-                type="file"
-                onChange={handleFileSelect}
-                className="flex-1"
-              />
-              {selectedFile && (
+              <label htmlFor="task-comment-file" className="cursor-pointer">
                 <Button
                   type="button"
                   variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedFile(null)}
+                  size="icon"
+                  className="h-10 w-10 shrink-0 text-muted-foreground hover:text-foreground"
+                  asChild
                 >
-                  <X className="h-4 w-4" />
+                  <span>
+                    <Paperclip className="h-5 w-5" />
+                  </span>
                 </Button>
-              )}
+              </label>
+              <input
+                id="task-comment-file"
+                type="file"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <Button
+                type="submit"
+                size="icon"
+                disabled={submitting || uploading || !newComment.trim()}
+                className="h-10 w-10 shrink-0 rounded-lg bg-primary hover:bg-primary/90"
+              >
+                {submitting || uploading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Send className="h-5 w-5" />
+                )}
+              </Button>
             </div>
-            {selectedFile && (
-              <p className="text-xs text-muted-foreground">
-                Fichier sélectionné : {selectedFile.name}
-              </p>
-            )}
           </div>
 
-          <Button type="submit" disabled={submitting || uploading || !newComment.trim()}>
-            {submitting || uploading ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4 mr-2" />
-            )}
-            {uploading ? 'Envoi en cours...' : 'Envoyer'}
-          </Button>
+          {selectedFile && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-md w-fit">
+              <Paperclip className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">{selectedFile.name}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedFile(null)}
+                className="h-6 w-6 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </form>
 
         {/* Comments list */}
@@ -311,36 +322,36 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
           ) : comments.length > 0 ? (
             <div className="space-y-4">
               {comments.map((comment) => (
-                <div key={comment.id} className="flex gap-3 pb-4 border-b last:border-0">
-                  <Avatar className="h-8 w-8 flex-shrink-0">
-                    <AvatarFallback>
+                <div key={comment.id} className="flex gap-3 py-3">
+                  <Avatar className="h-10 w-10 flex-shrink-0">
+                    <AvatarFallback className="bg-primary/10 text-primary text-sm">
                       {comment.profiles?.first_name?.[0]}{comment.profiles?.last_name?.[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-1 min-w-0">
-                    <div className="flex items-baseline gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-medium">
                         {comment.profiles?.first_name} {comment.profiles?.last_name}
                       </p>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(comment.created_at), 'dd MMM yyyy à HH:mm', { locale: fr })}
+                      </span>
                       {comment.tasks && (
                         <span className="text-xs text-muted-foreground">
-                          sur "{comment.tasks.title}"
+                          · sur "{comment.tasks.title}"
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-foreground break-words">{comment.content}</p>
+                    <p className="text-sm text-foreground break-words whitespace-pre-wrap">{comment.content}</p>
                     {comment.attachment_url && (
                       <button
                         onClick={() => handleDownload(comment.attachment_url!, comment.attachment_url?.split('/').pop())}
-                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
                       >
-                        <Download className="h-3 w-3" />
+                        <Paperclip className="h-3 w-3" />
                         Télécharger la pièce jointe
                       </button>
                     )}
-                    <p className="text-xs text-muted-foreground">
-                      {format(new Date(comment.created_at), 'dd MMM yyyy à HH:mm', { locale: fr })}
-                    </p>
                   </div>
                 </div>
               ))}
