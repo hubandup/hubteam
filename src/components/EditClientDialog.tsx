@@ -213,29 +213,30 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-          onPointerDown={(e) => e.stopPropagation()}
-        >
-          <Pencil className="mr-2 h-4 w-4" />
-          Modifier
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <DialogHeader>
-          <DialogTitle>Modifier le client</DialogTitle>
-          <DialogDescription>
-            Modifiez les informations du client.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(true);
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <Pencil className="mr-2 h-4 w-4" />
+        Modifier
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>Modifier le client</DialogTitle>
+            <DialogDescription>
+              Modifiez les informations du client.
+            </DialogDescription>
+          </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
@@ -452,5 +453,6 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
