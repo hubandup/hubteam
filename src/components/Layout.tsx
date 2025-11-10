@@ -16,7 +16,7 @@ export function Layout({ children }: LayoutProps) {
           <header className="h-14 border-b bg-card flex items-center px-4">
             <SidebarTrigger />
           </header>
-          <main className="flex-1 overflow-auto bg-background">
+          <main className="flex-1 min-h-0 overflow-hidden bg-background">
             <div className="px-6 pt-4">
               <Breadcrumbs />
             </div>

@@ -95,7 +95,7 @@ export default function CRM() {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 overflow-hidden">
       {/* Header - Always visible */}
       <div className="flex-shrink-0 p-6 pb-4 bg-background">
         <div className="flex items-center justify-between">
