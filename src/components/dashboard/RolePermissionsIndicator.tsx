@@ -2,7 +2,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Eye, Plus, Edit, Trash2, CheckCircle2, XCircle } from 'lucide-react';
+import { Shield, Eye, Plus, Edit, Trash2, CheckCircle2, XCircle, X } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Collapsible,
@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const roleConfig = {
   admin: { 
@@ -59,10 +59,73 @@ const actionLabels = {
   delete: 'Suppression',
 };
 
+const STORAGE_KEY = 'roleIndicatorDismissed';
+const MAX_DISMISSALS = 3;
+
+interface DismissalData {
+  count: number;
+  lastRole: string | null;
+}
+
 export function RolePermissionsIndicator() {
   const { role, loading: roleLoading } = useUserRole();
   const { permissions, loading: permissionsLoading } = usePermissions();
   const [isOpen, setIsOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    if (!role) return;
+
+    // Get dismissal data from localStorage
+    const storedData = localStorage.getItem(STORAGE_KEY);
+    let dismissalData: DismissalData = { count: 0, lastRole: null };
+
+    if (storedData) {
+      try {
+        dismissalData = JSON.parse(storedData);
+      } catch (e) {
+        console.error('Error parsing dismissal data:', e);
+      }
+    }
+
+    // Show if:
+    // 1. Role has changed (reset counter)
+    // 2. Dismissed less than 3 times
+    if (dismissalData.lastRole !== role) {
+      // Role changed, reset and show
+      dismissalData = { count: 0, lastRole: role };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dismissalData));
+      setIsVisible(true);
+    } else if (dismissalData.count >= MAX_DISMISSALS) {
+      // Already dismissed 3 times for this role
+      setIsVisible(false);
+    } else {
+      // Show again (new session)
+      setIsVisible(true);
+    }
+  }, [role]);
+
+  const handleDismiss = () => {
+    if (!role) return;
+
+    const storedData = localStorage.getItem(STORAGE_KEY);
+    let dismissalData: DismissalData = { count: 0, lastRole: role };
+
+    if (storedData) {
+      try {
+        dismissalData = JSON.parse(storedData);
+      } catch (e) {
+        console.error('Error parsing dismissal data:', e);
+      }
+    }
+
+    // Increment dismissal count
+    dismissalData.count += 1;
+    dismissalData.lastRole = role;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dismissalData));
+
+    setIsVisible(false);
+  };
 
   if (roleLoading || permissionsLoading) {
     return (
@@ -75,7 +138,7 @@ export function RolePermissionsIndicator() {
     );
   }
 
-  if (!role) {
+  if (!role || !isVisible) {
     return null;
   }
 
@@ -103,9 +166,19 @@ export function RolePermissionsIndicator() {
               {config.description}
             </CardDescription>
           </div>
-          <Badge variant={config.variant} className="text-sm px-3 py-1">
-            {config.label}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant={config.variant} className="text-sm px-3 py-1">
+              {config.label}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              onClick={handleDismiss}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardHeader>
       
