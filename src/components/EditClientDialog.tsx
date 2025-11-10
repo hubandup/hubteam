@@ -218,15 +218,12 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
         variant="outline"
         size="sm"
         type="button"
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
-        onClickCapture={(e) => { e.preventDefault(); e.stopPropagation(); }}
-        onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-        onMouseDownCapture={(e) => { e.preventDefault(); e.stopPropagation(); }}
-        onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-        onPointerDownCapture={(e) => { e.preventDefault(); e.stopPropagation(); }}
-        onKeyDownCapture={(e) => { e.stopPropagation(); }}
-        aria-haspopup="dialog"
-        aria-expanded={open}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(true);
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
       >
         <Pencil className="mr-2 h-4 w-4" />
         Modifier
