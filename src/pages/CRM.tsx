@@ -95,8 +95,8 @@ export default function CRM() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-6 space-y-6 max-w-full overflow-hidden">
+      <div className="flex items-center justify-between flex-shrink-0">
         <div>
           <h1 className="text-3xl font-bold text-foreground">CRM</h1>
           <p className="text-muted-foreground">Gérez vos clients et leurs projets</p>
@@ -128,7 +128,7 @@ export default function CRM() {
       </div>
 
       {clients.length > 0 && (
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Rechercher un client..."
@@ -150,11 +150,13 @@ export default function CRM() {
           <p className="text-sm text-muted-foreground mt-2">Essayez une autre recherche</p>
         </div>
       ) : viewMode === 'kanban' ? (
-        <ClientKanbanView
-          clients={filteredClients}
-          onClientClick={(clientId) => navigate(`/client/${clientId}`)}
-          onStageChange={handleStageChange}
-        />
+        <div className="w-full overflow-hidden">
+          <ClientKanbanView
+            clients={filteredClients}
+            onClientClick={(clientId) => navigate(`/client/${clientId}`)}
+            onStageChange={handleStageChange}
+          />
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredClients.map((client) => (
