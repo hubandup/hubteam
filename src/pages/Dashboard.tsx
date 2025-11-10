@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { WeeklySchedule } from '@/components/dashboard/WeeklySchedule';
 import { usePermissions } from '@/hooks/usePermissions';
+import { RolePermissionsIndicator } from '@/components/dashboard/RolePermissionsIndicator';
 
 export default function Dashboard() {
   const { canRead, loading: permissionsLoading } = usePermissions();
@@ -310,6 +311,9 @@ export default function Dashboard() {
         <h1 className="text-3xl font-bold text-foreground">Tableau de bord</h1>
         <p className="text-muted-foreground">Vue d'ensemble de votre activité</p>
       </div>
+
+      {/* Role & Permissions Indicator */}
+      <RolePermissionsIndicator />
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
