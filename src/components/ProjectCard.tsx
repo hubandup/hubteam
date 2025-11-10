@@ -71,7 +71,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
           </p>
         )}
         {(project.start_date || project.end_date) && (
-          <div className={`flex items-center gap-2 text-sm ${isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+          <div className={`flex items-center gap-2 text-sm ${isOverdue ? 'text-destructive font-medium' : project.status === 'completed' ? 'text-foreground' : 'text-muted-foreground'}`}>
             <Calendar className="h-4 w-4" />
             <span>
               {project.start_date && format(new Date(project.start_date), 'dd MMM yyyy', { locale: fr })}

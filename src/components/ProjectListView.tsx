@@ -52,7 +52,7 @@ export function ProjectListView({ projects, onProjectClick }: ProjectListViewPro
             </div>
 
             {(project.start_date || project.end_date) && (
-              <div className={`flex items-center gap-2 text-sm flex-shrink-0 ${isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+              <div className={`flex items-center gap-2 text-sm flex-shrink-0 ${isOverdue ? 'text-destructive font-medium' : project.status === 'completed' ? 'text-foreground' : 'text-muted-foreground'}`}>
                 <Calendar className="h-4 w-4" />
                 <span className="whitespace-nowrap">
                   {project.start_date && format(new Date(project.start_date), 'dd MMM yyyy', { locale: fr })}
