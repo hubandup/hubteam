@@ -20,8 +20,8 @@ export function Sidebar() {
   const { role } = useUserRole();
 
   const mainItems = [
-    { title: 'Tableau de bord', url: '/dashboard', icon: LayoutDashboard },
-    { title: 'CRM', url: '/', icon: Users },
+    { title: 'Tableau de bord', url: '/', icon: LayoutDashboard },
+    { title: 'CRM', url: '/crm', icon: Users },
     { title: 'Agences', url: '/agencies', icon: Building2 },
     { title: 'Projets', url: '/projects', icon: FolderKanban },
   ];
