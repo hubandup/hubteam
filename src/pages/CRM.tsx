@@ -95,79 +95,86 @@ export default function CRM() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-full overflow-hidden">
-      <div className="flex items-center justify-between flex-shrink-0">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">CRM</h1>
-          <p className="text-muted-foreground">Gérez vos clients et leurs projets</p>
-        </div>
-        <div className="flex gap-2">
-          <div className="flex gap-1 border rounded-md">
-            <Button
-              variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('kanban')}
-            >
-              <Columns3 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('grid')}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
+    <div className="flex flex-col h-full">
+      {/* Header - Always visible */}
+      <div className="flex-shrink-0 p-6 pb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">CRM</h1>
+            <p className="text-muted-foreground">Gérez vos clients et leurs projets</p>
           </div>
-          <ProtectedAction module="crm" action="create">
-            <ImportClientsDialog onClientsImported={fetchClients} />
-          </ProtectedAction>
-          <ProtectedAction module="crm" action="create">
-            <AddClientDialog onClientAdded={fetchClients} />
-          </ProtectedAction>
+          <div className="flex gap-2">
+            <div className="flex gap-1 border rounded-md">
+              <Button
+                variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('kanban')}
+              >
+                <Columns3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+            </div>
+            <ProtectedAction module="crm" action="create">
+              <ImportClientsDialog onClientsImported={fetchClients} />
+            </ProtectedAction>
+            <ProtectedAction module="crm" action="create">
+              <AddClientDialog onClientAdded={fetchClients} />
+            </ProtectedAction>
+          </div>
         </div>
       </div>
 
+      {/* Search bar - Always visible */}
       {clients.length > 0 && (
-        <div className="relative flex-shrink-0">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher un client..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
+        <div className="flex-shrink-0 px-6 pb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher un client..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
         </div>
       )}
 
-      {filteredClients.length === 0 && clients.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Aucun client pour le moment</p>
-          <p className="text-sm text-muted-foreground mt-2">Commencez par ajouter un nouveau client</p>
-        </div>
-      ) : filteredClients.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Aucun client trouvé</p>
-          <p className="text-sm text-muted-foreground mt-2">Essayez une autre recherche</p>
-        </div>
-      ) : viewMode === 'kanban' ? (
-        <div className="w-full overflow-hidden">
+      {/* Content area - Scrollable only for Kanban */}
+      <div className="flex-1 px-6 pb-6">
+        {filteredClients.length === 0 && clients.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Aucun client pour le moment</p>
+            <p className="text-sm text-muted-foreground mt-2">Commencez par ajouter un nouveau client</p>
+          </div>
+        ) : filteredClients.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Aucun client trouvé</p>
+            <p className="text-sm text-muted-foreground mt-2">Essayez une autre recherche</p>
+          </div>
+        ) : viewMode === 'kanban' ? (
           <ClientKanbanView
             clients={filteredClients}
             onClientClick={(clientId) => navigate(`/client/${clientId}`)}
             onStageChange={handleStageChange}
           />
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredClients.map((client) => (
-            <ClientCard
-              key={client.id}
-              client={client}
-              onClick={() => navigate(`/client/${client.id}`)}
-            />
-          ))}
-        </div>
-      )}
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredClients.map((client) => (
+              <ClientCard
+                key={client.id}
+                client={client}
+                onClick={() => navigate(`/client/${client.id}`)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
