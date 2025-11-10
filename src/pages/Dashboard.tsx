@@ -58,7 +58,7 @@ export default function Dashboard() {
       const activeClients = clients?.filter(c => c.active).length || 0;
       const totalRevenue = clients?.reduce((sum, c) => sum + (c.revenue || 0), 0) || 0;
 
-      // Fetch projects with tasks for progress calculation
+      // Fetch projects for progress calculation (without relying on FK-based nested selects)
       const { data: projects, error: projectsError } = await supabase
         .from('projects')
         .select(`
@@ -69,31 +69,50 @@ export default function Dashboard() {
             clients (
               company
             )
-          ),
-          tasks (
-            id,
-            status
           )
         `)
         .in('status', ['planning', 'active']);
 
       if (projectsError) throw projectsError;
 
-      const projectsProgress = projects?.map(project => {
-        const tasks = project.tasks || [];
-        const totalTasks = tasks.length;
-        const completedTasks = tasks.filter((t: any) => t.status === 'done').length;
-        const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-        const clientName = project.project_clients?.[0]?.clients?.company || 'Client inconnu';
-        
-        return {
-          ...project,
-          clientName,
-          totalTasks,
-          completedTasks,
-          progress,
-        };
-      }).filter(p => p.totalTasks > 0) || [];
+      // Compute progress by fetching tasks separately and grouping by project_id
+      const projectIds = (projects || []).map((p: any) => p.id);
+      let tasksByProject: Record<string, { total: number; done: number }> = {};
+
+      if (projectIds.length > 0) {
+        const { data: tasksList, error: tasksListError } = await supabase
+          .from('tasks')
+          .select('project_id, status')
+          .in('project_id', projectIds);
+        if (tasksListError) throw tasksListError;
+
+        tasksByProject = (tasksList || []).reduce((acc: Record<string, { total: number; done: number }>, t: any) => {
+          const pid = t.project_id;
+          if (!pid) return acc;
+          if (!acc[pid]) acc[pid] = { total: 0, done: 0 };
+          acc[pid].total += 1;
+          if (t.status === 'done') acc[pid].done += 1;
+          return acc;
+        }, {});
+      }
+
+      const projectsProgress = (projects || [])
+        .map((project: any) => {
+          const counts = tasksByProject[project.id] || { total: 0, done: 0 };
+          const totalTasks = counts.total;
+          const completedTasks = counts.done;
+          const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+          const clientName = project.project_clients?.[0]?.clients?.company || 'Client inconnu';
+
+          return {
+            ...project,
+            clientName,
+            totalTasks,
+            completedTasks,
+            progress,
+          };
+        })
+        .filter((p: any) => p.totalTasks > 0);
 
       // Fetch tasks in progress
       const { data: tasks, error: tasksError } = await supabase
