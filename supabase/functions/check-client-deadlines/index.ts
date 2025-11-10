@@ -22,26 +22,39 @@ Deno.serve(async (req) => {
       }
     );
 
-    console.log('Checking for overdue client follow-ups...');
+    console.log('Checking for client follow-ups...');
 
-    // Get clients with overdue follow-up dates
-    const { data: overdueClients, error: fetchError } = await supabaseClient
+    const now = new Date();
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+    // Get clients with follow-up dates that are overdue or approaching (within 24h)
+    const { data: clientsToCheck, error: fetchError } = await supabaseClient
       .from('clients')
       .select('id, company, first_name, last_name, follow_up_date')
       .not('follow_up_date', 'is', null)
-      .lt('follow_up_date', new Date().toISOString());
+      .lt('follow_up_date', tomorrow.toISOString());
 
     if (fetchError) {
-      console.error('Error fetching overdue clients:', fetchError);
+      console.error('Error fetching clients:', fetchError);
       throw fetchError;
     }
 
-    console.log(`Found ${overdueClients?.length || 0} clients with overdue follow-ups`);
+    console.log(`Found ${clientsToCheck?.length || 0} clients with follow-ups to check`);
+
+    // Separate overdue and approaching clients
+    const overdueClients = clientsToCheck?.filter(c => new Date(c.follow_up_date!) < now) || [];
+    const approachingClients = clientsToCheck?.filter(c => {
+      const followUpDate = new Date(c.follow_up_date!);
+      return followUpDate >= now && followUpDate <= tomorrow;
+    }) || [];
+
+    console.log(`- ${overdueClients.length} overdue`);
+    console.log(`- ${approachingClients.length} approaching (within 24h)`);
 
     // Get all admin and team users to notify
     const { data: usersToNotify, error: usersError } = await supabaseClient
       .from('user_roles')
-      .select('user_id')
+      .select('user_id, profiles!inner(id, first_name, last_name)')
       .in('role', ['admin', 'team']);
 
     if (usersError) {
@@ -49,18 +62,29 @@ Deno.serve(async (req) => {
       throw usersError;
     }
 
-    // Create notifications for each overdue client
+    // Create notifications for overdue and approaching clients
     const notifications = [];
-    for (const client of overdueClients || []) {
+    
+    // Process overdue clients
+    for (const client of overdueClients) {
       for (const user of usersToNotify || []) {
-        // Check if notification already exists (avoid duplicates)
+        // Check user preferences
+        const { data: prefs } = await supabaseClient
+          .from('notification_preferences')
+          .select('deadline_approaching')
+          .eq('user_id', user.user_id)
+          .single();
+
+        if (prefs?.deadline_approaching === false) continue;
+
+        // Check if notification already exists (avoid duplicates within 12h)
         const { data: existingNotif } = await supabaseClient
           .from('notifications')
           .select('id')
           .eq('user_id', user.user_id)
           .eq('type', 'deadline_overdue')
           .ilike('message', `%${client.company}%`)
-          .gt('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+          .gt('created_at', new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString())
           .limit(1);
 
         if (!existingNotif || existingNotif.length === 0) {
@@ -69,6 +93,40 @@ Deno.serve(async (req) => {
             type: 'deadline_overdue',
             title: 'Date de rappel dépassée',
             message: `Le rappel pour ${client.company} (${client.first_name} ${client.last_name}) est en retard`,
+            link: `/client/${client.id}`,
+          });
+        }
+      }
+    }
+
+    // Process approaching clients (within 24h)
+    for (const client of approachingClients) {
+      for (const user of usersToNotify || []) {
+        // Check user preferences
+        const { data: prefs } = await supabaseClient
+          .from('notification_preferences')
+          .select('deadline_approaching')
+          .eq('user_id', user.user_id)
+          .single();
+
+        if (prefs?.deadline_approaching === false) continue;
+
+        // Check if notification already exists (avoid duplicates within 12h)
+        const { data: existingNotif } = await supabaseClient
+          .from('notifications')
+          .select('id')
+          .eq('user_id', user.user_id)
+          .eq('type', 'deadline_approaching')
+          .ilike('message', `%${client.company}%`)
+          .gt('created_at', new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString())
+          .limit(1);
+
+        if (!existingNotif || existingNotif.length === 0) {
+          notifications.push({
+            user_id: user.user_id,
+            type: 'deadline_approaching',
+            title: 'Date de rappel approchante',
+            message: `Le rappel pour ${client.company} (${client.first_name} ${client.last_name}) est prévu dans moins de 24h`,
             link: `/client/${client.id}`,
           });
         }
@@ -91,7 +149,8 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        overdueCount: overdueClients?.length || 0,
+        overdueCount: overdueClients.length,
+        approachingCount: approachingClients.length,
         notificationsCreated: notifications.length 
       }),
       {
