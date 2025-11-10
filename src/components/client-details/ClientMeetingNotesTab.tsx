@@ -23,21 +23,31 @@ export function ClientMeetingNotesTab({ clientId }: ClientMeetingNotesTabProps) 
 
   const fetchNotes = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: notesData, error: notesError } = await supabase
         .from('meeting_notes')
-        .select(`
-          *,
-          profiles:user_id (
-            first_name,
-            last_name,
-            email
-          )
-        `)
+        .select('*')
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setNotes(data || []);
+      if (notesError) throw notesError;
+
+      // Fetch profiles separately for each note
+      const notesWithProfiles = await Promise.all(
+        (notesData || []).map(async (note) => {
+          if (note.user_id) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('first_name, last_name, email')
+              .eq('id', note.user_id)
+              .single();
+            
+            return { ...note, profiles: profile };
+          }
+          return { ...note, profiles: null };
+        })
+      );
+
+      setNotes(notesWithProfiles);
     } catch (error) {
       console.error('Error fetching notes:', error);
       toast.error('Erreur lors du chargement des comptes rendus');
