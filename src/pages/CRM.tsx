@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ClientCard } from '@/components/ClientCard';
 import { AddClientDialog } from '@/components/AddClientDialog';
+import { ImportClientsDialog } from '@/components/ImportClientsDialog';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { toast } from 'sonner';
@@ -61,7 +62,10 @@ export default function CRM() {
           <h1 className="text-3xl font-bold text-foreground">CRM</h1>
           <p className="text-muted-foreground">Gérez vos clients et leurs projets</p>
         </div>
-        <AddClientDialog onClientAdded={fetchClients} />
+        <div className="flex gap-2">
+          <ImportClientsDialog onClientsImported={fetchClients} />
+          <AddClientDialog onClientAdded={fetchClients} />
+        </div>
       </div>
 
       {clients.length > 0 && (
