@@ -468,6 +468,39 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          deadline_approaching: boolean
+          id: string
+          mention: boolean
+          task_assigned: boolean
+          task_comment: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deadline_approaching?: boolean
+          id?: string
+          mention?: boolean
+          task_assigned?: boolean
+          task_comment?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deadline_approaching?: boolean
+          id?: string
+          mention?: boolean
+          task_assigned?: boolean
+          task_comment?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
