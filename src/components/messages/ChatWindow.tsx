@@ -161,7 +161,7 @@ export function ChatWindow({ roomId }: ChatWindowProps) {
     }
   };
 
-  const renderMessageContent = (content: string) => {
+  const renderMessageContent = (content: string, isOwn: boolean) => {
     // Replace mention format with highlighted text
     const mentionRegex = /@\[([^\]]+)\]\(([a-f0-9-]+)\)/g;
     const parts = content.split(mentionRegex);
@@ -169,9 +169,16 @@ export function ChatWindow({ roomId }: ChatWindowProps) {
     return parts.map((part, index) => {
       // Every third item starting from index 1 is a user ID (which we skip in rendering)
       if (index % 3 === 1) {
-        // This is a display name
+        // This is a display name - use background with contrast
         return (
-          <span key={index} className="font-semibold text-primary">
+          <span 
+            key={index} 
+            className={`font-semibold px-1 rounded ${
+              isOwn 
+                ? 'bg-primary-foreground/20 text-primary-foreground' 
+                : 'bg-primary/10 text-primary'
+            }`}
+          >
             @{part}
           </span>
         );
@@ -223,7 +230,7 @@ export function ChatWindow({ roomId }: ChatWindowProps) {
                         : 'bg-muted'
                     }`}
                   >
-                    <p className="text-sm">{renderMessageContent(message.content)}</p>
+                    <p className="text-sm">{renderMessageContent(message.content, isOwn)}</p>
                   </div>
                   <span className="text-xs text-muted-foreground mt-1">
                     {formatDistanceToNow(new Date(message.created_at), {
