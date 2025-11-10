@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { Loader2, Upload, User, Mail, Lock, Badge as BadgeIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { UserManagement } from '@/components/settings/UserManagement';
 
 const profileSchema = z.object({
   firstName: z.string().min(1, 'Le prénom est requis').max(100),
@@ -35,7 +36,7 @@ type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export default function Settings() {
   const { user } = useAuth();
-  const { role } = useUserRole();
+  const { role, isAdmin } = useUserRole();
   const [loading, setLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -211,8 +212,13 @@ export default function Settings() {
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Paramètres</h1>
-        <p className="text-muted-foreground">Gérez vos informations personnelles</p>
+        <p className="text-muted-foreground">
+          {isAdmin ? 'Gérez les utilisateurs et vos informations personnelles' : 'Gérez vos informations personnelles'}
+        </p>
       </div>
+
+      {/* User Management Section - Only for Admins */}
+      {isAdmin && <UserManagement />}
 
       {/* Profile Info Card */}
       <Card>
