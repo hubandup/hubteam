@@ -997,6 +997,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_room_member: {
+        Args: { _room_id: string; _user_id: string }
+        Returns: boolean
+      }
       notify_upcoming_deadlines: { Args: never; Returns: undefined }
     }
     Enums: {
