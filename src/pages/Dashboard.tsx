@@ -25,6 +25,24 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData();
+
+    // Subscribe to realtime changes for projects, tasks, and clients
+    const projectsChannel = supabase
+      .channel('dashboard-projects')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
+        fetchDashboardData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => {
+        fetchDashboardData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => {
+        fetchDashboardData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(projectsChannel);
+    };
   }, []);
 
   const fetchDashboardData = async () => {
@@ -65,17 +83,17 @@ export default function Dashboard() {
         const tasks = project.tasks || [];
         const totalTasks = tasks.length;
         const completedTasks = tasks.filter((t: any) => t.status === 'done').length;
-        const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : Math.floor(Math.random() * 100);
+        const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
         const clientName = project.project_clients?.[0]?.clients?.company || 'Client inconnu';
         
         return {
           ...project,
           clientName,
-          totalTasks: totalTasks > 0 ? totalTasks : Math.floor(Math.random() * 10) + 5,
-          completedTasks: totalTasks > 0 ? completedTasks : Math.floor(Math.random() * 5) + 1,
+          totalTasks,
+          completedTasks,
           progress,
         };
-      }) || [];
+      }).filter(p => p.totalTasks > 0) || [];
 
       // Fetch tasks in progress
       const { data: tasks, error: tasksError } = await supabase
@@ -95,89 +113,37 @@ export default function Dashboard() {
 
       if (topClientsError) throw topClientsError;
 
-      // Mock comments data
-      const comments = [
-        {
-          id: '1',
-          content: 'Le design de la page d\'accueil est validé par le client',
-          created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-          profiles: { first_name: 'Marie', last_name: 'Dubois' },
-          tasks: { title: 'Design homepage' },
-          project: 'ACME - Refonte du site web'
-        },
-        {
-          id: '2',
-          content: 'Intégration responsive terminée, en attente de review',
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-          profiles: { first_name: 'Pierre', last_name: 'Martin' },
-          tasks: { title: 'Responsive integration' },
-          project: 'TechCorp - Application mobile'
-        },
-        {
-          id: '3',
-          content: 'Bug corrigé sur le formulaire de contact',
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
-          profiles: { first_name: 'Sophie', last_name: 'Laurent' },
-          tasks: { title: 'Fix contact form' },
-          project: 'ACME - Refonte du site web'
-        },
-        {
-          id: '4',
-          content: 'Tests unitaires ajoutés pour le module authentification',
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
-          profiles: { first_name: 'Thomas', last_name: 'Petit' },
-          tasks: { title: 'Auth module testing' },
-          project: 'StartupX - Plateforme SaaS'
-        },
-        {
-          id: '5',
-          content: 'Optimisation des performances sur mobile effectuée',
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
-          profiles: { first_name: 'Julie', last_name: 'Rousseau' },
-          tasks: { title: 'Mobile optimization' },
-          project: 'TechCorp - Application mobile'
-        },
-        {
-          id: '6',
-          content: 'Documentation API mise à jour avec les nouveaux endpoints',
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
-          profiles: { first_name: 'Marc', last_name: 'Bernard' },
-          tasks: { title: 'API documentation' },
-          project: 'StartupX - Plateforme SaaS'
-        },
-        {
-          id: '7',
-          content: 'Migration base de données réussie sans incident',
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 16).toISOString(),
-          profiles: { first_name: 'Laura', last_name: 'Simon' },
-          tasks: { title: 'Database migration' },
-          project: 'ACME - Refonte du site web'
-        },
-        {
-          id: '8',
-          content: 'Nouveau système de notifications push opérationnel',
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
-          profiles: { first_name: 'David', last_name: 'Michel' },
-          tasks: { title: 'Push notifications' },
-          project: 'TechCorp - Application mobile'
-        },
-        {
-          id: '9',
-          content: 'Refactoring du code legacy terminé, prêt pour déploiement',
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-          profiles: { first_name: 'Emma', last_name: 'Leroy' },
-          tasks: { title: 'Code refactoring' },
-          project: 'StartupX - Plateforme SaaS'
-        },
-        {
-          id: '10',
-          content: 'Réunion client plannifiée pour présenter les maquettes finales',
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 28).toISOString(),
-          profiles: { first_name: 'Nicolas', last_name: 'Moreau' },
-          tasks: { title: 'Client presentation' },
-          project: 'ACME - Refonte du site web'
-        }
-      ];
+      // Fetch recent task comments
+      const { data: commentsData, error: commentsError } = await supabase
+        .from('task_comments')
+        .select(`
+          id,
+          content,
+          created_at,
+          profiles!task_comments_user_id_fkey (
+            first_name,
+            last_name
+          ),
+          tasks (
+            title,
+            projects (
+              name
+            )
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (commentsError) console.error('Error fetching comments:', commentsError);
+
+      const comments = commentsData?.map(comment => ({
+        id: comment.id,
+        content: comment.content,
+        created_at: comment.created_at,
+        profiles: comment.profiles,
+        tasks: comment.tasks,
+        project: comment.tasks?.projects?.name || 'Projet inconnu'
+      })) || [];
 
       setStats({
         leads,
