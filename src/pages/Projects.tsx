@@ -48,6 +48,29 @@ export default function Projects() {
     }
   };
 
+  const handleStatusChange = async (projectId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ status: newStatus })
+        .eq('id', projectId);
+
+      if (error) throw error;
+
+      // Update local state
+      setProjects(prev =>
+        prev.map(p =>
+          p.id === projectId ? { ...p, status: newStatus } : p
+        )
+      );
+
+      toast.success('Statut du projet mis à jour');
+    } catch (error) {
+      console.error('Error updating project status:', error);
+      toast.error('Erreur lors de la mise à jour du statut');
+    }
+  };
+
   const filteredProjects = useMemo(() => {
     let filtered = projects;
     
@@ -167,6 +190,7 @@ export default function Projects() {
             <ProjectKanbanView 
               projects={filteredProjects}
               onProjectClick={(id) => navigate(`/project/${id}`)}
+              onStatusChange={handleStatusChange}
             />
           ) : (
             <ProjectListView 
