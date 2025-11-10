@@ -86,7 +86,7 @@ export function EditTaskDialog({ open, onOpenChange, task, onSuccess }: EditTask
           priority,
           start_date: startDate || null,
           end_date: endDate || null,
-          assigned_to: assignedTo || null,
+          assigned_to: assignedTo === 'unassigned' ? null : assignedTo,
         })
         .eq('id', task.id);
 
@@ -217,12 +217,12 @@ export function EditTaskDialog({ open, onOpenChange, task, onSuccess }: EditTask
 
             <div className="grid gap-2">
               <Label htmlFor="assignedTo">Assigné à</Label>
-              <Select value={assignedTo} onValueChange={setAssignedTo}>
+              <Select value={assignedTo || "unassigned"} onValueChange={setAssignedTo}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un membre" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Non assigné</SelectItem>
+                  <SelectItem value="unassigned">Non assigné</SelectItem>
                   {teamMembers.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
                       {member.first_name} {member.last_name}
