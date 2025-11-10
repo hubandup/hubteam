@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Loader2, MessageSquare, Send, Paperclip, X, Download } from 'lucide-react';
 import { format } from 'date-fns';
@@ -21,6 +21,7 @@ interface Comment {
   profiles: {
     first_name: string;
     last_name: string;
+    avatar_url: string | null;
   };
   tasks: {
     title: string;
@@ -115,7 +116,7 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
         (data || []).map(async (comment) => {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('first_name, last_name')
+            .select('first_name, last_name, avatar_url')
             .eq('id', comment.user_id)
             .single();
           
@@ -131,7 +132,7 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
           
           return { 
             ...comment, 
-            profiles: profile || { first_name: '', last_name: '' },
+            profiles: profile || { first_name: '', last_name: '', avatar_url: null },
             tasks: taskData
           };
         })
@@ -324,6 +325,12 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
               {comments.map((comment) => (
                 <div key={comment.id} className="flex gap-3 py-3">
                   <Avatar className="h-10 w-10 flex-shrink-0">
+                    {comment.profiles?.avatar_url && (
+                      <AvatarImage 
+                        src={comment.profiles.avatar_url} 
+                        alt={`${comment.profiles?.first_name} ${comment.profiles?.last_name}`} 
+                      />
+                    )}
                     <AvatarFallback className="bg-primary/10 text-primary text-sm">
                       {comment.profiles?.first_name?.[0]}{comment.profiles?.last_name?.[0]}
                     </AvatarFallback>

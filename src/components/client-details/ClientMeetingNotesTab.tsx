@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Paperclip, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -38,7 +38,7 @@ export function ClientMeetingNotesTab({ clientId }: ClientMeetingNotesTabProps) 
           if (note.user_id) {
             const { data: profile } = await supabase
               .from('profiles')
-              .select('first_name, last_name, email')
+              .select('first_name, last_name, email, avatar_url')
               .eq('id', note.user_id)
               .single();
             
@@ -99,6 +99,7 @@ export function ClientMeetingNotesTab({ clientId }: ClientMeetingNotesTabProps) 
                 <CardContent className="pt-6">
                   <div className="flex gap-3">
                     <Avatar className="h-10 w-10">
+                      {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt={fullName} />}
                       <AvatarFallback className="bg-primary/10 text-primary text-sm">
                         {initials}
                       </AvatarFallback>
