@@ -72,6 +72,9 @@ export default {
           "urgent-foreground": "hsl(var(--status-urgent-foreground))",
         },
       },
+      height: {
+        '7': '2.6rem',
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
