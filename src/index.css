@@ -14,8 +14,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
     
-    --primary: 66 99% 71%;
-    --primary-foreground: 0 0% 10%;
+    --primary: 210 99% 29%;
+    --primary-foreground: 0 0% 100%;
     
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -23,43 +23,43 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
     
-    --accent: 66 99% 85%;
-    --accent-foreground: 0 0% 10%;
+    --accent: 210 99% 85%;
+    --accent-foreground: 210 99% 29%;
     
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 66 99% 71%;
+    --ring: 210 99% 29%;
     
     --radius: 0.5rem;
     
     /* Custom tokens */
-    --primary-light: 66 99% 90%;
-    --success: 85 70% 55%;
-    --warning: 25 95% 60%;
-    --info: 180 70% 50%;
+    --primary-light: 210 99% 90%;
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
+    --info: 199 89% 48%;
     
     /* Project status colors */
-    --status-planning: 280 60% 65%;
+    --status-planning: 263 70% 50%;
     --status-planning-foreground: 0 0% 100%;
-    --status-active: 85 70% 55%;
-    --status-active-foreground: 0 0% 10%;
+    --status-active: 142 76% 36%;
+    --status-active-foreground: 0 0% 100%;
     --status-completed: 210 40% 96.1%;
     --status-completed-foreground: 222.2 47.4% 11.2%;
-    --status-urgent: 0 75% 60%;
+    --status-urgent: 0 84.2% 60.2%;
     --status-urgent-foreground: 0 0% 100%;
     
     /* Sidebar */
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 66 99% 71%;
-    --sidebar-primary-foreground: 0 0% 10%;
-    --sidebar-accent: 66 99% 95%;
-    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-primary: 210 99% 29%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 99% 95%;
+    --sidebar-accent-foreground: 210 99% 29%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 66 99% 71%;
+    --sidebar-ring: 210 99% 29%;
   }
   
   .dark {
@@ -137,5 +137,10 @@
   /* Logo white in dark mode */
   .dark img[alt="HubandUp"] {
     filter: brightness(0) invert(1);
+  }
+  
+  /* Logo normal in light mode */
+  img[alt="HubandUp"] {
+    filter: none;
   }
 }
