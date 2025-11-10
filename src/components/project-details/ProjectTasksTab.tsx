@@ -10,6 +10,7 @@ import { EditTaskDialog } from './EditTaskDialog';
 import { ProjectTaskComments } from './ProjectTaskComments';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { ProtectedAction } from '@/components/ProtectedAction';
 
 interface Task {
   id: string;
@@ -98,10 +99,12 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Tâches du projet</CardTitle>
-          <Button onClick={() => setShowAddDialog(true)} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Ajouter une tâche
-          </Button>
+          <ProtectedAction module="tasks" action="create">
+            <Button onClick={() => setShowAddDialog(true)} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Ajouter une tâche
+            </Button>
+          </ProtectedAction>
         </CardHeader>
         <CardContent>
           {loading ? (

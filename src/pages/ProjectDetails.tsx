@@ -27,6 +27,7 @@ import { ProjectAttachmentsTab } from '@/components/project-details/ProjectAttac
 import { SelectClientDialog } from '@/components/project-details/SelectClientDialog';
 import { EditProjectInfoDialog } from '@/components/project-details/EditProjectInfoDialog';
 import { useUserRole } from '@/hooks/useUserRole';
+import { ProtectedAction } from '@/components/ProtectedAction';
 
 export default function ProjectDetails() {
   const { id } = useParams<{ id: string }>();
@@ -157,26 +158,26 @@ export default function ProjectDetails() {
             <Badge variant={statusInfo.variant}>
               {statusInfo.label}
             </Badge>
-            {isAdmin && (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowEditDialog(true)}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Modifier
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setShowDeleteDialog(true)}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Supprimer
-                </Button>
-              </>
-            )}
+            <ProtectedAction module="projects" action="update">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowEditDialog(true)}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Modifier
+              </Button>
+            </ProtectedAction>
+            <ProtectedAction module="projects" action="delete">
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Supprimer
+              </Button>
+            </ProtectedAction>
           </div>
           {client && (
             <p className="text-muted-foreground mt-1">

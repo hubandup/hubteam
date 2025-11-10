@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { EditClientDialog } from '@/components/EditClientDialog';
 import { supabase } from '@/integrations/supabase/client';
+import { ProtectedAction } from '@/components/ProtectedAction';
 
 interface ClientInfoTabProps {
   client: {
@@ -71,7 +72,9 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
-        <EditClientDialog client={client} onClientUpdated={onUpdate} />
+        <ProtectedAction module="crm" action="update">
+          <EditClientDialog client={client} onClientUpdated={onUpdate} />
+        </ProtectedAction>
       </div>
       
       <div className="grid gap-6 md:grid-cols-2">

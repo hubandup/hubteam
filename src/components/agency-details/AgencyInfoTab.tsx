@@ -6,6 +6,7 @@ import { fr } from 'date-fns/locale';
 import { EditAgencyDialog } from '@/components/EditAgencyDialog';
 import { AgencyContactsManager } from './AgencyContactsManager';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ProtectedAction } from '@/components/ProtectedAction';
 
 interface AgencyInfoTabProps {
   agency: {
@@ -25,7 +26,9 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
-        <EditAgencyDialog agency={agency} onAgencyUpdated={onUpdate} />
+        <ProtectedAction module="agencies" action="update">
+          <EditAgencyDialog agency={agency} onAgencyUpdated={onUpdate} />
+        </ProtectedAction>
       </div>
       
       <div className="grid gap-6 md:grid-cols-2">

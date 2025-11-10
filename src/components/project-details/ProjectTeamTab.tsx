@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Trash2, User, Building2, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { AddTeamMemberDialog } from './AddTeamMemberDialog';
+import { ProtectedAction } from '@/components/ProtectedAction';
 
 interface TeamMember {
   id: string;
@@ -174,10 +175,12 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Membres de l'équipe</CardTitle>
-          <Button onClick={() => setShowAddDialog(true)} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Ajouter
-          </Button>
+          <ProtectedAction module="projects" action="update">
+            <Button onClick={() => setShowAddDialog(true)} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Ajouter
+            </Button>
+          </ProtectedAction>
         </CardHeader>
         <CardContent>
           {teamMembers.length > 0 ? (
@@ -199,13 +202,15 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
                       )}
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeMember(member.id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  <ProtectedAction module="projects" action="update">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeMember(member.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </ProtectedAction>
                 </div>
               ))}
             </div>

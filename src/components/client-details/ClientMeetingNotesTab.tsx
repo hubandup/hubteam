@@ -8,6 +8,7 @@ import { Loader2, Paperclip, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { MeetingNoteForm } from './MeetingNoteForm';
+import { ProtectedAction } from '@/components/ProtectedAction';
 
 interface ClientMeetingNotesTabProps {
   clientId: string;
@@ -66,11 +67,13 @@ export function ClientMeetingNotesTab({ clientId }: ClientMeetingNotesTabProps) 
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardContent className="pt-6">
-          <MeetingNoteForm clientId={clientId} onNoteAdded={fetchNotes} />
-        </CardContent>
-      </Card>
+      <ProtectedAction module="crm" action="create">
+        <Card>
+          <CardContent className="pt-6">
+            <MeetingNoteForm clientId={clientId} onNoteAdded={fetchNotes} />
+          </CardContent>
+        </Card>
+      </ProtectedAction>
 
       {notes.length === 0 ? (
         <Card>
