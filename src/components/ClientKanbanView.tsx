@@ -55,10 +55,20 @@ function DraggableClientCard({ client, onClick }: { client: any; onClick: () => 
 
   const isOverdue = client.follow_up_date && isPast(new Date(client.follow_up_date));
 
+  // Prevent click during drag
+  const handleClick = (e: React.MouseEvent) => {
+    if (isDragging) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    onClick();
+  };
+
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-3">
-      <div className="relative">
-        <ClientCard client={client} onClick={onClick} />
+      <div className="relative" onClick={handleClick}>
+        <ClientCard client={client} onClick={() => {}} />
         {client.follow_up_date && (
           <div className={`absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
             isOverdue 
