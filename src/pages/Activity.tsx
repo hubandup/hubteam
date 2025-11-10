@@ -26,6 +26,9 @@ interface ActivityLogEntry {
 }
 
 const actionIcons = {
+  created: Plus,
+  updated: Edit,
+  deleted: Trash2,
   create: Plus,
   update: Edit,
   delete: Trash2,
@@ -33,11 +36,34 @@ const actionIcons = {
 };
 
 const actionLabels = {
+  created: 'Création',
+  updated: 'Modification',
+  deleted: 'Suppression',
   create: 'Création',
   update: 'Modification',
   delete: 'Suppression',
   view: 'Consultation',
 };
+
+const fieldLabels: Record<string, string> = {
+  first_name: 'Prénom',
+  last_name: 'Nom',
+  email: 'Email',
+  phone: 'Téléphone',
+  company: 'Entreprise',
+  name: 'Nom',
+  title: 'Titre',
+  description: 'Description',
+  status: 'Statut',
+  priority: 'Priorité',
+  start_date: 'Date de début',
+  end_date: 'Date de fin',
+  assigned_to: 'Assigné à',
+  active: 'Actif',
+  revenue: 'Revenu',
+};
+
+const ignoredFields = ['id', 'created_at', 'updated_at', 'user_id', 'created_by', 'avatar_url', 'logo_url'];
 
 const entityLabels = {
   client: 'Client',
@@ -199,26 +225,56 @@ export default function Activity() {
 
                         {activity.old_values && activity.new_values && (
                           <div className="text-xs space-y-1 bg-muted/30 p-2 rounded">
-                            <div className="font-medium">Modifications :</div>
-                            {Object.keys(activity.new_values).map((key) => {
-                              const oldValue = activity.old_values?.[key];
-                              const newValue = activity.new_values[key];
-                              if (oldValue !== newValue) {
+                            <div className="font-medium mb-1">Modifications :</div>
+                            {Object.keys(activity.new_values)
+                              .filter(key => !ignoredFields.includes(key))
+                              .map((key) => {
+                                const oldValue = activity.old_values?.[key];
+                                const newValue = activity.new_values[key];
+                                if (oldValue !== newValue && newValue !== null) {
+                                  const label = fieldLabels[key] || key;
+                                  const displayOldValue = oldValue === null || oldValue === '' ? '(vide)' : String(oldValue);
+                                  const displayNewValue = String(newValue);
+                                  
+                                  return (
+                                    <div key={key} className="flex gap-2 items-center">
+                                      <span className="text-muted-foreground font-medium min-w-[100px]">{label}:</span>
+                                      {activity.action_type !== 'created' && (
+                                        <>
+                                          <span className="line-through text-destructive">
+                                            {displayOldValue}
+                                          </span>
+                                          <span>→</span>
+                                        </>
+                                      )}
+                                      <span className="text-primary font-medium">
+                                        {displayNewValue}
+                                      </span>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })
+                              .filter(Boolean)}
+                          </div>
+                        )}
+                        
+                        {activity.action_type === 'created' && activity.new_values && (
+                          <div className="text-xs space-y-1 bg-muted/30 p-2 rounded">
+                            <div className="font-medium mb-1">Détails :</div>
+                            {Object.keys(activity.new_values)
+                              .filter(key => !ignoredFields.includes(key) && activity.new_values[key] !== null && activity.new_values[key] !== '')
+                              .slice(0, 3)
+                              .map((key) => {
+                                const label = fieldLabels[key] || key;
+                                const value = String(activity.new_values[key]);
                                 return (
                                   <div key={key} className="flex gap-2">
-                                    <span className="text-muted-foreground">{key}:</span>
-                                    <span className="line-through text-destructive">
-                                      {String(oldValue)}
-                                    </span>
-                                    <span>→</span>
-                                    <span className="text-success">
-                                      {String(newValue)}
-                                    </span>
+                                    <span className="text-muted-foreground font-medium min-w-[100px]">{label}:</span>
+                                    <span className="text-foreground">{value}</span>
                                   </div>
                                 );
-                              }
-                              return null;
-                            })}
+                              })}
                           </div>
                         )}
                       </div>
