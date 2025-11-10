@@ -75,7 +75,7 @@ export default function Dashboard() {
             status
           )
         `)
-        .neq('status', 'completed');
+        .in('status', ['planning', 'active']);
 
       if (projectsError) throw projectsError;
 
@@ -164,17 +164,23 @@ export default function Dashboard() {
       ];
 
       // Calculate project status distribution
-      const statusCounts = projects?.reduce((acc: any, project: any) => {
+      const { data: allProjects, error: allProjectsError } = await supabase
+        .from('projects')
+        .select('status');
+
+      if (allProjectsError) console.error('Error fetching all projects:', allProjectsError);
+
+      const statusCounts = allProjects?.reduce((acc: any, project: any) => {
         const status = project.status;
         acc[status] = (acc[status] || 0) + 1;
         return acc;
       }, {}) || {};
 
       const projectsStatus = [
+        { name: 'Planification', value: statusCounts['planning'] || 0 },
         { name: 'Actif', value: statusCounts['active'] || 0 },
-        { name: 'En attente', value: statusCounts['pending'] || 0 },
         { name: 'Terminé', value: statusCounts['completed'] || 0 },
-      ];
+      ].filter(item => item.value > 0);
 
       // Mock monthly performance data
       const performance = [

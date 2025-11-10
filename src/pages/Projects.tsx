@@ -99,11 +99,11 @@ export default function Projects() {
           <TabsTrigger value="all">
             Tous ({projects.length})
           </TabsTrigger>
+          <TabsTrigger value="planning">
+            Planification ({projects.filter(p => p.status === 'planning').length})
+          </TabsTrigger>
           <TabsTrigger value="active">
             Actifs ({projects.filter(p => p.status === 'active').length})
-          </TabsTrigger>
-          <TabsTrigger value="pending">
-            En attente ({projects.filter(p => p.status === 'pending').length})
           </TabsTrigger>
           <TabsTrigger value="completed">
             Terminés ({projects.filter(p => p.status === 'completed').length})
@@ -116,7 +116,7 @@ export default function Projects() {
               <p className="text-muted-foreground">
                 {activeTab === 'all' 
                   ? 'Aucun projet pour le moment' 
-                  : `Aucun projet ${activeTab === 'active' ? 'actif' : activeTab === 'pending' ? 'en attente' : 'terminé'}`
+                  : `Aucun projet ${activeTab === 'planning' ? 'en planification' : activeTab === 'active' ? 'actif' : 'terminé'}`
                 }
               </p>
               <p className="text-sm text-muted-foreground mt-2">

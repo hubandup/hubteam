@@ -23,8 +23,8 @@ interface ProjectCardProps {
 }
 
 const statusConfig = {
+  planning: { label: 'Planification', variant: 'secondary' as const },
   active: { label: 'Actif', variant: 'default' as const },
-  pending: { label: 'En attente', variant: 'secondary' as const },
   completed: { label: 'Terminé', variant: 'outline' as const },
 };
 

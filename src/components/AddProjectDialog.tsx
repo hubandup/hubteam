@@ -191,8 +191,8 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="planning">Planification</SelectItem>
                   <SelectItem value="active">Actif</SelectItem>
-                  <SelectItem value="pending">En attente</SelectItem>
                   <SelectItem value="completed">Terminé</SelectItem>
                 </SelectContent>
               </Select>

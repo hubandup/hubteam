@@ -93,15 +93,12 @@ export default function ProjectDetails() {
   }
 
   const statusConfig = {
-    'avant-projet': { label: 'Avant projet', variant: 'secondary' as const },
-    'valide': { label: 'Validé', variant: 'default' as const },
-    'en-cours': { label: 'En cours', variant: 'default' as const },
-    'termine': { label: 'Terminé', variant: 'outline' as const },
-    'abandonne': { label: 'Abandonné', variant: 'destructive' as const },
-    'refuse': { label: 'Refusé', variant: 'destructive' as const },
+    'planning': { label: 'Planification', variant: 'secondary' as const },
+    'active': { label: 'Actif', variant: 'default' as const },
+    'completed': { label: 'Terminé', variant: 'outline' as const },
   };
 
-  const statusInfo = statusConfig[project.status as keyof typeof statusConfig] || statusConfig['en-cours'];
+  const statusInfo = statusConfig[project.status as keyof typeof statusConfig] || statusConfig['active'];
   const client = project.project_clients?.[0]?.clients;
 
   return (
