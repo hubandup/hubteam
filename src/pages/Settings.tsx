@@ -1,9 +1,10 @@
 import { useUserRole } from '@/hooks/useUserRole';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Lock, Users } from 'lucide-react';
+import { User, Lock, Users, Shield } from 'lucide-react';
 import { ProfileTab } from '@/components/settings/ProfileTab';
 import { SecurityTab } from '@/components/settings/SecurityTab';
 import { UsersTab } from '@/components/settings/UsersTab';
+import { PermissionsTab } from '@/components/settings/PermissionsTab';
 
 export default function Settings() {
   const { isAdmin } = useUserRole();
@@ -18,7 +19,7 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full" style={{ gridTemplateColumns: isAdmin ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)' }}>
+        <TabsList className="grid w-full" style={{ gridTemplateColumns: isAdmin ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)' }}>
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             Mon profil
@@ -28,10 +29,16 @@ export default function Settings() {
             Sécurité
           </TabsTrigger>
           {isAdmin && (
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Utilisateurs
-            </TabsTrigger>
+            <>
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Utilisateurs
+              </TabsTrigger>
+              <TabsTrigger value="permissions" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Permissions
+              </TabsTrigger>
+            </>
           )}
         </TabsList>
 
@@ -44,9 +51,15 @@ export default function Settings() {
         </TabsContent>
 
         {isAdmin && (
-          <TabsContent value="users" className="mt-6">
-            <UsersTab />
-          </TabsContent>
+          <>
+            <TabsContent value="users" className="mt-6">
+              <UsersTab />
+            </TabsContent>
+            
+            <TabsContent value="permissions" className="mt-6">
+              <PermissionsTab />
+            </TabsContent>
+          </>
         )}
       </Tabs>
     </div>

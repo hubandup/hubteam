@@ -568,6 +568,33 @@ export type Database = {
           },
         ]
       }
+      role_permissions: {
+        Row: {
+          action: Database["public"]["Enums"]["permission_action"]
+          created_at: string
+          id: string
+          module: Database["public"]["Enums"]["app_module"]
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["permission_action"]
+          created_at?: string
+          id?: string
+          module: Database["public"]["Enums"]["app_module"]
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["permission_action"]
+          created_at?: string
+          id?: string
+          module?: Database["public"]["Enums"]["app_module"]
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       task_agencies: {
         Row: {
           agency_id: string
@@ -731,6 +758,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_permission: {
+        Args: {
+          _action: Database["public"]["Enums"]["permission_action"]
+          _module: Database["public"]["Enums"]["app_module"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -740,7 +775,15 @@ export type Database = {
       }
     }
     Enums: {
+      app_module:
+        | "dashboard"
+        | "crm"
+        | "agencies"
+        | "projects"
+        | "tasks"
+        | "settings"
       app_role: "admin" | "team" | "client" | "agency"
+      permission_action: "read" | "create" | "update" | "delete"
       team_member_type: "profile" | "agency_contact" | "client"
     }
     CompositeTypes: {
@@ -869,7 +912,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_module: [
+        "dashboard",
+        "crm",
+        "agencies",
+        "projects",
+        "tasks",
+        "settings",
+      ],
       app_role: ["admin", "team", "client", "agency"],
+      permission_action: ["read", "create", "update", "delete"],
       team_member_type: ["profile", "agency_contact", "client"],
     },
   },
