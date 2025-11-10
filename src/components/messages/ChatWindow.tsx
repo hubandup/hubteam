@@ -2,13 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { MentionInput } from '@/components/common/MentionInput';
 
 interface ChatWindowProps {
   roomId: string | null;
@@ -30,6 +30,7 @@ export function ChatWindow({ roomId }: ChatWindowProps) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [mentions, setMentions] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -121,21 +122,66 @@ export function ChatWindow({ roomId }: ChatWindowProps) {
 
     setSending(true);
     try {
-      const { error } = await supabase.from('chat_messages').insert({
-        room_id: roomId,
-        user_id: user.id,
-        content: newMessage.trim(),
-      });
+      // Insert message
+      const { data: messageData, error: messageError } = await supabase
+        .from('chat_messages')
+        .insert({
+          room_id: roomId,
+          user_id: user.id,
+          content: newMessage.trim(),
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (messageError) throw messageError;
+
+      // Insert mentions if any
+      if (mentions.length > 0 && messageData) {
+        const mentionInserts = mentions.map(userId => ({
+          message_id: messageData.id,
+          user_id: userId,
+        }));
+
+        const { error: mentionsError } = await supabase
+          .from('chat_message_mentions')
+          .insert(mentionInserts);
+
+        if (mentionsError) {
+          console.error('Error inserting mentions:', mentionsError);
+        }
+      }
 
       setNewMessage('');
+      setMentions([]);
     } catch (error: any) {
       console.error('Error sending message:', error);
-      toast.error('Erreur lors de l\'envoi du message');
+      toast.error("Erreur lors de l'envoi du message");
     } finally {
       setSending(false);
     }
+  };
+
+  const renderMessageContent = (content: string) => {
+    // Replace mention format with highlighted text
+    const mentionRegex = /@\[([^\]]+)\]\(([a-f0-9-]+)\)/g;
+    const parts = content.split(mentionRegex);
+    
+    return parts.map((part, index) => {
+      // Every third item starting from index 1 is a user ID (which we skip in rendering)
+      if (index % 3 === 1) {
+        // This is a display name
+        return (
+          <span key={index} className="font-semibold text-primary">
+            @{part}
+          </span>
+        );
+      } else if (index % 3 === 2) {
+        // This is a user ID, skip it
+        return null;
+      }
+      // Regular text
+      return <span key={index}>{part}</span>;
+    });
   };
 
   if (!roomId) {
@@ -177,7 +223,7 @@ export function ChatWindow({ roomId }: ChatWindowProps) {
                         : 'bg-muted'
                     }`}
                   >
-                    <p className="text-sm">{message.content}</p>
+                    <p className="text-sm">{renderMessageContent(message.content)}</p>
                   </div>
                   <span className="text-xs text-muted-foreground mt-1">
                     {formatDistanceToNow(new Date(message.created_at), {
@@ -194,11 +240,11 @@ export function ChatWindow({ roomId }: ChatWindowProps) {
 
       <form onSubmit={handleSendMessage} className="border-t p-4">
         <div className="flex gap-2">
-          <Textarea
+          <MentionInput
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Écrivez votre message..."
-            className="resize-none"
+            onChange={setNewMessage}
+            onMentionsChange={setMentions}
+            placeholder="Écrivez votre message... (utilisez @ pour mentionner)"
             rows={3}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {

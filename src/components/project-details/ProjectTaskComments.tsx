@@ -3,13 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Loader2, MessageSquare, Send, Paperclip, X, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
+import { MentionInput } from '@/components/common/MentionInput';
 
 interface Comment {
   id: string;
@@ -36,6 +36,7 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
+  const [mentions, setMentions] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Array<{ id: string; title: string }>>([]);
@@ -212,15 +213,35 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
 
       toast.success('Commentaire ajouté avec succès');
       setNewComment('');
+      setMentions([]);
       setSelectedFile(null);
       fetchComments();
     } catch (error) {
       console.error('Error adding comment:', error);
-      toast.error('Erreur lors de l\'ajout du commentaire');
+      toast.error("Erreur lors de l'ajout du commentaire");
     } finally {
       setSubmitting(false);
       setUploading(false);
     }
+  };
+
+  const renderCommentContent = (content: string) => {
+    // Replace mention format with highlighted text
+    const mentionRegex = /@\[([^\]]+)\]\(([a-f0-9-]+)\)/g;
+    const parts = content.split(mentionRegex);
+    
+    return parts.map((part, index) => {
+      if (index % 3 === 1) {
+        return (
+          <span key={index} className="font-semibold text-primary">
+            @{part}
+          </span>
+        );
+      } else if (index % 3 === 2) {
+        return null;
+      }
+      return <span key={index}>{part}</span>;
+    });
   };
 
   return (
@@ -250,10 +271,11 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
           )}
 
           <div className="flex items-start gap-2 p-4 border border-input rounded-lg bg-background">
-            <Textarea
+            <MentionInput
               value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Ajouter un commentaire..."
+              onChange={setNewComment}
+              onMentionsChange={setMentions}
+              placeholder="Ajouter un commentaire... (utilisez @ pour mentionner)"
               rows={1}
               className="flex-1 resize-none border-0 p-0 focus-visible:ring-0 shadow-none bg-transparent min-h-[40px]"
               disabled={submitting}
@@ -349,7 +371,9 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-foreground break-words whitespace-pre-wrap">{comment.content}</p>
+                    <p className="text-sm text-foreground break-words whitespace-pre-wrap">
+                      {renderCommentContent(comment.content)}
+                    </p>
                     {comment.attachment_url && (
                       <button
                         onClick={() => handleDownload(comment.attachment_url!, comment.attachment_url?.split('/').pop())}
