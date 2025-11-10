@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from './ui/button';
 import { NotificationBell } from './notifications/NotificationBell';
+import logo from '@/assets/logo-hubandup.svg';
 
 export function Sidebar() {
   const { signOut } = useAuth();
@@ -38,7 +39,7 @@ export function Sidebar() {
     <ShadcnSidebar>
       <SidebarHeader className="border-b p-4">
         <div className="flex items-center justify-between">
-          <span className="text-lg font-bold text-primary">HubTeam</span>
+          <img src={logo} alt="HubandUp" className="h-8" />
           <NotificationBell />
         </div>
       </SidebarHeader>

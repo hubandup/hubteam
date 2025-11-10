@@ -11,6 +11,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import logo from '@/assets/logo-hubandup.svg';
 
 const loginSchema = z.object({
   email: z.string().trim().email('Adresse email invalide').max(255, 'Email trop long'),
@@ -84,7 +85,9 @@ export default function Auth() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-light to-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center text-primary">HubTeam</CardTitle>
+          <div className="flex justify-center mb-4">
+            <img src={logo} alt="HubandUp" className="h-12" />
+          </div>
           <CardDescription className="text-center">
             Gérez vos clients, projets et tâches en un seul endroit
           </CardDescription>
