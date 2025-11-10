@@ -214,13 +214,13 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+      <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
         <Button variant="outline" size="sm">
           <Pencil className="mr-2 h-4 w-4" />
           Modifier
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <DialogHeader>
           <DialogTitle>Modifier le client</DialogTitle>
           <DialogDescription>
