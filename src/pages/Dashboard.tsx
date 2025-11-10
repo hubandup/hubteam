@@ -6,6 +6,7 @@ import { Users, UserCheck, FolderKanban, CheckSquare, DollarSign, Loader2 } from
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { WeeklySchedule } from '@/components/dashboard/WeeklySchedule';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -306,6 +307,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Weekly Schedule */}
+      <WeeklySchedule />
 
       {/* Charts Row */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
