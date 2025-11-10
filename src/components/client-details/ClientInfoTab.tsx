@@ -132,7 +132,7 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
             <div className="flex items-start gap-3">
               <TrendingUp className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div>
-                <p className="text-sm text-muted-foreground">Statut</p>
+                <p className="text-sm text-muted-foreground">Action</p>
                 <Badge style={{ backgroundColor: clientStatus.color, color: 'white' }}>
                   {clientStatus.name}
                 </Badge>

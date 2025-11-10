@@ -323,7 +323,7 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="status_id">Statut</Label>
+                <Label htmlFor="status_id">Action</Label>
                 <AddClientStatusDialog onStatusAdded={fetchSectorsAndStatuses} />
               </div>
               <Select
@@ -331,7 +331,7 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
                 onValueChange={(value) => setValue('status_id', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un statut" />
+                  <SelectValue placeholder="Sélectionner une action" />
                 </SelectTrigger>
                 <SelectContent>
                   {clientStatuses.map((status) => (

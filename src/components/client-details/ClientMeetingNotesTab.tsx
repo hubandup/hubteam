@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Loader2, Paperclip, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { AddMeetingNoteDialog } from './AddMeetingNoteDialog';
+import { MeetingNoteForm } from './MeetingNoteForm';
 
 interface ClientMeetingNotesTabProps {
   clientId: string;
@@ -46,12 +46,11 @@ export function ClientMeetingNotesTab({ clientId }: ClientMeetingNotesTabProps) 
     );
   }
 
-  if (notes.length === 0) {
-    return (
-      <div className="space-y-4">
-        <div className="flex justify-end">
-          <AddMeetingNoteDialog clientId={clientId} onNoteAdded={fetchNotes} />
-        </div>
+  return (
+    <div className="space-y-6">
+      <MeetingNoteForm clientId={clientId} onNoteAdded={fetchNotes} />
+      
+      {notes.length === 0 ? (
         <Card>
           <CardContent className="py-12">
             <p className="text-center text-muted-foreground">
@@ -59,16 +58,9 @@ export function ClientMeetingNotesTab({ clientId }: ClientMeetingNotesTabProps) 
             </p>
           </CardContent>
         </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <AddMeetingNoteDialog clientId={clientId} onNoteAdded={fetchNotes} />
-      </div>
-      {notes.map((note) => (
+      ) : (
+        <div className="space-y-4">
+          {notes.map((note) => (
         <Card key={note.id}>
           <CardHeader>
             <div className="flex items-start justify-between">
@@ -98,8 +90,10 @@ export function ClientMeetingNotesTab({ clientId }: ClientMeetingNotesTabProps) 
               </div>
             )}
           </CardContent>
-        </Card>
-      ))}
+          </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

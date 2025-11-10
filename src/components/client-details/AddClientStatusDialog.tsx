@@ -82,9 +82,9 @@ export function AddClientStatusDialog({ onStatusAdded }: AddClientStatusDialogPr
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Ajouter un statut client</DialogTitle>
+          <DialogTitle>Ajouter une action client</DialogTitle>
           <DialogDescription>
-            Créez un nouveau statut personnalisé
+            Créez une nouvelle action personnalisée
           </DialogDescription>
         </DialogHeader>
 
