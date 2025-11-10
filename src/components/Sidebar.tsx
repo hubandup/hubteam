@@ -1,4 +1,4 @@
-import { LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, MessageSquare, History } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -13,8 +13,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarFooter,
+  SidebarHeader,
 } from '@/components/ui/sidebar';
 import { Button } from './ui/button';
+import { NotificationBell } from './notifications/NotificationBell';
 
 export function Sidebar() {
   const { signOut } = useAuth();
@@ -26,15 +28,22 @@ export function Sidebar() {
     { title: 'CRM', url: '/crm', icon: Users, module: 'crm' as const },
     { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const },
     { title: 'Projets', url: '/projects', icon: FolderKanban, module: 'projects' as const },
+    { title: 'Messages', url: '/messages', icon: MessageSquare, module: 'dashboard' as const },
+    { title: 'Activité', url: '/activity', icon: History, module: 'dashboard' as const },
   ];
 
   const showSettings = role === 'admin' || role === 'team';
 
   return (
     <ShadcnSidebar>
+      <SidebarHeader className="border-b p-4">
+        <div className="flex items-center justify-between">
+          <span className="text-lg font-bold text-primary">HubTeam</span>
+          <NotificationBell />
+        </div>
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-lg font-bold text-primary">HubTeam</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems.map((item) => 
