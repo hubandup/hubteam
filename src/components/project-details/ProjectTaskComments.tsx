@@ -15,14 +15,14 @@ interface Comment {
   content: string;
   created_at: string;
   user_id: string;
-  task_id: string;
+  task_id: string | null;
   profiles: {
     first_name: string;
     last_name: string;
   };
   tasks: {
     title: string;
-  };
+  } | null;
 }
 
 interface ProjectTaskCommentsProps {
@@ -73,9 +73,6 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
 
       if (error) throw error;
       setTasks(data || []);
-      if (data && data.length > 0) {
-        setSelectedTaskId(data[0].id);
-      }
     } catch (error) {
       console.error('Error fetching tasks:', error);
     }
@@ -93,13 +90,7 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
 
       const taskIds = projectTasks?.map(t => t.id) || [];
 
-      if (taskIds.length === 0) {
-        setComments([]);
-        setLoading(false);
-        return;
-      }
-
-      // Fetch comments for all tasks in this project
+      // Fetch comments for all tasks in this project OR comments without task
       const { data, error } = await supabase
         .from('task_comments')
         .select(`
@@ -107,18 +98,15 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
           content,
           created_at,
           user_id,
-          task_id,
-          tasks (
-            title
-          )
+          task_id
         `)
-        .in('task_id', taskIds)
+        .or(`task_id.in.(${taskIds.join(',')}),task_id.is.null`)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Fetch profile data separately
-      const commentsWithProfiles = await Promise.all(
+      // Fetch profile and task data separately for each comment
+      const commentsWithDetails = await Promise.all(
         (data || []).map(async (comment) => {
           const { data: profile } = await supabase
             .from('profiles')
@@ -126,11 +114,25 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
             .eq('id', comment.user_id)
             .single();
           
-          return { ...comment, profiles: profile || { first_name: '', last_name: '' } };
+          let taskData = null;
+          if (comment.task_id) {
+            const { data: task } = await supabase
+              .from('tasks')
+              .select('title')
+              .eq('id', comment.task_id)
+              .single();
+            taskData = task;
+          }
+          
+          return { 
+            ...comment, 
+            profiles: profile || { first_name: '', last_name: '' },
+            tasks: taskData
+          };
         })
       );
 
-      setComments(commentsWithProfiles as Comment[]);
+      setComments(commentsWithDetails as Comment[]);
     } catch (error) {
       console.error('Error fetching comments:', error);
       toast.error('Erreur lors du chargement des commentaires');
@@ -142,8 +144,8 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!newComment.trim() || !selectedTaskId || !user) {
-      toast.error('Veuillez sélectionner une tâche et saisir un commentaire');
+    if (!newComment.trim() || !user) {
+      toast.error('Veuillez saisir un commentaire');
       return;
     }
 
@@ -154,7 +156,7 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
         .from('task_comments')
         .insert({
           content: newComment.trim(),
-          task_id: selectedTaskId,
+          task_id: selectedTaskId || null,
           user_id: user.id,
         });
 
@@ -183,25 +185,18 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
         {/* Add comment form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Tâche</label>
+            <label className="text-sm font-medium">Tâche (optionnel)</label>
             <select
               value={selectedTaskId || ''}
               onChange={(e) => setSelectedTaskId(e.target.value)}
               className="w-full px-3 py-2 border rounded-md bg-background"
-              disabled={tasks.length === 0}
             >
-              {tasks.length === 0 ? (
-                <option value="">Aucune tâche disponible</option>
-              ) : (
-                <>
-                  <option value="">Sélectionnez une tâche</option>
-                  {tasks.map((task) => (
-                    <option key={task.id} value={task.id}>
-                      {task.title}
-                    </option>
-                  ))}
-                </>
-              )}
+              <option value="">Commentaire libre</option>
+              {tasks.map((task) => (
+                <option key={task.id} value={task.id}>
+                  {task.title}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -212,11 +207,10 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Ajoutez un commentaire..."
               rows={3}
-              disabled={!selectedTaskId}
             />
           </div>
 
-          <Button type="submit" disabled={submitting || !selectedTaskId || !newComment.trim()}>
+          <Button type="submit" disabled={submitting || !newComment.trim()}>
             {submitting ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
@@ -250,9 +244,11 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
                       <p className="text-sm font-medium">
                         {comment.profiles?.first_name} {comment.profiles?.last_name}
                       </p>
-                      <span className="text-xs text-muted-foreground">
-                        sur "{comment.tasks?.title}"
-                      </span>
+                      {comment.tasks && (
+                        <span className="text-xs text-muted-foreground">
+                          sur "{comment.tasks.title}"
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-foreground break-words">{comment.content}</p>
                     <p className="text-xs text-muted-foreground">
