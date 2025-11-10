@@ -1,23 +1,10 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Paperclip, X } from 'lucide-react';
-
-const noteSchema = z.object({
-  title: z.string().trim().min(1, 'Le titre est requis').max(200),
-  content: z.string().trim().min(1, 'Le contenu est requis'),
-  meeting_date: z.string().min(1, 'La date est requise'),
-});
-
-type NoteFormData = z.infer<typeof noteSchema>;
+import { Loader2, Paperclip, X, Send } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface MeetingNoteFormProps {
   clientId: string;
@@ -25,17 +12,11 @@ interface MeetingNoteFormProps {
 }
 
 export function MeetingNoteForm({ clientId, onNoteAdded }: MeetingNoteFormProps) {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [content, setContent] = useState('');
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<NoteFormData>({
-    resolver: zodResolver(noteSchema),
-  });
+  const [showAttachmentInput, setShowAttachmentInput] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -76,7 +57,19 @@ export function MeetingNoteForm({ clientId, onNoteAdded }: MeetingNoteFormProps)
     return publicUrl;
   };
 
-  const onSubmit = async (data: NoteFormData) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!content.trim()) {
+      toast.error('Le commentaire ne peut pas être vide');
+      return;
+    }
+
+    if (!user) {
+      toast.error('Vous devez être connecté');
+      return;
+    }
+
     setLoading(true);
     try {
       const attachmentUrl = await uploadAttachment();
@@ -85,108 +78,91 @@ export function MeetingNoteForm({ clientId, onNoteAdded }: MeetingNoteFormProps)
         .from('meeting_notes')
         .insert({
           client_id: clientId,
-          title: data.title,
-          content: data.content,
-          meeting_date: data.meeting_date,
+          content: content.trim(),
           attachment_url: attachmentUrl,
+          user_id: user.id,
         });
 
       if (error) throw error;
 
-      toast.success('Compte rendu ajouté');
-      reset();
+      toast.success('Commentaire ajouté');
+      setContent('');
       setAttachmentFile(null);
+      setShowAttachmentInput(false);
       onNoteAdded();
     } catch (error) {
       console.error('Error adding note:', error);
-      toast.error("Erreur lors de l'ajout du compte rendu");
+      toast.error("Erreur lors de l'ajout du commentaire");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Nouveau compte rendu</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Titre *</Label>
-            <Input
-              id="title"
-              {...register('title')}
-              placeholder="Ex: Réunion de suivi projet"
-            />
-            {errors.title && (
-              <p className="text-sm text-destructive">{errors.title.message}</p>
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <div className="flex gap-2">
+        <Textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="Ajouter un commentaire..."
+          rows={2}
+          className="flex-1 resize-none"
+          disabled={loading}
+        />
+        <div className="flex flex-col gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowAttachmentInput(!showAttachmentInput)}
+            className="shrink-0"
+          >
+            <Paperclip className="h-4 w-4" />
+          </Button>
+          <Button
+            type="submit"
+            size="icon"
+            disabled={loading || !content.trim()}
+            className="shrink-0"
+          >
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
             )}
-          </div>
+          </Button>
+        </div>
+      </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="meeting_date">Date de réunion *</Label>
-            <Input
-              id="meeting_date"
-              type="datetime-local"
-              {...register('meeting_date')}
+      {showAttachmentInput && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <input
+              type="file"
+              onChange={handleFileChange}
+              className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer"
             />
-            {errors.meeting_date && (
-              <p className="text-sm text-destructive">{errors.meeting_date.message}</p>
-            )}
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="content">Contenu *</Label>
-            <Textarea
-              id="content"
-              {...register('content')}
-              placeholder="Notes de la réunion..."
-              rows={6}
-            />
-            {errors.content && (
-              <p className="text-sm text-destructive">{errors.content.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="attachment">Pièce jointe (optionnel)</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                id="attachment"
-                type="file"
-                onChange={handleFileChange}
-                className="cursor-pointer"
-              />
-              {attachmentFile && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-md">
-                  <Paperclip className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{attachmentFile.name}</span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={removeAttachment}
-                    className="h-6 w-6 p-0"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
+          {attachmentFile && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-md w-fit">
+              <Paperclip className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">{attachmentFile.name}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={removeAttachment}
+                className="h-6 w-6 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Max 10MB - Tous formats acceptés
-            </p>
-          </div>
-
-          <div className="flex justify-end">
-            <Button type="submit" disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Ajouter le compte rendu
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Max 10MB - Tous formats acceptés
+          </p>
+        </div>
+      )}
+    </form>
   );
 }

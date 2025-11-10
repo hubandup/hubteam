@@ -244,9 +244,10 @@ export type Database = {
           content: string
           created_at: string
           id: string
-          meeting_date: string
-          title: string
+          meeting_date: string | null
+          title: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           attachment_url?: string | null
@@ -254,9 +255,10 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
-          meeting_date: string
-          title: string
+          meeting_date?: string | null
+          title?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           attachment_url?: string | null
@@ -264,9 +266,10 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
-          meeting_date?: string
-          title?: string
+          meeting_date?: string | null
+          title?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {

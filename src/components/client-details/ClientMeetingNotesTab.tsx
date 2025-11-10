@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Loader2, Paperclip, Download } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Loader2, Paperclip, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { MeetingNoteForm } from './MeetingNoteForm';
@@ -24,9 +25,16 @@ export function ClientMeetingNotesTab({ clientId }: ClientMeetingNotesTabProps) 
     try {
       const { data, error } = await supabase
         .from('meeting_notes')
-        .select('*')
+        .select(`
+          *,
+          profiles:user_id (
+            first_name,
+            last_name,
+            email
+          )
+        `)
         .eq('client_id', clientId)
-        .order('meeting_date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setNotes(data || []);
@@ -48,50 +56,68 @@ export function ClientMeetingNotesTab({ clientId }: ClientMeetingNotesTabProps) 
 
   return (
     <div className="space-y-6">
-      <MeetingNoteForm clientId={clientId} onNoteAdded={fetchNotes} />
-      
+      <Card>
+        <CardContent className="pt-6">
+          <MeetingNoteForm clientId={clientId} onNoteAdded={fetchNotes} />
+        </CardContent>
+      </Card>
+
       {notes.length === 0 ? (
         <Card>
           <CardContent className="py-12">
             <p className="text-center text-muted-foreground">
-              Aucun compte rendu de réunion pour le moment
+              Aucun commentaire pour le moment
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
-          {notes.map((note) => (
-        <Card key={note.id}>
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <CardTitle className="text-lg">{note.title}</CardTitle>
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                {format(new Date(note.meeting_date), 'dd MMMM yyyy', { locale: fr })}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-muted-foreground whitespace-pre-wrap">{note.content}</p>
-            {note.attachment_url && (
-              <div className="flex items-center gap-2 pt-2 border-t">
-                <Paperclip className="h-4 w-4 text-muted-foreground" />
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="p-0 h-auto"
-                  asChild
-                >
-                  <a href={note.attachment_url} target="_blank" rel="noopener noreferrer">
-                    <Download className="h-4 w-4 mr-1" />
-                    Télécharger la pièce jointe
-                  </a>
-                </Button>
-              </div>
-            )}
-          </CardContent>
-          </Card>
-          ))}
+          {notes.map((note) => {
+            const profile = note.profiles;
+            const initials = profile
+              ? `${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}`.toUpperCase()
+              : '?';
+            const fullName = profile
+              ? `${profile.first_name} ${profile.last_name}`
+              : 'Utilisateur inconnu';
+
+            return (
+              <Card key={note.id}>
+                <CardContent className="pt-6">
+                  <div className="flex gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback>{initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">{fullName}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(note.created_at), "d MMM yyyy 'à' HH:mm", { locale: fr })}
+                        </span>
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap">{note.content}</p>
+                      {note.attachment_url && (
+                        <div className="flex items-center gap-2 pt-2">
+                          <Paperclip className="h-4 w-4 text-muted-foreground" />
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="p-0 h-auto text-xs"
+                            asChild
+                          >
+                            <a href={note.attachment_url} target="_blank" rel="noopener noreferrer">
+                              <Download className="h-3 w-3 mr-1" />
+                              Télécharger la pièce jointe
+                            </a>
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
