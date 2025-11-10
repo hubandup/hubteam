@@ -2,11 +2,14 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ProjectCard } from '@/components/ProjectCard';
+import { ProjectKanbanView } from '@/components/ProjectKanbanView';
+import { ProjectListView } from '@/components/ProjectListView';
 import { AddProjectDialog } from '@/components/AddProjectDialog';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, LayoutGrid, List, Kanban } from 'lucide-react';
 
 export default function Projects() {
   const navigate = useNavigate();
@@ -14,6 +17,7 @@ export default function Projects() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'kanban' | 'list'>('grid');
 
   useEffect(() => {
     fetchProjects();
@@ -27,7 +31,8 @@ export default function Projects() {
           *,
           project_clients (
             clients (
-              company
+              company,
+              logo_url
             )
           )
         `)
@@ -83,14 +88,39 @@ export default function Projects() {
       </div>
 
       {projects.length > 0 && (
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher un projet..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher un projet..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="flex gap-1 border rounded-lg p-1">
+            <Button
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'kanban' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('kanban')}
+            >
+              <Kanban className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
 
@@ -123,7 +153,7 @@ export default function Projects() {
                 Commencez par créer un nouveau projet
               </p>
             </div>
-          ) : (
+          ) : viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredProjects.map((project) => (
                 <ProjectCard
@@ -133,6 +163,16 @@ export default function Projects() {
                 />
               ))}
             </div>
+          ) : viewMode === 'kanban' ? (
+            <ProjectKanbanView 
+              projects={filteredProjects}
+              onProjectClick={(id) => navigate(`/project/${id}`)}
+            />
+          ) : (
+            <ProjectListView 
+              projects={filteredProjects}
+              onProjectClick={(id) => navigate(`/project/${id}`)}
+            />
           )}
         </TabsContent>
       </Tabs>

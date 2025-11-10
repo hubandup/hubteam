@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FolderKanban, Calendar, Users } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { FolderKanban, Calendar, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -16,6 +17,7 @@ interface ProjectCardProps {
     project_clients?: Array<{
       clients: {
         company: string;
+        logo_url?: string;
       };
     }>;
   };
@@ -23,32 +25,39 @@ interface ProjectCardProps {
 }
 
 const statusConfig = {
-  planning: { label: 'Planification', variant: 'secondary' as const },
-  active: { label: 'Actif', variant: 'default' as const },
-  completed: { label: 'Terminé', variant: 'outline' as const },
+  planning: { label: 'À planifier', color: 'bg-[hsl(var(--status-planning))] text-[hsl(var(--status-planning-foreground))]' },
+  active: { label: 'Actif', color: 'bg-[hsl(var(--status-active))] text-[hsl(var(--status-active-foreground))]' },
+  completed: { label: 'Terminé', color: 'bg-[hsl(var(--status-completed))] text-[hsl(var(--status-completed-foreground))]' },
+  urgent: { label: 'Urgent', color: 'bg-[hsl(var(--status-urgent))] text-[hsl(var(--status-urgent-foreground))]' },
 };
 
 export function ProjectCard({ project, onClick }: ProjectCardProps) {
   const statusInfo = statusConfig[project.status as keyof typeof statusConfig] || statusConfig.active;
-  const clientName = project.project_clients?.[0]?.clients?.company || 'Sans client';
+  const client = project.project_clients?.[0]?.clients;
+  const clientName = client?.company || 'Sans client';
+  const clientLogo = client?.logo_url;
 
   return (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={onClick}>
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3 flex-1 min-w-0">
-            <FolderKanban className="h-10 w-10 text-primary flex-shrink-0" />
+            <Avatar className="h-12 w-12 flex-shrink-0">
+              <AvatarImage src={clientLogo} alt={clientName} />
+              <AvatarFallback>
+                <Building2 className="h-6 w-6" />
+              </AvatarFallback>
+            </Avatar>
             <div className="min-w-0 flex-1">
-              <CardTitle className="text-lg truncate">
-                {project.name}
-              </CardTitle>
-              <CardDescription className="mt-1 truncate flex items-center gap-1">
-                <Users className="h-3 w-3" />
+              <CardDescription className="text-xs font-medium">
                 {clientName}
               </CardDescription>
+              <CardTitle className="text-lg truncate mt-0.5">
+                {project.name}
+              </CardTitle>
             </div>
           </div>
-          <Badge variant={statusInfo.variant} className="flex-shrink-0">
+          <Badge className={`flex-shrink-0 border-0 ${statusInfo.color}`}>
             {statusInfo.label}
           </Badge>
         </div>

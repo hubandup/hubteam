@@ -61,6 +61,16 @@ export default {
         success: "hsl(var(--success))",
         warning: "hsl(var(--warning))",
         info: "hsl(var(--info))",
+        status: {
+          planning: "hsl(var(--status-planning))",
+          "planning-foreground": "hsl(var(--status-planning-foreground))",
+          active: "hsl(var(--status-active))",
+          "active-foreground": "hsl(var(--status-active-foreground))",
+          completed: "hsl(var(--status-completed))",
+          "completed-foreground": "hsl(var(--status-completed-foreground))",
+          urgent: "hsl(var(--status-urgent))",
+          "urgent-foreground": "hsl(var(--status-urgent-foreground))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
