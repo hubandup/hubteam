@@ -337,13 +337,24 @@ export function DataManagementTab() {
       
       // Handle deletion based on category
       if (deleteCategory === 'users') {
-        // For users, delete from auth.users using admin API
-        for (const userId of idsToDelete) {
-          const { error } = await supabase.auth.admin.deleteUser(userId);
-          if (error) {
-            console.error(`Error deleting user ${userId}:`, error);
-            throw error;
-          }
+        // For users, use edge function with admin privileges
+        const { data, error } = await supabase.functions.invoke('delete-users', {
+          body: { userIds: idsToDelete },
+        });
+
+        if (error) throw error;
+        
+        if (data?.error) {
+          throw new Error(data.error);
+        }
+
+        if (data?.results?.failed?.length > 0) {
+          console.warn('Some users failed to delete:', data.results.failed);
+          toast.warning(
+            `${data.results.success.length} utilisateur(s) supprimé(s), ${data.results.failed.length} échec(s)`
+          );
+        } else {
+          toast.success(data?.message || `${selected.size} utilisateur(s) supprimé(s) avec succès`);
         }
       } else if (deleteCategory === 'crm') {
         const { error } = await supabase
@@ -351,21 +362,22 @@ export function DataManagementTab() {
           .delete()
           .in('id', idsToDelete);
         if (error) throw error;
+        toast.success(`${selected.size} client(s) supprimé(s) avec succès`);
       } else if (deleteCategory === 'agencies') {
         const { error } = await supabase
           .from('agencies')
           .delete()
           .in('id', idsToDelete);
         if (error) throw error;
+        toast.success(`${selected.size} agence(s) supprimée(s) avec succès`);
       } else if (deleteCategory === 'projects') {
         const { error } = await supabase
           .from('projects')
           .delete()
           .in('id', idsToDelete);
         if (error) throw error;
+        toast.success(`${selected.size} projet(s) supprimé(s) avec succès`);
       }
-
-      toast.success(`${selected.size} élément(s) supprimé(s) avec succès`);
       
       // Clear selection and refresh data
       if (deleteCategory === 'crm') setSelectedCrm(new Set());
