@@ -141,30 +141,66 @@ export default function Dashboard() {
           id,
           content,
           created_at,
-          profiles!task_comments_user_id_fkey (
-            first_name,
-            last_name
-          ),
-          tasks (
-            title,
-            projects (
-              name
-            )
-          )
+          user_id,
+          task_id
         `)
         .order('created_at', { ascending: false })
         .limit(10);
 
       if (commentsError) console.error('Error fetching comments:', commentsError);
 
-      const comments = commentsData?.map(comment => ({
-        id: comment.id,
-        content: comment.content,
-        created_at: comment.created_at,
-        profiles: comment.profiles,
-        tasks: comment.tasks,
-        project: comment.tasks?.projects?.name || 'Projet inconnu'
-      })) || [];
+      // Fetch profiles and tasks separately for each comment
+      const commentsWithDetails = await Promise.all(
+        (commentsData || []).map(async (comment) => {
+          let profile = null;
+          let task = null;
+          let project = 'Projet inconnu';
+
+          if (comment.user_id) {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('first_name, last_name')
+              .eq('id', comment.user_id)
+              .single();
+            profile = profileData;
+          }
+
+          if (comment.task_id) {
+            const { data: taskData } = await supabase
+              .from('tasks')
+              .select('title, project_id')
+              .eq('id', comment.task_id)
+              .single();
+            
+            if (taskData) {
+              task = { title: taskData.title };
+              
+              if (taskData.project_id) {
+                const { data: projectData } = await supabase
+                  .from('projects')
+                  .select('name')
+                  .eq('id', taskData.project_id)
+                  .single();
+                
+                if (projectData) {
+                  project = projectData.name;
+                }
+              }
+            }
+          }
+
+          return {
+            id: comment.id,
+            content: comment.content,
+            created_at: comment.created_at,
+            profiles: profile,
+            tasks: task,
+            project
+          };
+        })
+      );
+
+      const comments = commentsWithDetails;
 
       setStats({
         leads,
