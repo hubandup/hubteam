@@ -26,7 +26,6 @@ export function Sidebar() {
     { title: 'CRM', url: '/crm', icon: Users, module: 'crm' as const },
     { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const },
     { title: 'Projets', url: '/projects', icon: FolderKanban, module: 'projects' as const },
-    { title: 'Tâches', url: '/tasks', icon: ListTodo, module: 'tasks' as const },
   ];
 
   const showSettings = role === 'admin' || role === 'team';

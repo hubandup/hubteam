@@ -190,7 +190,7 @@ export default function ProjectDetails() {
 
       {/* Progress Bar */}
       {projectProgress.total > 0 && (
-        <Card>
+        <Card className="border-0">
           <CardContent className="pt-6">
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
