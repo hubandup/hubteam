@@ -23,6 +23,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ProjectTeamTab } from '@/components/project-details/ProjectTeamTab';
 import { ProjectTasksTab } from '@/components/project-details/ProjectTasksTab';
+import { ProjectCommentsTab } from '@/components/project-details/ProjectCommentsTab';
 import { ProjectAttachmentsTab } from '@/components/project-details/ProjectAttachmentsTab';
 import { SelectClientDialog } from '@/components/project-details/SelectClientDialog';
 import { EditProjectInfoDialog } from '@/components/project-details/EditProjectInfoDialog';
@@ -208,9 +209,10 @@ export default function ProjectDetails() {
       )}
 
       <Tabs defaultValue="info" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="info">Informations</TabsTrigger>
           <TabsTrigger value="tasks">Tâches</TabsTrigger>
+          <TabsTrigger value="comments">Commentaires</TabsTrigger>
           <TabsTrigger value="team">Équipe</TabsTrigger>
           <TabsTrigger value="attachments">Pièces jointes</TabsTrigger>
         </TabsList>
@@ -311,6 +313,10 @@ export default function ProjectDetails() {
 
         <TabsContent value="tasks" className="mt-6">
           <ProjectTasksTab projectId={id!} />
+        </TabsContent>
+
+        <TabsContent value="comments" className="mt-6">
+          <ProjectCommentsTab projectId={id!} />
         </TabsContent>
 
         <TabsContent value="team" className="mt-6">

@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Loader2, Calendar, User } from 'lucide-react';
 import { AddTaskDialog } from './AddTaskDialog';
 import { EditTaskDialog } from './EditTaskDialog';
-import { ProjectTaskComments } from './ProjectTaskComments';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ProtectedAction } from '@/components/ProtectedAction';
@@ -166,8 +165,6 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
           )}
         </CardContent>
       </Card>
-
-      <ProjectTaskComments projectId={projectId} />
 
       <AddTaskDialog
         open={showAddDialog}
