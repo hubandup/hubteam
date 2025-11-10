@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { MentionInput } from '@/components/common/MentionInput';
+import { RichMentionInput } from '@/components/common/RichMentionInput';
 
 interface ChatWindowProps {
   roomId: string | null;
@@ -246,21 +246,20 @@ export function ChatWindow({ roomId }: ChatWindowProps) {
       </ScrollArea>
 
       <form onSubmit={handleSendMessage} className="border-t p-4">
-        <div className="flex gap-2">
-          <MentionInput
+        <div className="flex gap-2 items-end">
+          <RichMentionInput
             value={newMessage}
             onChange={setNewMessage}
             onMentionsChange={setMentions}
             placeholder="Écrivez votre message... (utilisez @ pour mentionner)"
-            rows={3}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                handleSendMessage(e);
+                handleSendMessage(e as any);
               }
             }}
           />
-          <Button type="submit" disabled={sending || !newMessage.trim()}>
+          <Button type="submit" disabled={sending || !newMessage.trim()} className="shrink-0">
             <Send className="h-4 w-4" />
           </Button>
         </div>
