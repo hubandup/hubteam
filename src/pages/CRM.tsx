@@ -2,10 +2,12 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ClientCard } from '@/components/ClientCard';
+import { ClientKanbanView } from '@/components/ClientKanbanView';
 import { AddClientDialog } from '@/components/AddClientDialog';
 import { ImportClientsDialog } from '@/components/ImportClientsDialog';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Search, LayoutGrid, Columns3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -16,6 +18,7 @@ export default function CRM() {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'kanban' | 'grid'>('kanban');
 
   useEffect(() => {
     fetchClients();
@@ -50,6 +53,28 @@ export default function CRM() {
     );
   }, [clients, searchQuery]);
 
+  const handleStageChange = async (clientId: string, newStage: string) => {
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({ kanban_stage: newStage })
+        .eq('id', clientId);
+
+      if (error) throw error;
+
+      setClients((prev) =>
+        prev.map((client) =>
+          client.id === clientId ? { ...client, kanban_stage: newStage } : client
+        )
+      );
+
+      toast.success('Statut client mis à jour');
+    } catch (error) {
+      console.error('Error updating client stage:', error);
+      toast.error('Erreur lors de la mise à jour du statut');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -77,6 +102,22 @@ export default function CRM() {
           <p className="text-muted-foreground">Gérez vos clients et leurs projets</p>
         </div>
         <div className="flex gap-2">
+          <div className="flex gap-1 border rounded-md">
+            <Button
+              variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('kanban')}
+            >
+              <Columns3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          </div>
           <ProtectedAction module="crm" action="create">
             <ImportClientsDialog onClientsImported={fetchClients} />
           </ProtectedAction>
@@ -108,6 +149,12 @@ export default function CRM() {
           <p className="text-muted-foreground">Aucun client trouvé</p>
           <p className="text-sm text-muted-foreground mt-2">Essayez une autre recherche</p>
         </div>
+      ) : viewMode === 'kanban' ? (
+        <ClientKanbanView
+          clients={filteredClients}
+          onClientClick={(clientId) => navigate(`/client/${clientId}`)}
+          onStageChange={handleStageChange}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredClients.map((client) => (

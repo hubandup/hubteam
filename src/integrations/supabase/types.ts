@@ -325,7 +325,9 @@ export type Database = {
           created_at: string
           email: string
           first_name: string
+          follow_up_date: string | null
           id: string
+          kanban_stage: string
           last_contact: string | null
           last_name: string
           logo_url: string | null
@@ -341,7 +343,9 @@ export type Database = {
           created_at?: string
           email: string
           first_name: string
+          follow_up_date?: string | null
           id?: string
+          kanban_stage?: string
           last_contact?: string | null
           last_name: string
           logo_url?: string | null
@@ -357,7 +361,9 @@ export type Database = {
           created_at?: string
           email?: string
           first_name?: string
+          follow_up_date?: string | null
           id?: string
+          kanban_stage?: string
           last_contact?: string | null
           last_name?: string
           logo_url?: string | null
