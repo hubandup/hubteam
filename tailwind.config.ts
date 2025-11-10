@@ -72,6 +72,10 @@ export default {
           "urgent-foreground": "hsl(var(--status-urgent-foreground))",
         },
       },
+      fontFamily: {
+        'heading': ['Instrument Sans', 'sans-serif'],
+        'body': ['Roboto', 'sans-serif'],
+      },
       height: {
         '7': '2.6rem',
       },
