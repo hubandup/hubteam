@@ -31,14 +31,20 @@ const clientSchema = z.object({
 type ClientFormData = z.infer<typeof clientSchema>;
 
 interface AddClientDialogProps {
-  onClientAdded: () => void;
+  onClientAdded: (clientId?: string) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function AddClientDialog({ onClientAdded }: AddClientDialogProps) {
-  const [open, setOpen] = useState(false);
+export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClientDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
+  // Use controlled state if provided, otherwise use internal state
+  const isOpen = open !== undefined ? open : internalOpen;
+  const setIsOpen = onOpenChange || setInternalOpen;
 
   const {
     register,
@@ -101,7 +107,7 @@ export function AddClientDialog({ onClientAdded }: AddClientDialogProps) {
     try {
       const logoUrl = await uploadLogo();
 
-      const { error } = await supabase.from('clients').insert({
+      const { data: clientData, error } = await supabase.from('clients').insert({
         first_name: data.first_name,
         last_name: data.last_name,
         company: data.company,
@@ -110,7 +116,7 @@ export function AddClientDialog({ onClientAdded }: AddClientDialogProps) {
         revenue: data.revenue,
         active: data.active,
         logo_url: logoUrl,
-      });
+      }).select().single();
 
       if (error) throw error;
 
@@ -118,8 +124,8 @@ export function AddClientDialog({ onClientAdded }: AddClientDialogProps) {
       reset();
       setLogoFile(null);
       setLogoPreview(null);
-      setOpen(false);
-      onClientAdded();
+      setIsOpen(false);
+      onClientAdded(clientData?.id);
     } catch (error) {
       console.error('Error adding client:', error);
       toast.error("Erreur lors de l'ajout du client");
@@ -129,13 +135,15 @@ export function AddClientDialog({ onClientAdded }: AddClientDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Nouveau client
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      {!open && !onOpenChange && (
+        <DialogTrigger asChild>
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Nouveau client
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Ajouter un nouveau client</DialogTitle>
@@ -271,7 +279,7 @@ export function AddClientDialog({ onClientAdded }: AddClientDialogProps) {
                 reset();
                 setLogoFile(null);
                 setLogoPreview(null);
-                setOpen(false);
+                setIsOpen(false);
               }}
               disabled={loading}
             >

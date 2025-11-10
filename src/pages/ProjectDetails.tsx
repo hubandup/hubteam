@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,7 @@ import { fr } from 'date-fns/locale';
 import { ProjectTeamTab } from '@/components/project-details/ProjectTeamTab';
 import { ProjectTasksTab } from '@/components/project-details/ProjectTasksTab';
 import { ProjectAttachmentsTab } from '@/components/project-details/ProjectAttachmentsTab';
+import { AddClientDialog } from '@/components/AddClientDialog';
 
 export default function ProjectDetails() {
   const { id } = useParams<{ id: string }>();
@@ -21,6 +22,7 @@ export default function ProjectDetails() {
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [projectProgress, setProjectProgress] = useState({ completed: 0, total: 0, percentage: 0 });
+  const [showAddClientDialog, setShowAddClientDialog] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -71,6 +73,29 @@ export default function ProjectDetails() {
       navigate('/projects');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleClientAdded = async (clientId?: string) => {
+    if (!clientId || !id) return;
+    
+    try {
+      // Associer le client au projet
+      const { error } = await supabase
+        .from('project_clients')
+        .insert({
+          project_id: id,
+          client_id: clientId,
+        });
+
+      if (error) throw error;
+      
+      // Recharger les détails du projet
+      fetchProjectDetails();
+      toast.success('Client associé au projet avec succès');
+    } catch (error) {
+      console.error('Error linking client to project:', error);
+      toast.error("Erreur lors de l'association du client au projet");
     }
   };
 
@@ -176,8 +201,9 @@ export default function ProjectDetails() {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => navigate(`/crm`)}
+                        onClick={() => setShowAddClientDialog(true)}
                       >
+                        <Plus className="h-4 w-4 mr-2" />
                         Ajouter un client
                       </Button>
                     </div>
@@ -256,6 +282,12 @@ export default function ProjectDetails() {
           <ProjectAttachmentsTab projectId={id!} />
         </TabsContent>
       </Tabs>
+
+      <AddClientDialog 
+        open={showAddClientDialog}
+        onOpenChange={setShowAddClientDialog}
+        onClientAdded={handleClientAdded}
+      />
     </div>
   );
 }
