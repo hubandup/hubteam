@@ -16,6 +16,8 @@
     
     --primary: 210 99% 29%;
     --primary-foreground: 0 0% 100%;
+    --primary-hover: 210 99% 35%;
+    --primary-active: 210 99% 23%;
     
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -74,6 +76,8 @@
     
     --primary: 66 99% 71%;
     --primary-foreground: 0 0% 10%;
+    --primary-hover: 66 99% 65%;
+    --primary-active: 66 99% 77%;
     
     --secondary: 220 15% 18%;
     --secondary-foreground: 210 20% 95%;
@@ -132,6 +136,15 @@
   
   p {
     @apply font-body font-light;
+  }
+  
+  /* Button hover effects */
+  .btn-primary:hover:not(:disabled) {
+    background-color: hsl(var(--primary-hover));
+  }
+  
+  .btn-primary:active:not(:disabled) {
+    background-color: hsl(var(--primary-active));
   }
   
   /* Logo white in dark mode */
