@@ -49,6 +49,22 @@ export function ProjectAttachmentsTab({ projectId }: ProjectAttachmentsTabProps)
     }
   };
 
+  const ALLOWED_TYPES = [
+    'application/pdf',
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/plain',
+    'text/csv',
+  ];
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -60,6 +76,18 @@ export function ProjectAttachmentsTab({ projectId }: ProjectAttachmentsTabProps)
       if (!user) throw new Error('User not authenticated');
 
       for (const file of Array.from(files)) {
+        // Validate file size
+        if (file.size > MAX_FILE_SIZE) {
+          toast.error(`${file.name} dépasse la limite de 10MB`);
+          continue;
+        }
+
+        // Validate file type
+        if (!ALLOWED_TYPES.includes(file.type)) {
+          toast.error(`Type de fichier non autorisé: ${file.name}`);
+          continue;
+        }
+
         const fileExt = file.name.split('.').pop();
         const fileName = `${projectId}/${Date.now()}-${file.name}`;
 
