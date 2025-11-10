@@ -61,33 +61,36 @@ export function CreateChatRoomDialog({ open, onOpenChange, onSuccess }: CreateCh
     setCreating(true);
     try {
       // Create room name from participants
-      const participantNames = selectedUsers.map(u => 
-        u.display_name || `${u.first_name} ${u.last_name}`
-      ).join(', ');
+      const participantNames = selectedUsers
+        .map(u => u.display_name || `${u.first_name} ${u.last_name}`)
+        .join(', ');
 
-      const { data: room, error: roomError } = await supabase
+      // Generate room id to avoid needing SELECT (RLS) to get it back
+      const roomId = crypto.randomUUID();
+
+      // 1) Create the room without selecting it (avoid SELECT RLS)
+      const { error: roomError } = await supabase
         .from('chat_rooms')
-        .insert({
-          name: participantNames,
-          type: 'direct',
-          project_id: null,
-        })
-        .select()
-        .single();
+        .insert([{ id: roomId, name: participantNames, type: 'direct', project_id: null }] as any);
 
       if (roomError) throw roomError;
 
-      // Add current user and selected users as members
-      const members = [
-        { room_id: room.id, user_id: user!.id },
-        ...selectedUsers.map(u => ({ room_id: room.id, user_id: u.id }))
-      ];
-
-      const { error: memberError } = await supabase
+      // 2) Add current user as a member first (bootstrap membership per RLS)
+      const { error: selfMemberError } = await supabase
         .from('chat_room_members')
-        .insert(members);
+        .insert({ room_id: roomId, user_id: user!.id });
 
-      if (memberError) throw memberError;
+      if (selfMemberError) throw selfMemberError;
+
+      // 3) Add other selected users
+      if (selectedUsers.length > 0) {
+        const otherMembers = selectedUsers.map(u => ({ room_id: roomId, user_id: u.id }));
+        const { error: othersError } = await supabase
+          .from('chat_room_members')
+          .insert(otherMembers);
+
+        if (othersError) throw othersError;
+      }
 
       toast.success('Conversation créée avec succès');
       setSelectedUsers([]);
