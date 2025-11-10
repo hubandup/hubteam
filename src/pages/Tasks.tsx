@@ -30,7 +30,14 @@ export default function Tasks() {
           *,
           projects (
             id,
-            name
+            name,
+            project_clients (
+              clients (
+                company,
+                first_name,
+                last_name
+              )
+            )
           ),
           profiles (
             first_name,
@@ -138,9 +145,16 @@ export default function Tasks() {
                       <p className="text-sm text-muted-foreground">{task.description}</p>
                     )}
 
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                       {task.projects && (
-                        <span className="font-medium">{task.projects.name}</span>
+                        <>
+                          {task.projects.project_clients?.[0]?.clients && (
+                            <span className="font-medium text-primary">
+                              {task.projects.project_clients[0].clients.company}
+                            </span>
+                          )}
+                          <span className="font-medium">{task.projects.name}</span>
+                        </>
                       )}
                       
                       {task.profiles && (

@@ -158,6 +158,32 @@ export default function ProjectDetails() {
                 <CardTitle className="text-lg">Informations générales</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {client ? (
+                  <div className="flex items-start gap-3">
+                    <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Client</p>
+                      <p className="font-medium">
+                        {client.company} - {client.first_name} {client.last_name}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-3">
+                    <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground mb-2">Client</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => navigate(`/crm`)}
+                      >
+                        Ajouter un client
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-start gap-3">
                   <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
@@ -172,18 +198,6 @@ export default function ProjectDetails() {
                     <div>
                       <p className="text-sm text-muted-foreground">Description</p>
                       <p className="font-medium">{project.description}</p>
-                    </div>
-                  </div>
-                )}
-
-                {client && (
-                  <div className="flex items-start gap-3">
-                    <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Client</p>
-                      <p className="font-medium">
-                        {client.company} - {client.first_name} {client.last_name}
-                      </p>
                     </div>
                   </div>
                 )}
