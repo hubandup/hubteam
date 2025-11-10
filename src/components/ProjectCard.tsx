@@ -36,6 +36,8 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
   const client = project.project_clients?.[0]?.clients;
   const clientName = client?.company || 'Sans client';
   const clientLogo = client?.logo_url;
+  
+  const isOverdue = project.end_date && new Date(project.end_date) < new Date() && project.status !== 'completed';
 
   return (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={onClick}>
@@ -69,7 +71,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
           </p>
         )}
         {(project.start_date || project.end_date) && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className={`flex items-center gap-2 text-sm ${isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
             <Calendar className="h-4 w-4" />
             <span>
               {project.start_date && format(new Date(project.start_date), 'dd MMM yyyy', { locale: fr })}

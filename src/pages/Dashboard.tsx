@@ -65,6 +65,7 @@ export default function Dashboard() {
           id,
           name,
           status,
+          end_date,
           project_clients (
             clients (
               company
@@ -420,20 +421,26 @@ export default function Dashboard() {
               </p>
             ) : (
               <div className="space-y-4">
-                {projectsWithProgress.slice(0, 5).map((project) => (
-                  <div key={project.id} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">{project.clientName} - {project.name}</p>
-                      <span className="text-xs text-muted-foreground">
-                        {project.completedTasks}/{project.totalTasks} tâches
-                      </span>
+                {projectsWithProgress.slice(0, 5).map((project) => {
+                  const isOverdue = project.end_date && new Date(project.end_date) < new Date() && project.status !== 'completed';
+                  
+                  return (
+                    <div key={project.id} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className={`text-sm font-medium ${isOverdue ? 'text-destructive' : ''}`}>
+                          {project.clientName} - {project.name}
+                        </p>
+                        <span className="text-xs text-muted-foreground">
+                          {project.completedTasks}/{project.totalTasks} tâches
+                        </span>
+                      </div>
+                      <Progress value={project.progress} className="h-2" />
+                      <p className="text-xs text-muted-foreground">
+                        {project.progress.toFixed(1)}% complété
+                      </p>
                     </div>
-                    <Progress value={project.progress} className="h-2" />
-                    <p className="text-xs text-muted-foreground">
-                      {project.progress.toFixed(1)}% complété
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
