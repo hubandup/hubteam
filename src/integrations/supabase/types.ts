@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_sectors: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       agencies: {
         Row: {
           active: boolean
@@ -88,9 +109,31 @@ export type Database = {
           },
         ]
       }
+      client_statuses: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           active: boolean
+          activity_sector_id: string | null
           company: string
           created_at: string
           email: string
@@ -101,10 +144,12 @@ export type Database = {
           logo_url: string | null
           phone: string | null
           revenue: number | null
+          status_id: string | null
           updated_at: string
         }
         Insert: {
           active?: boolean
+          activity_sector_id?: string | null
           company: string
           created_at?: string
           email: string
@@ -115,10 +160,12 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           revenue?: number | null
+          status_id?: string | null
           updated_at?: string
         }
         Update: {
           active?: boolean
+          activity_sector_id?: string | null
           company?: string
           created_at?: string
           email?: string
@@ -129,9 +176,25 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           revenue?: number | null
+          status_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_activity_sector_id_fkey"
+            columns: ["activity_sector_id"]
+            isOneToOne: false
+            referencedRelation: "activity_sectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "client_statuses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoices: {
         Row: {
@@ -176,6 +239,7 @@ export type Database = {
       }
       meeting_notes: {
         Row: {
+          attachment_url: string | null
           client_id: string
           content: string
           created_at: string
@@ -185,6 +249,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          attachment_url?: string | null
           client_id: string
           content: string
           created_at?: string
@@ -194,6 +259,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          attachment_url?: string | null
           client_id?: string
           content?: string
           created_at?: string

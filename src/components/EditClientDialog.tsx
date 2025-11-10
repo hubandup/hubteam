@@ -5,6 +5,13 @@ import * as z from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -17,6 +24,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Pencil, Loader2 } from 'lucide-react';
+import { AddActivitySectorDialog } from './client-details/AddActivitySectorDialog';
+import { AddClientStatusDialog } from './client-details/AddClientStatusDialog';
 
 const clientSchema = z.object({
   first_name: z.string().trim().min(1, 'Le prénom est requis').max(100),
@@ -26,6 +35,8 @@ const clientSchema = z.object({
   phone: z.string().trim().max(20).optional(),
   revenue: z.number().min(0, 'Le CA doit être positif'),
   active: z.boolean(),
+  activity_sector_id: z.string().optional(),
+  status_id: z.string().optional(),
 });
 
 type ClientFormData = z.infer<typeof clientSchema>;
@@ -41,6 +52,8 @@ interface EditClientDialogProps {
     revenue: number;
     active: boolean;
     logo_url?: string;
+    activity_sector_id?: string;
+    status_id?: string;
   };
   onClientUpdated: () => void;
 }
@@ -50,6 +63,8 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
   const [loading, setLoading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(client.logo_url || null);
+  const [activitySectors, setActivitySectors] = useState<any[]>([]);
+  const [clientStatuses, setClientStatuses] = useState<any[]>([]);
 
   const {
     register,
@@ -68,10 +83,32 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
       phone: client.phone || '',
       revenue: client.revenue,
       active: client.active,
+      activity_sector_id: client.activity_sector_id || '',
+      status_id: client.status_id || '',
     },
   });
 
   const active = watch('active');
+  const selectedSectorId = watch('activity_sector_id');
+  const selectedStatusId = watch('status_id');
+
+  useEffect(() => {
+    fetchSectorsAndStatuses();
+  }, []);
+
+  const fetchSectorsAndStatuses = async () => {
+    const { data: sectors } = await supabase
+      .from('activity_sectors')
+      .select('*')
+      .order('name');
+    setActivitySectors(sectors || []);
+
+    const { data: statuses } = await supabase
+      .from('client_statuses')
+      .select('*')
+      .order('name');
+    setClientStatuses(statuses || []);
+  };
 
   useEffect(() => {
     if (open) {
@@ -83,9 +120,12 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
         phone: client.phone || '',
         revenue: client.revenue,
         active: client.active,
+        activity_sector_id: client.activity_sector_id || '',
+        status_id: client.status_id || '',
       });
       setLogoPreview(client.logo_url || null);
       setLogoFile(null);
+      fetchSectorsAndStatuses();
     }
   }, [open, client, reset]);
 
@@ -144,6 +184,8 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
           revenue: data.revenue,
           active: data.active,
           logo_url: logoUrl,
+          activity_sector_id: data.activity_sector_id || null,
+          status_id: data.status_id || null,
         })
         .eq('id', client.id);
 
@@ -243,7 +285,7 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="revenue">Chiffre d'affaires (€) *</Label>
+            <Label htmlFor="revenue">Chiffre d'affaires (€ HT) *</Label>
             <Input
               id="revenue"
               type="number"
@@ -254,6 +296,52 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
             {errors.revenue && (
               <p className="text-sm text-destructive">{errors.revenue.message}</p>
             )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="activity_sector_id">Secteur d'activité</Label>
+                <AddActivitySectorDialog onSectorAdded={fetchSectorsAndStatuses} />
+              </div>
+              <Select
+                value={selectedSectorId}
+                onValueChange={(value) => setValue('activity_sector_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un secteur" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activitySectors.map((sector) => (
+                    <SelectItem key={sector.id} value={sector.id}>
+                      {sector.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="status_id">Statut</Label>
+                <AddClientStatusDialog onStatusAdded={fetchSectorsAndStatuses} />
+              </div>
+              <Select
+                value={selectedStatusId}
+                onValueChange={(value) => setValue('status_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clientStatuses.map((status) => (
+                    <SelectItem key={status.id} value={status.id}>
+                      {status.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
