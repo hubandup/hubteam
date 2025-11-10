@@ -158,19 +158,13 @@ export default function CRM() {
             <p className="text-sm text-muted-foreground mt-2">Essayez une autre recherche</p>
           </div>
         ) : viewMode === 'kanban' ? (
-          <div className="h-full px-6 pb-6 relative">
-            <div className="h-full overflow-x-auto overflow-y-hidden relative">
-              {/* Fade indicators */}
-              <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-background to-transparent pointer-events-none z-10" />
-              <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none z-10" />
-              
-              <div className="min-w-max">
-                <ClientKanbanView
-                  clients={filteredClients}
-                  onClientClick={(clientId) => navigate(`/client/${clientId}`)}
-                  onStageChange={handleStageChange}
-                />
-              </div>
+          <div className="h-full overflow-x-auto overflow-y-hidden px-6 pb-6 relative">
+            <div className="min-w-max">
+              <ClientKanbanView
+                clients={filteredClients}
+                onClientClick={(clientId) => navigate(`/client/${clientId}`)}
+                onStageChange={handleStageChange}
+              />
             </div>
           </div>
         ) : (
