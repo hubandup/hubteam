@@ -204,6 +204,7 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
           task_id: selectedTaskId || null,
           user_id: user.id,
           attachment_url: attachmentUrl,
+          project_id: projectId,
         });
 
       if (error) throw error;

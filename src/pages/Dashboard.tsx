@@ -142,7 +142,8 @@ export default function Dashboard() {
           content,
           created_at,
           user_id,
-          task_id
+          task_id,
+          project_id
         `)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -186,6 +187,17 @@ export default function Dashboard() {
                   project = projectData.name;
                 }
               }
+            }
+          } else if (comment.project_id) {
+            // For free comments without task, get project directly
+            const { data: projectData } = await supabase
+              .from('projects')
+              .select('name')
+              .eq('id', comment.project_id)
+              .single();
+            
+            if (projectData) {
+              project = projectData.name;
             }
           }
 

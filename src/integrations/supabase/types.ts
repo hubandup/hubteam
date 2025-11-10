@@ -575,6 +575,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          project_id: string | null
           task_id: string | null
           updated_at: string
           user_id: string
@@ -584,6 +585,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          project_id?: string | null
           task_id?: string | null
           updated_at?: string
           user_id: string
@@ -593,11 +595,19 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          project_id?: string | null
           task_id?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "task_comments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "task_comments_task_id_fkey"
             columns: ["task_id"]
