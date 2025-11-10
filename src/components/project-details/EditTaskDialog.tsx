@@ -86,18 +86,24 @@ export function EditTaskDialog({ open, onOpenChange, task, onSuccess }: EditTask
           priority,
           start_date: startDate || null,
           end_date: endDate || null,
-          assigned_to: assignedTo === 'unassigned' ? null : assignedTo,
+          assigned_to: (!assignedTo || assignedTo === 'unassigned') ? null : assignedTo,
         })
         .eq('id', task.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating task:', error);
+        toast.error(`Erreur: ${error.message}`);
+        throw error;
+      }
 
       toast.success('Tâche mise à jour avec succès');
       onSuccess();
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating task:', error);
-      toast.error('Erreur lors de la mise à jour de la tâche');
+      if (!error.message) {
+        toast.error('Erreur lors de la mise à jour de la tâche');
+      }
     } finally {
       setLoading(false);
     }
