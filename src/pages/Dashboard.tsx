@@ -427,7 +427,7 @@ export default function Dashboard() {
                   return (
                     <div key={project.id} className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <p className={`text-sm font-medium ${isOverdue ? 'text-destructive' : project.status === 'completed' ? 'text-foreground' : ''}`}>
+                        <p className={`text-sm font-medium ${isOverdue ? 'text-destructive' : 'text-foreground'}`}>
                           {project.clientName} - {project.name}
                         </p>
                         <span className="text-xs text-muted-foreground">
