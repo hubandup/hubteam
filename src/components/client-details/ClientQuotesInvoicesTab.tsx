@@ -3,18 +3,23 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText, DollarSign, Calendar, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { FileText, DollarSign, Calendar, Loader2, Upload, ExternalLink, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface ClientQuotesInvoicesTabProps {
   clientId: string;
 }
 
 export function ClientQuotesInvoicesTab({ clientId }: ClientQuotesInvoicesTabProps) {
+  const { isAdmin } = useUserRole();
   const [quotes, setQuotes] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -56,6 +61,94 @@ export function ClientQuotesInvoicesTab({ clientId }: ClientQuotesInvoicesTabPro
     );
   }
 
+  const handleFileUpload = async (file: File, id: string, type: 'quote' | 'invoice') => {
+    if (!file.type.includes('pdf')) {
+      toast.error('Seuls les fichiers PDF sont acceptés');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Le fichier ne doit pas dépasser 10 MB');
+      return;
+    }
+
+    setUploadingId(id);
+    try {
+      const fileExt = 'pdf';
+      const fileName = `${type}_${id}_${Date.now()}.${fileExt}`;
+      const filePath = `${clientId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('invoices-quotes')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('invoices-quotes')
+        .getPublicUrl(filePath);
+
+      const table = type === 'quote' ? 'quotes' : 'invoices';
+      const { error: updateError } = await supabase
+        .from(table)
+        .update({ pdf_url: filePath })
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+
+      toast.success('PDF ajouté avec succès');
+      fetchData();
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast.error('Erreur lors de l\'ajout du PDF');
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
+  const handleDeletePdf = async (id: string, pdfUrl: string, type: 'quote' | 'invoice') => {
+    try {
+      const { error: deleteStorageError } = await supabase.storage
+        .from('invoices-quotes')
+        .remove([pdfUrl]);
+
+      if (deleteStorageError) throw deleteStorageError;
+
+      const table = type === 'quote' ? 'quotes' : 'invoices';
+      const { error: updateError } = await supabase
+        .from(table)
+        .update({ pdf_url: null })
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+
+      toast.success('PDF supprimé');
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      toast.error('Erreur lors de la suppression du PDF');
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    setDragOverId(id);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverId(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, id: string, type: 'quote' | 'invoice') => {
+    e.preventDefault();
+    setDragOverId(null);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleFileUpload(file, id, type);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, 'default' | 'secondary' | 'destructive'> = {
       accepted: 'default',
@@ -72,6 +165,97 @@ export function ClientQuotesInvoicesTab({ clientId }: ClientQuotesInvoicesTabPro
       unpaid: 'Impayée',
     };
     return <Badge variant={variants[status] || 'secondary'}>{labels[status] || status}</Badge>;
+  };
+
+  const renderPdfSection = (item: any, type: 'quote' | 'invoice') => {
+    if (!isAdmin) {
+      if (item.pdf_url) {
+        return (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const { data } = supabase.storage.from('invoices-quotes').getPublicUrl(item.pdf_url);
+              window.open(data.publicUrl, '_blank');
+            }}
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Voir le PDF
+          </Button>
+        );
+      }
+      return null;
+    }
+
+    if (item.pdf_url) {
+      return (
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const { data } = supabase.storage.from('invoices-quotes').getPublicUrl(item.pdf_url);
+              window.open(data.publicUrl, '_blank');
+            }}
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Voir le PDF
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => handleDeletePdf(item.id, item.pdf_url, type)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      );
+    }
+
+    const isDragging = dragOverId === item.id;
+    const isUploading = uploadingId === item.id;
+
+    return (
+      <div
+        onDragOver={(e) => handleDragOver(e, item.id)}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e, item.id, type)}
+        className={`border-2 border-dashed rounded-lg p-3 text-center transition-colors ${
+          isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
+        }`}
+      >
+        {isUploading ? (
+          <div className="flex items-center justify-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">Ajout en cours...</span>
+          </div>
+        ) : (
+          <>
+            <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground mb-2">
+              Glissez-déposez un PDF ici
+            </p>
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleFileUpload(file, item.id, type);
+              }}
+              className="hidden"
+              id={`file-${item.id}`}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => document.getElementById(`file-${item.id}`)?.click()}
+            >
+              Parcourir
+            </Button>
+          </>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -93,7 +277,7 @@ export function ClientQuotesInvoicesTab({ clientId }: ClientQuotesInvoicesTabPro
               {quotes.map((quote) => (
                 <div
                   key={quote.id}
-                  className="border rounded-lg p-4 space-y-2 hover:bg-muted/50 transition-colors"
+                  className="border rounded-lg p-4 space-y-3 hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-start justify-between">
                     <div>
@@ -109,6 +293,7 @@ export function ClientQuotesInvoicesTab({ clientId }: ClientQuotesInvoicesTabPro
                     <DollarSign className="h-4 w-4" />
                     {quote.amount.toLocaleString('fr-FR')} €
                   </div>
+                  {renderPdfSection(quote, 'quote')}
                 </div>
               ))}
             </div>
@@ -133,7 +318,7 @@ export function ClientQuotesInvoicesTab({ clientId }: ClientQuotesInvoicesTabPro
               {invoices.map((invoice) => (
                 <div
                   key={invoice.id}
-                  className="border rounded-lg p-4 space-y-2 hover:bg-muted/50 transition-colors"
+                  className="border rounded-lg p-4 space-y-3 hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-start justify-between">
                     <div>
@@ -149,6 +334,7 @@ export function ClientQuotesInvoicesTab({ clientId }: ClientQuotesInvoicesTabPro
                     <DollarSign className="h-4 w-4" />
                     {invoice.amount.toLocaleString('fr-FR')} €
                   </div>
+                  {renderPdfSection(invoice, 'invoice')}
                 </div>
               ))}
             </div>

@@ -2,8 +2,18 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, Plus, Edit } from 'lucide-react';
+import { ArrowLeft, Loader2, Plus, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +37,8 @@ export default function ProjectDetails() {
   const [projectProgress, setProjectProgress] = useState({ completed: 0, total: 0, percentage: 0 });
   const [showSelectClientDialog, setShowSelectClientDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -84,6 +96,30 @@ export default function ProjectDetails() {
     fetchProjectDetails();
   };
 
+  const handleDeleteProject = async () => {
+    if (!id) return;
+    
+    setDeleting(true);
+    try {
+      // Delete project (cascade will handle related records)
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Projet supprimé avec succès');
+      navigate('/projects');
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      toast.error('Erreur lors de la suppression du projet');
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -122,14 +158,24 @@ export default function ProjectDetails() {
               {statusInfo.label}
             </Badge>
             {isAdmin && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowEditDialog(true)}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Modifier
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowEditDialog(true)}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Modifier
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setShowDeleteDialog(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Supprimer
+                </Button>
+              </>
             )}
           </div>
           {client && (
@@ -283,12 +329,44 @@ export default function ProjectDetails() {
       />
 
       {isAdmin && (
-        <EditProjectInfoDialog
-          open={showEditDialog}
-          onOpenChange={setShowEditDialog}
-          project={project}
-          onSuccess={fetchProjectDetails}
-        />
+        <>
+          <EditProjectInfoDialog
+            open={showEditDialog}
+            onOpenChange={setShowEditDialog}
+            project={project}
+            onSuccess={fetchProjectDetails}
+          />
+          
+          <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Êtes-vous sûr de vouloir supprimer le projet "{project.name}" ? 
+                  Cette action est irréversible et supprimera également toutes les tâches, 
+                  membres d'équipe et pièces jointes associés.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteProject}
+                  disabled={deleting}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {deleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Suppression...
+                    </>
+                  ) : (
+                    'Supprimer'
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
       )}
     </div>
   );
