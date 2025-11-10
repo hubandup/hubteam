@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -16,7 +17,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Loader2 } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Plus, Loader2, CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const clientSchema = z.object({
   first_name: z.string().trim().min(1, 'Le prénom est requis').max(100),
@@ -26,6 +30,7 @@ const clientSchema = z.object({
   phone: z.string().trim().max(20).optional(),
   revenue: z.number().min(0, 'Le CA doit être positif'),
   active: z.boolean(),
+  follow_up_date: z.date().optional(),
 });
 
 type ClientFormData = z.infer<typeof clientSchema>;
@@ -62,6 +67,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
   });
 
   const active = watch('active');
+  const followUpDate = watch('follow_up_date');
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -116,6 +122,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
         revenue: data.revenue,
         active: data.active,
         logo_url: logoUrl,
+        follow_up_date: data.follow_up_date ? data.follow_up_date.toISOString() : null,
       }).select().single();
 
       if (error) throw error;
@@ -218,18 +225,51 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="revenue">Chiffre d'affaires (€) *</Label>
-            <Input
-              id="revenue"
-              type="number"
-              step="0.01"
-              {...register('revenue', { valueAsNumber: true })}
-              placeholder="50000"
-            />
-            {errors.revenue && (
-              <p className="text-sm text-destructive">{errors.revenue.message}</p>
-            )}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="revenue">Chiffre d'affaires (€) *</Label>
+              <Input
+                id="revenue"
+                type="number"
+                step="0.01"
+                {...register('revenue', { valueAsNumber: true })}
+                placeholder="50000"
+              />
+              {errors.revenue && (
+                <p className="text-sm text-destructive">{errors.revenue.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="follow_up_date">Date de rappel</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !followUpDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {followUpDate ? format(followUpDate, "dd/MM/yyyy") : "Choisir une date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={followUpDate}
+                    onSelect={(date) => setValue('follow_up_date', date)}
+                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+              {errors.follow_up_date && (
+                <p className="text-sm text-destructive">{errors.follow_up_date.message}</p>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">

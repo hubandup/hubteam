@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -23,9 +24,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Pencil, Loader2 } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Pencil, Loader2, CalendarIcon } from 'lucide-react';
 import { AddActivitySectorDialog } from './client-details/AddActivitySectorDialog';
 import { AddClientStatusDialog } from './client-details/AddClientStatusDialog';
+import { cn } from '@/lib/utils';
 
 const clientSchema = z.object({
   first_name: z.string().trim().min(1, 'Le prénom est requis').max(100),
@@ -37,6 +41,7 @@ const clientSchema = z.object({
   active: z.boolean(),
   activity_sector_id: z.string().optional(),
   status_id: z.string().optional(),
+  follow_up_date: z.date().optional(),
 });
 
 type ClientFormData = z.infer<typeof clientSchema>;
@@ -54,6 +59,7 @@ interface EditClientDialogProps {
     logo_url?: string;
     activity_sector_id?: string;
     status_id?: string;
+    follow_up_date?: string;
   };
   onClientUpdated: () => void;
 }
@@ -85,12 +91,14 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
       active: client.active,
       activity_sector_id: client.activity_sector_id || '',
       status_id: client.status_id || '',
+      follow_up_date: client.follow_up_date ? new Date(client.follow_up_date) : undefined,
     },
   });
 
   const active = watch('active');
   const selectedSectorId = watch('activity_sector_id');
   const selectedStatusId = watch('status_id');
+  const followUpDate = watch('follow_up_date');
 
   useEffect(() => {
     fetchSectorsAndStatuses();
@@ -122,6 +130,7 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
         active: client.active,
         activity_sector_id: client.activity_sector_id || '',
         status_id: client.status_id || '',
+        follow_up_date: client.follow_up_date ? new Date(client.follow_up_date) : undefined,
       });
       setLogoPreview(client.logo_url || null);
       setLogoFile(null);
@@ -186,6 +195,7 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
           logo_url: logoUrl,
           activity_sector_id: data.activity_sector_id || null,
           status_id: data.status_id || null,
+          follow_up_date: data.follow_up_date ? data.follow_up_date.toISOString() : null,
         })
         .eq('id', client.id);
 
@@ -284,18 +294,51 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="revenue">Chiffre d'affaires (€ HT) *</Label>
-            <Input
-              id="revenue"
-              type="number"
-              step="0.01"
-              {...register('revenue', { valueAsNumber: true })}
-              placeholder="50000"
-            />
-            {errors.revenue && (
-              <p className="text-sm text-destructive">{errors.revenue.message}</p>
-            )}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="revenue">Chiffre d'affaires (€ HT) *</Label>
+              <Input
+                id="revenue"
+                type="number"
+                step="0.01"
+                {...register('revenue', { valueAsNumber: true })}
+                placeholder="50000"
+              />
+              {errors.revenue && (
+                <p className="text-sm text-destructive">{errors.revenue.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="follow_up_date">Date de rappel</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !followUpDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {followUpDate ? format(followUpDate, "dd/MM/yyyy") : "Choisir une date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={followUpDate}
+                    onSelect={(date) => setValue('follow_up_date', date)}
+                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+              {errors.follow_up_date && (
+                <p className="text-sm text-destructive">{errors.follow_up_date.message}</p>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
