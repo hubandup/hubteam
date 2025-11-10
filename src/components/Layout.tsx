@@ -12,11 +12,11 @@ export function Layout({ children }: LayoutProps) {
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <Sidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 min-w-0 flex flex-col">
           <header className="h-14 border-b bg-card flex items-center px-4">
             <SidebarTrigger />
           </header>
-          <main className="flex-1 min-h-0 overflow-hidden bg-background">
+          <main className="flex-1 min-h-0 min-w-0 overflow-hidden bg-background">
             <div className="px-6 pt-4">
               <Breadcrumbs />
             </div>

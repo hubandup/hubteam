@@ -146,7 +146,7 @@ export default function CRM() {
       )}
 
       {/* Content area - Scrollable container */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 min-w-0 overflow-hidden">
         {filteredClients.length === 0 && clients.length === 0 ? (
           <div className="text-center py-12 px-6">
             <p className="text-muted-foreground">Aucun client pour le moment</p>
