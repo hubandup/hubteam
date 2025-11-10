@@ -1,9 +1,10 @@
 import { ProjectCard } from './ProjectCard';
-import { DndContext, DragEndEvent, DragOverlay, closestCorners } from '@dnd-kit/core';
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter, useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface ProjectKanbanViewProps {
   projects: any[];
@@ -26,8 +27,9 @@ function DraggableProjectCard({ project, onClick }: { project: any; onClick: () 
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+    transition: transition || 'transform 200ms ease',
+    opacity: isDragging ? 0.4 : 1,
+    cursor: isDragging ? 'grabbing' : 'grab',
   };
 
   return (
@@ -37,36 +39,99 @@ function DraggableProjectCard({ project, onClick }: { project: any; onClick: () 
   );
 }
 
+function DroppableColumn({ 
+  column, 
+  projects, 
+  onProjectClick,
+  isOver 
+}: { 
+  column: { id: string; label: string };
+  projects: any[];
+  onProjectClick: (id: string) => void;
+  isOver: boolean;
+}) {
+  const { setNodeRef } = useDroppable({
+    id: column.id,
+    data: { type: 'column', status: column.id }
+  });
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="sticky top-0 bg-background z-10 pb-2">
+        <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+          {column.label} ({projects.length})
+        </h3>
+      </div>
+      <div
+        ref={setNodeRef}
+        className={cn(
+          "space-y-3 min-h-[200px] p-4 rounded-lg transition-all duration-200",
+          isOver && "bg-accent/20 border-2 border-primary border-dashed scale-[1.02]"
+        )}
+      >
+        <SortableContext
+          items={projects.map(p => p.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {projects.map((project) => (
+            <DraggableProjectCard
+              key={project.id}
+              project={project}
+              onClick={() => onProjectClick(project.id)}
+            />
+          ))}
+          {projects.length === 0 && (
+            <div className="text-center py-8 text-sm text-muted-foreground border-2 border-dashed rounded-lg">
+              Glissez un projet ici
+            </div>
+          )}
+        </SortableContext>
+      </div>
+    </div>
+  );
+}
+
 export function ProjectKanbanView({ projects, onProjectClick, onStatusChange }: ProjectKanbanViewProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
   
   const activeProject = projects.find(p => p.id === activeId);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragOver = (event: any) => {
+    const { over } = event;
+    setOverId(over?.id || null);
+  };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     
+    setActiveId(null);
+    setOverId(null);
+    
     if (!over) {
-      setActiveId(null);
       return;
     }
 
     const activeProject = active.data.current?.project;
-    const overColumn = over.id as string;
     
-    // Check if we're dropping on a column (status)
-    if (statusColumns.some(col => col.id === overColumn)) {
-      if (activeProject && activeProject.status !== overColumn) {
-        await onStatusChange(activeProject.id, overColumn);
-      }
+    // Check if we're dropping on a column
+    const overData = over.data.current;
+    const targetStatus = overData?.type === 'column' ? overData.status : null;
+    
+    if (targetStatus && activeProject && activeProject.status !== targetStatus) {
+      await onStatusChange(activeProject.id, targetStatus);
     }
-    
-    setActiveId(null);
   };
 
   return (
     <DndContext
-      collisionDetection={closestCorners}
-      onDragStart={(event) => setActiveId(event.active.id as string)}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -74,45 +139,22 @@ export function ProjectKanbanView({ projects, onProjectClick, onStatusChange }: 
           const columnProjects = projects.filter(p => p.status === column.id);
           
           return (
-            <div
+            <DroppableColumn
               key={column.id}
-              className="flex flex-col gap-3"
-            >
-              <div className="sticky top-0 bg-background z-10 pb-2">
-                <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                  {column.label} ({columnProjects.length})
-                </h3>
-              </div>
-              <SortableContext
-                id={column.id}
-                items={columnProjects.map(p => p.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div 
-                  className="space-y-3 min-h-[200px] p-2 rounded-lg transition-colors"
-                  data-column={column.id}
-                >
-                  {columnProjects.map((project) => (
-                    <DraggableProjectCard
-                      key={project.id}
-                      project={project}
-                      onClick={() => onProjectClick(project.id)}
-                    />
-                  ))}
-                  {columnProjects.length === 0 && (
-                    <div className="text-center py-8 text-sm text-muted-foreground border-2 border-dashed rounded-lg">
-                      Aucun projet
-                    </div>
-                  )}
-                </div>
-              </SortableContext>
-            </div>
+              column={column}
+              projects={columnProjects}
+              onProjectClick={onProjectClick}
+              isOver={overId === column.id}
+            />
           );
         })}
       </div>
-      <DragOverlay>
+      <DragOverlay dropAnimation={{
+        duration: 200,
+        easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+      }}>
         {activeProject && (
-          <div className="opacity-80">
+          <div className="rotate-3 scale-105 shadow-2xl">
             <ProjectCard project={activeProject} onClick={() => {}} />
           </div>
         )}
