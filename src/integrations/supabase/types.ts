@@ -964,6 +964,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      notify_upcoming_deadlines: { Args: never; Returns: undefined }
     }
     Enums: {
       app_module:
