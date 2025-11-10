@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from './ui/button';
 import { NotificationBell } from './notifications/NotificationBell';
+import { ThemeToggle } from './ThemeToggle';
 import logo from '@/assets/logo-hubandup.svg';
 
 export function Sidebar() {
@@ -38,9 +39,12 @@ export function Sidebar() {
   return (
     <ShadcnSidebar>
       <SidebarHeader className="border-b p-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <img src={logo} alt="HubandUp" className="h-7 w-auto" />
-          <NotificationBell />
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <NotificationBell />
+          </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
