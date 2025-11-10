@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, MessageSquare, Send } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Loader2, MessageSquare, Send, Paperclip, X, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,6 +17,7 @@ interface Comment {
   created_at: string;
   user_id: string;
   task_id: string | null;
+  attachment_url: string | null;
   profiles: {
     first_name: string;
     last_name: string;
@@ -36,6 +38,8 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
   const [submitting, setSubmitting] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Array<{ id: string; title: string }>>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -98,7 +102,8 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
           content,
           created_at,
           user_id,
-          task_id
+          task_id,
+          attachment_url
         `)
         .or(`task_id.in.(${taskIds.join(',')}),task_id.is.null`)
         .order('created_at', { ascending: false });
@@ -141,6 +146,29 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
     }
   };
 
+  const getFileUrl = async (filePath: string) => {
+    const { data } = await supabase.storage
+      .from('project-attachments')
+      .createSignedUrl(filePath, 3600); // URL valid for 1 hour
+    return data?.signedUrl || '';
+  };
+
+  const handleDownload = async (filePath: string, fileName?: string) => {
+    const url = await getFileUrl(filePath);
+    if (url) {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName || 'attachment';
+      link.click();
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -150,26 +178,46 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
     }
 
     setSubmitting(true);
+    setUploading(true);
 
     try {
+      let attachmentUrl = null;
+
+      // Upload file if selected
+      if (selectedFile) {
+        const fileExt = selectedFile.name.split('.').pop();
+        const fileName = `${projectId}/${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('project-attachments')
+          .upload(fileName, selectedFile);
+
+        if (uploadError) throw uploadError;
+
+        attachmentUrl = fileName; // Store the file path, not the URL
+      }
+
       const { error } = await supabase
         .from('task_comments')
         .insert({
           content: newComment.trim(),
           task_id: selectedTaskId || null,
           user_id: user.id,
+          attachment_url: attachmentUrl,
         });
 
       if (error) throw error;
 
       toast.success('Commentaire ajouté avec succès');
       setNewComment('');
+      setSelectedFile(null);
       fetchComments();
     } catch (error) {
       console.error('Error adding comment:', error);
       toast.error('Erreur lors de l\'ajout du commentaire');
     } finally {
       setSubmitting(false);
+      setUploading(false);
     }
   };
 
@@ -210,13 +258,42 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
             />
           </div>
 
-          <Button type="submit" disabled={submitting || !newComment.trim()}>
-            {submitting ? (
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-2">
+              <Paperclip className="h-4 w-4" />
+              Pièce jointe (optionnel)
+            </label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="file"
+                onChange={handleFileSelect}
+                className="flex-1"
+              />
+              {selectedFile && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedFile(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            {selectedFile && (
+              <p className="text-xs text-muted-foreground">
+                Fichier sélectionné : {selectedFile.name}
+              </p>
+            )}
+          </div>
+
+          <Button type="submit" disabled={submitting || uploading || !newComment.trim()}>
+            {submitting || uploading ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
               <Send className="h-4 w-4 mr-2" />
             )}
-            Envoyer
+            {uploading ? 'Envoi en cours...' : 'Envoyer'}
           </Button>
         </form>
 
@@ -251,6 +328,15 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
                       )}
                     </div>
                     <p className="text-sm text-foreground break-words">{comment.content}</p>
+                    {comment.attachment_url && (
+                      <button
+                        onClick={() => handleDownload(comment.attachment_url!, comment.attachment_url?.split('/').pop())}
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                      >
+                        <Download className="h-3 w-3" />
+                        Télécharger la pièce jointe
+                      </button>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       {format(new Date(comment.created_at), 'dd MMM yyyy à HH:mm', { locale: fr })}
                     </p>

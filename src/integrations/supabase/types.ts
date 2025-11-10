@@ -571,6 +571,7 @@ export type Database = {
       }
       task_comments: {
         Row: {
+          attachment_url: string | null
           content: string
           created_at: string
           id: string
@@ -579,6 +580,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attachment_url?: string | null
           content: string
           created_at?: string
           id?: string
@@ -587,6 +589,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attachment_url?: string | null
           content?: string
           created_at?: string
           id?: string
