@@ -185,15 +185,17 @@ export function ClientKanbanView({ clients, onClientClick, onStageChange }: Clie
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-4 overflow-x-auto pb-4">
-        {stageColumns.map((stage) => (
-          <DroppableColumn
-            key={stage.id}
-            stage={stage}
-            clients={clientsByStage[stage.id] || []}
-            onClientClick={onClientClick}
-          />
-        ))}
+      <div className="w-full overflow-x-auto">
+        <div className="flex gap-4 pb-4 w-max">
+          {stageColumns.map((stage) => (
+            <DroppableColumn
+              key={stage.id}
+              stage={stage}
+              clients={clientsByStage[stage.id] || []}
+              onClientClick={onClientClick}
+            />
+          ))}
+        </div>
       </div>
       <DragOverlay>
         {activeClient ? (
