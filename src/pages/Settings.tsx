@@ -37,10 +37,6 @@ export default function Settings() {
           </TabsTrigger>
           {isAdmin && (
             <>
-              <TabsTrigger value="design" className="flex items-center gap-2">
-                <Palette className="h-4 w-4" />
-                Design
-              </TabsTrigger>
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Utilisateurs
@@ -52,6 +48,10 @@ export default function Settings() {
               <TabsTrigger value="data" className="flex items-center gap-2">
                 <Database className="h-4 w-4" />
                 Données
+              </TabsTrigger>
+              <TabsTrigger value="design" className="flex items-center gap-2">
+                <Palette className="h-4 w-4" />
+                Design
               </TabsTrigger>
             </>
           )}
@@ -71,10 +71,6 @@ export default function Settings() {
 
         {isAdmin && (
           <>
-            <TabsContent value="design" className="mt-6">
-              <DesignTab />
-            </TabsContent>
-
             <TabsContent value="users" className="mt-6">
               <UsersTab />
             </TabsContent>
@@ -85,6 +81,10 @@ export default function Settings() {
 
             <TabsContent value="data" className="mt-6">
               <DataManagementTab />
+            </TabsContent>
+
+            <TabsContent value="design" className="mt-6">
+              <DesignTab />
             </TabsContent>
           </>
         )}

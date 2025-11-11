@@ -1,66 +1,72 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-export interface DesignSettings {
-  id: string;
-  heading_font: string;
-  body_font: string;
-  light_primary: string;
-  light_secondary: string;
-  light_background: string;
-  dark_primary: string;
-  dark_secondary: string;
-  dark_background: string;
-}
-
 export function useDesignSettings() {
-  const [settings, setSettings] = useState<DesignSettings | null>(null);
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
-    fetchSettings();
+    loadAndApplyDesignSettings();
   }, []);
 
-  const fetchSettings = async () => {
+  const loadAndApplyDesignSettings = async () => {
     try {
       const { data, error } = await supabase
         .from('design_settings')
         .select('*')
+        .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
       if (error) throw error;
-      setSettings(data);
+      if (data) {
+        applyDesignSettings(data);
+      }
     } catch (error) {
-      console.error('Error fetching design settings:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error loading design settings:', error);
     }
   };
 
-  const updateSettings = async (updates: Partial<DesignSettings>) => {
-    if (!settings) return;
-
-    try {
-      const { error } = await supabase
-        .from('design_settings')
-        .update(updates)
-        .eq('id', settings.id);
-
-      if (error) throw error;
-      
-      await fetchSettings();
-      return { success: true };
-    } catch (error) {
-      console.error('Error updating design settings:', error);
-      return { success: false, error };
+  const applyDesignSettings = (data: any) => {
+    const root = document.documentElement;
+    
+    // Apply fonts
+    root.style.setProperty('--font-heading', data.heading_font);
+    root.style.setProperty('--font-body', data.body_font);
+    
+    // Apply light mode colors
+    root.style.setProperty('--primary', data.light_primary);
+    root.style.setProperty('--secondary', data.light_secondary);
+    root.style.setProperty('--background', data.light_background);
+    
+    // Apply dark mode colors
+    const style = document.getElementById('dynamic-theme-style') || document.createElement('style');
+    style.id = 'dynamic-theme-style';
+    style.innerHTML = `
+      .dark {
+        --primary: ${data.dark_primary};
+        --secondary: ${data.dark_secondary};
+        --background: ${data.dark_background};
+      }
+    `;
+    if (!document.getElementById('dynamic-theme-style')) {
+      document.head.appendChild(style);
     }
+    
+    // Load Google Fonts
+    loadGoogleFonts(data.heading_font, data.body_font);
   };
 
-  return {
-    settings,
-    loading,
-    updateSettings,
-    refetch: fetchSettings,
+  const loadGoogleFonts = (headingFont: string, bodyFont: string) => {
+    const existingLink = document.getElementById('google-fonts-link');
+    if (existingLink) {
+      existingLink.remove();
+    }
+    
+    const fonts = [headingFont, bodyFont].filter((f, i, arr) => arr.indexOf(f) === i);
+    const fontQuery = fonts.map(f => f.replace(/ /g, '+')).join('&family=');
+    
+    const link = document.createElement('link');
+    link.id = 'google-fonts-link';
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${fontQuery}:wght@300;400;600;700&display=swap`;
+    document.head.appendChild(link);
   };
 }
