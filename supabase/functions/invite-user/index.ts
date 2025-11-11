@@ -98,19 +98,20 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Invite user
-    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
-      email,
-      {
+    // Generate invite link
+    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'invite',
+      email: email,
+      options: {
         redirectTo: `${Deno.env.get("SUPABASE_URL")?.replace('/v1', '')}/`,
         data: {
           role: role,
-        }
-      }
-    );
+        },
+      },
+    });
 
     if (inviteError) {
-      console.error("Error inviting user:", inviteError);
+      console.error("Error generating invite link:", inviteError);
       return new Response(
         JSON.stringify({ error: inviteError.message }),
         {
@@ -119,6 +120,42 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     }
+
+    console.log('Invite link generated successfully');
+
+    // Send custom invitation email via Brevo
+    const emailResponse = await fetch(
+      `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-invitation-email`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': req.headers.get('Authorization') || '',
+        },
+        body: JSON.stringify({
+          email: email,
+          invitationUrl: inviteData.properties.action_link,
+          role: role,
+        }),
+      }
+    );
+
+    if (!emailResponse.ok) {
+      const emailError = await emailResponse.text();
+      console.error('Error sending invitation email:', emailError);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Utilisateur créé mais échec de l\'envoi de l\'email d\'invitation',
+          details: emailError 
+        }),
+        { 
+          status: 500, 
+          headers: { 'Content-Type': 'application/json', ...corsHeaders } 
+        }
+      );
+    }
+
+    console.log('Custom invitation email sent successfully');
 
     // Note: Role is now automatically assigned by the handle_new_user() trigger
     // which reads the role from raw_user_meta_data
