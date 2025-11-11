@@ -1,5 +1,6 @@
 import { useUserRole } from '@/hooks/useUserRole';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useRoleConfig } from '@/hooks/useRoleConfig';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RoleBadge } from '@/components/common/RoleBadge';
@@ -14,12 +15,6 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
-const roleDescriptions = {
-  admin: 'Accès complet à toutes les fonctionnalités',
-  team: 'Accès en lecture et écriture sur la plupart des modules',
-  client: 'Accès en lecture à vos données uniquement',
-  agency: 'Accès à vos clients et projets rattachés',
-};
 
 const moduleLabels = {
   dashboard: 'Tableau de bord',
@@ -55,6 +50,7 @@ interface DismissalData {
 export function RolePermissionsIndicator() {
   const { role, loading: roleLoading } = useUserRole();
   const { permissions, loading: permissionsLoading } = usePermissions();
+  const { getRoleDescription } = useRoleConfig();
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
 
@@ -127,7 +123,7 @@ export function RolePermissionsIndicator() {
     return null;
   }
 
-  const description = roleDescriptions[role] || 'Accès personnalisé';
+  const description = getRoleDescription(role);
   
   // Group permissions by module
   const permissionsByModule = permissions.reduce((acc, perm) => {

@@ -1,36 +1,24 @@
 import { Badge } from '@/components/ui/badge';
-
-type UserRole = 'admin' | 'team' | 'client' | 'agency';
+import { useRoleConfig } from '@/hooks/useRoleConfig';
 
 interface RoleBadgeProps {
-  role: UserRole | null | string;
+  role: string | null;
   className?: string;
 }
 
-const roleConfig: Record<UserRole, { label: string; variant: 'admin' | 'team' | 'client' | 'agency' }> = {
-  admin: { label: 'Administrateur', variant: 'admin' },
-  team: { label: 'Équipe', variant: 'team' },
-  client: { label: 'Client', variant: 'client' },
-  agency: { label: 'Agence', variant: 'agency' },
-};
-
 export function RoleBadge({ role, className }: RoleBadgeProps) {
+  const { getRoleLabel, getRoleVariant } = useRoleConfig();
+
   if (!role) {
     return <Badge variant="outline" className={className}>Aucun rôle</Badge>;
   }
 
-  const config = roleConfig[role as UserRole];
-  
-  if (!config) {
-    return <Badge variant="outline" className={className}>Rôle inconnu</Badge>;
-  }
+  const label = getRoleLabel(role);
+  const variant = getRoleVariant(role);
 
   return (
-    <Badge variant={config.variant} className={className}>
-      {config.label}
+    <Badge variant={variant} className={className}>
+      {label}
     </Badge>
   );
 }
-
-// Export role configuration for components that need it
-export { roleConfig };
