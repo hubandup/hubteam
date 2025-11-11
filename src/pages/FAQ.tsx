@@ -80,19 +80,24 @@ function SortableFaqItem({ item, isAdmin, onEdit, onDelete }: SortableFaqItemPro
         <CollapsibleTrigger className="w-full px-4 py-4 flex items-center justify-between hover:bg-muted/50 transition-colors gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             {isAdmin && (
-              <div
+              <button
+                type="button"
                 {...attributes}
                 {...listeners}
-                className="cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
+                className="cursor-grab active:cursor-grabbing touch-none flex-shrink-0 flex items-center justify-center"
                 onClick={(e) => e.stopPropagation()}
               >
                 <GripVertical className="h-5 w-5 text-muted-foreground" />
-              </div>
+              </button>
             )}
-            <IconComponent className="h-5 w-5 text-primary flex-shrink-0" />
-            <h3 className="font-semibold text-left text-foreground flex-1 min-w-0">{item.title}</h3>
+            <div className="flex items-center justify-center flex-shrink-0">
+              <IconComponent className="h-5 w-5 text-primary" />
+            </div>
+            <h3 className="font-semibold text-left text-foreground flex-1 min-w-0 leading-tight">{item.title}</h3>
           </div>
-          <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200 flex-shrink-0" />
+          <div className="flex items-center justify-center flex-shrink-0">
+            <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200" />
+          </div>
         </CollapsibleTrigger>
         <CollapsibleContent className="px-4 pb-4 pt-3 border-t bg-card">
           <div
