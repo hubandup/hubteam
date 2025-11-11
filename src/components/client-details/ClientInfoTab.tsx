@@ -23,6 +23,8 @@ interface ClientInfoTabProps {
     logo_url?: string;
     activity_sector_id?: string;
     status_id?: string;
+    follow_up_date?: string;
+    kanban_stage: string;
   };
   onUpdate: () => void;
 }

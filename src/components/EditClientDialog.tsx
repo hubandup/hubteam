@@ -42,6 +42,8 @@ const clientSchema = z.object({
   activity_sector_id: z.string().optional(),
   status_id: z.string().optional(),
   follow_up_date: z.date().optional(),
+  last_contact: z.date().optional(),
+  kanban_stage: z.string(),
 });
 
 type ClientFormData = z.infer<typeof clientSchema>;
@@ -60,6 +62,8 @@ interface EditClientDialogProps {
     activity_sector_id?: string;
     status_id?: string;
     follow_up_date?: string;
+    last_contact?: string;
+    kanban_stage: string;
   };
   onClientUpdated: () => void;
 }
@@ -92,6 +96,8 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
       activity_sector_id: client.activity_sector_id || '',
       status_id: client.status_id || '',
       follow_up_date: client.follow_up_date ? new Date(client.follow_up_date) : undefined,
+      last_contact: client.last_contact ? new Date(client.last_contact) : undefined,
+      kanban_stage: client.kanban_stage,
     },
   });
 
@@ -99,6 +105,8 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
   const selectedSectorId = watch('activity_sector_id');
   const selectedStatusId = watch('status_id');
   const followUpDate = watch('follow_up_date');
+  const lastContact = watch('last_contact');
+  const kanbanStage = watch('kanban_stage');
 
   useEffect(() => {
     fetchSectorsAndStatuses();
@@ -131,6 +139,8 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
         activity_sector_id: client.activity_sector_id || '',
         status_id: client.status_id || '',
         follow_up_date: client.follow_up_date ? new Date(client.follow_up_date) : undefined,
+        last_contact: client.last_contact ? new Date(client.last_contact) : undefined,
+        kanban_stage: client.kanban_stage,
       });
       setLogoPreview(client.logo_url || null);
       setLogoFile(null);
@@ -196,6 +206,8 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
           activity_sector_id: data.activity_sector_id || null,
           status_id: data.status_id || null,
           follow_up_date: data.follow_up_date ? data.follow_up_date.toISOString() : null,
+          last_contact: data.last_contact ? data.last_contact.toISOString() : null,
+          kanban_stage: data.kanban_stage,
         })
         .eq('id', client.id);
 
@@ -314,6 +326,64 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
               />
               {errors.revenue && (
                 <p className="text-sm text-destructive">{errors.revenue.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="kanban_stage">Position Kanban *</Label>
+              <Select
+                value={kanbanStage}
+                onValueChange={(value) => setValue('kanban_stage', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une position" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="prospect">Prospect</SelectItem>
+                  <SelectItem value="rdv_a_prendre">RDV à prendre</SelectItem>
+                  <SelectItem value="a_relancer">À relancer</SelectItem>
+                  <SelectItem value="rdv_hub_date">RDV Hub Date</SelectItem>
+                  <SelectItem value="rdv_pris">RDV Pris</SelectItem>
+                  <SelectItem value="reco_en_cours">Reco en cours</SelectItem>
+                  <SelectItem value="projet_valide">Projet Validé</SelectItem>
+                  <SelectItem value="a_fideliser">À fidéliser</SelectItem>
+                  <SelectItem value="sans_suite">Sans suite</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.kanban_stage && (
+                <p className="text-sm text-destructive">{errors.kanban_stage.message}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="last_contact">Dernier contact</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !lastContact && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {lastContact ? format(lastContact, "dd/MM/yyyy") : "Choisir une date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={lastContact}
+                    onSelect={(date) => setValue('last_contact', date)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+              {errors.last_contact && (
+                <p className="text-sm text-destructive">{errors.last_contact.message}</p>
               )}
             </div>
 

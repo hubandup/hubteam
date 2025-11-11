@@ -14,6 +14,7 @@ interface ClientCardProps {
     phone?: string;
     revenue: number;
     last_contact?: string;
+    follow_up_date?: string;
     active: boolean;
     created_at: string;
     logo_url?: string;
@@ -23,7 +24,7 @@ interface ClientCardProps {
 
 export function ClientCard({ client, onClick }: ClientCardProps) {
   return (
-    <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={onClick}>
+    <Card className="cursor-pointer hover:shadow-lg transition-shadow relative" onClick={onClick}>
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -51,7 +52,7 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-2 pb-20">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Mail className="h-4 w-4" />
           <span className="truncate">{client.email}</span>
@@ -66,13 +67,22 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
           <DollarSign className="h-4 w-4" />
           <span>{client.revenue.toLocaleString('fr-FR')} €</span>
         </div>
+      </CardContent>
+      
+      <div className="absolute bottom-3 right-3 space-y-1 text-right">
         {client.last_contact && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Calendar className="h-4 w-4" />
-            <span>Dernier contact: {format(new Date(client.last_contact), 'dd MMM yyyy', { locale: fr })}</span>
+          <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
+            <Calendar className="h-3 w-3" />
+            <span>{format(new Date(client.last_contact), 'dd/MM/yyyy')}</span>
           </div>
         )}
-      </CardContent>
+        {client.follow_up_date && (
+          <Badge variant="outline" className="text-xs">
+            <Calendar className="h-3 w-3 mr-1" />
+            {format(new Date(client.follow_up_date), 'dd/MM/yyyy')}
+          </Badge>
+        )}
+      </div>
     </Card>
   );
 }
