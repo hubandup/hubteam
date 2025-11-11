@@ -4,8 +4,36 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Palette } from 'lucide-react';
+
+// Popular Google Fonts
+const HEADING_FONTS = [
+  'Instrument Sans',
+  'Poppins',
+  'Montserrat',
+  'Playfair Display',
+  'Oswald',
+  'Raleway',
+  'Merriweather',
+  'Bebas Neue',
+  'Archivo Black',
+  'DM Serif Display',
+];
+
+const BODY_FONTS = [
+  'Roboto',
+  'Open Sans',
+  'Lato',
+  'Inter',
+  'Nunito',
+  'Source Sans Pro',
+  'PT Sans',
+  'Work Sans',
+  'Noto Sans',
+  'Ubuntu',
+];
 
 // Conversion functions
 function hslToHex(hsl: string): string {
@@ -180,8 +208,9 @@ export function DesignTab() {
       existingLink.remove();
     }
     
-    const fonts = [headingFont, bodyFont].filter((f, i, arr) => arr.indexOf(f) === i);
-    const fontQuery = fonts.map(f => f.replace(/ /g, '+')).join('&family=');
+    // Include all fonts for preview
+    const allFonts = [...new Set([...HEADING_FONTS, ...BODY_FONTS, headingFont, bodyFont])];
+    const fontQuery = allFonts.map(f => f.replace(/ /g, '+')).join('&family=');
     
     const link = document.createElement('link');
     link.id = 'google-fonts-link';
@@ -189,6 +218,25 @@ export function DesignTab() {
     link.href = `https://fonts.googleapis.com/css2?family=${fontQuery}:wght@300;400;600;700&display=swap`;
     document.head.appendChild(link);
   };
+  
+  // Load all fonts on mount for preview
+  useEffect(() => {
+    const allFonts = [...new Set([...HEADING_FONTS, ...BODY_FONTS])];
+    const fontQuery = allFonts.map(f => f.replace(/ /g, '+')).join('&family=');
+    
+    const link = document.createElement('link');
+    link.id = 'google-fonts-preview-link';
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${fontQuery}:wght@300;400;600;700&display=swap`;
+    document.head.appendChild(link);
+    
+    return () => {
+      const previewLink = document.getElementById('google-fonts-preview-link');
+      if (previewLink) {
+        previewLink.remove();
+      }
+    };
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
@@ -258,21 +306,51 @@ export function DesignTab() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="heading-font">Police des titres</Label>
-            <Input
-              id="heading-font"
-              value={settings.heading_font}
-              onChange={(e) => setSettings({ ...settings, heading_font: e.target.value })}
-              placeholder="Instrument Sans"
-            />
+            <Select 
+              value={settings.heading_font} 
+              onValueChange={(value) => setSettings({ ...settings, heading_font: value })}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Sélectionnez une police" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px] bg-popover z-50">
+                {HEADING_FONTS.map((font) => (
+                  <SelectItem 
+                    key={font} 
+                    value={font}
+                    className="cursor-pointer"
+                  >
+                    <span style={{ fontFamily: font, fontWeight: 700 }}>
+                      {font}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="body-font">Police du texte</Label>
-            <Input
-              id="body-font"
-              value={settings.body_font}
-              onChange={(e) => setSettings({ ...settings, body_font: e.target.value })}
-              placeholder="Roboto"
-            />
+            <Select 
+              value={settings.body_font} 
+              onValueChange={(value) => setSettings({ ...settings, body_font: value })}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Sélectionnez une police" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px] bg-popover z-50">
+                {BODY_FONTS.map((font) => (
+                  <SelectItem 
+                    key={font} 
+                    value={font}
+                    className="cursor-pointer"
+                  >
+                    <span style={{ fontFamily: font, fontWeight: 300 }}>
+                      {font}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
