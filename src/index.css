@@ -65,13 +65,13 @@
   }
   
   .dark {
-    --background: 0 0% 0%;
+    --background: 0 0% 4%;
     --foreground: 0 0% 95%;
     
-    --card: 0 0% 8%;
+    --card: 0 0% 10%;
     --card-foreground: 0 0% 95%;
     
-    --popover: 0 0% 8%;
+    --popover: 0 0% 10%;
     --popover-foreground: 0 0% 95%;
     
     --primary: 66 99% 71%;
@@ -155,5 +155,26 @@
   /* Logo normal in light mode */
   img[alt="HubandUp"] {
     filter: none;
+  }
+  
+  /* Dark mode spacing improvements */
+  .dark .card {
+    @apply p-6;
+  }
+  
+  .dark h1, .dark h2, .dark h3 {
+    @apply mb-4;
+  }
+  
+  .dark h4, .dark h5, .dark h6 {
+    @apply mb-3;
+  }
+  
+  .dark p {
+    @apply mb-3 leading-relaxed;
+  }
+  
+  .dark section {
+    @apply space-y-4;
   }
 }

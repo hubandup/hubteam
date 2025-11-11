@@ -17,10 +17,12 @@ export function Layout({ children }: LayoutProps) {
             <SidebarTrigger />
           </header>
           <main className="flex-1 min-h-0 min-w-0 overflow-hidden bg-background">
-            <div className="px-6 pt-4">
+            <div className="px-6 py-4">
               <Breadcrumbs />
             </div>
-            {children}
+            <div className="px-6 pb-6">
+              {children}
+            </div>
           </main>
         </div>
       </div>
