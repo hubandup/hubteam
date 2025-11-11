@@ -8,10 +8,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RichTextEditor } from './RichTextEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Upload } from 'lucide-react';
+import { Upload, Eye, Edit } from 'lucide-react';
 
 interface FaqItem {
   id: string;
@@ -121,61 +122,99 @@ export function AddEditFaqDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="title">Titre *</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Question..."
-            />
-          </div>
+        <Tabs defaultValue="edit" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="edit" className="flex items-center gap-2">
+              <Edit className="h-4 w-4" />
+              Édition
+            </TabsTrigger>
+            <TabsTrigger value="preview" className="flex items-center gap-2">
+              <Eye className="h-4 w-4" />
+              Prévisualisation
+            </TabsTrigger>
+          </TabsList>
 
-          <div>
-            <Label>Contenu *</Label>
-            <RichTextEditor value={content} onChange={setContent} />
-          </div>
-
-          <div>
-            <Label htmlFor="pdf">Document PDF (optionnel)</Label>
-            <div className="flex items-center gap-2">
+          <TabsContent value="edit" className="space-y-4">
+            <div>
+              <Label htmlFor="title">Titre *</Label>
               <Input
-                id="pdf"
-                type="file"
-                accept="application/pdf"
-                onChange={handlePdfChange}
-                className="hidden"
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Question..."
               />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => document.getElementById('pdf')?.click()}
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                {pdfFile ? pdfFile.name : 'Choisir un PDF'}
-              </Button>
-              {currentPdfUrl && !pdfFile && (
-                <a
-                  href={currentPdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-primary hover:underline"
+            </div>
+
+            <div>
+              <Label>Contenu *</Label>
+              <RichTextEditor value={content} onChange={setContent} />
+            </div>
+
+            <div>
+              <Label htmlFor="pdf">Document PDF (optionnel)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="pdf"
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handlePdfChange}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById('pdf')?.click()}
                 >
-                  PDF actuel
-                </a>
+                  <Upload className="h-4 w-4 mr-2" />
+                  {pdfFile ? pdfFile.name : 'Choisir un PDF'}
+                </Button>
+                {currentPdfUrl && !pdfFile && (
+                  <a
+                    href={currentPdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary hover:underline"
+                  >
+                    PDF actuel
+                  </a>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="preview" className="space-y-4">
+            <div className="border rounded-lg p-6 bg-card min-h-[400px]">
+              <h3 className="font-bold text-xl mb-4 text-foreground">
+                {title || 'Titre de la question'}
+              </h3>
+              {content ? (
+                <div
+                  className="prose prose-sm max-w-none dark:prose-invert"
+                  dangerouslySetInnerHTML={{ __html: content }}
+                />
+              ) : (
+                <p className="text-muted-foreground italic">
+                  Le contenu apparaîtra ici...
+                </p>
+              )}
+              {(pdfFile || currentPdfUrl) && (
+                <div className="mt-4 pt-4 border-t">
+                  <p className="text-sm text-muted-foreground">
+                    📎 Document PDF joint
+                  </p>
+                </div>
               )}
             </div>
-          </div>
+          </TabsContent>
+        </Tabs>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={onClose} disabled={isSaving}>
-              Annuler
-            </Button>
-            <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? 'Enregistrement...' : 'Enregistrer'}
-            </Button>
-          </div>
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <Button variant="outline" onClick={onClose} disabled={isSaving}>
+            Annuler
+          </Button>
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
