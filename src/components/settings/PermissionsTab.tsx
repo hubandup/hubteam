@@ -6,8 +6,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Save, Loader2 } from 'lucide-react';
+import { Shield, Save, Loader2, Info } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 
 type UserRole = 'admin' | 'team' | 'client' | 'agency';
@@ -267,22 +268,38 @@ export function PermissionsTab() {
                           <Label className="text-base font-medium">{module.label}</Label>
                           
                           {module.hasScope && module.scopeOptions.length > 0 && (
-                            <ToggleGroup 
-                              type="single" 
-                              value={currentScope}
-                              onValueChange={(value) => value && setModuleScope(module.value, value as PermissionScope)}
-                              className="bg-muted/50 rounded-md p-1"
-                            >
-                              {module.scopeOptions.map((scope) => (
-                                <ToggleGroupItem 
-                                  key={scope} 
-                                  value={scope}
-                                  className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                                >
-                                  {scopeLabels[scope]}
-                                </ToggleGroupItem>
-                              ))}
-                            </ToggleGroup>
+                            <div className="flex items-center gap-2">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent side="left" className="max-w-xs">
+                                    <p className="text-sm">
+                                      <strong>Tout :</strong> Accès complet à toutes les données du module<br />
+                                      <strong>Limité :</strong> Accès uniquement aux données assignées à l'utilisateur
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              
+                              <ToggleGroup 
+                                type="single" 
+                                value={currentScope}
+                                onValueChange={(value) => value && setModuleScope(module.value, value as PermissionScope)}
+                                className="bg-muted/50 rounded-md p-1"
+                              >
+                                {module.scopeOptions.map((scope) => (
+                                  <ToggleGroupItem 
+                                    key={scope} 
+                                    value={scope}
+                                    className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                                  >
+                                    {scopeLabels[scope]}
+                                  </ToggleGroupItem>
+                                ))}
+                              </ToggleGroup>
+                            </div>
                           )}
                         </div>
                         
