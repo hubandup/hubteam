@@ -1,12 +1,13 @@
 import { useUserRole } from '@/hooks/useUserRole';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Lock, Users, Shield, Database, Bell } from 'lucide-react';
+import { User, Lock, Users, Shield, Database, Bell, Palette } from 'lucide-react';
 import { ProfileTab } from '@/components/settings/ProfileTab';
 import { SecurityTab } from '@/components/settings/SecurityTab';
 import { NotificationPreferencesTab } from '@/components/settings/NotificationPreferencesTab';
 import { UsersTab } from '@/components/settings/UsersTab';
 import { PermissionsTab } from '@/components/settings/PermissionsTab';
 import { DataManagementTab } from '@/components/settings/DataManagementTab';
+import { DesignTab } from '@/components/settings/DesignTab';
 
 export default function Settings() {
   const { isAdmin } = useUserRole();
@@ -21,7 +22,7 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full" style={{ gridTemplateColumns: isAdmin ? 'repeat(6, 1fr)' : 'repeat(3, 1fr)' }}>
+        <TabsList className="grid w-full" style={{ gridTemplateColumns: isAdmin ? 'repeat(7, 1fr)' : 'repeat(3, 1fr)' }}>
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             Mon profil
@@ -36,6 +37,10 @@ export default function Settings() {
           </TabsTrigger>
           {isAdmin && (
             <>
+              <TabsTrigger value="design" className="flex items-center gap-2">
+                <Palette className="h-4 w-4" />
+                Design
+              </TabsTrigger>
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Utilisateurs
@@ -66,6 +71,10 @@ export default function Settings() {
 
         {isAdmin && (
           <>
+            <TabsContent value="design" className="mt-6">
+              <DesignTab />
+            </TabsContent>
+
             <TabsContent value="users" className="mt-6">
               <UsersTab />
             </TabsContent>
