@@ -1,4 +1,4 @@
-import { LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, MessageSquare, History } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, MessageSquare, History, HelpCircle } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -32,6 +32,7 @@ export function Sidebar() {
     { title: 'Projets', url: '/projects', icon: FolderKanban, module: 'projects' as const },
     { title: 'Messages', url: '/messages', icon: MessageSquare, module: 'dashboard' as const },
     { title: 'Activité', url: '/activity', icon: History, module: 'dashboard' as const },
+    { title: 'FAQ', url: '/faq', icon: HelpCircle, module: 'dashboard' as const },
   ];
 
   const showSettings = role === 'admin' || role === 'team';

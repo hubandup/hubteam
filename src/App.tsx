@@ -17,6 +17,7 @@ import ProjectDetails from "./pages/ProjectDetails";
 import Tasks from "./pages/Tasks";
 import Messages from "./pages/Messages";
 import Activity from "./pages/Activity";
+import FAQ from "./pages/FAQ";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -46,6 +47,7 @@ const App = () => {
             <Route path="/tasks" element={<ProtectedRoute><Layout><Tasks /></Layout></ProtectedRoute>} />
             <Route path="/messages" element={<ProtectedRoute><Layout><Messages /></Layout></ProtectedRoute>} />
             <Route path="/activity" element={<ProtectedRoute><Layout><Activity /></Layout></ProtectedRoute>} />
+            <Route path="/faq" element={<ProtectedRoute><Layout><FAQ /></Layout></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

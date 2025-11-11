@@ -431,6 +431,39 @@ export type Database = {
         }
         Relationships: []
       }
+      faq_items: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          display_order: number
+          id: string
+          pdf_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by?: string | null
+          display_order?: number
+          id?: string
+          pdf_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          display_order?: number
+          id?: string
+          pdf_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       invoices: {
         Row: {
           amount: number
