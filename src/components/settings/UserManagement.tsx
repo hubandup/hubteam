@@ -100,10 +100,25 @@ export function UserManagement() {
 
     setDeleting(true);
     try {
-      // Delete user from auth.users (cascade will handle related records)
-      const { error } = await supabase.auth.admin.deleteUser(userToDelete.id);
+      // Get current session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('Session non trouvée');
+      }
+
+      // Call edge function to delete user
+      const { data, error } = await supabase.functions.invoke('delete-users', {
+        body: { userIds: [userToDelete.id] },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
 
       if (error) throw error;
+      if (data?.results?.failed?.length > 0) {
+        throw new Error(data.results.failed[0].error);
+      }
 
       toast.success('Utilisateur supprimé avec succès');
       fetchUsers();
