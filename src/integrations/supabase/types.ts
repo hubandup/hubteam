@@ -389,6 +389,48 @@ export type Database = {
           },
         ]
       }
+      design_settings: {
+        Row: {
+          body_font: string
+          created_at: string
+          dark_background: string
+          dark_primary: string
+          dark_secondary: string
+          heading_font: string
+          id: string
+          light_background: string
+          light_primary: string
+          light_secondary: string
+          updated_at: string
+        }
+        Insert: {
+          body_font?: string
+          created_at?: string
+          dark_background?: string
+          dark_primary?: string
+          dark_secondary?: string
+          heading_font?: string
+          id?: string
+          light_background?: string
+          light_primary?: string
+          light_secondary?: string
+          updated_at?: string
+        }
+        Update: {
+          body_font?: string
+          created_at?: string
+          dark_background?: string
+          dark_primary?: string
+          dark_secondary?: string
+          heading_font?: string
+          id?: string
+          light_background?: string
+          light_primary?: string
+          light_secondary?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       invoices: {
         Row: {
           amount: number
