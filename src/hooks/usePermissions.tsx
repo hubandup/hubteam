@@ -2,12 +2,30 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-export type AppModule = 'dashboard' | 'crm' | 'agencies' | 'projects' | 'tasks' | 'settings' | 'faq' | 'messages';
+export type AppModule = 
+  | 'dashboard' 
+  | 'crm' 
+  | 'agencies' 
+  | 'projects' 
+  | 'tasks' 
+  | 'settings' 
+  | 'settings_profile'
+  | 'settings_security'
+  | 'settings_notifications'
+  | 'settings_users'
+  | 'settings_permissions'
+  | 'settings_data'
+  | 'settings_design'
+  | 'settings_faq'
+  | 'faq' 
+  | 'messages';
 export type PermissionAction = 'read' | 'create' | 'update' | 'delete';
+export type PermissionScope = 'all' | 'limited' | 'own';
 
 interface Permission {
   module: AppModule;
   action: PermissionAction;
+  scope?: PermissionScope;
 }
 
 export function usePermissions() {
@@ -46,7 +64,7 @@ export function usePermissions() {
       // Get permissions for this role
       const { data: permissionsData, error: permissionsError } = await supabase
         .from('role_permissions')
-        .select('module, action')
+        .select('module, action, scope')
         .eq('role', roleData.role);
 
       if (permissionsError) throw permissionsError;
@@ -60,14 +78,19 @@ export function usePermissions() {
     }
   };
 
-  const hasPermission = (module: AppModule, action: PermissionAction): boolean => {
-    return permissions.some(p => p.module === module && p.action === action);
+  const hasPermission = (module: AppModule, action: PermissionAction, scope?: PermissionScope): boolean => {
+    return permissions.some(p => {
+      const moduleMatch = p.module === module;
+      const actionMatch = p.action === action;
+      const scopeMatch = !scope || !p.scope || p.scope === scope || p.scope === 'all';
+      return moduleMatch && actionMatch && scopeMatch;
+    });
   };
 
-  const canRead = (module: AppModule): boolean => hasPermission(module, 'read');
-  const canCreate = (module: AppModule): boolean => hasPermission(module, 'create');
-  const canUpdate = (module: AppModule): boolean => hasPermission(module, 'update');
-  const canDelete = (module: AppModule): boolean => hasPermission(module, 'delete');
+  const canRead = (module: AppModule, scope?: PermissionScope): boolean => hasPermission(module, 'read', scope);
+  const canCreate = (module: AppModule, scope?: PermissionScope): boolean => hasPermission(module, 'create', scope);
+  const canUpdate = (module: AppModule, scope?: PermissionScope): boolean => hasPermission(module, 'update', scope);
+  const canDelete = (module: AppModule, scope?: PermissionScope): boolean => hasPermission(module, 'delete', scope);
 
   return {
     permissions,

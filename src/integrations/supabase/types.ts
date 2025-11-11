@@ -924,6 +924,7 @@ export type Database = {
           id: string
           module: Database["public"]["Enums"]["app_module"]
           role: Database["public"]["Enums"]["app_role"]
+          scope: Database["public"]["Enums"]["permission_scope"] | null
           updated_at: string
         }
         Insert: {
@@ -932,6 +933,7 @@ export type Database = {
           id?: string
           module: Database["public"]["Enums"]["app_module"]
           role: Database["public"]["Enums"]["app_role"]
+          scope?: Database["public"]["Enums"]["permission_scope"] | null
           updated_at?: string
         }
         Update: {
@@ -940,6 +942,7 @@ export type Database = {
           id?: string
           module?: Database["public"]["Enums"]["app_module"]
           role?: Database["public"]["Enums"]["app_role"]
+          scope?: Database["public"]["Enums"]["permission_scope"] | null
           updated_at?: string
         }
         Relationships: []
@@ -1138,8 +1141,17 @@ export type Database = {
         | "settings"
         | "faq"
         | "messages"
+        | "settings_profile"
+        | "settings_security"
+        | "settings_notifications"
+        | "settings_users"
+        | "settings_permissions"
+        | "settings_data"
+        | "settings_design"
+        | "settings_faq"
       app_role: "admin" | "team" | "client" | "agency"
       permission_action: "read" | "create" | "update" | "delete"
+      permission_scope: "all" | "limited" | "own"
       team_member_type: "profile" | "agency_contact" | "client"
     }
     CompositeTypes: {
@@ -1277,9 +1289,18 @@ export const Constants = {
         "settings",
         "faq",
         "messages",
+        "settings_profile",
+        "settings_security",
+        "settings_notifications",
+        "settings_users",
+        "settings_permissions",
+        "settings_data",
+        "settings_design",
+        "settings_faq",
       ],
       app_role: ["admin", "team", "client", "agency"],
       permission_action: ["read", "create", "update", "delete"],
+      permission_scope: ["all", "limited", "own"],
       team_member_type: ["profile", "agency_contact", "client"],
     },
   },
