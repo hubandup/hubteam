@@ -115,9 +115,9 @@ const scopeLabels: Record<PermissionScope, string> = {
 
 const roles = [
   { value: 'admin' as UserRole, label: 'Administrateur', variant: 'default' as const },
-  { value: 'team' as UserRole, label: 'Équipe', variant: 'secondary' as const },
+  { value: 'team' as UserRole, label: 'Équipe', variant: 'outline' as const },
   { value: 'client' as UserRole, label: 'Client', variant: 'default' as const },
-  { value: 'agency' as UserRole, label: 'Agence', variant: 'secondary' as const },
+  { value: 'agency' as UserRole, label: 'Agence', variant: 'outline' as const },
 ];
 
 export function PermissionsTab() {
