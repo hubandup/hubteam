@@ -6,9 +6,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Save, Loader2, Info } from 'lucide-react';
+import { Shield, Save, Loader2, Info, Copy } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
 type UserRole = 'admin' | 'team' | 'client' | 'agency';
@@ -124,6 +125,8 @@ export function PermissionsTab() {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [sourceRole, setSourceRole] = useState<UserRole | ''>('');
 
   useEffect(() => {
     fetchPermissions();
@@ -170,6 +173,34 @@ export function PermissionsTab() {
       setPermissions(prev => prev.filter(p => !(p.module === module && p.action === action && p.scope === scope)));
     } else {
       setPermissions(prev => [...prev, { role: selectedRole, module, action, scope }]);
+    }
+  };
+
+  const handleCopyPermissions = async () => {
+    if (!sourceRole) return;
+    
+    try {
+      // Fetch permissions from source role
+      const { data, error } = await supabase
+        .from('role_permissions')
+        .select('module, action, scope')
+        .eq('role', sourceRole);
+
+      if (error) throw error;
+
+      // Update permissions for current role
+      const copiedPermissions = data.map(p => ({
+        ...p,
+        role: selectedRole,
+      }));
+
+      setPermissions(copiedPermissions);
+      setCopyDialogOpen(false);
+      setSourceRole('');
+      toast.success(`Permissions copiées depuis ${roles.find(r => r.value === sourceRole)?.label}`);
+    } catch (error) {
+      console.error('Error copying permissions:', error);
+      toast.error('Erreur lors de la copie des permissions');
     }
   };
 
@@ -233,22 +264,33 @@ export function PermissionsTab() {
       </CardHeader>
 
       <CardContent className="space-y-6">
-        <div className="space-y-2">
-          <Label>Rôle à configurer</Label>
-          <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as UserRole)}>
-            <SelectTrigger className="w-[250px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {roles.map((role) => (
-                <SelectItem key={role.value} value={role.value}>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={role.variant}>{role.label}</Badge>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-2 flex-1">
+            <Label>Rôle à configurer</Label>
+            <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as UserRole)}>
+              <SelectTrigger className="w-[250px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {roles.map((role) => (
+                  <SelectItem key={role.value} value={role.value}>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={role.variant}>{role.label}</Badge>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <Button
+            variant="outline"
+            onClick={() => setCopyDialogOpen(true)}
+            className="mt-7"
+          >
+            <Copy className="h-4 w-4 mr-2" />
+            Copier depuis un rôle
+          </Button>
         </div>
 
         <div className="space-y-8">
@@ -338,6 +380,51 @@ export function PermissionsTab() {
           </div>
         </div>
       </CardContent>
+
+      <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Copier les permissions</DialogTitle>
+            <DialogDescription>
+              Sélectionnez le rôle source depuis lequel copier les permissions vers <strong>{roles.find(r => r.value === selectedRole)?.label}</strong>.
+              Cette action remplacera toutes les permissions actuelles (non sauvegardées).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 py-4">
+            <Label>Rôle source</Label>
+            <Select value={sourceRole} onValueChange={(value) => setSourceRole(value as UserRole)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner un rôle" />
+              </SelectTrigger>
+              <SelectContent>
+                {roles
+                  .filter(role => role.value !== selectedRole)
+                  .map((role) => (
+                    <SelectItem key={role.value} value={role.value}>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={role.variant}>{role.label}</Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setCopyDialogOpen(false);
+              setSourceRole('');
+            }}>
+              Annuler
+            </Button>
+            <Button onClick={handleCopyPermissions} disabled={!sourceRole}>
+              <Copy className="h-4 w-4 mr-2" />
+              Copier les permissions
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
