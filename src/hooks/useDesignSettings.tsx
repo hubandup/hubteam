@@ -36,14 +36,14 @@ export function useDesignSettings() {
     root.style.setProperty('--secondary', data.light_secondary);
     root.style.setProperty('--background', data.light_background);
     
-    // Apply dark mode colors
+    // Apply dark mode colors with !important to override static CSS
     const style = document.getElementById('dynamic-theme-style') || document.createElement('style');
     style.id = 'dynamic-theme-style';
     style.innerHTML = `
       .dark {
-        --primary: ${data.dark_primary};
-        --secondary: ${data.dark_secondary};
-        --background: ${data.dark_background};
+        --primary: ${data.dark_primary} !important;
+        --secondary: ${data.dark_secondary} !important;
+        --background: ${data.dark_background} !important;
       }
     `;
     if (!document.getElementById('dynamic-theme-style')) {
