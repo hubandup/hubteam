@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-export type AppModule = 'dashboard' | 'crm' | 'agencies' | 'projects' | 'tasks' | 'settings';
+export type AppModule = 'dashboard' | 'crm' | 'agencies' | 'projects' | 'tasks' | 'settings' | 'faq' | 'messages';
 export type PermissionAction = 'read' | 'create' | 'update' | 'delete';
 
 interface Permission {

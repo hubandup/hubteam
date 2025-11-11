@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { HelpCircle, Plus, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Collapsible,
@@ -147,7 +149,13 @@ export default function FAQ() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FaqItem | null>(null);
   const { role } = useUserRole();
+  const { canRead, loading } = usePermissions();
   const isAdmin = role === 'admin';
+
+  // Check permission
+  if (!loading && !canRead('faq')) {
+    return <Navigate to="/" replace />;
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor),

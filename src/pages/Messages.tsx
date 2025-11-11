@@ -2,9 +2,17 @@ import { MessageSquare } from 'lucide-react';
 import { ChatRoomList } from '@/components/messages/ChatRoomList';
 import { ChatWindow } from '@/components/messages/ChatWindow';
 import { useState } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Navigate } from 'react-router-dom';
 
 export default function Messages() {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const { canRead, loading } = usePermissions();
+
+  // Check permission
+  if (!loading && !canRead('messages')) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="h-screen flex flex-col">

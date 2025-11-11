@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/select';
 
 type UserRole = 'admin' | 'team' | 'client' | 'agency';
-type AppModule = 'dashboard' | 'crm' | 'agencies' | 'projects' | 'tasks' | 'settings';
+type AppModule = 'dashboard' | 'crm' | 'agencies' | 'projects' | 'tasks' | 'settings' | 'faq' | 'messages';
 type PermissionAction = 'read' | 'create' | 'update' | 'delete';
 
 interface Permission {
@@ -31,6 +31,8 @@ const modules: { id: AppModule; label: string }[] = [
   { id: 'agencies', label: 'Agences' },
   { id: 'projects', label: 'Projets' },
   { id: 'tasks', label: 'Tâches' },
+  { id: 'faq', label: 'FAQ' },
+  { id: 'messages', label: 'Messagerie' },
   { id: 'settings', label: 'Paramètres' },
 ];
 

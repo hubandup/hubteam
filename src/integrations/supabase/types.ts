@@ -1136,6 +1136,8 @@ export type Database = {
         | "projects"
         | "tasks"
         | "settings"
+        | "faq"
+        | "messages"
       app_role: "admin" | "team" | "client" | "agency"
       permission_action: "read" | "create" | "update" | "delete"
       team_member_type: "profile" | "agency_contact" | "client"
@@ -1273,6 +1275,8 @@ export const Constants = {
         "projects",
         "tasks",
         "settings",
+        "faq",
+        "messages",
       ],
       app_role: ["admin", "team", "client", "agency"],
       permission_action: ["read", "create", "update", "delete"],

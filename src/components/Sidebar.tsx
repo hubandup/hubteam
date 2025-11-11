@@ -30,9 +30,9 @@ export function Sidebar() {
     { title: 'CRM', url: '/crm', icon: Users, module: 'crm' as const },
     { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const },
     { title: 'Projets', url: '/projects', icon: FolderKanban, module: 'projects' as const },
-    { title: 'Messages', url: '/messages', icon: MessageSquare, module: 'dashboard' as const },
+    { title: 'Messages', url: '/messages', icon: MessageSquare, module: 'messages' as const },
     { title: 'Activité', url: '/activity', icon: History, module: 'dashboard' as const },
-    { title: 'FAQ', url: '/faq', icon: HelpCircle, module: 'dashboard' as const },
+    { title: 'FAQ', url: '/faq', icon: HelpCircle, module: 'faq' as const },
   ];
 
   const showSettings = role === 'admin' || role === 'team';
