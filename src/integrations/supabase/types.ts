@@ -433,30 +433,36 @@ export type Database = {
       }
       faq_items: {
         Row: {
+          category: string | null
           content: string
           created_at: string
           created_by: string | null
           display_order: number
+          icon: string | null
           id: string
           pdf_url: string | null
           title: string
           updated_at: string
         }
         Insert: {
+          category?: string | null
           content: string
           created_at?: string
           created_by?: string | null
           display_order?: number
+          icon?: string | null
           id?: string
           pdf_url?: string | null
           title: string
           updated_at?: string
         }
         Update: {
+          category?: string | null
           content?: string
           created_at?: string
           created_by?: string | null
           display_order?: number
+          icon?: string | null
           id?: string
           pdf_url?: string | null
           title?: string

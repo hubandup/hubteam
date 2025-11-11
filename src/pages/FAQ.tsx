@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { HelpCircle, Plus, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Collapsible,
   CollapsibleContent,
@@ -28,6 +29,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { FAQ_CATEGORIES, getIconComponent } from '@/components/faq/faqConstants';
 
 interface FaqItem {
   id: string;
@@ -35,6 +37,8 @@ interface FaqItem {
   content: string;
   pdf_url: string | null;
   display_order: number;
+  category: string;
+  icon: string;
 }
 
 interface SortableFaqItemProps {
@@ -60,6 +64,8 @@ function SortableFaqItem({ item, isAdmin, onEdit, onDelete }: SortableFaqItemPro
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const IconComponent = getIconComponent(item.icon);
+
   return (
     <div ref={setNodeRef} style={style}>
       <Collapsible className="border rounded-lg bg-card">
@@ -75,6 +81,7 @@ function SortableFaqItem({ item, isAdmin, onEdit, onDelete }: SortableFaqItemPro
                 <GripVertical className="h-5 w-5 text-muted-foreground" />
               </div>
             )}
+            <IconComponent className="h-5 w-5 text-primary flex-shrink-0" />
             <h3 className="font-semibold text-left text-foreground flex-1">{item.title}</h3>
           </div>
           <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200" />
@@ -122,6 +129,7 @@ function SortableFaqItem({ item, isAdmin, onEdit, onDelete }: SortableFaqItemPro
 
 export default function FAQ() {
   const [faqItems, setFaqItems] = useState<FaqItem[]>([]);
+  const [activeCategory, setActiveCategory] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FaqItem | null>(null);
   const { role } = useUserRole();
@@ -151,6 +159,10 @@ export default function FAQ() {
 
     setFaqItems(data || []);
   };
+
+  const filteredItems = activeCategory === 'all' 
+    ? faqItems 
+    : faqItems.filter(item => item.category === activeCategory);
 
   const handleEdit = (item: FaqItem) => {
     setEditingItem(item);
@@ -184,11 +196,18 @@ export default function FAQ() {
       return;
     }
 
-    const oldIndex = faqItems.findIndex((item) => item.id === active.id);
-    const newIndex = faqItems.findIndex((item) => item.id === over.id);
+    const oldIndex = filteredItems.findIndex((item) => item.id === active.id);
+    const newIndex = filteredItems.findIndex((item) => item.id === over.id);
 
-    const newItems = arrayMove(faqItems, oldIndex, newIndex);
-    setFaqItems(newItems);
+    const newItems = arrayMove(filteredItems, oldIndex, newIndex);
+    
+    // Update the full list with new order for filtered category
+    const updatedFullList = faqItems.map(item => {
+      const newItem = newItems.find(ni => ni.id === item.id);
+      return newItem || item;
+    });
+    
+    setFaqItems(updatedFullList);
 
     // Update display_order in database
     try {
@@ -208,7 +227,7 @@ export default function FAQ() {
     } catch (error) {
       console.error('Error updating order:', error);
       toast.error('Erreur lors de la mise à jour de l\'ordre');
-      loadFaqItems(); // Reload to restore correct order
+      loadFaqItems();
     }
   };
 
@@ -235,36 +254,58 @@ export default function FAQ() {
       </div>
 
       <div className="flex-1 overflow-auto p-6 bg-background">
-        <div className="max-w-4xl mx-auto space-y-4">
-          {faqItems.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <HelpCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Aucune question pour le moment</p>
-            </div>
-          ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={faqItems.map((item) => item.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-4">
-                  {faqItems.map((item) => (
-                    <SortableFaqItem
-                      key={item.id}
-                      item={item}
-                      isAdmin={isAdmin}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                    />
-                  ))}
+        <div className="max-w-4xl mx-auto">
+          <Tabs value={activeCategory} onValueChange={setActiveCategory}>
+            <TabsList className="mb-6 w-full justify-start flex-wrap h-auto">
+              <TabsTrigger value="all" className="gap-2">
+                <HelpCircle className="h-4 w-4" />
+                Toutes
+              </TabsTrigger>
+              {FAQ_CATEGORIES.map((category) => {
+                const IconComponent = category.icon;
+                const count = faqItems.filter(item => item.category === category.id).length;
+                return (
+                  <TabsTrigger key={category.id} value={category.id} className="gap-2">
+                    <IconComponent className="h-4 w-4" />
+                    {category.label}
+                    <span className="ml-1 text-xs opacity-70">({count})</span>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+
+            <TabsContent value={activeCategory} className="space-y-4">
+              {filteredItems.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <HelpCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Aucune question dans cette catégorie</p>
                 </div>
-              </SortableContext>
-            </DndContext>
-          )}
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={filteredItems.map((item) => item.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-4">
+                      {filteredItems.map((item) => (
+                        <SortableFaqItem
+                          key={item.id}
+                          item={item}
+                          isAdmin={isAdmin}
+                          onEdit={handleEdit}
+                          onDelete={handleDelete}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 

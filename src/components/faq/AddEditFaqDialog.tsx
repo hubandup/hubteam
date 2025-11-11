@@ -5,6 +5,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +20,7 @@ import { RichTextEditor } from './RichTextEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Upload, Eye, Edit } from 'lucide-react';
+import { FAQ_CATEGORIES, FAQ_ICONS, getIconComponent } from './faqConstants';
 
 interface FaqItem {
   id: string;
@@ -20,6 +28,8 @@ interface FaqItem {
   content: string;
   pdf_url: string | null;
   display_order: number;
+  category: string;
+  icon: string;
 }
 
 interface AddEditFaqDialogProps {
@@ -35,6 +45,8 @@ export function AddEditFaqDialog({
 }: AddEditFaqDialogProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [category, setCategory] = useState('general');
+  const [icon, setIcon] = useState('help-circle');
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -43,10 +55,14 @@ export function AddEditFaqDialog({
     if (editingItem) {
       setTitle(editingItem.title);
       setContent(editingItem.content);
+      setCategory(editingItem.category || 'general');
+      setIcon(editingItem.icon || 'help-circle');
       setCurrentPdfUrl(editingItem.pdf_url);
     } else {
       setTitle('');
       setContent('');
+      setCategory('general');
+      setIcon('help-circle');
       setCurrentPdfUrl(null);
     }
     setPdfFile(null);
@@ -94,6 +110,8 @@ export function AddEditFaqDialog({
     const data = {
       title,
       content,
+      category,
+      icon,
       pdf_url: pdfUrl,
       display_order: editingItem?.display_order ?? 0,
     };
@@ -135,6 +153,52 @@ export function AddEditFaqDialog({
           </TabsList>
 
           <TabsContent value="edit" className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="category">Catégorie *</Label>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger id="category">
+                    <SelectValue placeholder="Sélectionner une catégorie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FAQ_CATEGORIES.map((cat) => {
+                      const IconComponent = cat.icon;
+                      return (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          <div className="flex items-center gap-2">
+                            <IconComponent className="h-4 w-4" />
+                            {cat.label}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="icon">Icône *</Label>
+                <Select value={icon} onValueChange={setIcon}>
+                  <SelectTrigger id="icon">
+                    <SelectValue placeholder="Sélectionner une icône" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FAQ_ICONS.map((iconOption) => {
+                      const IconComponent = iconOption.icon;
+                      return (
+                        <SelectItem key={iconOption.id} value={iconOption.id}>
+                          <div className="flex items-center gap-2">
+                            <IconComponent className="h-4 w-4" />
+                            {iconOption.label}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div>
               <Label htmlFor="title">Titre *</Label>
               <Input
@@ -184,9 +248,15 @@ export function AddEditFaqDialog({
 
           <TabsContent value="preview" className="space-y-4">
             <div className="border rounded-lg p-6 bg-card min-h-[400px]">
-              <h3 className="font-bold text-xl mb-4 text-foreground">
-                {title || 'Titre de la question'}
-              </h3>
+              <div className="flex items-center gap-3 mb-4">
+                {(() => {
+                  const IconComponent = getIconComponent(icon);
+                  return <IconComponent className="h-6 w-6 text-primary" />;
+                })()}
+                <h3 className="font-bold text-xl text-foreground">
+                  {title || 'Titre de la question'}
+                </h3>
+              </div>
               {content ? (
                 <div
                   className="prose prose-sm max-w-none dark:prose-invert"
