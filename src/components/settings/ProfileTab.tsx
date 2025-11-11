@@ -10,9 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { RoleBadge } from '@/components/common/RoleBadge';
 import { toast } from 'sonner';
 import { Loader2, Upload, User, Mail, Badge as BadgeIcon } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 
 const profileSchema = z.object({
   firstName: z.string().min(1, 'Le prénom est requis').max(100),
@@ -147,19 +147,6 @@ export function ProfileTab() {
     }
   };
 
-  const getRoleBadge = () => {
-    const roleLabels = {
-      admin: { label: 'Administrateur', variant: 'admin' as const },
-      team: { label: 'Équipe', variant: 'team' as const },
-      client: { label: 'Client', variant: 'client' as const },
-      agency: { label: 'Agence', variant: 'agency' as const },
-    };
-
-    if (!role) return null;
-    const roleInfo = roleLabels[role];
-    return <Badge variant={roleInfo.variant}>{roleInfo.label}</Badge>;
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -212,7 +199,7 @@ export function ProfileTab() {
           </div>
           <div className="flex items-center gap-2">
             <BadgeIcon className="h-4 w-4 text-muted-foreground" />
-            {getRoleBadge()}
+            <RoleBadge role={role} />
           </div>
         </div>
 

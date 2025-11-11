@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { RoleBadge } from '@/components/common/RoleBadge';
 import { Users, Edit, Loader2, Trash2, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { EditUserRoleDialog } from './EditUserRoleDialog';
@@ -132,22 +132,6 @@ export function UserManagement() {
     }
   };
 
-  const getRoleBadge = (role: string | null) => {
-    if (!role) {
-      return <Badge variant="outline">Aucun rôle</Badge>;
-    }
-
-    const roleConfig = {
-      admin: { label: 'Administrateur', variant: 'admin' as const },
-      team: { label: 'Équipe', variant: 'team' as const },
-      client: { label: 'Client', variant: 'client' as const },
-      agency: { label: 'Agence', variant: 'agency' as const },
-    };
-
-    const config = roleConfig[role as keyof typeof roleConfig];
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR', {
       year: 'numeric',
@@ -212,7 +196,7 @@ export function UserManagement() {
                         {user.display_name || `${user.first_name} ${user.last_name}`}
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell>{getRoleBadge(user.role)}</TableCell>
+                      <TableCell><RoleBadge role={user.role} /></TableCell>
                       <TableCell>{formatDate(user.created_at)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">

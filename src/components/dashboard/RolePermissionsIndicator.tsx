@@ -2,6 +2,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { RoleBadge } from '@/components/common/RoleBadge';
 import { Shield, Eye, Plus, Edit, Trash2, CheckCircle2, XCircle, X } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -13,27 +14,11 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
-const roleConfig = {
-  admin: { 
-    label: 'Administrateur', 
-    variant: 'admin' as const,
-    description: 'Accès complet à toutes les fonctionnalités'
-  },
-  team: { 
-    label: 'Équipe', 
-    variant: 'team' as const,
-    description: 'Accès en lecture et écriture sur la plupart des modules'
-  },
-  client: { 
-    label: 'Client', 
-    variant: 'client' as const,
-    description: 'Accès en lecture à vos données uniquement'
-  },
-  agency: { 
-    label: 'Agence', 
-    variant: 'agency' as const,
-    description: 'Accès à vos clients et projets rattachés'
-  },
+const roleDescriptions = {
+  admin: 'Accès complet à toutes les fonctionnalités',
+  team: 'Accès en lecture et écriture sur la plupart des modules',
+  client: 'Accès en lecture à vos données uniquement',
+  agency: 'Accès à vos clients et projets rattachés',
 };
 
 const moduleLabels = {
@@ -142,7 +127,7 @@ export function RolePermissionsIndicator() {
     return null;
   }
 
-  const config = roleConfig[role];
+  const description = roleDescriptions[role] || 'Accès personnalisé';
   
   // Group permissions by module
   const permissionsByModule = permissions.reduce((acc, perm) => {
@@ -163,13 +148,11 @@ export function RolePermissionsIndicator() {
               Votre profil utilisateur
             </CardTitle>
             <CardDescription className="text-sm">
-              {config.description}
+              {description}
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={config.variant} className="text-sm px-3 py-1">
-              {config.label}
-            </Badge>
+            <RoleBadge role={role} className="text-sm px-3 py-1" />
             <Button
               variant="ghost"
               size="icon"

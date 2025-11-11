@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+import { RoleBadge } from '@/components/common/RoleBadge';
 import { Shield, Save, Loader2, Info, Copy } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -114,10 +114,10 @@ const scopeLabels: Record<PermissionScope, string> = {
 };
 
 const roles = [
-  { value: 'admin' as UserRole, label: 'Administrateur', variant: 'admin' as const },
-  { value: 'team' as UserRole, label: 'Équipe', variant: 'team' as const },
-  { value: 'client' as UserRole, label: 'Client', variant: 'client' as const },
-  { value: 'agency' as UserRole, label: 'Agence', variant: 'agency' as const },
+  { value: 'admin' as UserRole, label: 'Administrateur' },
+  { value: 'team' as UserRole, label: 'Équipe' },
+  { value: 'client' as UserRole, label: 'Client' },
+  { value: 'agency' as UserRole, label: 'Agence' },
 ];
 
 export function PermissionsTab() {
@@ -275,7 +275,7 @@ export function PermissionsTab() {
                 {roles.map((role) => (
                   <SelectItem key={role.value} value={role.value}>
                     <div className="flex items-center gap-2">
-                      <Badge variant={role.variant}>{role.label}</Badge>
+                      <RoleBadge role={role.value} />
                     </div>
                   </SelectItem>
                 ))}
@@ -403,7 +403,7 @@ export function PermissionsTab() {
                   .map((role) => (
                     <SelectItem key={role.value} value={role.value}>
                       <div className="flex items-center gap-2">
-                        <Badge variant={role.variant}>{role.label}</Badge>
+                        <RoleBadge role={role.value} />
                       </div>
                     </SelectItem>
                   ))}
