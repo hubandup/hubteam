@@ -138,10 +138,10 @@ export function UserManagement() {
     }
 
     const roleConfig = {
-      admin: { label: 'Administrateur', variant: 'default' as const },
-      team: { label: 'Équipe', variant: 'secondary' as const },
-      client: { label: 'Client', variant: 'outline' as const },
-      agency: { label: 'Agence', variant: 'outline' as const },
+      admin: { label: 'Administrateur', variant: 'admin' as const },
+      team: { label: 'Équipe', variant: 'team' as const },
+      client: { label: 'Client', variant: 'client' as const },
+      agency: { label: 'Agence', variant: 'agency' as const },
     };
 
     const config = roleConfig[role as keyof typeof roleConfig];

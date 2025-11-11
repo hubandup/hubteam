@@ -16,22 +16,22 @@ import { useState, useEffect } from 'react';
 const roleConfig = {
   admin: { 
     label: 'Administrateur', 
-    variant: 'default' as const,
+    variant: 'admin' as const,
     description: 'Accès complet à toutes les fonctionnalités'
   },
   team: { 
     label: 'Équipe', 
-    variant: 'secondary' as const,
+    variant: 'team' as const,
     description: 'Accès en lecture et écriture sur la plupart des modules'
   },
   client: { 
     label: 'Client', 
-    variant: 'outline' as const,
+    variant: 'client' as const,
     description: 'Accès en lecture à vos données uniquement'
   },
   agency: { 
     label: 'Agence', 
-    variant: 'outline' as const,
+    variant: 'agency' as const,
     description: 'Accès à vos clients et projets rattachés'
   },
 };
