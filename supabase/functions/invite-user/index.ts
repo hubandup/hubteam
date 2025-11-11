@@ -120,20 +120,8 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Assign role to the invited user
-    if (inviteData.user) {
-      const { error: roleInsertError } = await supabaseAdmin
-        .from("user_roles")
-        .insert({
-          user_id: inviteData.user.id,
-          role: role,
-        });
-
-      if (roleInsertError) {
-        console.error("Error assigning role:", roleInsertError);
-        // Don't fail the request, user is already invited
-      }
-    }
+    // Note: Role is now automatically assigned by the handle_new_user() trigger
+    // which reads the role from raw_user_meta_data
 
     return new Response(
       JSON.stringify({ 
