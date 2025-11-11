@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface InvitationEmailRequest {
@@ -13,19 +13,19 @@ interface InvitationEmailRequest {
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const brevoApiKey = Deno.env.get('BREVO_API_KEY');
+    const brevoApiKey = Deno.env.get("BREVO_API_KEY");
     if (!brevoApiKey) {
-      throw new Error('BREVO_API_KEY is not configured');
+      throw new Error("BREVO_API_KEY is not configured");
     }
 
     const { email, invitationUrl, role }: InvitationEmailRequest = await req.json();
 
-    console.log('Sending invitation email to:', email, 'with role:', role);
+    console.log("Sending invitation email to:", email, "with role:", role);
 
     // Prepare the email content
     const htmlContent = `
@@ -75,52 +75,46 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     // Send email via Brevo API
-    const brevoResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
+    const brevoResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
       headers: {
-        'api-key': brevoApiKey,
-        'Content-Type': 'application/json',
+        "api-key": brevoApiKey,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         sender: {
-          name: 'HubandUp',
-          email: 'noreply@hubandup.com', // TODO: Update with your verified sender email
+          name: "Organisation Hub & Up",
+          email: "orga@hubandup.com", // TODO: Update with your verified sender email
         },
         to: [
           {
             email: email,
           },
         ],
-        subject: 'Invitation à rejoindre HubandUp',
+        subject: "Invitation à rejoindre HubandUp",
         htmlContent: htmlContent,
       }),
     });
 
     if (!brevoResponse.ok) {
       const errorText = await brevoResponse.text();
-      console.error('Brevo API error:', errorText);
+      console.error("Brevo API error:", errorText);
       throw new Error(`Failed to send email: ${errorText}`);
     }
 
     const result = await brevoResponse.json();
-    console.log('Email sent successfully:', result);
+    console.log("Email sent successfully:", result);
 
-    return new Response(
-      JSON.stringify({ success: true, messageId: result.messageId }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      }
-    );
+    return new Response(JSON.stringify({ success: true, messageId: result.messageId }), {
+      status: 200,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
   } catch (error: any) {
-    console.error('Error sending invitation email:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      }
-    );
+    console.error("Error sending invitation email:", error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
   }
 };
 
