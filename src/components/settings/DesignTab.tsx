@@ -279,6 +279,35 @@ export function DesignTab() {
 
       <Card>
         <CardHeader>
+          <CardTitle>Prévisualisation des polices</CardTitle>
+          <CardDescription>
+            Aperçu en direct des polices sélectionnées
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-3 p-6 bg-muted/30 rounded-lg border border-border">
+            <div style={{ fontFamily: settings.heading_font }}>
+              <h1 className="text-4xl font-bold mb-2">Titre niveau 1</h1>
+              <h2 className="text-3xl font-bold mb-2">Titre niveau 2</h2>
+              <h3 className="text-2xl font-bold mb-2">Titre niveau 3</h3>
+              <h4 className="text-xl font-bold">Titre niveau 4</h4>
+            </div>
+          </div>
+          <div className="space-y-2 p-6 bg-muted/30 rounded-lg border border-border">
+            <p className="text-base font-light" style={{ fontFamily: settings.body_font }}>
+              Ceci est un exemple de texte de paragraphe avec la police du corps. 
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
+              Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            </p>
+            <p className="text-sm font-light text-muted-foreground" style={{ fontFamily: settings.body_font }}>
+              Texte de taille réduite pour les descriptions et les détails secondaires.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Couleurs - Mode clair</CardTitle>
           <CardDescription>
             Sélectionnez vos couleurs avec le color picker
