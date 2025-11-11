@@ -15,12 +15,57 @@ export default function ClientDetails() {
   const navigate = useNavigate();
   const [client, setClient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [quotesInvoicesCount, setQuotesInvoicesCount] = useState(0);
+  const [meetingNotesCount, setMeetingNotesCount] = useState(0);
+  const [projectsCount, setProjectsCount] = useState(0);
 
   useEffect(() => {
     if (id) {
       fetchClientDetails();
+      fetchBadgeCounts();
     }
   }, [id]);
+
+  const fetchBadgeCounts = async () => {
+    if (!id) return;
+
+    try {
+      // Count quotes and invoices
+      const [quotesResult, invoicesResult] = await Promise.all([
+        supabase
+          .from('quotes')
+          .select('*', { count: 'exact', head: true })
+          .eq('client_id', id),
+        supabase
+          .from('invoices')
+          .select('*', { count: 'exact', head: true })
+          .eq('client_id', id)
+      ]);
+
+      const totalQuotesInvoices = (quotesResult.count || 0) + (invoicesResult.count || 0);
+      setQuotesInvoicesCount(totalQuotesInvoices);
+
+      // Count meeting notes
+      const { count: notes, error: notesError } = await supabase
+        .from('meeting_notes')
+        .select('*', { count: 'exact', head: true })
+        .eq('client_id', id);
+
+      if (notesError) throw notesError;
+      setMeetingNotesCount(notes || 0);
+
+      // Count projects
+      const { count: projects, error: projectsError } = await supabase
+        .from('project_clients')
+        .select('*', { count: 'exact', head: true })
+        .eq('client_id', id);
+
+      if (projectsError) throw projectsError;
+      setProjectsCount(projects || 0);
+    } catch (error) {
+      console.error('Error fetching badge counts:', error);
+    }
+  };
 
   const fetchClientDetails = async () => {
     try {
@@ -64,18 +109,21 @@ export default function ClientDetails() {
       value: 'quotes-invoices',
       label: 'Devis & Factures',
       icon: <Receipt className="h-4 w-4" />,
+      badge: quotesInvoicesCount,
       content: <ClientQuotesInvoicesTab clientId={client.id} />
     },
     {
       value: 'meeting-notes',
       label: 'Comptes rendus',
       icon: <Users className="h-4 w-4" />,
+      badge: meetingNotesCount,
       content: <ClientMeetingNotesTab clientId={client.id} />
     },
     {
       value: 'projects',
       label: 'Projets',
       icon: <FolderKanban className="h-4 w-4" />,
+      badge: projectsCount,
       content: <ClientProjectsTab clientId={client.id} />
     }
   ];

@@ -40,12 +40,52 @@ export default function ProjectDetails() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [pendingTasksCount, setPendingTasksCount] = useState(0);
+  const [unreadCommentsCount, setUnreadCommentsCount] = useState(0);
+  const [attachmentsCount, setAttachmentsCount] = useState(0);
 
   useEffect(() => {
     if (id) {
       fetchProjectDetails();
+      fetchBadgeCounts();
     }
   }, [id]);
+
+  const fetchBadgeCounts = async () => {
+    if (!id) return;
+
+    try {
+      // Count pending tasks (not done)
+      const { data: tasks, error: tasksError } = await supabase
+        .from('tasks')
+        .select('id, status')
+        .eq('project_id', id);
+
+      if (tasksError) throw tasksError;
+      const pending = tasks?.filter(t => t.status !== 'done').length || 0;
+      setPendingTasksCount(pending);
+
+      // Count attachments
+      const { count: attachments, error: attachmentsError } = await supabase
+        .from('project_attachments')
+        .select('*', { count: 'exact', head: true })
+        .eq('project_id', id);
+
+      if (attachmentsError) throw attachmentsError;
+      setAttachmentsCount(attachments || 0);
+
+      // For comments, we'll show total count as "unread" indicator
+      const { count: comments, error: commentsError } = await supabase
+        .from('task_comments')
+        .select('*', { count: 'exact', head: true })
+        .eq('project_id', id);
+
+      if (commentsError) throw commentsError;
+      setUnreadCommentsCount(comments || 0);
+    } catch (error) {
+      console.error('Error fetching badge counts:', error);
+    }
+  };
 
   const fetchProjectDetails = async () => {
     try {
@@ -92,6 +132,13 @@ export default function ProjectDetails() {
       setLoading(false);
     }
   };
+
+  // Refresh badge counts when project details change
+  useEffect(() => {
+    if (project && id) {
+      fetchBadgeCounts();
+    }
+  }, [project, id]);
 
   const handleClientSelected = () => {
     fetchProjectDetails();
@@ -313,12 +360,16 @@ export default function ProjectDetails() {
             value: 'tasks',
             label: 'Tâches',
             icon: <FileText className="h-4 w-4" />,
+            badge: pendingTasksCount,
+            badgeVariant: pendingTasksCount > 0 ? 'destructive' : undefined,
             content: <ProjectTasksTab projectId={id!} />
           },
           {
             value: 'comments',
             label: 'Commentaires',
             icon: <MessageSquare className="h-4 w-4" />,
+            badge: unreadCommentsCount,
+            badgeVariant: unreadCommentsCount > 0 ? 'secondary' : undefined,
             content: <ProjectCommentsTab projectId={id!} />
           },
           {
@@ -331,6 +382,7 @@ export default function ProjectDetails() {
             value: 'attachments',
             label: 'Pièces jointes',
             icon: <Paperclip className="h-4 w-4" />,
+            badge: attachmentsCount,
             content: <ProjectAttachmentsTab projectId={id!} />
           }
         ]}

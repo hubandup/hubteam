@@ -7,12 +7,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 export interface TabItem {
   value: string;
   label: string;
   icon?: React.ReactNode;
   content: React.ReactNode;
+  badge?: number | string;
+  badgeVariant?: 'default' | 'destructive' | 'outline' | 'secondary';
 }
 
 interface ResponsiveTabsProps {
@@ -56,15 +60,31 @@ export function ResponsiveTabs({
               <div className="flex items-center gap-2">
                 {currentTab?.icon}
                 <span>{currentTab?.label}</span>
+                {currentTab?.badge !== undefined && currentTab.badge !== 0 && (
+                  <Badge 
+                    variant={currentTab.badgeVariant || 'default'} 
+                    className="ml-auto"
+                  >
+                    {currentTab.badge}
+                  </Badge>
+                )}
               </div>
             </SelectValue>
           </SelectTrigger>
           <SelectContent className="bg-background z-50">
             {tabs.map((tab) => (
               <SelectItem key={tab.value} value={tab.value}>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full">
                   {tab.icon}
                   <span>{tab.label}</span>
+                  {tab.badge !== undefined && tab.badge !== 0 && (
+                    <Badge 
+                      variant={tab.badgeVariant || 'default'} 
+                      className="ml-auto"
+                    >
+                      {tab.badge}
+                    </Badge>
+                  )}
                 </div>
               </SelectItem>
             ))}
@@ -76,14 +96,26 @@ export function ResponsiveTabs({
             <button
               key={tab.value}
               onClick={() => setCurrentValue(tab.value)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md whitespace-nowrap transition-colors ${
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-md whitespace-nowrap transition-colors relative",
                 currentValue === tab.value
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
-              }`}
+              )}
             >
               {tab.icon}
               <span>{tab.label}</span>
+              {tab.badge !== undefined && tab.badge !== 0 && (
+                <Badge 
+                  variant={tab.badgeVariant || 'default'} 
+                  className={cn(
+                    "ml-2",
+                    currentValue === tab.value && "bg-primary-foreground text-primary"
+                  )}
+                >
+                  {tab.badge}
+                </Badge>
+              )}
             </button>
           ))}
         </div>
