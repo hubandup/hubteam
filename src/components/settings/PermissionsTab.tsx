@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { RoleBadge } from '@/components/common/RoleBadge';
 import { Shield, Save, Loader2, Info, Copy } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
@@ -311,19 +311,17 @@ export function PermissionsTab() {
                           
                           {module.hasScope && module.scopeOptions.length > 0 && (
                             <div className="flex items-center gap-2">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                                  </TooltipTrigger>
-                                  <TooltipContent side="left" className="max-w-xs">
-                                    <p className="text-sm">
-                                      <strong>Tout :</strong> Accès complet à toutes les données du module<br />
-                                      <strong>Limité :</strong> Accès uniquement aux données assignées à l'utilisateur
-                                    </p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent side="left" className="max-w-xs">
+                                  <p className="text-sm">
+                                    <strong>Tout :</strong> Accès complet à toutes les données du module<br />
+                                    <strong>Limité :</strong> Accès uniquement aux données assignées à l'utilisateur
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
                               
                               <ToggleGroup 
                                 type="single" 
