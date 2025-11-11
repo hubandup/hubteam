@@ -71,8 +71,8 @@ export default function FAQ() {
   };
 
   return (
-    <div className="h-screen flex flex-col">
-      <div className="border-b p-4">
+    <div className="h-screen flex flex-col bg-background">
+      <div className="border-b p-4 bg-card">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <HelpCircle className="h-6 w-6 text-primary" />
@@ -92,17 +92,17 @@ export default function FAQ() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-6 bg-background">
         <div className="max-w-4xl mx-auto space-y-4">
           {faqItems.map((item) => (
-            <Collapsible key={item.id} className="border rounded-lg">
+            <Collapsible key={item.id} className="border rounded-lg bg-card">
               <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
-                <h3 className="font-semibold text-left">{item.title}</h3>
+                <h3 className="font-semibold text-left text-foreground">{item.title}</h3>
                 <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200" />
               </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 pt-0 border-t">
+              <CollapsibleContent className="p-4 pt-0 border-t bg-card">
                 <div
-                  className="prose prose-sm max-w-none mb-4"
+                  className="prose prose-sm max-w-none mb-4 dark:prose-invert"
                   dangerouslySetInnerHTML={{ __html: item.content }}
                 />
                 {item.pdf_url && (
@@ -111,7 +111,7 @@ export default function FAQ() {
                       href={item.pdf_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-primary hover:underline text-sm"
+                      className="text-primary hover:underline text-sm no-underline"
                     >
                       📎 Voir le document PDF
                     </a>
