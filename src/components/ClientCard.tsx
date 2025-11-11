@@ -23,7 +23,7 @@ interface ClientCardProps {
 
 export function ClientCard({ client, onClick }: ClientCardProps) {
   return (
-    <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={onClick}>
+    <Card className="cursor-pointer hover:shadow-lg transition-shadow relative" onClick={onClick}>
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -51,7 +51,7 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-2 pb-12">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Mail className="h-4 w-4" />
           <span className="truncate">{client.email}</span>
@@ -66,13 +66,13 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
           <DollarSign className="h-4 w-4" />
           <span>{client.revenue.toLocaleString('fr-FR')} €</span>
         </div>
-        {client.last_contact && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Calendar className="h-4 w-4" />
-            <span>Dernier contact: {format(new Date(client.last_contact), 'dd MMM yyyy', { locale: fr })}</span>
-          </div>
-        )}
       </CardContent>
+      {client.last_contact && (
+        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 text-xs text-muted-foreground bg-background/80 backdrop-blur-sm px-2.5 py-1.5 rounded-md border">
+          <Calendar className="h-3.5 w-3.5" />
+          <span>{format(new Date(client.last_contact), 'dd/MM/yyyy', { locale: fr })}</span>
+        </div>
+      )}
     </Card>
   );
 }
