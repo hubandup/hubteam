@@ -84,6 +84,7 @@ export function DesignTab() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savedSettings, setSavedSettings] = useState<DesignSettings | null>(null);
   const [settings, setSettings] = useState<DesignSettings>({
     heading_font: 'Instrument Sans',
     body_font: 'Roboto',
@@ -99,6 +100,13 @@ export function DesignTab() {
     loadDesignSettings();
   }, []);
 
+  // Apply settings in real-time as user changes them
+  useEffect(() => {
+    if (!loading) {
+      applyDesignSettings(settings);
+    }
+  }, [settings, loading]);
+
   const loadDesignSettings = async () => {
     try {
       const { data, error } = await supabase
@@ -111,6 +119,7 @@ export function DesignTab() {
       if (error) throw error;
       if (data) {
         setSettings(data);
+        setSavedSettings(data);
         applyDesignSettings(data);
       }
     } catch (error) {
@@ -122,6 +131,16 @@ export function DesignTab() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReset = () => {
+    if (savedSettings) {
+      setSettings(savedSettings);
+      toast({
+        title: 'Réinitialisé',
+        description: 'Les modifications non sauvegardées ont été annulées.',
+      });
     }
   };
 
@@ -189,17 +208,12 @@ export function DesignTab() {
         if (error) throw error;
       }
 
-      applyDesignSettings(settings);
+      setSavedSettings(settings);
       
       toast({
         title: 'Succès',
-        description: 'Les paramètres de design ont été sauvegardés. La page va se recharger.',
+        description: 'Les paramètres de design ont été sauvegardés.',
       });
-
-      // Reload the page after a short delay to ensure styles are fully applied
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
     } catch (error) {
       console.error('Error saving design settings:', error);
       toast({
@@ -207,9 +221,12 @@ export function DesignTab() {
         description: 'Impossible de sauvegarder les paramètres.',
         variant: 'destructive',
       });
+    } finally {
       setSaving(false);
     }
   };
+
+  const hasUnsavedChanges = savedSettings && JSON.stringify(settings) !== JSON.stringify(savedSettings);
 
   if (loading) {
     return (
@@ -384,12 +401,31 @@ export function DesignTab() {
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving}>
-          {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Sauvegarder les modifications
-        </Button>
-      </div>
+      {hasUnsavedChanges && (
+        <div className="bg-muted/50 border border-border rounded-lg p-4">
+          <p className="text-sm text-muted-foreground mb-3">
+            💡 Les modifications sont appliquées en temps réel. N'oubliez pas de les sauvegarder pour les conserver.
+          </p>
+          <div className="flex gap-3 justify-end">
+            <Button variant="outline" onClick={handleReset} disabled={saving}>
+              Annuler les modifications
+            </Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Sauvegarder les modifications
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {!hasUnsavedChanges && (
+        <div className="flex justify-end">
+          <Button onClick={handleSave} disabled={saving}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Sauvegarder les modifications
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
