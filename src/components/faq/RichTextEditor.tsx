@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Bold,
@@ -16,6 +16,14 @@ interface RichTextEditorProps {
 
 export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const isTyping = useRef(false);
+
+  // Initialize content only when value changes from outside (not from typing)
+  useEffect(() => {
+    if (editorRef.current && !isTyping.current && editorRef.current.innerHTML !== value) {
+      editorRef.current.innerHTML = value;
+    }
+  }, [value]);
 
   const execCommand = (command: string, value?: string) => {
     document.execCommand(command, false, value);
@@ -24,7 +32,11 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
 
   const updateContent = () => {
     if (editorRef.current) {
+      isTyping.current = true;
       onChange(editorRef.current.innerHTML);
+      setTimeout(() => {
+        isTyping.current = false;
+      }, 0);
     }
   };
 
@@ -98,8 +110,7 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
         contentEditable
         onInput={updateContent}
         onPaste={handlePaste}
-        dangerouslySetInnerHTML={{ __html: value }}
-        className="min-h-[300px] p-4 focus:outline-none prose prose-sm max-w-none"
+        className="min-h-[300px] p-4 focus:outline-none prose prose-sm max-w-none dark:prose-invert"
         style={{ whiteSpace: 'pre-wrap' }}
       />
     </div>
