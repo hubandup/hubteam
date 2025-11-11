@@ -228,22 +228,52 @@
   /* Dark mode prose (rich text) styling */
   .dark .prose {
     @apply text-foreground;
+    color: hsl(var(--foreground)) !important;
   }
   
   .dark .prose h1, .dark .prose h2, .dark .prose h3, .dark .prose h4, .dark .prose h5, .dark .prose h6 {
     @apply text-foreground;
+    color: hsl(var(--foreground)) !important;
+  }
+  
+  .dark .prose p {
+    @apply text-foreground;
+    color: hsl(var(--foreground)) !important;
+  }
+  
+  .dark .prose li {
+    @apply text-foreground;
+    color: hsl(var(--foreground)) !important;
+  }
+  
+  .dark .prose span {
+    color: hsl(var(--foreground)) !important;
+  }
+  
+  .dark .prose div {
+    color: hsl(var(--foreground)) !important;
   }
   
   .dark .prose a {
     @apply text-primary;
+    color: hsl(var(--primary)) !important;
   }
   
-  .dark .prose strong {
+  .dark .prose strong, .dark .prose b {
     @apply text-foreground;
+    color: hsl(var(--foreground)) !important;
+  }
+  
+  .dark .prose em, .dark .prose i {
+    color: hsl(var(--foreground)) !important;
   }
   
   .dark .prose code {
     @apply bg-muted text-foreground;
+  }
+  
+  .dark .prose ul, .dark .prose ol {
+    color: hsl(var(--foreground)) !important;
   }
   
   /* Dark mode border improvements */
