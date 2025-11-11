@@ -77,24 +77,24 @@ function SortableFaqItem({ item, isAdmin, onEdit, onDelete }: SortableFaqItemPro
   return (
     <div ref={setNodeRef} style={style}>
       <Collapsible className="border rounded-lg bg-card">
-        <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
-          <div className="flex items-center gap-3 flex-1">
+        <CollapsibleTrigger className="w-full px-4 py-4 flex items-center justify-between hover:bg-muted/50 transition-colors gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             {isAdmin && (
               <div
                 {...attributes}
                 {...listeners}
-                className="cursor-grab active:cursor-grabbing touch-none"
+                className="cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
                 onClick={(e) => e.stopPropagation()}
               >
                 <GripVertical className="h-5 w-5 text-muted-foreground" />
               </div>
             )}
             <IconComponent className="h-5 w-5 text-primary flex-shrink-0" />
-            <h3 className="font-semibold text-left text-foreground flex-1">{item.title}</h3>
+            <h3 className="font-semibold text-left text-foreground flex-1 min-w-0">{item.title}</h3>
           </div>
-          <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200" />
+          <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200 flex-shrink-0" />
         </CollapsibleTrigger>
-        <CollapsibleContent className="p-4 pt-0 border-t bg-card">
+        <CollapsibleContent className="px-4 pb-4 pt-3 border-t bg-card">
           <div
             className="prose prose-sm max-w-none mb-4 dark:prose-invert"
             dangerouslySetInnerHTML={{ __html: item.content }}
@@ -252,10 +252,10 @@ export default function FAQ() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      <div className="border-b p-4 bg-card">
-        <div className="flex items-center justify-between">
+      <div className="border-b px-6 py-4 bg-card">
+        <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <HelpCircle className="h-6 w-6 text-primary" />
+            <HelpCircle className="h-6 w-6 text-primary flex-shrink-0" />
             <div>
               <h1 className="text-2xl font-bold text-foreground">FAQ</h1>
               <p className="text-sm text-muted-foreground">
@@ -264,7 +264,7 @@ export default function FAQ() {
             </div>
           </div>
           {isAdmin && (
-            <Button onClick={() => setIsDialogOpen(true)}>
+            <Button onClick={() => setIsDialogOpen(true)} className="flex-shrink-0">
               <Plus className="h-4 w-4 mr-2" />
               Ajouter une question
             </Button>
@@ -275,21 +275,21 @@ export default function FAQ() {
       <div className="flex-1 overflow-auto p-6 bg-background">
         <div className="max-w-4xl mx-auto">
           <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-            <TabsList className="mb-6 w-full justify-start flex-wrap h-auto">
-              <TabsTrigger value="all" className="gap-2">
-                <HelpCircle className="h-4 w-4" />
-                Toutes
+            <TabsList className="mb-6 w-full justify-start flex-wrap h-auto p-1">
+              <TabsTrigger value="all" className="gap-2 px-3 py-2">
+                <HelpCircle className="h-4 w-4 flex-shrink-0" />
+                <span>Toutes</span>
               </TabsTrigger>
               {categories.map((category) => {
                 const count = faqItems.filter(item => item.category_id === category.id).length;
                 return (
-                  <TabsTrigger key={category.id} value={category.id} className="gap-2">
+                  <TabsTrigger key={category.id} value={category.id} className="gap-2 px-3 py-2">
                     <div
-                      className="w-3 h-3 rounded-full"
+                      className="w-3 h-3 rounded-full flex-shrink-0"
                       style={{ backgroundColor: category.color }}
                     />
-                    {category.name}
-                    <span className="ml-1 text-xs opacity-70">({count})</span>
+                    <span>{category.name}</span>
+                    <span className="text-xs opacity-70">({count})</span>
                   </TabsTrigger>
                 );
               })}
