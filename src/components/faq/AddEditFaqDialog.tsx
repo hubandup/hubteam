@@ -16,11 +16,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { RichTextEditor } from './RichTextEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Upload, Eye, Edit } from 'lucide-react';
-import { FAQ_CATEGORIES, FAQ_ICONS, getIconComponent } from './faqConstants';
+import { FAQ_ICONS, getIconComponent } from './faqConstants';
+import type { UserRole } from '@/hooks/useUserRole';
+
+interface FaqCategory {
+  id: string;
+  name: string;
+  color: string;
+}
 
 interface FaqItem {
   id: string;
@@ -28,8 +36,9 @@ interface FaqItem {
   content: string;
   pdf_url: string | null;
   display_order: number;
-  category: string;
+  category_id: string | null;
   icon: string;
+  allowed_roles: UserRole[];
 }
 
 interface AddEditFaqDialogProps {
@@ -45,28 +54,48 @@ export function AddEditFaqDialog({
 }: AddEditFaqDialogProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [category, setCategory] = useState('general');
+  const [categoryId, setCategoryId] = useState<string>('');
   const [icon, setIcon] = useState('help-circle');
+  const [allowedRoles, setAllowedRoles] = useState<UserRole[]>(['admin', 'team', 'agency', 'client']);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [categories, setCategories] = useState<FaqCategory[]>([]);
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     if (editingItem) {
       setTitle(editingItem.title);
       setContent(editingItem.content);
-      setCategory(editingItem.category || 'general');
+      setCategoryId(editingItem.category_id || '');
       setIcon(editingItem.icon || 'help-circle');
+      setAllowedRoles(editingItem.allowed_roles || ['admin', 'team', 'agency', 'client']);
       setCurrentPdfUrl(editingItem.pdf_url);
     } else {
       setTitle('');
       setContent('');
-      setCategory('general');
+      setCategoryId('');
       setIcon('help-circle');
+      setAllowedRoles(['admin', 'team', 'agency', 'client']);
       setCurrentPdfUrl(null);
     }
     setPdfFile(null);
   }, [editingItem, isOpen]);
+
+  const loadCategories = async () => {
+    const { data } = await supabase
+      .from('faq_categories')
+      .select('*')
+      .order('display_order', { ascending: true });
+    
+    setCategories(data || []);
+    if (data && data.length > 0 && !categoryId) {
+      setCategoryId(data[0].id);
+    }
+  };
 
   const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -98,7 +127,7 @@ export function AddEditFaqDialog({
   };
 
   const handleSave = async () => {
-    if (!title.trim() || !content.trim()) {
+    if (!title.trim() || !content.trim() || !categoryId) {
       toast.error('Veuillez remplir tous les champs requis');
       return;
     }
@@ -110,8 +139,9 @@ export function AddEditFaqDialog({
     const data = {
       title,
       content,
-      category,
+      category_id: categoryId,
       icon,
+      allowed_roles: allowedRoles,
       pdf_url: pdfUrl,
       display_order: editingItem?.display_order ?? 0,
     };
@@ -129,6 +159,14 @@ export function AddEditFaqDialog({
 
     toast.success(editingItem ? 'Question modifiée' : 'Question ajoutée');
     onClose();
+  };
+
+  const toggleRole = (role: UserRole) => {
+    setAllowedRoles(prev =>
+      prev.includes(role)
+        ? prev.filter(r => r !== role)
+        : [...prev, role]
+    );
   };
 
   return (
@@ -156,22 +194,22 @@ export function AddEditFaqDialog({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="category">Catégorie *</Label>
-                <Select value={category} onValueChange={setCategory}>
+                <Select value={categoryId} onValueChange={setCategoryId}>
                   <SelectTrigger id="category">
                     <SelectValue placeholder="Sélectionner une catégorie" />
                   </SelectTrigger>
                   <SelectContent>
-                    {FAQ_CATEGORIES.map((cat) => {
-                      const IconComponent = cat.icon;
-                      return (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          <div className="flex items-center gap-2">
-                            <IconComponent className="h-4 w-4" />
-                            {cat.label}
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: cat.color }}
+                          />
+                          {cat.name}
+                        </div>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -196,6 +234,27 @@ export function AddEditFaqDialog({
                     })}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label>Rôles autorisés *</Label>
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                {(['admin', 'team', 'agency', 'client'] as UserRole[]).map((role) => (
+                  <div key={role} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={role}
+                      checked={allowedRoles.includes(role)}
+                      onCheckedChange={() => toggleRole(role)}
+                    />
+                    <label
+                      htmlFor={role}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 capitalize"
+                    >
+                      {role === 'admin' ? 'Admin' : role === 'team' ? 'Équipe' : role === 'agency' ? 'Agence' : 'Client'}
+                    </label>
+                  </div>
+                ))}
               </div>
             </div>
 

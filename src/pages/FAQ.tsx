@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/collapsible';
 import { AddEditFaqDialog } from '@/components/faq/AddEditFaqDialog';
 import { supabase } from '@/integrations/supabase/client';
-import { useUserRole } from '@/hooks/useUserRole';
+import { useUserRole, type UserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 import { ChevronDown } from 'lucide-react';
 import {
@@ -29,7 +29,14 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { FAQ_CATEGORIES, getIconComponent } from '@/components/faq/faqConstants';
+import { getIconComponent } from '@/components/faq/faqConstants';
+
+interface FaqCategory {
+  id: string;
+  name: string;
+  color: string;
+  display_order: number;
+}
 
 interface FaqItem {
   id: string;
@@ -37,8 +44,9 @@ interface FaqItem {
   content: string;
   pdf_url: string | null;
   display_order: number;
-  category: string;
+  category_id: string | null;
   icon: string;
+  allowed_roles: UserRole[];
 }
 
 interface SortableFaqItemProps {
@@ -129,6 +137,7 @@ function SortableFaqItem({ item, isAdmin, onEdit, onDelete }: SortableFaqItemPro
 
 export default function FAQ() {
   const [faqItems, setFaqItems] = useState<FaqItem[]>([]);
+  const [categories, setCategories] = useState<FaqCategory[]>([]);
   const [activeCategory, setActiveCategory] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FaqItem | null>(null);
@@ -143,8 +152,18 @@ export default function FAQ() {
   );
 
   useEffect(() => {
+    loadCategories();
     loadFaqItems();
   }, []);
+
+  const loadCategories = async () => {
+    const { data } = await supabase
+      .from('faq_categories')
+      .select('*')
+      .order('display_order', { ascending: true });
+
+    setCategories(data || []);
+  };
 
   const loadFaqItems = async () => {
     const { data, error } = await supabase
@@ -162,7 +181,7 @@ export default function FAQ() {
 
   const filteredItems = activeCategory === 'all' 
     ? faqItems 
-    : faqItems.filter(item => item.category === activeCategory);
+    : faqItems.filter(item => item.category_id === activeCategory);
 
   const handleEdit = (item: FaqItem) => {
     setEditingItem(item);
@@ -261,13 +280,15 @@ export default function FAQ() {
                 <HelpCircle className="h-4 w-4" />
                 Toutes
               </TabsTrigger>
-              {FAQ_CATEGORIES.map((category) => {
-                const IconComponent = category.icon;
-                const count = faqItems.filter(item => item.category === category.id).length;
+              {categories.map((category) => {
+                const count = faqItems.filter(item => item.category_id === category.id).length;
                 return (
                   <TabsTrigger key={category.id} value={category.id} className="gap-2">
-                    <IconComponent className="h-4 w-4" />
-                    {category.label}
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: category.color }}
+                    />
+                    {category.name}
                     <span className="ml-1 text-xs opacity-70">({count})</span>
                   </TabsTrigger>
                 );

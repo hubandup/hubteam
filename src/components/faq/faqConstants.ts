@@ -14,26 +14,11 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-export interface FaqCategory {
-  id: string;
-  label: string;
-  icon: LucideIcon;
-}
-
 export interface FaqIconOption {
   id: string;
   label: string;
   icon: LucideIcon;
 }
-
-export const FAQ_CATEGORIES: FaqCategory[] = [
-  { id: 'general', label: 'Général', icon: HelpCircle },
-  { id: 'account', label: 'Compte', icon: Users },
-  { id: 'technical', label: 'Technique', icon: Settings },
-  { id: 'billing', label: 'Facturation', icon: CreditCard },
-  { id: 'security', label: 'Sécurité', icon: ShieldCheck },
-  { id: 'features', label: 'Fonctionnalités', icon: Zap },
-];
 
 export const FAQ_ICONS: FaqIconOption[] = [
   { id: 'help-circle', label: 'Aide', icon: HelpCircle },
@@ -53,9 +38,4 @@ export const FAQ_ICONS: FaqIconOption[] = [
 export const getIconComponent = (iconId: string): LucideIcon => {
   const iconOption = FAQ_ICONS.find((icon) => icon.id === iconId);
   return iconOption ? iconOption.icon : HelpCircle;
-};
-
-export const getCategoryLabel = (categoryId: string): string => {
-  const category = FAQ_CATEGORIES.find((cat) => cat.id === categoryId);
-  return category ? category.label : 'Général';
 };

@@ -431,9 +431,37 @@ export type Database = {
         }
         Relationships: []
       }
+      faq_categories: {
+        Row: {
+          color: string
+          created_at: string
+          display_order: number
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       faq_items: {
         Row: {
-          category: string | null
+          allowed_roles: Database["public"]["Enums"]["app_role"][] | null
+          category_id: string | null
           content: string
           created_at: string
           created_by: string | null
@@ -445,7 +473,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          category?: string | null
+          allowed_roles?: Database["public"]["Enums"]["app_role"][] | null
+          category_id?: string | null
           content: string
           created_at?: string
           created_by?: string | null
@@ -457,7 +486,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          category?: string | null
+          allowed_roles?: Database["public"]["Enums"]["app_role"][] | null
+          category_id?: string | null
           content?: string
           created_at?: string
           created_by?: string | null
@@ -468,7 +498,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "faq_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "faq_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoices: {
         Row: {
