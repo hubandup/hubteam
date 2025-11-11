@@ -73,8 +73,8 @@ export default {
         },
       },
       fontFamily: {
-        'heading': ['Instrument Sans', 'sans-serif'],
-        'body': ['Roboto', 'sans-serif'],
+        'heading': ['var(--font-heading)', 'sans-serif'],
+        'body': ['var(--font-body)', 'sans-serif'],
       },
       height: {
         '7': '2.6rem',

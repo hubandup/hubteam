@@ -4,6 +4,10 @@
 
 @layer base {
   :root {
+    /* Fonts */
+    --font-heading: 'Instrument Sans';
+    --font-body: 'Roboto';
+    
     /* Professional Blue Theme */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
