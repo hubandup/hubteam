@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, FileText, Receipt, Users, FolderKanban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ResponsiveTabs, type TabItem } from '@/components/ui/responsive-tabs';
 import { ClientInfoTab } from '@/components/client-details/ClientInfoTab';
 import { ClientQuotesInvoicesTab } from '@/components/client-details/ClientQuotesInvoicesTab';
 import { ClientMeetingNotesTab } from '@/components/client-details/ClientMeetingNotesTab';
@@ -53,6 +53,33 @@ export default function ClientDetails() {
     return null;
   }
 
+  const tabs: TabItem[] = [
+    {
+      value: 'info',
+      label: 'Infos',
+      icon: <FileText className="h-4 w-4" />,
+      content: <ClientInfoTab client={client} onUpdate={fetchClientDetails} />
+    },
+    {
+      value: 'quotes-invoices',
+      label: 'Devis & Factures',
+      icon: <Receipt className="h-4 w-4" />,
+      content: <ClientQuotesInvoicesTab clientId={client.id} />
+    },
+    {
+      value: 'meeting-notes',
+      label: 'Comptes rendus',
+      icon: <Users className="h-4 w-4" />,
+      content: <ClientMeetingNotesTab clientId={client.id} />
+    },
+    {
+      value: 'projects',
+      label: 'Projets',
+      icon: <FolderKanban className="h-4 w-4" />,
+      content: <ClientProjectsTab clientId={client.id} />
+    }
+  ];
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-4">
@@ -80,30 +107,7 @@ export default function ClientDetails() {
         </div>
       </div>
 
-      <Tabs defaultValue="info" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="info">Infos</TabsTrigger>
-          <TabsTrigger value="quotes-invoices">Devis & Factures</TabsTrigger>
-          <TabsTrigger value="meeting-notes">Comptes rendus</TabsTrigger>
-          <TabsTrigger value="projects">Projets</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="info" className="mt-6">
-          <ClientInfoTab client={client} onUpdate={fetchClientDetails} />
-        </TabsContent>
-
-        <TabsContent value="quotes-invoices" className="mt-6">
-          <ClientQuotesInvoicesTab clientId={client.id} />
-        </TabsContent>
-
-        <TabsContent value="meeting-notes" className="mt-6">
-          <ClientMeetingNotesTab clientId={client.id} />
-        </TabsContent>
-
-        <TabsContent value="projects" className="mt-6">
-          <ClientProjectsTab clientId={client.id} />
-        </TabsContent>
-      </Tabs>
+      <ResponsiveTabs defaultValue="info" tabs={tabs} />
     </div>
   );
 }

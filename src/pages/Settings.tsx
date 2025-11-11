@@ -1,5 +1,5 @@
 import { useUserRole } from '@/hooks/useUserRole';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ResponsiveTabs, type TabItem } from '@/components/ui/responsive-tabs';
 import { User, Lock, Users, Shield, Database, Bell, Palette, HelpCircle } from 'lucide-react';
 import { ProfileTab } from '@/components/settings/ProfileTab';
 import { SecurityTab } from '@/components/settings/SecurityTab';
@@ -13,6 +13,62 @@ import { FaqCategoriesTab } from '@/components/settings/FaqCategoriesTab';
 export default function Settings() {
   const { isAdmin } = useUserRole();
 
+  const baseTabs: TabItem[] = [
+    {
+      value: 'profile',
+      label: 'Mon profil',
+      icon: <User className="h-4 w-4" />,
+      content: <ProfileTab />
+    },
+    {
+      value: 'security',
+      label: 'Sécurité',
+      icon: <Lock className="h-4 w-4" />,
+      content: <SecurityTab />
+    },
+    {
+      value: 'notifications',
+      label: 'Notifications',
+      icon: <Bell className="h-4 w-4" />,
+      content: <NotificationPreferencesTab />
+    }
+  ];
+
+  const adminTabs: TabItem[] = isAdmin ? [
+    {
+      value: 'users',
+      label: 'Utilisateurs',
+      icon: <Users className="h-4 w-4" />,
+      content: <UsersTab />
+    },
+    {
+      value: 'permissions',
+      label: 'Permissions',
+      icon: <Shield className="h-4 w-4" />,
+      content: <PermissionsTab />
+    },
+    {
+      value: 'data',
+      label: 'Données',
+      icon: <Database className="h-4 w-4" />,
+      content: <DataManagementTab />
+    },
+    {
+      value: 'design',
+      label: 'Design',
+      icon: <Palette className="h-4 w-4" />,
+      content: <DesignTab />
+    },
+    {
+      value: 'faq',
+      label: 'FAQ',
+      icon: <HelpCircle className="h-4 w-4" />,
+      content: <FaqCategoriesTab />
+    }
+  ] : [];
+
+  const allTabs = [...baseTabs, ...adminTabs];
+
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
       <div>
@@ -22,84 +78,7 @@ export default function Settings() {
         </p>
       </div>
 
-      <Tabs defaultValue="profile" className="w-full">
-        <div className="w-full overflow-x-auto">
-          <TabsList className="inline-flex w-auto min-w-full">
-            <TabsTrigger value="profile" className="flex items-center gap-2 whitespace-nowrap">
-              <User className="h-4 w-4" />
-              Mon profil
-            </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center gap-2 whitespace-nowrap">
-              <Lock className="h-4 w-4" />
-              Sécurité
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2 whitespace-nowrap">
-              <Bell className="h-4 w-4" />
-              Notifications
-            </TabsTrigger>
-            {isAdmin && (
-              <>
-                <TabsTrigger value="users" className="flex items-center gap-2 whitespace-nowrap">
-                  <Users className="h-4 w-4" />
-                  Utilisateurs
-                </TabsTrigger>
-                <TabsTrigger value="permissions" className="flex items-center gap-2 whitespace-nowrap">
-                  <Shield className="h-4 w-4" />
-                  Permissions
-                </TabsTrigger>
-                <TabsTrigger value="data" className="flex items-center gap-2 whitespace-nowrap">
-                  <Database className="h-4 w-4" />
-                  Données
-                </TabsTrigger>
-                <TabsTrigger value="design" className="flex items-center gap-2 whitespace-nowrap">
-                  <Palette className="h-4 w-4" />
-                  Design
-                </TabsTrigger>
-                <TabsTrigger value="faq" className="flex items-center gap-2 whitespace-nowrap">
-                  <HelpCircle className="h-4 w-4" />
-                  FAQ
-                </TabsTrigger>
-              </>
-            )}
-          </TabsList>
-        </div>
-
-        <TabsContent value="profile" className="mt-6">
-          <ProfileTab />
-        </TabsContent>
-
-        <TabsContent value="security" className="mt-6">
-          <SecurityTab />
-        </TabsContent>
-
-        <TabsContent value="notifications" className="mt-6">
-          <NotificationPreferencesTab />
-        </TabsContent>
-
-        {isAdmin && (
-          <>
-            <TabsContent value="users" className="mt-6">
-              <UsersTab />
-            </TabsContent>
-            
-            <TabsContent value="permissions" className="mt-6">
-              <PermissionsTab />
-            </TabsContent>
-
-            <TabsContent value="data" className="mt-6">
-              <DataManagementTab />
-            </TabsContent>
-
-            <TabsContent value="design" className="mt-6">
-              <DesignTab />
-            </TabsContent>
-
-            <TabsContent value="faq" className="mt-6">
-              <FaqCategoriesTab />
-            </TabsContent>
-          </>
-        )}
-      </Tabs>
+      <ResponsiveTabs defaultValue="profile" tabs={allTabs} />
     </div>
   );
 }

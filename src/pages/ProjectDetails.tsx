@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, Plus, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Plus, Edit, Trash2, FileText, Calendar, Users, MessageSquare, Paperclip, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -14,11 +14,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ResponsiveTabs, type TabItem } from '@/components/ui/responsive-tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Calendar, Users, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ProjectTeamTab } from '@/components/project-details/ProjectTeamTab';
@@ -208,125 +207,134 @@ export default function ProjectDetails() {
         </Card>
       )}
 
-      <Tabs defaultValue="info" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="info">Informations</TabsTrigger>
-          <TabsTrigger value="tasks">Tâches</TabsTrigger>
-          <TabsTrigger value="comments">Commentaires</TabsTrigger>
-          <TabsTrigger value="team">Équipe</TabsTrigger>
-          <TabsTrigger value="attachments">Pièces jointes</TabsTrigger>
-        </TabsList>
+      {/* Tabs */}
+      <ResponsiveTabs
+        defaultValue="info"
+        tabs={[
+          {
+            value: 'info',
+            label: 'Informations',
+            icon: <Info className="h-4 w-4" />,
+            content: (
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Informations générales</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {client ? (
+                      <div className="flex items-start gap-3">
+                        <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">Client</p>
+                          <p className="font-medium">
+                            {client.company} - {client.first_name} {client.last_name}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-3">
+                        <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-sm text-muted-foreground mb-2">Client</p>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setShowSelectClientDialog(true)}
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Sélectionner un client
+                          </Button>
+                        </div>
+                      </div>
+                    )}
 
-        <TabsContent value="info" className="mt-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Informations générales</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {client ? (
-                  <div className="flex items-start gap-3">
-                    <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div className="flex items-start gap-3">
+                      <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Nom du projet</p>
+                        <p className="font-medium">{project.name}</p>
+                      </div>
+                    </div>
+
+                    {project.description && (
+                      <div className="flex items-start gap-3">
+                        <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">Description</p>
+                          <p className="font-medium">{project.description}</p>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Dates & Statut</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {project.start_date && (
+                      <div className="flex items-start gap-3">
+                        <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">Date de début</p>
+                          <p className="font-medium">
+                            {format(new Date(project.start_date), 'dd MMMM yyyy', { locale: fr })}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {project.end_date && (
+                      <div className="flex items-start gap-3">
+                        <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">Date de fin</p>
+                          <p className="font-medium">
+                            {format(new Date(project.end_date), 'dd MMMM yyyy', { locale: fr })}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     <div>
-                      <p className="text-sm text-muted-foreground">Client</p>
-                      <p className="font-medium">
-                        {client.company} - {client.first_name} {client.last_name}
-                      </p>
+                      <p className="text-sm text-muted-foreground mb-2">Statut</p>
+                      <Badge variant={statusInfo.variant}>
+                        {statusInfo.label}
+                      </Badge>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex items-start gap-3">
-                    <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div className="flex-1">
-                      <p className="text-sm text-muted-foreground mb-2">Client</p>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setShowSelectClientDialog(true)}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Sélectionner un client
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-start gap-3">
-                  <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Nom du projet</p>
-                    <p className="font-medium">{project.name}</p>
-                  </div>
-                </div>
-
-                {project.description && (
-                  <div className="flex items-start gap-3">
-                    <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Description</p>
-                      <p className="font-medium">{project.description}</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Dates & Statut</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {project.start_date && (
-                  <div className="flex items-start gap-3">
-                    <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Date de début</p>
-                      <p className="font-medium">
-                        {format(new Date(project.start_date), 'dd MMMM yyyy', { locale: fr })}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {project.end_date && (
-                  <div className="flex items-start gap-3">
-                    <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Date de fin</p>
-                      <p className="font-medium">
-                        {format(new Date(project.end_date), 'dd MMMM yyyy', { locale: fr })}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Statut</p>
-                  <Badge variant={statusInfo.variant}>
-                    {statusInfo.label}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="tasks" className="mt-6">
-          <ProjectTasksTab projectId={id!} />
-        </TabsContent>
-
-        <TabsContent value="comments" className="mt-6">
-          <ProjectCommentsTab projectId={id!} />
-        </TabsContent>
-
-        <TabsContent value="team" className="mt-6">
-          <ProjectTeamTab projectId={id!} />
-        </TabsContent>
-
-        <TabsContent value="attachments" className="mt-6">
-          <ProjectAttachmentsTab projectId={id!} />
-        </TabsContent>
-      </Tabs>
+                  </CardContent>
+                </Card>
+              </div>
+            )
+          },
+          {
+            value: 'tasks',
+            label: 'Tâches',
+            icon: <FileText className="h-4 w-4" />,
+            content: <ProjectTasksTab projectId={id!} />
+          },
+          {
+            value: 'comments',
+            label: 'Commentaires',
+            icon: <MessageSquare className="h-4 w-4" />,
+            content: <ProjectCommentsTab projectId={id!} />
+          },
+          {
+            value: 'team',
+            label: 'Équipe',
+            icon: <Users className="h-4 w-4" />,
+            content: <ProjectTeamTab projectId={id!} />
+          },
+          {
+            value: 'attachments',
+            label: 'Pièces jointes',
+            icon: <Paperclip className="h-4 w-4" />,
+            content: <ProjectAttachmentsTab projectId={id!} />
+          }
+        ]}
+      />
 
       <SelectClientDialog 
         open={showSelectClientDialog}
