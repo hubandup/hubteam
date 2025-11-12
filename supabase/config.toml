@@ -11,5 +11,5 @@ function = "check-deadlines"
 
 [[edge_runtime.cron.jobs]]
 name = "check-client-deadlines"
-schedule = "0 8 * * *"  # Every day at 8 AM
+schedule = "0 * * * *"  # Every hour
 function = "check-client-deadlines"
