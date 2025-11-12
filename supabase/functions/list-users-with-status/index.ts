@@ -102,7 +102,8 @@ const handler = async (req: Request): Promise<Response> => {
         role: userRole?.role || null,
         email_confirmed_at: authUser?.email_confirmed_at || null,
         last_sign_in_at: authUser?.last_sign_in_at || null,
-        confirmed: !!authUser?.email_confirmed_at,
+        // User is confirmed only if they have signed in at least once (meaning they set their password)
+        confirmed: !!authUser?.last_sign_in_at,
       };
     });
 
