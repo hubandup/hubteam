@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Loader2, Bell, MessageSquare, Calendar, CheckCircle } from 'lucide-react';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 interface NotificationPreferences {
   task_assigned: boolean;
@@ -18,6 +20,7 @@ export function NotificationPreferencesTab() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const { isSupported, permission, requestPermission } = usePushNotifications();
   const [preferences, setPreferences] = useState<NotificationPreferences>({
     task_assigned: true,
     task_comment: true,
@@ -114,6 +117,42 @@ export function NotificationPreferencesTab() {
   }
 
   return (
+    <div className="space-y-6">
+      {isSupported && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              Notifications Push
+            </CardTitle>
+            <CardDescription>
+              Recevez des notifications instantanées même lorsque l'application est fermée
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">
+                  {permission === 'granted' ? 'Notifications activées' : 
+                   permission === 'denied' ? 'Notifications bloquées' : 
+                   'Notifications désactivées'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {permission === 'granted' ? 'Vous recevez les notifications push' :
+                   permission === 'denied' ? 'Autorisez les notifications dans les paramètres du navigateur' :
+                   'Activez pour recevoir des alertes en temps réel'}
+                </p>
+              </div>
+              {permission !== 'granted' && permission !== 'denied' && (
+                <Button onClick={requestPermission}>
+                  Activer
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -208,5 +247,6 @@ export function NotificationPreferencesTab() {
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 }
