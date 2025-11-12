@@ -223,7 +223,6 @@ export function UserManagement() {
                 <TableRow>
                   <TableHead>Utilisateur</TableHead>
                   <TableHead>Rôle</TableHead>
-                  <TableHead>Statut</TableHead>
                   <TableHead>Date d'inscription</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -240,53 +239,25 @@ export function UserManagement() {
                     <TableRow key={user.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {user.confirmed && (
-                            <BadgeCheck className="h-5 w-5 text-primary flex-shrink-0" />
-                          )}
                           <div className="relative">
                             <div className={`absolute -left-2 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full ${
                               isRecentlyActive(user.last_sign_in_at) ? 'bg-green-500' : 'bg-muted-foreground/30'
                             }`} />
                           </div>
                           <div className="flex flex-col">
-                            <span className="font-medium">
-                              {user.display_name || `${user.first_name} ${user.last_name}`}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">
+                                {user.display_name || `${user.first_name} ${user.last_name}`}
+                              </span>
+                              {user.confirmed && (
+                                <BadgeCheck className="h-5 w-5 text-primary flex-shrink-0" />
+                              )}
+                            </div>
                             <span className="text-sm text-muted-foreground">{user.email}</span>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell><RoleBadge role={user.role} /></TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1.5" title={user.confirmed ? "Compte activé" : "En attente d'activation"}>
-                            {user.confirmed ? (
-                              <>
-                                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                                <span className="text-xs text-muted-foreground">Inscrit</span>
-                              </>
-                            ) : (
-                              <>
-                                <Circle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                                <span className="text-xs text-muted-foreground">En attente</span>
-                              </>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1.5" title={isRecentlyActive(user.last_sign_in_at) ? "Connecté récemment" : "Hors ligne"}>
-                            {isRecentlyActive(user.last_sign_in_at) ? (
-                              <>
-                                <Wifi className="h-4 w-4 text-green-600 dark:text-green-400" />
-                                <span className="text-xs text-muted-foreground">En ligne</span>
-                              </>
-                            ) : (
-                              <>
-                                <WifiOff className="h-4 w-4 text-muted-foreground/50" />
-                                <span className="text-xs text-muted-foreground">Hors ligne</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
                       <TableCell>{formatDate(user.created_at)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
