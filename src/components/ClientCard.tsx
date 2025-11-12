@@ -63,6 +63,11 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
               <CardDescription className="mt-1 truncate">
                 {client.first_name} {client.last_name}
               </CardDescription>
+              {client.kanban_stage && (
+                <Badge variant="secondary" className="mt-2 text-xs">
+                  {getStageLabel(client.kanban_stage)}
+                </Badge>
+              )}
             </div>
           </div>
         </div>
