@@ -173,6 +173,42 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Check if user already exists
+    console.log("Checking if user already exists with email:", email);
+    const { data: existingUser, error: userCheckError } = await supabaseAdmin.auth.admin.listUsers();
+    
+    if (userCheckError) {
+      console.error("ERROR: Failed to check existing users:", userCheckError);
+      return new Response(
+        JSON.stringify({ 
+          error: "Erreur lors de la vérification de l'utilisateur",
+          details: userCheckError.message
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    const emailExists = existingUser.users.some(u => u.email === email);
+    
+    if (emailExists) {
+      console.error("ERROR: User with this email already exists:", email);
+      return new Response(
+        JSON.stringify({ 
+          error: "Utilisateur déjà existant",
+          details: `Un utilisateur avec l'email ${email} existe déjà. Vous ne pouvez pas réinviter un utilisateur existant. Si vous souhaitez modifier son rôle, veuillez le faire depuis la gestion des utilisateurs.`
+        }),
+        {
+          status: 409,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    console.log("✓ Email is available, proceeding with invitation");
+
     // Generate invite link - redirects to set-password page
     // Use the request origin to build the correct frontend URL
     const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/') || '';

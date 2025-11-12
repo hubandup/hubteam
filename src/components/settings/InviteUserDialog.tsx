@@ -59,14 +59,28 @@ export function InviteUserDialog({ open, onOpenChange, onSuccess }: InviteUserDi
 
       if (data?.error) {
         console.error('Edge function returned error:', data);
-        // Display detailed error message from backend
-        const errorMessage = data.details 
-          ? `${data.error}\n\nDétails: ${data.details}`
-          : data.error;
-        toast.error(errorMessage, {
+        
+        // Format error title and description based on error type
+        let errorTitle = data.error;
+        let errorDescription = data.details || undefined;
+        
+        // Handle specific error cases
+        if (data.error?.includes('déjà existant') || data.error?.includes('already')) {
+          errorTitle = "Utilisateur déjà existant";
+          errorDescription = data.details || "Cet utilisateur existe déjà dans le système. Modifiez son rôle depuis la gestion des utilisateurs.";
+        } else if (data.error?.includes('401') || data.error?.includes('autorisé')) {
+          errorTitle = "Non autorisé";
+          errorDescription = data.details || "Vous devez être connecté en tant qu'administrateur.";
+        } else if (data.error?.includes('403') || data.error?.includes('interdit')) {
+          errorTitle = "Accès refusé";
+          errorDescription = data.details || "Seuls les administrateurs peuvent inviter des utilisateurs.";
+        }
+        
+        toast.error(errorTitle, {
           duration: 6000,
-          description: data.technicalDetails ? 'Voir la console pour plus de détails' : undefined
+          description: errorDescription
         });
+        
         if (data.technicalDetails) {
           console.error('Technical details:', data.technicalDetails);
         }
