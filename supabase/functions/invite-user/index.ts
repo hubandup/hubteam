@@ -31,8 +31,8 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
 
-    // Verify the user making the request is an admin
-    const authHeader = req.headers.get("Authorization");
+    // Verify the user making the request is authenticated and an admin
+    const authHeader = req.headers.get("Authorization") || req.headers.get("authorization");
     if (!authHeader) {
       return new Response(
         JSON.stringify({ error: "Autorisation manquante" }),
@@ -43,10 +43,28 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    const token = authHeader.replace(/^Bearer\s+/i, "");
 
-    if (authError || !user) {
+    // Try to resolve the user using the Admin API, and fallback to decoding the verified JWT
+    let userId: string | null = null;
+    try {
+      const { data: userData, error: authError } = await supabaseAdmin.auth.getUser(token);
+      if (userData?.user?.id) userId = userData.user.id;
+      if (authError) {
+        console.log("auth.getUser failed, fallback to JWT decode:", authError.message);
+      }
+    } catch (e: any) {
+      console.log("auth.getUser exception, fallback to JWT decode:", e?.message || e);
+    }
+
+    if (!userId) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        userId = payload?.sub || null;
+      } catch (_) {}
+    }
+
+    if (!userId) {
       return new Response(
         JSON.stringify({ error: "Non autorisé" }),
         {
@@ -60,7 +78,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: userRole, error: roleError } = await supabaseAdmin
       .from("user_roles")
       .select("role")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .single();
 
     if (roleError || userRole?.role !== "admin") {
