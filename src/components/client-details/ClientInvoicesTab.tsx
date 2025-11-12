@@ -18,6 +18,7 @@ interface Invoice {
   amount: number;
   status: string;
   invoice_date: string;
+  facturation_pro_id?: string | null;
   facturation_pro_pdf_url?: string;
   created_at: string;
 }
@@ -168,7 +169,7 @@ export function ClientInvoicesTab({ clientId }: ClientInvoicesTabProps) {
                       })}
                     </p>
                   </div>
-                  {invoice.facturation_pro_pdf_url && (
+                  {invoice.facturation_pro_id && (
                     <Button
                       variant="outline"
                       size="sm"
