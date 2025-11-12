@@ -98,12 +98,16 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Generate invite link
+    // Generate invite link - redirects to set-password page
+    const redirectUrl = `${Deno.env.get('VITE_SUPABASE_URL')?.includes('localhost') 
+      ? 'http://localhost:5173' 
+      : Deno.env.get('VITE_SUPABASE_URL')?.replace('supabase.co', 'lovable.app') || ''}/auth/set-password`;
+    
     const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'invite',
       email: email,
       options: {
-        redirectTo: `${Deno.env.get("SUPABASE_URL")?.replace('/v1', '')}/`,
+        redirectTo: redirectUrl,
         data: {
           role: role,
         },

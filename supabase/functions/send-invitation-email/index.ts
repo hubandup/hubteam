@@ -52,9 +52,9 @@ const handler = async (req: Request): Promise<Response> => {
             <div class="content">
               <h2>Bienvenue sur HubandUp !</h2>
               <p>Vous avez été invité(e) à rejoindre notre plateforme en tant que <strong>${role}</strong>.</p>
-              <p>Pour activer votre compte, veuillez cliquer sur le bouton ci-dessous :</p>
+              <p>Pour activer votre compte et définir votre mot de passe, veuillez cliquer sur le bouton ci-dessous :</p>
               <div style="text-align: center;">
-                <a href="${invitationUrl}" class="button">Activer mon compte</a>
+                <a href="${invitationUrl}" class="button">Définir mon mot de passe</a>
               </div>
               <p style="margin-top: 20px; font-size: 14px; color: #666;">
                 Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :<br>
