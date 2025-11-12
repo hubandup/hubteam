@@ -9,14 +9,14 @@ const FACTURATION_PRO_API_URL = 'https://www.facturation.pro'
 
 interface FacturationProClient {
   id: number
-  company: string
-  first_name: string
-  last_name: string
-  email: string
-  phone?: string
-  address?: string
-  zip_code?: string
-  city?: string
+  company_name?: string
+  first_name?: string | null
+  last_name?: string | null
+  email?: string | null
+  phone?: string | null
+  address?: string | null
+  zip_code?: string | null
+  city?: string | null
 }
 
 Deno.serve(async (req) => {
@@ -68,34 +68,49 @@ Deno.serve(async (req) => {
         .eq('facturation_pro_id', fpClient.id.toString())
         .single()
 
+      if (!fpClient.email) {
+        console.warn(`Skipping client ${fpClient.id} - missing email`)
+        continue
+      }
+
       if (existingClient) {
         // Update existing client
-        await supabaseClient
+        const { error: updErr } = await supabaseClient
           .from('clients')
           .update({
-            company: fpClient.company || `${fpClient.first_name} ${fpClient.last_name}`,
-            first_name: fpClient.first_name,
-            last_name: fpClient.last_name,
+            company: fpClient.company_name || `${fpClient.first_name || ''} ${fpClient.last_name || ''}`.trim() || 'Client',
+            first_name: fpClient.first_name || '',
+            last_name: fpClient.last_name || '',
             email: fpClient.email,
-            phone: fpClient.phone,
+            phone: fpClient.phone || null,
             facturation_pro_synced_at: new Date().toISOString(),
           })
           .eq('id', existingClient.id)
+
+        if (updErr) {
+          console.error('Failed to update client', existingClient.id, updErr)
+          continue
+        }
       } else {
         // Create new client
-        await supabaseClient
+        const { error: insErr } = await supabaseClient
           .from('clients')
           .insert({
-            company: fpClient.company || `${fpClient.first_name} ${fpClient.last_name}`,
-            first_name: fpClient.first_name,
-            last_name: fpClient.last_name,
+            company: fpClient.company_name || `${fpClient.first_name || ''} ${fpClient.last_name || ''}`.trim() || 'Client',
+            first_name: fpClient.first_name || '',
+            last_name: fpClient.last_name || '',
             email: fpClient.email,
-            phone: fpClient.phone,
+            phone: fpClient.phone || null,
             facturation_pro_id: fpClient.id.toString(),
             facturation_pro_synced_at: new Date().toISOString(),
             kanban_stage: 'prospect',
             active: true,
           })
+
+        if (insErr) {
+          console.error('Failed to insert client', fpClient.id, insErr)
+          continue
+        }
       }
       syncedFromFacturationPro++
     }
@@ -121,7 +136,7 @@ Deno.serve(async (req) => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              company: client.company,
+              company_name: client.company,
               first_name: client.first_name,
               last_name: client.last_name,
               email: client.email,
