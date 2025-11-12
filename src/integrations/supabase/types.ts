@@ -319,6 +319,7 @@ export type Database = {
       }
       clients: {
         Row: {
+          action: string | null
           active: boolean
           activity_sector_id: string | null
           company: string
@@ -337,6 +338,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          action?: string | null
           active?: boolean
           activity_sector_id?: string | null
           company: string
@@ -355,6 +357,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          action?: string | null
           active?: boolean
           activity_sector_id?: string | null
           company?: string

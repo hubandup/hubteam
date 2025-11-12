@@ -19,31 +19,12 @@ interface ClientCardProps {
     created_at: string;
     logo_url?: string;
     kanban_stage?: string;
+    action?: string;
   };
   onClick: () => void;
 }
 
 export function ClientCard({ client, onClick }: ClientCardProps) {
-  const getStageLabel = (stage?: string) => {
-    const stageLabels: Record<string, string> = {
-      'prospect': 'Prospect',
-      'rdv_a_prendre': 'RDV à prendre',
-      'a_relancer': 'À relancer',
-      'rdv_hub_date': 'RDV Hub Date',
-      'rdv_pris': 'RDV Pris',
-      'reco_en_cours': 'Reco en cours',
-      'projet_valide': 'Projet Validé',
-      'a_fideliser': 'À fidéliser',
-      'sans_suite': 'Sans suite',
-      'a_appeler': 'À appeler',
-      'bloque': 'Bloqué',
-      'client': 'Client',
-      'rdv_pitch': 'RDV Pitch',
-      'rendez_vous': 'Rendez-vous'
-    };
-    return stage ? stageLabels[stage] || stage : '';
-  };
-
   return (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow relative" onClick={onClick}>
       <CardHeader>
@@ -63,9 +44,9 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
               <CardDescription className="mt-1 truncate">
                 {client.first_name} {client.last_name}
               </CardDescription>
-              {client.kanban_stage && (
+              {client.action && (
                 <Badge variant="secondary" className="mt-2 text-xs">
-                  {getStageLabel(client.kanban_stage)}
+                  {client.action}
                 </Badge>
               )}
             </div>
