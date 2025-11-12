@@ -1,10 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +28,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Plus, Loader2, CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AddClientStatusDialog } from './client-details/AddClientStatusDialog';
 
 const clientSchema = z.object({
   first_name: z.string().trim().min(1, 'Le prénom est requis').max(100),
@@ -31,6 +39,7 @@ const clientSchema = z.object({
   revenue: z.number().min(0, 'Le CA doit être positif'),
   active: z.boolean(),
   follow_up_date: z.date().optional(),
+  status_id: z.string().optional(),
 });
 
 type ClientFormData = z.infer<typeof clientSchema>;
@@ -46,6 +55,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
   const [loading, setLoading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [clientStatuses, setClientStatuses] = useState<any[]>([]);
 
   // Use controlled state if provided, otherwise use internal state
   const isOpen = open !== undefined ? open : internalOpen;
@@ -68,6 +78,21 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
 
   const active = watch('active');
   const followUpDate = watch('follow_up_date');
+  const selectedStatusId = watch('status_id');
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchStatuses();
+    }
+  }, [isOpen]);
+
+  const fetchStatuses = async () => {
+    const { data } = await supabase
+      .from('client_statuses')
+      .select('*')
+      .order('name');
+    setClientStatuses(data || []);
+  };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -123,6 +148,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
         active: data.active,
         logo_url: logoUrl,
         follow_up_date: data.follow_up_date ? data.follow_up_date.toISOString() : null,
+        status_id: data.status_id || null,
       }).select().single();
 
       if (error) throw error;
@@ -241,35 +267,57 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="follow_up_date">Date de rappel</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !followUpDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {followUpDate ? format(followUpDate, "dd/MM/yyyy") : "Choisir une date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={followUpDate}
-                    onSelect={(date) => setValue('follow_up_date', date)}
-                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-              {errors.follow_up_date && (
-                <p className="text-sm text-destructive">{errors.follow_up_date.message}</p>
-              )}
+              <div className="flex items-center justify-between">
+                <Label htmlFor="status_id">Action</Label>
+                <AddClientStatusDialog onStatusAdded={fetchStatuses} />
+              </div>
+              <Select
+                value={selectedStatusId}
+                onValueChange={(value) => setValue('status_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une action" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clientStatuses.map((status) => (
+                    <SelectItem key={status.id} value={status.id}>
+                      {status.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="follow_up_date">Date de rappel</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !followUpDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {followUpDate ? format(followUpDate, "dd/MM/yyyy") : "Choisir une date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={followUpDate}
+                  onSelect={(date) => setValue('follow_up_date', date)}
+                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            {errors.follow_up_date && (
+              <p className="text-sm text-destructive">{errors.follow_up_date.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">

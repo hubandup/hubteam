@@ -47,7 +47,15 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
                 {client.first_name} {client.last_name}
               </CardDescription>
               {(client.action_name || client.action) && (
-                <Badge variant="secondary" className="mt-2 text-xs">
+                <Badge 
+                  variant="secondary" 
+                  className="mt-2 text-xs"
+                  style={client.action_color ? {
+                    backgroundColor: `${client.action_color}20`,
+                    color: client.action_color,
+                    borderColor: `${client.action_color}40`,
+                  } : undefined}
+                >
                   {client.action_name || client.action}
                 </Badge>
               )}
