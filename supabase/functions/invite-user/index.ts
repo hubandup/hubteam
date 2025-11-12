@@ -175,7 +175,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Check if user already exists
     console.log("Checking if user already exists with email:", email);
-    const { data: existingUser, error: userCheckError } = await supabaseAdmin.auth.admin.listUsers();
+    const { data: existingUsers, error: userCheckError } = await supabaseAdmin.auth.admin.listUsers();
     
     if (userCheckError) {
       console.error("ERROR: Failed to check existing users:", userCheckError);
@@ -191,14 +191,15 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const emailExists = existingUser.users.some(u => u.email === email);
+    const existingUser = existingUsers.users.find(u => u.email === email);
     
-    if (emailExists) {
-      console.error("ERROR: User with this email already exists:", email);
+    // If user exists and has confirmed their email, they cannot be re-invited
+    if (existingUser && existingUser.email_confirmed_at) {
+      console.error("ERROR: User with this email already exists and is confirmed:", email);
       return new Response(
         JSON.stringify({ 
-          error: "Utilisateur déjà existant",
-          details: `Un utilisateur avec l'email ${email} existe déjà. Vous ne pouvez pas réinviter un utilisateur existant. Si vous souhaitez modifier son rôle, veuillez le faire depuis la gestion des utilisateurs.`
+          error: "Utilisateur déjà actif",
+          details: `Un utilisateur avec l'email ${email} a déjà activé son compte. Vous ne pouvez pas renvoyer d'invitation. Si vous souhaitez modifier son rôle, veuillez le faire depuis la gestion des utilisateurs.`
         }),
         {
           status: 409,
@@ -207,7 +208,28 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log("✓ Email is available, proceeding with invitation");
+    // If user exists but hasn't confirmed their email, we'll delete and recreate
+    if (existingUser && !existingUser.email_confirmed_at) {
+      console.log("User exists but hasn't confirmed email, deleting old user:", email);
+      const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(existingUser.id);
+      
+      if (deleteError) {
+        console.error("ERROR: Failed to delete unconfirmed user:", deleteError);
+        return new Response(
+          JSON.stringify({ 
+            error: "Erreur lors de la suppression de l'ancien utilisateur",
+            details: deleteError.message
+          }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          }
+        );
+      }
+      console.log("✓ Old unconfirmed user deleted, proceeding with new invitation");
+    } else {
+      console.log("✓ Email is available, proceeding with invitation");
+    }
 
     // Generate invite link - redirects to set-password page
     // Use the request origin to build the correct frontend URL
