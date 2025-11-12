@@ -78,6 +78,34 @@ export function ClientInvoicesTab({ clientId }: ClientInvoicesTabProps) {
     }
   };
 
+  const handleDownloadPdf = async (invoiceId: string, invoiceNumber: string) => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/download-invoice-pdf?invoice_id=${invoiceId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to download PDF');
+      }
+
+      // Create blob URL and open in new tab
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      
+      // Clean up the blob URL after a delay
+      setTimeout(() => window.URL.revokeObjectURL(url), 100);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast.error('Erreur lors du téléchargement du PDF');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -144,7 +172,7 @@ export function ClientInvoicesTab({ clientId }: ClientInvoicesTabProps) {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.open(invoice.facturation_pro_pdf_url, '_blank')}
+                      onClick={() => handleDownloadPdf(invoice.id, invoice.invoice_number)}
                     >
                       <ExternalLink className="h-4 w-4 mr-2" />
                       Voir le PDF

@@ -37,3 +37,6 @@ verify_jwt = false
 
 [functions.check-facturation-pro-quotes]
 verify_jwt = false
+
+[functions.download-invoice-pdf]
+verify_jwt = false
