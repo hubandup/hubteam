@@ -15,9 +15,6 @@ import { CSS } from '@dnd-kit/utilities';
 import { ClientCard } from '@/components/ClientCard';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Clock } from 'lucide-react';
-import { format, isPast } from 'date-fns';
-import { fr } from 'date-fns/locale';
 
 interface ClientKanbanViewProps {
   clients: any[];
@@ -53,8 +50,6 @@ function DraggableClientCard({ client, onClick }: { client: any; onClick: () => 
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const isOverdue = client.follow_up_date && isPast(new Date(client.follow_up_date));
-
   // Prevent click during drag
   const handleClick = (e: React.MouseEvent) => {
     if (isDragging) {
@@ -69,16 +64,6 @@ function DraggableClientCard({ client, onClick }: { client: any; onClick: () => 
     <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-3">
       <div className="relative" onClick={handleClick}>
         <ClientCard client={client} onClick={() => {}} />
-        {client.follow_up_date && (
-          <div className={`absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
-            isOverdue 
-              ? 'bg-destructive text-destructive-foreground' 
-              : 'bg-muted text-muted-foreground'
-          }`}>
-            <Clock className="h-3 w-3" />
-            {format(new Date(client.follow_up_date), 'dd/MM/yyyy', { locale: fr })}
-          </div>
-        )}
       </div>
     </div>
   );

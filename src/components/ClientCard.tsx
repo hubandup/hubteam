@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Building2, Mail, Phone, DollarSign, Calendar, BellRing } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isPast } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 interface ClientCardProps {
@@ -91,17 +91,28 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
       
       <div className="absolute bottom-3 left-6 right-6 space-y-2">
         {client.last_contact && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Calendar className="h-3 w-3 text-blue-500" />
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <Calendar className="h-3 w-3" />
             <span className="font-medium">Dernier contact:</span>
             <span>{format(new Date(client.last_contact), 'dd/MM/yyyy')}</span>
           </div>
         )}
         {client.follow_up_date && (
-          <div className="flex items-center gap-2 text-xs">
-            <BellRing className="h-3 w-3 text-orange-500" />
+          <div className={`flex items-center gap-2 text-xs ${
+            isPast(new Date(client.follow_up_date)) 
+              ? 'text-red-600 dark:text-red-500' 
+              : 'text-gray-500 dark:text-gray-400'
+          }`}>
+            <BellRing className="h-3 w-3" />
             <span className="font-medium">Date de rappel:</span>
-            <Badge variant="outline" className="text-xs border-orange-500 text-orange-600">
+            <Badge 
+              variant="outline" 
+              className={`text-xs ${
+                isPast(new Date(client.follow_up_date))
+                  ? 'border-red-500 text-red-600 dark:text-red-500'
+                  : 'border-gray-300 text-gray-600 dark:text-gray-400'
+              }`}
+            >
               {format(new Date(client.follow_up_date), 'dd/MM/yyyy')}
             </Badge>
           </div>
