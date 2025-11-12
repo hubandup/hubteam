@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const FACTURATION_PRO_API_URL = 'https://api.facturation.pro/v1'
+const FACTURATION_PRO_API_URL = 'https://www.facturation.pro'
 
 interface FacturationProQuote {
   id: number
@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
 
     // Fetch all quotes from Facturation.PRO
     const quotesResponse = await fetch(
-      `${FACTURATION_PRO_API_URL}/firm/${firmId}/quotes`,
+      `${FACTURATION_PRO_API_URL}/firms/${firmId}/quotes.json`,
       {
         headers: {
           'Authorization': `Basic ${btoa(`${apiId}:${apiKey}`)}`,

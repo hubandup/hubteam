@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const FACTURATION_PRO_API_URL = 'https://api.facturation.pro/v1'
+const FACTURATION_PRO_API_URL = 'https://www.facturation.pro'
 
 interface FacturationProClient {
   id: number
@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
 
     // Step 1: Fetch clients from Facturation.PRO
     const facturationProResponse = await fetch(
-      `${FACTURATION_PRO_API_URL}/firm/${firmId}/clients`,
+      `${FACTURATION_PRO_API_URL}/firms/${firmId}/customers.json`,
       {
         headers: {
           'Authorization': `Basic ${btoa(`${apiId}:${apiKey}`)}`,
@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
       for (const client of crmClients) {
         // Create client in Facturation.PRO
         const createResponse = await fetch(
-          `${FACTURATION_PRO_API_URL}/firm/${firmId}/clients`,
+          `${FACTURATION_PRO_API_URL}/firms/${firmId}/customers.json`,
           {
             method: 'POST',
             headers: {

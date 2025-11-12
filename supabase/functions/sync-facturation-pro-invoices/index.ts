@@ -5,16 +5,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const FACTURATION_PRO_API_URL = 'https://api.facturation.pro/v1'
+const FACTURATION_PRO_API_URL = 'https://www.facturation.pro'
 
 interface FacturationProInvoice {
   id: number
-  client_id: number
-  invoice_number: string
-  total_ttc: number
-  status: string
-  date: string
-  url_pdf: string
+  customer_id: number
+  invoice_ref: string
+  total: string
+  paid_on: string | null
+  invoiced_on: string
 }
 
 Deno.serve(async (req) => {
@@ -40,7 +39,7 @@ Deno.serve(async (req) => {
 
     // Fetch all invoices from Facturation.PRO
     const invoicesResponse = await fetch(
-      `${FACTURATION_PRO_API_URL}/firm/${firmId}/invoices`,
+      `${FACTURATION_PRO_API_URL}/firms/${firmId}/invoices.json`,
       {
         headers: {
           'Authorization': `Basic ${btoa(`${apiId}:${apiKey}`)}`,
@@ -65,11 +64,11 @@ Deno.serve(async (req) => {
       const { data: client } = await supabaseClient
         .from('clients')
         .select('id')
-        .eq('facturation_pro_id', fpInvoice.client_id.toString())
+        .eq('facturation_pro_id', fpInvoice.customer_id?.toString())
         .single()
 
       if (!client) {
-        console.warn(`Client not found for Facturation.PRO client_id: ${fpInvoice.client_id}`)
+        console.warn(`Client not found for Facturation.PRO customer_id: ${fpInvoice.customer_id}`)
         skippedInvoices++
         continue
       }
@@ -78,17 +77,20 @@ Deno.serve(async (req) => {
       const { data: existingInvoice } = await supabaseClient
         .from('invoices')
         .select('id')
-        .eq('facturation_pro_id', fpInvoice.id.toString())
+        .eq('facturation_pro_id', fpInvoice.id?.toString())
         .single()
+
+      // Generate PDF URL
+      const pdfUrl = `${FACTURATION_PRO_API_URL}/firms/${firmId}/invoices/${fpInvoice.id}.pdf`
 
       const invoiceData = {
         client_id: client.id,
-        invoice_number: fpInvoice.invoice_number,
-        amount: fpInvoice.total_ttc,
-        status: fpInvoice.status === 'paid' ? 'paid' : 'unpaid',
-        invoice_date: fpInvoice.date,
-        facturation_pro_id: fpInvoice.id.toString(),
-        facturation_pro_pdf_url: fpInvoice.url_pdf,
+        invoice_number: fpInvoice.invoice_ref,
+        amount: parseFloat(fpInvoice.total),
+        status: fpInvoice.paid_on ? 'paid' : 'unpaid',
+        invoice_date: fpInvoice.invoiced_on,
+        facturation_pro_id: fpInvoice.id?.toString(),
+        facturation_pro_pdf_url: pdfUrl,
       }
 
       if (existingInvoice) {

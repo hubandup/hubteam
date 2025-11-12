@@ -28,3 +28,12 @@ function = "sync-facturation-pro-invoices"
 name = "check-facturation-pro-quotes"
 schedule = "0 * * * *"  # Every hour
 function = "check-facturation-pro-quotes"
+
+[functions.sync-facturation-pro-clients]
+verify_jwt = false
+
+[functions.sync-facturation-pro-invoices]
+verify_jwt = false
+
+[functions.check-facturation-pro-quotes]
+verify_jwt = false
