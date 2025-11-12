@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { RoleBadge } from '@/components/common/RoleBadge';
-import { Users, Edit, Loader2, Trash2, UserPlus, Mail, CheckCircle2, Circle, Wifi, WifiOff } from 'lucide-react';
+import { Users, Edit, Loader2, Trash2, UserPlus, Mail, CheckCircle2, Circle, Wifi, WifiOff, BadgeCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { EditUserRoleDialog } from './EditUserRoleDialog';
@@ -222,7 +222,6 @@ export function UserManagement() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Utilisateur</TableHead>
-                  <TableHead>Email</TableHead>
                   <TableHead>Rôle</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead>Date d'inscription</TableHead>
@@ -239,10 +238,24 @@ export function UserManagement() {
                 ) : (
                   users.map((user) => (
                     <TableRow key={user.id}>
-                      <TableCell className="font-medium">
-                        {user.display_name || `${user.first_name} ${user.last_name}`}
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {user.confirmed && (
+                            <BadgeCheck className="h-5 w-5 text-primary flex-shrink-0" />
+                          )}
+                          <div className="relative">
+                            <div className={`absolute -left-2 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full ${
+                              isRecentlyActive(user.last_sign_in_at) ? 'bg-green-500' : 'bg-muted-foreground/30'
+                            }`} />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {user.display_name || `${user.first_name} ${user.last_name}`}
+                            </span>
+                            <span className="text-sm text-muted-foreground">{user.email}</span>
+                          </div>
+                        </div>
                       </TableCell>
-                      <TableCell>{user.email}</TableCell>
                       <TableCell><RoleBadge role={user.role} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
