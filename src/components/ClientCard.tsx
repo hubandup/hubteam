@@ -18,6 +18,7 @@ interface ClientCardProps {
     active: boolean;
     created_at: string;
     logo_url?: string;
+    kanban_stage?: string;
   };
   onClick: () => void;
 }
@@ -42,6 +43,11 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
               <CardDescription className="mt-1 truncate">
                 {client.first_name} {client.last_name}
               </CardDescription>
+              {client.kanban_stage && (
+                <Badge variant="outline" className="mt-2 text-xs">
+                  {client.kanban_stage}
+                </Badge>
+              )}
             </div>
           </div>
           <Badge 
@@ -69,18 +75,22 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
         </div>
       </CardContent>
       
-      <div className="absolute bottom-3 right-3 space-y-1 text-right">
+      <div className="absolute bottom-3 left-6 right-6 space-y-2">
         {client.last_contact && (
-          <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Calendar className="h-3 w-3" />
+            <span className="font-medium">Dernier contact:</span>
             <span>{format(new Date(client.last_contact), 'dd/MM/yyyy')}</span>
           </div>
         )}
         {client.follow_up_date && (
-          <Badge variant="outline" className="text-xs">
-            <Calendar className="h-3 w-3 mr-1" />
-            {format(new Date(client.follow_up_date), 'dd/MM/yyyy')}
-          </Badge>
+          <div className="flex items-center gap-2 text-xs">
+            <Calendar className="h-3 w-3" />
+            <span className="font-medium">Date de rappel:</span>
+            <Badge variant="outline" className="text-xs">
+              {format(new Date(client.follow_up_date), 'dd/MM/yyyy')}
+            </Badge>
+          </div>
         )}
       </div>
     </Card>
