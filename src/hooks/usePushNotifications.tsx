@@ -48,7 +48,8 @@ export function usePushNotifications() {
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(
-          'BOyU1schd4GGZLa4jXmER1mQh0wQV0dHXP7IXouBA9i6xHqI_bDATulLuShNNjGkC0YUQ_OZ-t6c--Sq1r13S4c'
+          // Replace with your actual VAPID public key
+          'YOUR_VAPID_PUBLIC_KEY'
         )
       });
 
