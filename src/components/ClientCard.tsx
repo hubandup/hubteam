@@ -20,6 +20,8 @@ interface ClientCardProps {
     logo_url?: string;
     kanban_stage?: string;
     action?: string;
+    action_name?: string;
+    action_color?: string;
   };
   onClick: () => void;
 }
@@ -44,9 +46,9 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
               <CardDescription className="mt-1 truncate">
                 {client.first_name} {client.last_name}
               </CardDescription>
-              {client.action && (
+              {(client.action_name || client.action) && (
                 <Badge variant="secondary" className="mt-2 text-xs">
-                  {client.action}
+                  {client.action_name || client.action}
                 </Badge>
               )}
             </div>

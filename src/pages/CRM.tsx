@@ -26,13 +26,27 @@ export default function CRM() {
 
   const fetchClients = async () => {
     try {
-      const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Fetch clients and action statuses in parallel
+      const [{ data: clientsData, error: clientsError }, { data: statusesData, error: statusesError }] = await Promise.all([
+        supabase.from('clients').select('*').order('created_at', { ascending: false }),
+        supabase.from('client_statuses').select('id, name, color')
+      ]);
 
-      if (error) throw error;
-      setClients(data || []);
+      if (clientsError) throw clientsError;
+      if (statusesError) throw statusesError;
+
+      const statusById = (statusesData || []).reduce<Record<string, { name: string; color: string }>>((acc, s) => {
+        acc[s.id] = { name: s.name, color: s.color } as any;
+        return acc;
+      }, {});
+
+      const withAction = (clientsData || []).map((c) => ({
+        ...c,
+        action_name: c.status_id ? statusById[c.status_id]?.name : undefined,
+        action_color: c.status_id ? statusById[c.status_id]?.color : undefined,
+      }));
+
+      setClients(withAction);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Erreur lors du chargement des clients');
