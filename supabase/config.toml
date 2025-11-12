@@ -13,3 +13,18 @@ function = "check-deadlines"
 name = "check-client-deadlines"
 schedule = "0 * * * *"  # Every hour
 function = "check-client-deadlines"
+
+[[edge_runtime.cron.jobs]]
+name = "sync-facturation-pro-clients"
+schedule = "0 */6 * * *"  # Every 6 hours
+function = "sync-facturation-pro-clients"
+
+[[edge_runtime.cron.jobs]]
+name = "sync-facturation-pro-invoices"
+schedule = "0 */6 * * *"  # Every 6 hours
+function = "sync-facturation-pro-invoices"
+
+[[edge_runtime.cron.jobs]]
+name = "check-facturation-pro-quotes"
+schedule = "0 * * * *"  # Every hour
+function = "check-facturation-pro-quotes"

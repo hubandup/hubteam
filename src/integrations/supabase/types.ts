@@ -325,6 +325,8 @@ export type Database = {
           company: string
           created_at: string
           email: string
+          facturation_pro_id: string | null
+          facturation_pro_synced_at: string | null
           first_name: string
           follow_up_date: string | null
           id: string
@@ -344,6 +346,8 @@ export type Database = {
           company: string
           created_at?: string
           email: string
+          facturation_pro_id?: string | null
+          facturation_pro_synced_at?: string | null
           first_name: string
           follow_up_date?: string | null
           id?: string
@@ -363,6 +367,8 @@ export type Database = {
           company?: string
           created_at?: string
           email?: string
+          facturation_pro_id?: string | null
+          facturation_pro_synced_at?: string | null
           first_name?: string
           follow_up_date?: string | null
           id?: string
@@ -516,7 +522,10 @@ export type Database = {
           amount: number
           client_id: string
           created_at: string
+          facturation_pro_id: string | null
+          facturation_pro_pdf_url: string | null
           id: string
+          invoice_date: string | null
           invoice_number: string
           pdf_url: string | null
           status: string
@@ -526,7 +535,10 @@ export type Database = {
           amount: number
           client_id: string
           created_at?: string
+          facturation_pro_id?: string | null
+          facturation_pro_pdf_url?: string | null
           id?: string
+          invoice_date?: string | null
           invoice_number: string
           pdf_url?: string | null
           status?: string
@@ -536,7 +548,10 @@ export type Database = {
           amount?: number
           client_id?: string
           created_at?: string
+          facturation_pro_id?: string | null
+          facturation_pro_pdf_url?: string | null
           id?: string
+          invoice_date?: string | null
           invoice_number?: string
           pdf_url?: string | null
           status?: string

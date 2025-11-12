@@ -6,18 +6,18 @@ import { ArrowLeft, Loader2, FileText, Receipt, Users, FolderKanban } from 'luci
 import { Button } from '@/components/ui/button';
 import { ResponsiveTabs, type TabItem } from '@/components/ui/responsive-tabs';
 import { ClientInfoTab } from '@/components/client-details/ClientInfoTab';
-import { ClientQuotesInvoicesTab } from '@/components/client-details/ClientQuotesInvoicesTab';
 import { ClientMeetingNotesTab } from '@/components/client-details/ClientMeetingNotesTab';
 import { ClientProjectsTab } from '@/components/client-details/ClientProjectsTab';
+import { ClientInvoicesTab } from '@/components/client-details/ClientInvoicesTab';
 
 export default function ClientDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [client, setClient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [quotesInvoicesCount, setQuotesInvoicesCount] = useState(0);
   const [meetingNotesCount, setMeetingNotesCount] = useState(0);
   const [projectsCount, setProjectsCount] = useState(0);
+  const [invoicesCount, setInvoicesCount] = useState(0);
 
   useEffect(() => {
     if (id) {
@@ -30,20 +30,14 @@ export default function ClientDetails() {
     if (!id) return;
 
     try {
-      // Count quotes and invoices
-      const [quotesResult, invoicesResult] = await Promise.all([
-        supabase
-          .from('quotes')
-          .select('*', { count: 'exact', head: true })
-          .eq('client_id', id),
-        supabase
-          .from('invoices')
-          .select('*', { count: 'exact', head: true })
-          .eq('client_id', id)
-      ]);
+      // Count invoices
+      const { count: invoices, error: invoicesError } = await supabase
+        .from('invoices')
+        .select('*', { count: 'exact', head: true })
+        .eq('client_id', id);
 
-      const totalQuotesInvoices = (quotesResult.count || 0) + (invoicesResult.count || 0);
-      setQuotesInvoicesCount(totalQuotesInvoices);
+      if (invoicesError) throw invoicesError;
+      setInvoicesCount(invoices || 0);
 
       // Count meeting notes
       const { count: notes, error: notesError } = await supabase
@@ -106,13 +100,6 @@ export default function ClientDetails() {
       content: <ClientInfoTab client={client} onUpdate={fetchClientDetails} />
     },
     {
-      value: 'quotes-invoices',
-      label: 'Devis & Factures',
-      icon: <Receipt className="h-4 w-4" />,
-      badge: quotesInvoicesCount,
-      content: <ClientQuotesInvoicesTab clientId={client.id} />
-    },
-    {
       value: 'meeting-notes',
       label: 'Comptes rendus',
       icon: <Users className="h-4 w-4" />,
@@ -125,6 +112,13 @@ export default function ClientDetails() {
       icon: <FolderKanban className="h-4 w-4" />,
       badge: projectsCount,
       content: <ClientProjectsTab clientId={client.id} />
+    },
+    {
+      value: 'invoices',
+      label: 'Factures',
+      icon: <Receipt className="h-4 w-4" />,
+      badge: invoicesCount,
+      content: <ClientInvoicesTab clientId={client.id} />
     }
   ];
 
