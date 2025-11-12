@@ -52,20 +52,61 @@ export function InviteUserDialog({ open, onOpenChange, onSuccess }: InviteUserDi
         body: { email, role },
       });
 
-      if (error) throw error;
-
-      if (data.error) {
-        throw new Error(data.error);
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
       }
 
-      toast.success('Invitation envoyée avec succès');
+      if (data?.error) {
+        console.error('Edge function returned error:', data);
+        // Display detailed error message from backend
+        const errorMessage = data.details 
+          ? `${data.error}\n\nDétails: ${data.details}`
+          : data.error;
+        toast.error(errorMessage, {
+          duration: 6000,
+          description: data.technicalDetails ? 'Voir la console pour plus de détails' : undefined
+        });
+        if (data.technicalDetails) {
+          console.error('Technical details:', data.technicalDetails);
+        }
+        return;
+      }
+
+      toast.success('Invitation envoyée avec succès', {
+        description: `Un email a été envoyé à ${email}`
+      });
       setEmail('');
       setRole('');
       onOpenChange(false);
       onSuccess();
     } catch (error: any) {
       console.error('Error inviting user:', error);
-      toast.error(error.message || 'Erreur lors de l\'envoi de l\'invitation');
+      
+      // Format error message for better user understanding
+      let errorMessage = 'Erreur lors de l\'envoi de l\'invitation';
+      let errorDescription = undefined;
+      
+      if (error?.message) {
+        // Handle common error types
+        if (error.message.includes('401')) {
+          errorMessage = 'Erreur d\'authentification';
+          errorDescription = 'Votre session a peut-être expiré. Essayez de vous reconnecter.';
+        } else if (error.message.includes('403')) {
+          errorMessage = 'Accès refusé';
+          errorDescription = 'Vous n\'avez pas les permissions nécessaires pour inviter des utilisateurs.';
+        } else if (error.message.includes('500')) {
+          errorMessage = 'Erreur serveur';
+          errorDescription = 'Une erreur s\'est produite côté serveur. Consultez les logs pour plus de détails.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      toast.error(errorMessage, {
+        duration: 6000,
+        description: errorDescription
+      });
     } finally {
       setInviting(false);
     }
