@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { RoleBadge } from '@/components/common/RoleBadge';
-import { Users, Edit, Loader2, Trash2, UserPlus, Mail } from 'lucide-react';
+import { Users, Edit, Loader2, Trash2, UserPlus, Mail, CheckCircle2, Circle, Wifi, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 import { EditUserRoleDialog } from './EditUserRoleDialog';
 import { InviteUserDialog } from './InviteUserDialog';
 import {
@@ -27,6 +28,8 @@ interface UserWithRole {
   display_name: string | null;
   role: 'admin' | 'team' | 'client' | 'agency' | null;
   created_at: string;
+  confirmed?: boolean;
+  last_sign_in_at?: string | null;
 }
 
 export function UserManagement() {
@@ -47,31 +50,16 @@ export function UserManagement() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      // Fetch all profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, email, first_name, last_name, display_name, created_at')
-        .order('created_at', { ascending: false });
+      // Call edge function to get users with status
+      const { data, error } = await supabase.functions.invoke('list-users-with-status');
 
-      if (profilesError) throw profilesError;
+      if (error) throw error;
 
-      // Fetch roles for all users
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role');
-
-      if (rolesError) throw rolesError;
-
-      // Combine profiles with roles
-      const usersWithRoles = profiles.map(profile => {
-        const userRole = roles.find(r => r.user_id === profile.id);
-        return {
-          ...profile,
-          role: userRole?.role || null,
-        };
-      });
-
-      setUsers(usersWithRoles);
+      if (data?.users) {
+        setUsers(data.users.sort((a: UserWithRole, b: UserWithRole) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        ));
+      }
     } catch (error: any) {
       toast.error('Erreur lors du chargement des utilisateurs');
       console.error('Error fetching users:', error);
@@ -192,6 +180,12 @@ export function UserManagement() {
     });
   };
 
+  const isRecentlyActive = (lastSignIn: string | null | undefined) => {
+    if (!lastSignIn) return false;
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    return new Date(lastSignIn) > fiveMinutesAgo;
+  };
+
   if (loading) {
     return (
       <Card>
@@ -230,6 +224,7 @@ export function UserManagement() {
                   <TableHead>Utilisateur</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Rôle</TableHead>
+                  <TableHead>Statut</TableHead>
                   <TableHead>Date d'inscription</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -249,23 +244,55 @@ export function UserManagement() {
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell><RoleBadge role={user.role} /></TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5" title={user.confirmed ? "Compte activé" : "En attente d'activation"}>
+                            {user.confirmed ? (
+                              <>
+                                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                <span className="text-xs text-muted-foreground">Inscrit</span>
+                              </>
+                            ) : (
+                              <>
+                                <Circle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                                <span className="text-xs text-muted-foreground">En attente</span>
+                              </>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5" title={isRecentlyActive(user.last_sign_in_at) ? "Connecté récemment" : "Hors ligne"}>
+                            {isRecentlyActive(user.last_sign_in_at) ? (
+                              <>
+                                <Wifi className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                <span className="text-xs text-muted-foreground">En ligne</span>
+                              </>
+                            ) : (
+                              <>
+                                <WifiOff className="h-4 w-4 text-muted-foreground/50" />
+                                <span className="text-xs text-muted-foreground">Hors ligne</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
                       <TableCell>{formatDate(user.created_at)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleResendInvite(user)}
-                            disabled={resendingInvite === user.id}
-                            title="Renvoyer l'invitation"
-                          >
-                            {resendingInvite === user.id ? (
-                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                            ) : (
-                              <Mail className="h-4 w-4 mr-1" />
-                            )}
-                            Renvoyer
-                          </Button>
+                          {!user.confirmed && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleResendInvite(user)}
+                              disabled={resendingInvite === user.id}
+                              title="Renvoyer l'invitation"
+                            >
+                              {resendingInvite === user.id ? (
+                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                              ) : (
+                                <Mail className="h-4 w-4 mr-1" />
+                              )}
+                              Renvoyer
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
