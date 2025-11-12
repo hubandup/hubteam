@@ -4,10 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { History, Loader2, Edit, Plus, Trash2, Eye } from 'lucide-react';
+import { History, Loader2, Edit, Plus, Trash2, Eye, RotateCcw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { usePermissions } from '@/hooks/usePermissions';
+import { Button } from '@/components/ui/button';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 interface ActivityLogEntry {
   id: string;
@@ -75,9 +78,10 @@ const entityLabels = {
 };
 
 export default function Activity() {
-  const { canRead } = usePermissions();
+  const { canRead, canUpdate } = usePermissions();
   const [activities, setActivities] = useState<ActivityLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [restoring, setRestoring] = useState(false);
 
   useEffect(() => {
     fetchActivities();
@@ -140,6 +144,31 @@ export default function Activity() {
     }
   };
 
+  const handleRestore = async (activity: ActivityLogEntry) => {
+    if (!activity.old_values || activity.action_type === 'created') {
+      toast.error('Impossible de restaurer cette version');
+      return;
+    }
+
+    setRestoring(true);
+    try {
+      const { error } = await supabase
+        .from(activity.entity_type + 's' as any)
+        .update(activity.old_values)
+        .eq('id', activity.entity_id);
+
+      if (error) throw error;
+
+      toast.success('Version restaurée avec succès');
+      fetchActivities();
+    } catch (error) {
+      console.error('Error restoring version:', error);
+      toast.error('Erreur lors de la restauration');
+    } finally {
+      setRestoring(false);
+    }
+  };
+
   if (!canRead('dashboard')) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -196,7 +225,8 @@ export default function Activity() {
                       key={activity.id}
                       className="flex gap-4 p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
                     >
-                      <Avatar className="h-10 w-10">
+                      <div className="flex gap-4 flex-1">
+                        <Avatar className="h-10 w-10">
                         <AvatarImage src={activity.profiles.avatar_url || undefined} />
                         <AvatarFallback>
                           {activity.profiles.first_name[0]}
@@ -274,10 +304,43 @@ export default function Activity() {
                                     <span className="text-foreground">{value}</span>
                                   </div>
                                 );
-                              })}
+                            })}
                           </div>
                         )}
                       </div>
+                    </div>
+
+                      {canUpdate(activity.entity_type as any) && 
+                       activity.action_type === 'updated' && 
+                       activity.old_values && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              disabled={restoring}
+                            >
+                              <RotateCcw className="h-4 w-4 mr-2" />
+                              Restaurer
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Restaurer cette version ?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Cette action restaurera {entityLabel} à son état précédent. 
+                                Les modifications actuelles seront remplacées par les anciennes valeurs.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleRestore(activity)}>
+                                Confirmer la restauration
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </div>
                   );
                 })}
