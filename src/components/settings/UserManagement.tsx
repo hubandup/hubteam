@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { RoleBadge } from '@/components/common/RoleBadge';
-import { Users, Edit, Loader2, Trash2, UserPlus } from 'lucide-react';
+import { Users, Edit, Loader2, Trash2, UserPlus, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { EditUserRoleDialog } from './EditUserRoleDialog';
 import { InviteUserDialog } from './InviteUserDialog';
@@ -38,6 +38,7 @@ export function UserManagement() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserWithRole | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [resendingInvite, setResendingInvite] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -93,6 +94,57 @@ export function UserManagement() {
   const handleDeleteUser = (user: UserWithRole) => {
     setUserToDelete(user);
     setDeleteDialogOpen(true);
+  };
+
+  const handleResendInvite = async (user: UserWithRole) => {
+    if (!user.role) {
+      toast.error('Impossible de renvoyer l\'invitation', {
+        description: 'L\'utilisateur n\'a pas de rôle assigné'
+      });
+      return;
+    }
+
+    setResendingInvite(user.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: { 
+          email: user.email, 
+          role: user.role 
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        console.error('Edge function returned error:', data);
+        
+        // Handle specific error cases
+        let errorTitle = data.error;
+        let errorDescription = data.details || undefined;
+        
+        if (data.error?.includes('déjà existant') || data.error?.includes('already')) {
+          errorTitle = "Utilisateur déjà actif";
+          errorDescription = "Cet utilisateur a déjà complété son inscription. Vous ne pouvez pas renvoyer d'invitation.";
+        }
+        
+        toast.error(errorTitle, {
+          duration: 6000,
+          description: errorDescription
+        });
+        return;
+      }
+
+      toast.success('Invitation renvoyée avec succès', {
+        description: `Un nouvel email a été envoyé à ${user.email}`
+      });
+    } catch (error: any) {
+      console.error('Error resending invitation:', error);
+      toast.error('Erreur lors du renvoi de l\'invitation', {
+        description: error.message || 'Une erreur s\'est produite'
+      });
+    } finally {
+      setResendingInvite(null);
+    }
   };
 
   const confirmDeleteUser = async () => {
@@ -200,6 +252,20 @@ export function UserManagement() {
                       <TableCell>{formatDate(user.created_at)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleResendInvite(user)}
+                            disabled={resendingInvite === user.id}
+                            title="Renvoyer l'invitation"
+                          >
+                            {resendingInvite === user.id ? (
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            ) : (
+                              <Mail className="h-4 w-4 mr-1" />
+                            )}
+                            Renvoyer
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
