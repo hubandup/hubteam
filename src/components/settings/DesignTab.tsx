@@ -35,6 +35,40 @@ const BODY_FONTS = [
   'Ubuntu',
 ];
 
+// Predefined color palettes
+const COLOR_PALETTES = {
+  professional: {
+    name: 'Professionnel',
+    description: 'Palette corporate classique avec bleu et gris',
+    light_primary: '210 99% 29%',      // Deep blue
+    light_secondary: '210 40% 96%',    // Light blue-gray
+    light_background: '0 0% 100%',     // White
+    dark_primary: '210 99% 71%',       // Light blue
+    dark_secondary: '0 0% 14%',        // Dark gray
+    dark_background: '0 0% 6%',        // Very dark gray
+  },
+  modern: {
+    name: 'Moderne',
+    description: 'Palette contemporaine avec violet et orange',
+    light_primary: '270 75% 50%',      // Purple
+    light_secondary: '30 95% 60%',     // Orange
+    light_background: '0 0% 99%',      // Off-white
+    dark_primary: '280 70% 65%',       // Light purple
+    dark_secondary: '30 95% 65%',      // Light orange
+    dark_background: '260 15% 8%',     // Dark purple-gray
+  },
+  creative: {
+    name: 'Créatif',
+    description: 'Palette vibrante avec turquoise et rose',
+    light_primary: '180 80% 40%',      // Turquoise
+    light_secondary: '320 85% 55%',    // Pink
+    light_background: '0 0% 100%',     // White
+    dark_primary: '180 70% 60%',       // Light turquoise
+    dark_secondary: '320 75% 65%',     // Light pink
+    dark_background: '200 20% 10%',    // Dark teal-gray
+  },
+};
+
 // Conversion functions
 function hslToHex(hsl: string): string {
   const [h, s, l] = hsl.split(' ').map(v => parseFloat(v));
@@ -172,6 +206,23 @@ export function DesignTab() {
     }
   };
 
+  const applyPalette = (paletteKey: keyof typeof COLOR_PALETTES) => {
+    const palette = COLOR_PALETTES[paletteKey];
+    setSettings(prev => ({
+      ...prev,
+      light_primary: palette.light_primary,
+      light_secondary: palette.light_secondary,
+      light_background: palette.light_background,
+      dark_primary: palette.dark_primary,
+      dark_secondary: palette.dark_secondary,
+      dark_background: palette.dark_background,
+    }));
+    toast({
+      title: 'Palette appliquée',
+      description: `La palette "${palette.name}" a été appliquée. N'oubliez pas de sauvegarder.`,
+    });
+  };
+
   const applyDesignSettings = (data: DesignSettings) => {
     const root = document.documentElement;
     
@@ -295,6 +346,57 @@ export function DesignTab() {
           Personnalisez les polices et les couleurs de l'application
         </p>
       </div>
+
+      {/* Predefined Palettes Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Palettes prédéfinies</CardTitle>
+          <CardDescription>
+            Sélectionnez une palette de couleurs pour appliquer instantanément un thème cohérent
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Object.entries(COLOR_PALETTES).map(([key, palette]) => (
+              <button
+                key={key}
+                onClick={() => applyPalette(key as keyof typeof COLOR_PALETTES)}
+                className="group relative overflow-hidden rounded-lg border-2 border-border hover:border-primary transition-all p-4 text-left bg-card hover:shadow-md"
+              >
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-lg">{palette.name}</h3>
+                  <p className="text-sm text-muted-foreground">{palette.description}</p>
+                  
+                  {/* Color Preview */}
+                  <div className="grid grid-cols-3 gap-2 mt-3">
+                    <div className="space-y-1">
+                      <div 
+                        className="h-12 rounded border" 
+                        style={{ background: `hsl(${palette.light_primary})` }}
+                      />
+                      <p className="text-xs text-muted-foreground text-center">Primaire</p>
+                    </div>
+                    <div className="space-y-1">
+                      <div 
+                        className="h-12 rounded border" 
+                        style={{ background: `hsl(${palette.light_secondary})` }}
+                      />
+                      <p className="text-xs text-muted-foreground text-center">Secondaire</p>
+                    </div>
+                    <div className="space-y-1">
+                      <div 
+                        className="h-12 rounded border" 
+                        style={{ background: `hsl(${palette.light_background})` }}
+                      />
+                      <p className="text-xs text-muted-foreground text-center">Fond</p>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
