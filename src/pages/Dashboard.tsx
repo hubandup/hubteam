@@ -10,6 +10,8 @@ import { WeeklySchedule } from '@/components/dashboard/WeeklySchedule';
 import { usePermissions } from '@/hooks/usePermissions';
 import { RolePermissionsIndicator } from '@/components/dashboard/RolePermissionsIndicator';
 import { useNavigate } from 'react-router-dom';
+import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -230,15 +232,45 @@ export default function Dashboard() {
         totalRevenue,
       });
 
-      // Mock revenue evolution data (last 6 months)
-      const revenueEvolution = [
-        { month: 'Juillet', revenue: 45000 },
-        { month: 'Août', revenue: 52000 },
-        { month: 'Septembre', revenue: 48000 },
-        { month: 'Octobre', revenue: 61000 },
-        { month: 'Novembre', revenue: 58000 },
-        { month: 'Décembre', revenue: totalRevenue },
-      ];
+      // Fetch revenue evolution data from invoices (last 6 months)
+      const now = new Date();
+      const sixMonthsAgo = subMonths(now, 5); // 5 months ago + current month = 6 months
+      
+      const { data: invoices, error: invoicesError } = await supabase
+        .from('invoices')
+        .select('invoice_date, amount')
+        .gte('invoice_date', format(startOfMonth(sixMonthsAgo), 'yyyy-MM-dd'))
+        .lte('invoice_date', format(endOfMonth(now), 'yyyy-MM-dd'))
+        .order('invoice_date', { ascending: true });
+      
+      if (invoicesError) {
+        console.error('Error fetching invoices:', invoicesError);
+      }
+
+      // Group invoices by month and calculate revenue
+      const revenueByMonth: Record<string, number> = {};
+      
+      invoices?.forEach((invoice) => {
+        const monthKey = format(new Date(invoice.invoice_date), 'yyyy-MM');
+        if (!revenueByMonth[monthKey]) {
+          revenueByMonth[monthKey] = 0;
+        }
+        revenueByMonth[monthKey] += Number(invoice.amount);
+      });
+
+      // Generate array of last 6 months with revenue data
+      const revenueEvolution = [];
+      for (let i = 5; i >= 0; i--) {
+        const monthDate = subMonths(now, i);
+        const monthKey = format(monthDate, 'yyyy-MM');
+        const monthName = format(monthDate, 'MMMM', { locale: fr });
+        const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+        
+        revenueEvolution.push({
+          month: capitalizedMonth,
+          revenue: revenueByMonth[monthKey] || 0,
+        });
+      }
 
       // Calculate project status distribution
       const { data: allProjects, error: allProjectsError } = await supabase
