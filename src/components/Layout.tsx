@@ -3,6 +3,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Sidebar } from './Sidebar';
 import { Breadcrumbs } from './Breadcrumbs';
 import { MobileBottomNav } from './MobileBottomNav';
+import { FloatingFaqButton } from './FloatingFaqButton';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface LayoutProps {
@@ -30,6 +31,7 @@ export function Layout({ children }: LayoutProps) {
           </main>
         </div>
         {isMobile && <MobileBottomNav />}
+        <FloatingFaqButton />
       </div>
     </SidebarProvider>
   );
