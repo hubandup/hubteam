@@ -14,6 +14,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
+import { ActivityReactions } from './ActivityReactions';
 
 interface ActivityFeedItemProps {
   activity: {
@@ -145,44 +146,48 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
     : '?';
 
   return (
-    <Card 
-      className={`p-4 ${getEntityLink() ? 'cursor-pointer hover:bg-accent/50' : ''} transition-colors`}
-      onClick={handleClick}
-    >
-      <div className="flex items-start gap-3">
-        <Avatar className="h-10 w-10">
-          <AvatarImage src={activity.profiles?.avatar_url || undefined} />
-          <AvatarFallback>{userInitials}</AvatarFallback>
-        </Avatar>
+    <Card className="p-4">
+      <div 
+        className={`${getEntityLink() ? 'cursor-pointer hover:bg-accent/50 -m-4 p-4 rounded-lg' : ''} transition-colors`}
+        onClick={handleClick}
+      >
+        <div className="flex items-start gap-3">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={activity.profiles?.avatar_url || undefined} />
+            <AvatarFallback>{userInitials}</AvatarFallback>
+          </Avatar>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-medium">{userName}</span>
-            <span className="text-muted-foreground text-sm">{getActionText()}</span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-medium">{userName}</span>
+              <span className="text-muted-foreground text-sm">{getActionText()}</span>
+            </div>
+
+            {getDetailText() && (
+              <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                {getDetailText()}
+              </p>
+            )}
+
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <EntityIcon className="h-3.5 w-3.5" />
+              <Clock className="h-3.5 w-3.5" />
+              <span>
+                {formatDistanceToNow(new Date(activity.created_at), {
+                  addSuffix: true,
+                  locale: fr,
+                })}
+              </span>
+            </div>
           </div>
 
-          {getDetailText() && (
-            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-              {getDetailText()}
-            </p>
-          )}
-
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <EntityIcon className="h-3.5 w-3.5" />
-            <Clock className="h-3.5 w-3.5" />
-            <span>
-              {formatDistanceToNow(new Date(activity.created_at), {
-                addSuffix: true,
-                locale: fr,
-              })}
-            </span>
+          <div className="flex-shrink-0">
+            <ActionIcon className="h-5 w-5 text-muted-foreground" />
           </div>
-        </div>
-
-        <div className="flex-shrink-0">
-          <ActionIcon className="h-5 w-5 text-muted-foreground" />
         </div>
       </div>
+
+      <ActivityReactions activityId={activity.id} />
     </Card>
   );
 }
