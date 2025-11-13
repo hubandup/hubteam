@@ -11,6 +11,7 @@ interface FacturationProInvoice {
   id: number
   customer_id: number
   invoice_ref: string
+  title?: string
   total: string
   paid_on: string | null
   invoiced_on: string
@@ -86,6 +87,7 @@ Deno.serve(async (req) => {
       const invoiceData = {
         client_id: client.id,
         invoice_number: fpInvoice.invoice_ref,
+        title: fpInvoice.title || null,
         amount: parseFloat(fpInvoice.total),
         status: fpInvoice.paid_on ? 'paid' : 'unpaid',
         invoice_date: fpInvoice.invoiced_on,

@@ -529,6 +529,7 @@ export type Database = {
           invoice_number: string
           pdf_url: string | null
           status: string
+          title: string | null
           updated_at: string
         }
         Insert: {
@@ -542,6 +543,7 @@ export type Database = {
           invoice_number: string
           pdf_url?: string | null
           status?: string
+          title?: string | null
           updated_at?: string
         }
         Update: {
@@ -555,6 +557,7 @@ export type Database = {
           invoice_number?: string
           pdf_url?: string | null
           status?: string
+          title?: string | null
           updated_at?: string
         }
         Relationships: [
