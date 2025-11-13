@@ -102,7 +102,7 @@ export default function Feed() {
   }
 
   return (
-    <div className="container mx-auto p-4 pb-20 max-w-2xl">
+    <div className="w-full md:container md:mx-auto p-4 pb-24 md:pb-8 md:max-w-2xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Fil d'actualité</h1>
         <p className="text-muted-foreground mt-2">
@@ -112,7 +112,7 @@ export default function Feed() {
 
       <OnlineUsersIndicator />
 
-      <ScrollArea className="h-[calc(100vh-12rem)]">
+      <ScrollArea className="h-[calc(100vh-16rem)] md:h-[calc(100vh-12rem)]">
         <div className="space-y-4">
           {activities.length === 0 ? (
             <Card className="p-8 text-center">
