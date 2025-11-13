@@ -195,15 +195,24 @@ export default function Projects() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Projets</h1>
-          <p className="text-muted-foreground">Gérez tous vos projets</p>
-        </div>
-        <ProtectedAction module="projects" action="create">
-          <AddProjectDialog onProjectAdded={fetchProjects} />
-        </ProtectedAction>
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">Projets</h1>
+        <p className="text-muted-foreground">Gérez tous vos projets</p>
+        {isMobile && (
+          <div className="mt-4">
+            <ProtectedAction module="projects" action="create">
+              <AddProjectDialog onProjectAdded={fetchProjects} />
+            </ProtectedAction>
+          </div>
+        )}
       </div>
+      {!isMobile && (
+        <div className="flex justify-end">
+          <ProtectedAction module="projects" action="create">
+            <AddProjectDialog onProjectAdded={fetchProjects} />
+          </ProtectedAction>
+        </div>
+      )}
 
       {projects.length > 0 && (
         <div className="flex items-center gap-3">

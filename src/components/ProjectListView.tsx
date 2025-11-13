@@ -40,9 +40,9 @@ export function ProjectListView({ projects, onProjectClick }: ProjectListViewPro
             </Avatar>
             
             <div className="flex-1 min-w-0">
-              <div className="flex items-baseline gap-2">
-                <span className="text-xs text-muted-foreground">{clientName}</span>
+              <div className="flex flex-col gap-1">
                 <span className="text-sm font-medium truncate">{project.name}</span>
+                <span className="text-xs text-muted-foreground">{clientName}</span>
               </div>
               {project.description && (
                 <p className="text-sm text-muted-foreground truncate mt-1">

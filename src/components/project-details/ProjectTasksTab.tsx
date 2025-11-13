@@ -10,6 +10,7 @@ import { EditTaskDialog } from './EditTaskDialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ProtectedAction } from '@/components/ProtectedAction';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Task {
   id: string;
@@ -31,6 +32,7 @@ interface ProjectTasksTabProps {
 }
 
 export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
+  const isMobile = useIsMobile();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -133,12 +135,14 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Tâches du projet</CardTitle>
-          <ProtectedAction module="tasks" action="create">
-            <Button onClick={() => setShowAddDialog(true)} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Ajouter une tâche
-            </Button>
-          </ProtectedAction>
+          {!isMobile && (
+            <ProtectedAction module="tasks" action="create">
+              <Button onClick={() => setShowAddDialog(true)} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Ajouter une tâche
+              </Button>
+            </ProtectedAction>
+          )}
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -153,7 +157,7 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
                   className="p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
                   onClick={() => handleTaskClick(task)}
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col gap-4">
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-semibold">{task.title}</h3>
@@ -190,33 +194,65 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      {task.status !== 'done' ? (
-                        <ProtectedAction module="tasks" action="update">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => handleMarkAsDone(task.id, e)}
-                            className="shrink-0"
-                          >
-                            <Check className="h-4 w-4 mr-2" />
-                            Terminer
-                          </Button>
-                        </ProtectedAction>
-                      ) : (
-                        <ProtectedAction module="tasks" action="update">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={(e) => handleReopenTask(task.id, e)}
-                            className="shrink-0"
-                          >
-                            <RotateCcw className="h-4 w-4 mr-2" />
-                            Terminé
-                          </Button>
-                        </ProtectedAction>
-                      )}
-                    </div>
+                    {isMobile && (
+                      <div className="flex items-center gap-2 justify-end border-t pt-3">
+                        {task.status !== 'done' ? (
+                          <ProtectedAction module="tasks" action="update">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => handleMarkAsDone(task.id, e)}
+                              className="shrink-0"
+                            >
+                              <Check className="h-4 w-4 mr-2" />
+                              Terminer
+                            </Button>
+                          </ProtectedAction>
+                        ) : (
+                          <ProtectedAction module="tasks" action="update">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => handleReopenTask(task.id, e)}
+                              className="shrink-0"
+                            >
+                              <RotateCcw className="h-4 w-4 mr-2" />
+                              Rouvrir
+                            </Button>
+                          </ProtectedAction>
+                        )}
+                      </div>
+                    )}
+
+                    {!isMobile && (
+                      <div className="flex items-center gap-2">
+                        {task.status !== 'done' ? (
+                          <ProtectedAction module="tasks" action="update">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => handleMarkAsDone(task.id, e)}
+                              className="shrink-0"
+                            >
+                              <Check className="h-4 w-4 mr-2" />
+                              Terminer
+                            </Button>
+                          </ProtectedAction>
+                        ) : (
+                          <ProtectedAction module="tasks" action="update">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => handleReopenTask(task.id, e)}
+                              className="shrink-0"
+                            >
+                              <RotateCcw className="h-4 w-4 mr-2" />
+                              Terminé
+                            </Button>
+                          </ProtectedAction>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

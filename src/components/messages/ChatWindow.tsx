@@ -3,15 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, MessageSquare } from 'lucide-react';
+import { Send, MessageSquare, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { RichMentionInput } from '@/components/common/RichMentionInput';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ChatWindowProps {
   roomId: string | null;
+  onBack?: () => void;
 }
 
 interface Message {
@@ -26,8 +28,9 @@ interface Message {
   };
 }
 
-export function ChatWindow({ roomId }: ChatWindowProps) {
+export function ChatWindow({ roomId, onBack }: ChatWindowProps) {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [mentions, setMentions] = useState<string[]>([]);
@@ -250,7 +253,7 @@ export function ChatWindow({ roomId }: ChatWindowProps) {
     return (
       <div className="flex-1 flex items-center justify-center bg-muted/20">
         <div className="text-center">
-          <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          {!isMobile && <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />}
           <p className="text-muted-foreground">
             Sélectionnez une conversation pour commencer
           </p>
@@ -261,6 +264,14 @@ export function ChatWindow({ roomId }: ChatWindowProps) {
 
   return (
     <div className="flex-1 flex flex-col">
+      {isMobile && onBack && (
+        <div className="flex items-center gap-2 p-4 border-b bg-card">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h2 className="text-lg font-semibold">Messages</h2>
+        </div>
+      )}
       <ScrollArea className="flex-1 p-4" ref={scrollRef}>
         <div className="space-y-4">
           {messages.map((message) => {
