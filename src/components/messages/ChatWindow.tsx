@@ -309,7 +309,7 @@ export function ChatWindow({ roomId, onBack }: ChatWindowProps) {
       {/* Messages area */}
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full" ref={scrollRef}>
-          <div className="p-4 space-y-6 pb-20 md:pb-6">
+          <div className={cn("p-4 space-y-6", isMobile ? "pb-48" : "pb-6")}>
           {Object.entries(groupedMessages).map(([dateKey, dateMessages]) => {
             const date = new Date(dateKey);
             
@@ -383,7 +383,10 @@ export function ChatWindow({ roomId, onBack }: ChatWindowProps) {
       </div>
 
       {/* Message input */}
-      <div className="border-t p-4 bg-background flex-shrink-0">
+      <div className={cn(
+        "border-t p-4 bg-background flex-shrink-0",
+        isMobile && "fixed bottom-16 left-0 right-0 z-50"
+      )}>
         <form onSubmit={handleSendMessage} className="flex items-center gap-2">
           <Button
             type="button"
