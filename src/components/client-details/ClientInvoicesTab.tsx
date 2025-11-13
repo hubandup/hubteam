@@ -155,52 +155,57 @@ export function ClientInvoicesTab({ clientId }: ClientInvoicesTabProps) {
         <div className="grid gap-4">
           {invoices.map((invoice) => (
             <Card key={invoice.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <CardTitle className="text-base">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  {/* Header: Numéro + Badge */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-5 w-5 text-muted-foreground" />
+                      <h3 className="text-lg font-semibold">
                         Facture {invoice.invoice_number}
-                      </CardTitle>
-                      {invoice.title && (
-                        <p className="text-sm font-medium mt-1">
-                          {invoice.title}
-                        </p>
-                      )}
-                      <p className="text-sm text-muted-foreground">
-                        {invoice.invoice_date
-                          ? format(new Date(invoice.invoice_date), 'dd MMMM yyyy', {
-                              locale: fr,
-                            })
-                          : format(new Date(invoice.created_at), 'dd MMMM yyyy', {
-                              locale: fr,
-                            })}
-                      </p>
+                      </h3>
                     </div>
+                    {getStatusBadge(invoice.status)}
                   </div>
-                  {getStatusBadge(invoice.status)}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {invoice.amount.toLocaleString('fr-FR', {
-                        style: 'currency',
-                        currency: 'EUR',
-                      })}
-                    </p>
-                  </div>
+
+                  {/* Titre */}
+                  {invoice.title && (
+                    <h2 className="text-2xl font-bold leading-tight">
+                      {invoice.title}
+                    </h2>
+                  )}
+
+                  {/* Date */}
+                  <p className="text-sm text-muted-foreground">
+                    {invoice.invoice_date
+                      ? format(new Date(invoice.invoice_date), 'dd MMMM yyyy', {
+                          locale: fr,
+                        })
+                      : format(new Date(invoice.created_at), 'dd MMMM yyyy', {
+                          locale: fr,
+                        })}
+                  </p>
+
+                  {/* Montant */}
+                  <p className="text-3xl font-bold">
+                    {invoice.amount.toLocaleString('fr-FR', {
+                      style: 'currency',
+                      currency: 'EUR',
+                    })}
+                  </p>
+
+                  {/* Bouton télécharger */}
                   {invoice.facturation_pro_id && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownloadPdf(invoice.id, invoice.invoice_number)}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Télécharger le PDF
-                    </Button>
+                    <div className="flex justify-end pt-2">
+                      <Button
+                        variant="outline"
+                        size="default"
+                        onClick={() => handleDownloadPdf(invoice.id, invoice.invoice_number)}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Télécharger le PDF
+                      </Button>
+                    </div>
                   )}
                 </div>
               </CardContent>
