@@ -32,6 +32,13 @@ interface Comment {
   replies?: Comment[];
 }
 
+interface Task {
+  id: string;
+  title: string;
+  priority: string;
+  status: string;
+}
+
 interface ProjectTaskCommentsProps {
   projectId: string;
 }
@@ -43,7 +50,7 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
   const [mentions, setMentions] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string>('none');
-  const [tasks, setTasks] = useState<Array<{ id: string; title: string }>>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
@@ -85,7 +92,7 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
     try {
       const { data, error } = await supabase
         .from('tasks')
-        .select('id, title')
+        .select('id, title, priority, status')
         .eq('project_id', projectId)
         .order('title');
 
@@ -337,6 +344,21 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
     setDeleteDialogOpen(true);
   };
 
+  const getTaskBadgeColor = (priority: string, isSelected: boolean) => {
+    if (!isSelected) return 'outline';
+    
+    switch (priority) {
+      case 'high':
+        return 'destructive';
+      case 'medium':
+        return 'default';
+      case 'low':
+        return 'secondary';
+      default:
+        return 'default';
+    }
+  };
+
   const handleReply = (commentId: string) => {
     setReplyingTo(commentId);
     setReplyContent('');
@@ -570,7 +592,7 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
               {tasks.map((task) => (
                 <Badge
                   key={task.id}
-                  variant={selectedTaskId === task.id ? 'default' : 'outline'}
+                  variant={getTaskBadgeColor(task.priority, selectedTaskId === task.id) as any}
                   className="cursor-pointer px-3 py-1.5 text-sm transition-all hover:scale-105"
                   onClick={() => setSelectedTaskId(selectedTaskId === task.id ? 'none' : task.id)}
                 >
