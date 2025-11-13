@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import {
@@ -39,6 +39,11 @@ export function ResponsiveTabs({
   const searchParams = new URLSearchParams(location.search);
   const initialTab = searchParams.get('tab') || defaultValue;
   const [currentValue, setCurrentValue] = useState(initialTab);
+  const userInitiatedRef = useRef(false);
+  const handleTabChange = (val: string) => {
+    userInitiatedRef.current = true;
+    setCurrentValue(val);
+  };
 
   useEffect(() => {
     const checkWidth = () => {
@@ -73,7 +78,7 @@ export function ResponsiveTabs({
   return (
     <Tabs 
       value={currentValue}
-      onValueChange={setCurrentValue}
+      onValueChange={handleTabChange}
       className={className}
     >
       {isMobile ? (
