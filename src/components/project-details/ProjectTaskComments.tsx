@@ -10,7 +10,6 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
 import { MentionInput } from '@/components/common/MentionInput';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
@@ -567,25 +566,25 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
               <Tag className="h-4 w-4" />
               Associer à une tâche (optionnel)
             </label>
-            <Select value={selectedTaskId} onValueChange={setSelectedTaskId}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Commentaire libre (aucune tâche)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Commentaire libre</SelectItem>
-                {tasks.length > 0 ? (
-                  tasks.map((task) => (
-                    <SelectItem key={task.id} value={task.id}>
-                      {task.title}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="no-tasks" disabled>
-                    Aucune tâche disponible
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+            <div className="flex flex-wrap gap-2">
+              <Badge
+                variant={selectedTaskId === 'none' ? 'default' : 'outline'}
+                className="cursor-pointer px-3 py-1.5 text-sm transition-all hover:scale-105"
+                onClick={() => setSelectedTaskId('none')}
+              >
+                Commentaire libre
+              </Badge>
+              {tasks.map((task) => (
+                <Badge
+                  key={task.id}
+                  variant={selectedTaskId === task.id ? 'default' : 'outline'}
+                  className="cursor-pointer px-3 py-1.5 text-sm transition-all hover:scale-105"
+                  onClick={() => setSelectedTaskId(task.id)}
+                >
+                  {task.title}
+                </Badge>
+              ))}
+            </div>
           </div>
 
           <div className="flex items-start gap-2 p-4 border border-input rounded-lg bg-background">
