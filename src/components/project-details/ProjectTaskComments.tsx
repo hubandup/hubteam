@@ -5,11 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { Loader2, MessageSquare, Send, Paperclip, X, Download } from 'lucide-react';
+import { Loader2, MessageSquare, Send, Paperclip, X, Download, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
 import { MentionInput } from '@/components/common/MentionInput';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 interface Comment {
   id: string;
@@ -245,20 +247,31 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
       <CardContent className="space-y-6">
         {/* Add comment form */}
         <form onSubmit={handleSubmit} className="space-y-3">
-          {tasks.length > 0 && (
-            <select
-              value={selectedTaskId || ''}
-              onChange={(e) => setSelectedTaskId(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-input rounded-md bg-background"
-            >
-              <option value="">Commentaire libre</option>
-              {tasks.map((task) => (
-                <option key={task.id} value={task.id}>
-                  {task.title}
-                </option>
-              ))}
-            </select>
-          )}
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-2">
+              <Tag className="h-4 w-4" />
+              Associer à une tâche (optionnel)
+            </label>
+            <Select value={selectedTaskId || ''} onValueChange={setSelectedTaskId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Commentaire libre (aucune tâche)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Commentaire libre</SelectItem>
+                {tasks.length > 0 ? (
+                  tasks.map((task) => (
+                    <SelectItem key={task.id} value={task.id}>
+                      {task.title}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-tasks" disabled>
+                    Aucune tâche disponible
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="flex items-start gap-2 p-4 border border-input rounded-lg bg-background">
             <MentionInput
@@ -355,12 +368,13 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
                       <span className="text-xs text-muted-foreground">
                         {format(new Date(comment.created_at), 'dd MMM yyyy à HH:mm', { locale: fr })}
                       </span>
-                      {comment.tasks && (
-                        <span className="text-xs text-muted-foreground">
-                          · sur "{comment.tasks.title}"
-                        </span>
-                      )}
                     </div>
+                    {comment.tasks && (
+                      <Badge variant="outline" className="mt-1 text-xs gap-1">
+                        <Tag className="h-3 w-3" />
+                        {comment.tasks.title}
+                      </Badge>
+                    )}
                     <p className="text-sm text-foreground break-words whitespace-pre-wrap">
                       {renderCommentContent(comment.content)}
                     </p>
