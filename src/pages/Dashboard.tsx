@@ -31,6 +31,7 @@ export default function Dashboard() {
   const [monthlyPerformance, setMonthlyPerformance] = useState<any[]>([]);
   const [projectsByUser, setProjectsByUser] = useState<any[]>([]);
   const [tasksByUser, setTasksByUser] = useState<any[]>([]);
+  const [taskCompletionByUser, setTaskCompletionByUser] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -383,6 +384,43 @@ export default function Dashboard() {
           taches: user.count,
         }));
 
+      // Calculate task completion rate by user
+      const taskCompletionByUserData: any[] = [];
+
+      if (teamAdminUsers) {
+        for (const userRole of teamAdminUsers) {
+          const userId = userRole.user_id;
+          const profile = userRole.profiles as any;
+          const userName = `${profile.first_name} ${profile.last_name}`;
+
+          // Count total tasks assigned to this user
+          const { count: totalTasks } = await supabase
+            .from('tasks')
+            .select('*', { count: 'exact', head: true })
+            .eq('assigned_to', userId);
+
+          // Count completed tasks
+          const { count: completedTasks } = await supabase
+            .from('tasks')
+            .select('*', { count: 'exact', head: true })
+            .eq('assigned_to', userId)
+            .eq('status', 'done');
+
+          if (totalTasks && totalTasks > 0) {
+            const completionRate = Math.round(((completedTasks || 0) / totalTasks) * 100);
+            taskCompletionByUserData.push({
+              name: userName,
+              taux: completionRate,
+              terminees: completedTasks || 0,
+              total: totalTasks,
+            });
+          }
+        }
+      }
+
+      // Sort by completion rate descending
+      taskCompletionByUserData.sort((a, b) => b.taux - a.taux);
+
       setStats({
         leads,
         clients: activeClients,
@@ -399,6 +437,7 @@ export default function Dashboard() {
       setMonthlyPerformance(performance);
       setProjectsByUser(projectsByUserData);
       setTasksByUser(tasksByUserData);
+      setTaskCompletionByUser(taskCompletionByUserData);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast.error('Erreur lors du chargement du tableau de bord');
@@ -640,6 +679,36 @@ export default function Dashboard() {
                   }}
                 />
                 <Bar dataKey="taches" fill="hsl(var(--secondary))" name="Tâches" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Task Completion Rate by User */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Taux de complétion des tâches</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={taskCompletionByUser} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis type="number" domain={[0, 100]} className="text-xs" />
+                <YAxis dataKey="name" type="category" className="text-xs" width={100} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px'
+                  }}
+                  formatter={(value: any, name: string, props: any) => {
+                    if (name === 'taux') {
+                      return [`${value}% (${props.payload.terminees}/${props.payload.total})`, 'Taux de complétion'];
+                    }
+                    return [value, name];
+                  }}
+                />
+                <Bar dataKey="taux" fill="hsl(var(--success))" name="Taux (%)" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
