@@ -1,9 +1,18 @@
-import { Users, FolderKanban, MessageSquare, HelpCircle } from 'lucide-react';
+import { Users, FolderKanban, MessageSquare, Activity } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { cn } from '@/lib/utils';
 
 export function MobileBottomNav() {
+  // Check if running as PWA
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                (window.navigator as any).standalone === true;
+
   const navItems = [
+    ...(isPWA ? [{
+      to: '/feed',
+      icon: Activity,
+      label: 'Feed',
+    }] : []),
     {
       to: '/crm',
       icon: Users,
@@ -18,11 +27,6 @@ export function MobileBottomNav() {
       to: '/messages',
       icon: MessageSquare,
       label: 'Messages',
-    },
-    {
-      to: '/faq',
-      icon: HelpCircle,
-      label: 'FAQ',
     },
   ];
 

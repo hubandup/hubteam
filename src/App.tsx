@@ -8,6 +8,7 @@ import { useDesignSettings } from "./hooks/useDesignSettings";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Layout } from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
+import Feed from "./pages/Feed";
 import CRM from "./pages/CRM";
 import ClientDetails from "./pages/ClientDetails";
 import Agencies from "./pages/Agencies";
@@ -42,6 +43,7 @@ const App = () => {
             <Route path="/auth/set-password" element={<SetPassword />} />
             <Route path="/" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
             <Route path="/dashboard" element={<Navigate to="/" replace />} />
+            <Route path="/feed" element={<ProtectedRoute><Layout><Feed /></Layout></ProtectedRoute>} />
             <Route path="/crm" element={<ProtectedRoute><Layout><CRM /></Layout></ProtectedRoute>} />
             <Route path="/client/:id" element={<ProtectedRoute><Layout><ClientDetails /></Layout></ProtectedRoute>} />
             <Route path="/agencies" element={<ProtectedRoute><Layout><Agencies /></Layout></ProtectedRoute>} />
