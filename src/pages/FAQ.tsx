@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Collapsible,
   CollapsibleContent,
@@ -14,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useUserRole, type UserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 import { ChevronDown } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   DndContext,
   closestCenter,
@@ -151,6 +153,7 @@ export default function FAQ() {
   const { role } = useUserRole();
   const { canRead, loading } = usePermissions();
   const isAdmin = role === 'admin';
+  const isMobile = useIsMobile();
 
   // Check permission
   if (!loading && !canRead('faq')) {

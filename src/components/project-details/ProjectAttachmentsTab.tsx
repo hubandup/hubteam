@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Paperclip, Download, Trash2, Upload, FileText, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Attachment {
   id: string;
@@ -23,6 +24,7 @@ interface ProjectAttachmentsTabProps {
 }
 
 export function ProjectAttachmentsTab({ projectId }: ProjectAttachmentsTabProps) {
+  const isMobile = useIsMobile();
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -181,35 +183,13 @@ export function ProjectAttachmentsTab({ projectId }: ProjectAttachmentsTabProps)
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Paperclip className="h-5 w-5" />
           Pièces jointes
         </CardTitle>
-        <div>
-          <Input
-            type="file"
-            id="file-upload"
-            className="hidden"
-            onChange={handleFileUpload}
-            multiple
-            disabled={uploading}
-          />
-          <Button
-            onClick={() => document.getElementById('file-upload')?.click()}
-            disabled={uploading}
-            size="sm"
-          >
-            {uploading ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Upload className="h-4 w-4 mr-2" />
-            )}
-            Ajouter des fichiers
-          </Button>
-        </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
         {loading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -237,27 +217,51 @@ export function ProjectAttachmentsTab({ projectId }: ProjectAttachmentsTabProps)
                 <div className="flex items-center gap-1">
                   <Button
                     variant="ghost"
-                    size="icon"
+                    size="sm"
                     onClick={() => downloadFile(attachment)}
                   >
                     <Download className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="ghost"
-                    size="icon"
+                    size="sm"
                     onClick={() => deleteAttachment(attachment)}
                   >
-                    <Trash2 className="h-4 w-4 text-destructive" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground text-center py-8">
-            Aucune pièce jointe. Cliquez sur "Ajouter des fichiers" pour commencer.
+          <p className="text-center text-muted-foreground py-8">
+            Aucune pièce jointe
           </p>
         )}
+        
+        <div className={isMobile ? 'border-t pt-4' : ''}>
+          <Input
+            type="file"
+            id="file-upload"
+            className="hidden"
+            onChange={handleFileUpload}
+            multiple
+            disabled={uploading}
+          />
+          <Button
+            onClick={() => document.getElementById('file-upload')?.click()}
+            disabled={uploading}
+            size="sm"
+            className={isMobile ? 'w-full' : ''}
+          >
+            {uploading ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Upload className="h-4 w-4 mr-2" />
+            )}
+            Ajouter des fichiers
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

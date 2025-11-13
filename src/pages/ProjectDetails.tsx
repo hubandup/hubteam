@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, Plus, Edit, Trash2, FileText, Calendar, Users, MessageSquare, Paperclip, Info } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, FileText, Calendar, Users, MessageSquare, Paperclip, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -28,11 +28,14 @@ import { SelectClientDialog } from '@/components/project-details/SelectClientDia
 import { EditProjectInfoDialog } from '@/components/project-details/EditProjectInfoDialog';
 import { useUserRole } from '@/hooks/useUserRole';
 import { ProtectedAction } from '@/components/ProtectedAction';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { ArrowLeft } from 'lucide-react';
 
 export default function ProjectDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
+  const isMobile = useIsMobile();
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [projectProgress, setProjectProgress] = useState({ completed: 0, total: 0, percentage: 0 });
@@ -200,31 +203,35 @@ export default function ProjectDetails() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-3xl font-bold text-foreground">{project.name}</h1>
             <Badge variant={statusInfo.variant}>
               {statusInfo.label}
             </Badge>
-            <ProtectedAction module="projects" action="update">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowEditDialog(true)}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Modifier
-              </Button>
-            </ProtectedAction>
-            <ProtectedAction module="projects" action="delete">
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setShowDeleteDialog(true)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Supprimer
-              </Button>
-            </ProtectedAction>
+            {!isMobile && (
+              <>
+                <ProtectedAction module="projects" action="update">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowEditDialog(true)}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Modifier
+                  </Button>
+                </ProtectedAction>
+                <ProtectedAction module="projects" action="delete">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setShowDeleteDialog(true)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Supprimer
+                  </Button>
+                </ProtectedAction>
+              </>
+            )}
           </div>
           {client && (
             <p className="text-muted-foreground mt-1">

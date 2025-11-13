@@ -130,40 +130,43 @@ export default function CRM() {
     <div className="flex flex-col h-full min-h-0 overflow-hidden">
       {/* Header - Always visible */}
       <div className="flex-shrink-0 p-6 pb-4 bg-background">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">CRM</h1>
-            <p className="text-muted-foreground">Gérez vos clients et leurs projets</p>
-          </div>
-          <div className="flex gap-2">
-            {!isMobile && (
-              <div className="flex gap-1 border rounded-md">
-                <Button
-                  variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('kanban')}
-                >
-                  <Columns3 className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('grid')}
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-            {!isMobile && (
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">CRM</h1>
+          <p className="text-muted-foreground">Gérez vos clients et leurs projets</p>
+          {isMobile && (
+            <div className="mt-4">
               <ProtectedAction module="crm" action="create">
-                <ImportClientsValidationDialog onClientsImported={fetchClients} />
+                <AddClientDialog onClientAdded={fetchClients} />
               </ProtectedAction>
-            )}
+            </div>
+          )}
+        </div>
+        {!isMobile && (
+          <div className="flex gap-2 mt-4 justify-end">
+            <div className="flex gap-1 border rounded-md">
+              <Button
+                variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('kanban')}
+              >
+                <Columns3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+            </div>
+            <ProtectedAction module="crm" action="create">
+              <ImportClientsValidationDialog onClientsImported={fetchClients} />
+            </ProtectedAction>
             <ProtectedAction module="crm" action="create">
               <AddClientDialog onClientAdded={fetchClients} />
             </ProtectedAction>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Search bar and filters - Always visible */}
@@ -179,16 +182,18 @@ export default function CRM() {
                 className="pl-9"
               />
             </div>
-            <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-              <SelectTrigger className="w-[240px]">
-                <ArrowDownUp className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Trier par..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="created_at">Date de création</SelectItem>
-                <SelectItem value="revenue_current_year">CA année fiscale ↓</SelectItem>
-              </SelectContent>
-            </Select>
+            {!isMobile && (
+              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <SelectTrigger className="w-[240px]">
+                  <ArrowDownUp className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Trier par..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="created_at">Date de création</SelectItem>
+                  <SelectItem value="revenue_current_year">CA année fiscale ↓</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </div>
       )}
