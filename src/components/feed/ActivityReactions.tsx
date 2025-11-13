@@ -7,7 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Heart, Flame, PartyPopper, ThumbsUp, Sparkles } from 'lucide-react';
+import { Heart, Flame, PartyPopper, ThumbsUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -24,9 +24,8 @@ interface ActivityReactionsProps {
 }
 
 const REACTION_TYPES = [
-  { type: 'like', icon: ThumbsUp, label: 'J\'aime', color: 'text-blue-500' },
   { type: 'love', icon: Heart, label: 'Adore', color: 'text-red-500' },
-  { type: 'clap', icon: Sparkles, label: 'Bravo', color: 'text-yellow-500' },
+  { type: 'like', icon: ThumbsUp, label: 'J\'aime', color: 'text-blue-500' },
   { type: 'fire', icon: Flame, label: 'Impressionnant', color: 'text-orange-500' },
   { type: 'celebrate', icon: PartyPopper, label: 'Félicitations', color: 'text-purple-500' },
 ];
@@ -63,13 +62,13 @@ export function ActivityReactions({ activityId }: ActivityReactionsProps) {
 
   const fetchReactions = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('activity_reactions')
         .select('*')
         .eq('activity_id', activityId);
 
       if (error) throw error;
-      setReactions(data || []);
+      setReactions((data as any) || []);
     } catch (error) {
       console.error('Error fetching reactions:', error);
     }
@@ -87,7 +86,7 @@ export function ActivityReactions({ activityId }: ActivityReactionsProps) {
       // Remove reaction
       try {
         setLoading(true);
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('activity_reactions')
           .delete()
           .eq('id', existingReaction.id);
@@ -103,7 +102,7 @@ export function ActivityReactions({ activityId }: ActivityReactionsProps) {
       // Add reaction
       try {
         setLoading(true);
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('activity_reactions')
           .insert({
             activity_id: activityId,
@@ -173,7 +172,7 @@ export function ActivityReactions({ activityId }: ActivityReactionsProps) {
             className="h-8 px-2"
             disabled={loading}
           >
-            <Sparkles className="h-4 w-4" />
+            <Heart className="h-4 w-4" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-2" align="start">

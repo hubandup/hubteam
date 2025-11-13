@@ -68,25 +68,111 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
   };
 
   const getActionText = () => {
-    const entityName = {
-      tasks: 'une tâche',
-      task_comments: 'un commentaire',
-      projects: 'un projet',
-      clients: 'un client',
-      meeting_notes: 'un compte rendu',
-      agencies: 'une agence',
-    }[activity.entity_type] || 'un élément';
+    const entityName = activity.new_values?.company || 
+                       activity.new_values?.name || 
+                       activity.new_values?.title || 
+                       activity.old_values?.company || 
+                       activity.old_values?.name || 
+                       activity.old_values?.title;
 
-    switch (activity.action_type) {
-      case 'INSERT':
-        return `a créé ${entityName}`;
-      case 'UPDATE':
-        return `a modifié ${entityName}`;
-      case 'DELETE':
-        return `a supprimé ${entityName}`;
-      default:
-        return `a effectué une action sur ${entityName}`;
+    // Détails pour les modifications
+    if (activity.action_type === 'UPDATE' && activity.old_values && activity.new_values) {
+      // Pour les clients
+      if (activity.entity_type === 'clients') {
+        const changes = [];
+        if (activity.old_values.contact_email !== activity.new_values.contact_email) {
+          changes.push('le contact');
+        }
+        if (activity.old_values.phone !== activity.new_values.phone) {
+          changes.push('le téléphone');
+        }
+        if (activity.old_values.logo_url !== activity.new_values.logo_url && activity.new_values.logo_url) {
+          return `a ajouté un logo à ${entityName || 'un client'}`;
+        }
+        if (activity.old_values.status_id !== activity.new_values.status_id) {
+          changes.push('le statut');
+        }
+        if (changes.length > 0) {
+          return `a modifié ${changes.join(', ')} de ${entityName || 'un client'}`;
+        }
+        return `a modifié ${entityName || 'un client'}`;
+      }
+      
+      // Pour les projets
+      if (activity.entity_type === 'projects') {
+        if (activity.old_values.status !== activity.new_values.status) {
+          return `a changé le statut du projet ${entityName || ''}`;
+        }
+        return `a modifié le projet ${entityName || ''}`;
+      }
+      
+      // Pour les tâches
+      if (activity.entity_type === 'tasks') {
+        if (activity.old_values.status !== activity.new_values.status) {
+          return `a changé le statut de la tâche ${entityName || ''}`;
+        }
+        if (activity.old_values.assigned_to !== activity.new_values.assigned_to) {
+          return `a assigné la tâche ${entityName || ''}`;
+        }
+        return `a modifié la tâche ${entityName || ''}`;
+      }
+
+      // Pour les project_attachments
+      if (activity.entity_type === 'project_attachments') {
+        const projectName = activity.new_values.project_name || 'un projet';
+        const fileName = activity.new_values.file_name;
+        return `a ajouté un fichier dans le projet ${projectName}${fileName ? ` : ${fileName}` : ''}`;
+      }
     }
+
+    // Textes pour les créations
+    if (activity.action_type === 'INSERT') {
+      if (activity.entity_type === 'task_comments') {
+        const taskTitle = activity.new_values?.task_title || 'une tâche';
+        const comment = activity.new_values?.content;
+        if (comment) {
+          const shortComment = comment.length > 50 ? comment.substring(0, 50) + '...' : comment;
+          return `a commenté la tâche ${taskTitle} : "${shortComment}"`;
+        }
+        return `a commenté la tâche ${taskTitle}`;
+      }
+      
+      if (activity.entity_type === 'meeting_notes') {
+        const clientName = activity.new_values?.client_name || 'un client';
+        return `a créé un compte rendu pour ${clientName}`;
+      }
+
+      if (activity.entity_type === 'project_attachments') {
+        const projectName = activity.new_values?.project_name || 'un projet';
+        const fileName = activity.new_values?.file_name;
+        return `a ajouté un fichier dans le projet ${projectName}${fileName ? ` : ${fileName}` : ''}`;
+      }
+
+      const entityNameGeneric = {
+        tasks: `la tâche ${entityName || ''}`,
+        projects: `le projet ${entityName || ''}`,
+        clients: `le client ${entityName || ''}`,
+        agencies: `l'agence ${entityName || ''}`,
+      }[activity.entity_type] || 'un élément';
+      
+      return `a créé ${entityNameGeneric}`;
+    }
+
+    // Textes pour les suppressions
+    if (activity.action_type === 'DELETE') {
+      const entityNameGeneric = {
+        tasks: `la tâche ${entityName || ''}`,
+        task_comments: 'un commentaire',
+        projects: `le projet ${entityName || ''}`,
+        clients: `le client ${entityName || ''}`,
+        meeting_notes: 'un compte rendu',
+        agencies: `l'agence ${entityName || ''}`,
+      }[activity.entity_type] || 'un élément';
+      
+      return `a supprimé ${entityNameGeneric}`;
+    }
+
+    return 'a effectué une action';
   };
 
   const getEntityLink = () => {

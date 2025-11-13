@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2 } from 'lucide-react';
 import { ActivityFeedItem } from '@/components/feed/ActivityFeedItem';
+import { OnlineUsersIndicator } from '@/components/feed/OnlineUsersIndicator';
 import { useAuth } from '@/hooks/useAuth';
 
 interface ActivityLog {
@@ -108,6 +109,8 @@ export default function Feed() {
           Toutes les activités récentes sur HubTeam
         </p>
       </div>
+
+      <OnlineUsersIndicator />
 
       <ScrollArea className="h-[calc(100vh-12rem)]">
         <div className="space-y-4">
