@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 interface CreateChatRoomDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
+  onSuccess: (roomId: string) => void;
 }
 
 interface User {
@@ -94,7 +94,7 @@ export function CreateChatRoomDialog({ open, onOpenChange, onSuccess }: CreateCh
 
       toast.success('Conversation créée avec succès');
       setSelectedUsers([]);
-      onSuccess();
+      onSuccess(roomId);
     } catch (error: any) {
       console.error('Error creating chat room:', error);
       toast.error('Erreur lors de la création');

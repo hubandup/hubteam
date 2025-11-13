@@ -3,16 +3,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, User, Loader2, Users } from 'lucide-react';
+import { Plus, Loader2, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CreateChatRoomDialog } from './CreateChatRoomDialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 interface ChatRoom {
   id: string;
   name: string | null;
   type: 'direct';
   memberCount?: number;
+  lastMessage?: string;
+  lastMessageTime?: string;
+  isOnline?: boolean;
   members?: Array<{
     user_id: string;
     profiles: {
@@ -99,7 +104,7 @@ export function ChatRoomList({ selectedRoomId, onSelectRoom }: ChatRoomListProps
 
       if (roomsError) throw roomsError;
 
-      // For each room, fetch members
+      // For each room, fetch members and last message
       const roomsWithMembers = await Promise.all(
         (roomsData || []).map(async (room) => {
           // Get member IDs
@@ -122,11 +127,23 @@ export function ChatRoomList({ selectedRoomId, onSelectRoom }: ChatRoomListProps
             profiles: profile
           }));
 
+          // Fetch last message
+          const { data: lastMessageData } = await supabase
+            .from('chat_messages')
+            .select('content, created_at')
+            .eq('room_id', room.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
           return {
             ...room,
             type: 'direct' as const,
             memberCount: members.length + 1,
-            members
+            members,
+            lastMessage: lastMessageData?.content,
+            lastMessageTime: lastMessageData?.created_at,
+            isOnline: Math.random() > 0.5 // TODO: implement real online status
           };
         })
       );
@@ -141,97 +158,134 @@ export function ChatRoomList({ selectedRoomId, onSelectRoom }: ChatRoomListProps
 
   if (loading) {
     return (
-      <div className="w-64 border-r flex items-center justify-center">
+      <div className="w-80 border-r flex items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
+  const otherMember = (room: ChatRoom) => {
+    if (room.type === 'direct' && room.members && room.members.length > 0) {
+      const member = room.members[0];
+      return member.profiles.display_name || 
+             `${member.profiles.first_name} ${member.profiles.last_name}`;
+    }
+    return room.name || 'Conversation';
+  };
+
+  const otherMemberInitials = (room: ChatRoom) => {
+    if (room.type === 'direct' && room.members && room.members.length > 0) {
+      const member = room.members[0];
+      return `${member.profiles.first_name[0]}${member.profiles.last_name[0]}`;
+    }
+    return 'C';
+  };
+
+  const otherMemberAvatar = (room: ChatRoom) => {
+    if (room.type === 'direct' && room.members && room.members.length > 0) {
+      return room.members[0].profiles.avatar_url;
+    }
+    return null;
+  };
+
+  const formatTimestamp = (timestamp: string | undefined) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffInDays === 0) {
+      return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    } else if (diffInDays < 7) {
+      return date.toLocaleDateString('fr-FR', { weekday: 'short' }).slice(0, 3) + '.';
+    } else {
+      return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace(' ', ' ');
+    }
+  };
+
+  const truncateMessage = (text: string | undefined, maxLength: number = 50) => {
+    if (!text) return 'Aucun message';
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+  };
+
   return (
-    <div className="w-64 border-r flex flex-col">
+    <div className="w-80 border-r flex flex-col bg-background">
+      {/* Header */}
       <div className="p-4 border-b flex items-center justify-between">
-        <h2 className="font-semibold">Messages</h2>
+        <h2 className="text-lg font-semibold">Messages</h2>
         <Button
-          size="icon"
           variant="ghost"
+          size="icon"
           onClick={() => setCreateDialogOpen(true)}
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-5 w-5" />
         </Button>
       </div>
 
+      {/* Chat rooms list */}
       <ScrollArea className="flex-1">
-        <div className="p-2 space-y-1">
-          {rooms.length === 0 ? (
-            <div className="text-center py-8 px-4">
-              <p className="text-sm text-muted-foreground mb-4">
-                Aucune conversation
-              </p>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setCreateDialogOpen(true)}
+        {rooms.length === 0 ? (
+          <div className="p-8 text-center">
+            <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground mb-4">
+              Aucune conversation
+            </p>
+            <Button
+              onClick={() => setCreateDialogOpen(true)}
+              size="sm"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nouvelle conversation
+            </Button>
+          </div>
+        ) : (
+          <div>
+            {rooms.map((room) => (
+              <button
+                key={room.id}
+                onClick={() => onSelectRoom(room.id)}
+                className={cn(
+                  "w-full px-4 py-3 flex items-start gap-3 hover:bg-accent/30 transition-colors text-left border-b border-border/50",
+                  selectedRoomId === room.id && "bg-accent/50"
+                )}
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Démarrer une conversation
-              </Button>
-            </div>
-          ) : (
-            rooms.map((room) => {
-              const otherMembers = room.members || [];
-              const displayName = otherMembers.length > 0
-                ? otherMembers.map(m => 
-                    m.profiles.display_name || `${m.profiles.first_name} ${m.profiles.last_name}`
-                  ).join(', ')
-                : room.name || 'Sans nom';
-
-              return (
-                <button
-                  key={room.id}
-                  onClick={() => onSelectRoom(room.id)}
-                  className={cn(
-                    'w-full text-left p-3 rounded-lg hover:bg-muted transition-colors',
-                    selectedRoomId === room.id && 'bg-primary/10'
+                <div className="relative flex-shrink-0">
+                  <Avatar className="h-14 w-14">
+                    <AvatarImage src={otherMemberAvatar(room) || undefined} />
+                    <AvatarFallback className="text-base">
+                      {otherMemberInitials(room)}
+                    </AvatarFallback>
+                  </Avatar>
+                  {room.isOnline && (
+                    <div className="absolute bottom-0 right-0 h-4 w-4 bg-green-500 rounded-full border-2 border-background" />
                   )}
-                >
-                  <div className="flex items-center gap-3">
-                    {otherMembers.length === 1 ? (
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={otherMembers[0].profiles.avatar_url || undefined} />
-                        <AvatarFallback className="text-xs">
-                          {otherMembers[0].profiles.first_name[0]}
-                          {otherMembers[0].profiles.last_name[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                    ) : (
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Users className="h-4 w-4 text-primary" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {displayName}
-                      </p>
-                      {otherMembers.length > 1 && (
-                        <p className="text-xs text-muted-foreground">
-                          {otherMembers.length + 1} participants
-                        </p>
-                      )}
-                    </div>
+                </div>
+                <div className="flex-1 min-w-0 pt-1">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <h3 className="font-semibold text-base text-foreground truncate">
+                      {otherMember(room)}
+                    </h3>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
+                      {formatTimestamp(room.lastMessageTime)}
+                    </span>
                   </div>
-                </button>
-              );
-            })
-          )}
-        </div>
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {truncateMessage(room.lastMessage)}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </ScrollArea>
 
+      {/* Create chat dialog */}
       <CreateChatRoomDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
-        onSuccess={() => {
+        onSuccess={(roomId) => {
           setCreateDialogOpen(false);
-          fetchRooms();
+          onSelectRoom(roomId);
         }}
       />
     </div>
