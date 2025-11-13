@@ -57,7 +57,7 @@ export function ResponsiveTabs({
       params.set('tab', currentValue);
       navigate({ search: params.toString() }, { replace: true });
     }
-  }, [currentValue, location.search, navigate]);
+  }, [currentValue, navigate]); // Removed location.search to avoid loop
 
   // Update current tab if URL changes externally
   useEffect(() => {
