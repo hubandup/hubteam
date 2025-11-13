@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Loader2, Bell, MessageSquare, Calendar, CheckCircle } from 'lucide-react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { AppBadgeInfo } from '@/components/notifications/AppBadgeInfo';
 
 interface NotificationPreferences {
   task_assigned: boolean;
@@ -184,37 +185,41 @@ export function NotificationPreferencesTab() {
           </Card>
 
           {permission === 'granted' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5" />
-                  Test des notifications
-                </CardTitle>
-                <CardDescription>
-                  Envoyez-vous une notification de test pour vérifier que tout fonctionne
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button 
-                  onClick={sendTestNotification}
-                  disabled={saving}
-                  variant="outline"
-                  className="w-full"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Envoi en cours...
-                    </>
-                  ) : (
-                    <>
-                      <Bell className="h-4 w-4 mr-2" />
-                      Envoyer une notification de test
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bell className="h-5 w-5" />
+                    Test des notifications
+                  </CardTitle>
+                  <CardDescription>
+                    Envoyez-vous une notification de test pour vérifier que tout fonctionne
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    onClick={sendTestNotification}
+                    disabled={saving}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Envoi en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Bell className="h-4 w-4 mr-2" />
+                        Envoyer une notification de test
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <AppBadgeInfo />
+            </>
           )}
         </>
       )}

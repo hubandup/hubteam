@@ -53,14 +53,21 @@ export function useNotifications() {
 
   // Update app badge when unread count changes
   useEffect(() => {
-    if ('serviceWorker' in navigator && 'setAppBadge' in navigator) {
-      navigator.serviceWorker.ready.then((registration) => {
-        registration.active?.postMessage({
-          type: 'UPDATE_BADGE',
-          count: unreadCount,
-        });
-      });
-    }
+    const updateBadge = async () => {
+      if ('setAppBadge' in navigator) {
+        try {
+          if (unreadCount > 0) {
+            await (navigator as any).setAppBadge(unreadCount);
+          } else {
+            await (navigator as any).clearAppBadge();
+          }
+        } catch (error) {
+          console.error('Error updating app badge:', error);
+        }
+      }
+    };
+
+    updateBadge();
   }, [unreadCount]);
 
   const fetchNotifications = async () => {
@@ -97,7 +104,18 @@ export function useNotifications() {
       setNotifications(prev =>
         prev.map(n => (n.id === notificationId ? { ...n, read: true } : n))
       );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      
+      const newCount = Math.max(0, unreadCount - 1);
+      setUnreadCount(newCount);
+      
+      // Update app badge
+      if ('setAppBadge' in navigator) {
+        if (newCount > 0) {
+          await (navigator as any).setAppBadge(newCount);
+        } else {
+          await (navigator as any).clearAppBadge();
+        }
+      }
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
@@ -117,6 +135,11 @@ export function useNotifications() {
 
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
+      
+      // Clear app badge
+      if ('clearAppBadge' in navigator) {
+        await (navigator as any).clearAppBadge();
+      }
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
     }
