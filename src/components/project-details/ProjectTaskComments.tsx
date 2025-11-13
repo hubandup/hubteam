@@ -41,7 +41,7 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
   const [newComment, setNewComment] = useState('');
   const [mentions, setMentions] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string>('none');
   const [tasks, setTasks] = useState<Array<{ id: string; title: string }>>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -201,7 +201,7 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
         .from('task_comments')
         .insert({
           content: newComment.trim(),
-          task_id: selectedTaskId || null,
+          task_id: selectedTaskId === 'none' ? null : selectedTaskId,
           user_id: user.id,
           attachment_url: attachmentUrl,
           project_id: projectId,
@@ -319,12 +319,12 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
               <Tag className="h-4 w-4" />
               Associer à une tâche (optionnel)
             </label>
-            <Select value={selectedTaskId || ''} onValueChange={setSelectedTaskId}>
+            <Select value={selectedTaskId} onValueChange={setSelectedTaskId}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Commentaire libre (aucune tâche)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Commentaire libre</SelectItem>
+                <SelectItem value="none">Commentaire libre</SelectItem>
                 {tasks.length > 0 ? (
                   tasks.map((task) => (
                     <SelectItem key={task.id} value={task.id}>
