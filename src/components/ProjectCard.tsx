@@ -50,13 +50,28 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
                 <Building2 className="h-6 w-6" />
               </AvatarFallback>
             </Avatar>
-            <div className="min-w-0 flex-1">
-              <CardTitle className="text-lg truncate mb-1">
+            <div className="min-w-0 flex-1 space-y-1">
+              <CardTitle className="text-lg truncate">
                 {project.name}
               </CardTitle>
               <CardDescription className="text-xs font-medium">
                 {clientName}
               </CardDescription>
+              {project.description && (
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {project.description}
+                </p>
+              )}
+              {(project.start_date || project.end_date) && (
+                <div className={`flex items-center gap-2 text-sm ${isOverdue ? 'text-destructive font-medium' : project.status === 'completed' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  <Calendar className="h-4 w-4" />
+                  <span>
+                    {project.start_date && format(new Date(project.start_date), 'dd MMM yyyy', { locale: fr })}
+                    {project.start_date && project.end_date && ' - '}
+                    {project.end_date && format(new Date(project.end_date), 'dd MMM yyyy', { locale: fr })}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
           <Badge className={`flex-shrink-0 border-0 ${statusInfo.color}`}>
@@ -64,23 +79,6 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-2">
-        {project.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {project.description}
-          </p>
-        )}
-        {(project.start_date || project.end_date) && (
-          <div className={`flex items-center gap-2 text-sm ${isOverdue ? 'text-destructive font-medium' : project.status === 'completed' ? 'text-foreground' : 'text-muted-foreground'}`}>
-            <Calendar className="h-4 w-4" />
-            <span>
-              {project.start_date && format(new Date(project.start_date), 'dd MMM yyyy', { locale: fr })}
-              {project.start_date && project.end_date && ' - '}
-              {project.end_date && format(new Date(project.end_date), 'dd MMM yyyy', { locale: fr })}
-            </span>
-          </div>
-        )}
-      </CardContent>
     </Card>
   );
 }
