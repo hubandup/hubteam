@@ -7,6 +7,7 @@ import { fr } from 'date-fns/locale';
 import { EditClientDialog } from '@/components/EditClientDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { ProtectedAction } from '@/components/ProtectedAction';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ClientInfoTabProps {
   client: {
@@ -31,6 +32,7 @@ interface ClientInfoTabProps {
 }
 
 export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
+  const isMobile = useIsMobile();
   const [activitySector, setActivitySector] = useState<any>(null);
   const [clientStatus, setClientStatus] = useState<any>(null);
   const [clientRanking, setClientRanking] = useState<number | null>(null);
@@ -148,61 +150,63 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Statistiques</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-start gap-3">
-            <Euro className="h-5 w-5 text-success mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm text-muted-foreground">Chiffre d'affaires total</p>
-              <p className="text-2xl font-bold text-success">
-                {client.revenue.toLocaleString('fr-FR')} € HT
-              </p>
-              {client.revenue_current_year !== undefined && client.revenue_current_year !== null && (
-                <div className="mt-2 pt-2 border-t">
-                  <p className="text-sm text-muted-foreground">Année fiscale en cours (avril - mars)</p>
-                  <p className="text-lg font-semibold text-primary">
-                    {client.revenue_current_year.toLocaleString('fr-FR')} € HT
+      {!isMobile && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Statistiques</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-start gap-3">
+              <Euro className="h-5 w-5 text-success mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground">Chiffre d'affaires total</p>
+                <p className="text-2xl font-bold text-success">
+                  {client.revenue.toLocaleString('fr-FR')} € HT
+                </p>
+                {client.revenue_current_year !== undefined && client.revenue_current_year !== null && (
+                  <div className="mt-2 pt-2 border-t">
+                    <p className="text-sm text-muted-foreground">Année fiscale en cours (avril - mars)</p>
+                    <p className="text-lg font-semibold text-primary">
+                      {client.revenue_current_year.toLocaleString('fr-FR')} € HT
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {clientRanking && (
+              <div className="flex items-start gap-3">
+                <Award className="h-5 w-5 text-primary mt-0.5" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Classement CA</p>
+                  <p className="text-xl font-bold text-primary">
+                    #{clientRanking}
                   </p>
                 </div>
-              )}
-            </div>
-          </div>
-
-          {clientRanking && (
-            <div className="flex items-start gap-3">
-              <Award className="h-5 w-5 text-primary mt-0.5" />
-              <div>
-                <p className="text-sm text-muted-foreground">Classement CA</p>
-                <p className="text-xl font-bold text-primary">
-                  #{clientRanking}
-                </p>
               </div>
-            </div>
-          )}
+            )}
 
-          {client.last_contact && (
-            <div className="flex items-start gap-3">
-              <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div>
-                <p className="text-sm text-muted-foreground">Dernier contact</p>
-                <p className="font-medium">
-                  {format(new Date(client.last_contact), 'dd MMMM yyyy', { locale: fr })}
-                </p>
+            {client.last_contact && (
+              <div className="flex items-start gap-3">
+                <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Dernier contact</p>
+                  <p className="font-medium">
+                    {format(new Date(client.last_contact), 'dd MMMM yyyy', { locale: fr })}
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          <div>
-            <p className="text-sm text-muted-foreground mb-2">Statut</p>
-            <Badge variant={client.active ? 'default' : 'secondary'}>
-              {client.active ? 'Actif' : 'Inactif'}
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Statut</p>
+              <Badge variant={client.active ? 'default' : 'secondary'}>
+                {client.active ? 'Actif' : 'Inactif'}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       </div>
     </div>
   );
