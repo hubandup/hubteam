@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
           type: 'project_created',
           title: 'Nouveau projet créé automatiquement',
           message: `Le projet "${quote.title}" a été créé depuis un devis accepté`,
-          link: `/projects/${newProject.id}`,
+          link: `/project/${newProject.id}`,
         }))
 
         await supabaseClient

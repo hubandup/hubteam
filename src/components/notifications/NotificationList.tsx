@@ -11,10 +11,19 @@ export function NotificationList() {
   const { notifications, loading, markAsRead, markAllAsRead } = useNotifications();
   const navigate = useNavigate();
 
-  const handleNotificationClick = (notification: any) => {
-    markAsRead(notification.id);
-    if (notification.link) {
-      navigate(notification.link);
+  const handleNotificationClick = async (notification: any) => {
+    // Correct legacy links with /projects/ to /project/
+    let correctedLink = notification.link;
+    if (correctedLink) {
+      correctedLink = correctedLink.replace('/projects/', '/project/');
+    }
+    
+    // Mark as read
+    await markAsRead(notification.id);
+    
+    // Navigate to corrected link
+    if (correctedLink) {
+      navigate(correctedLink);
     }
   };
 
