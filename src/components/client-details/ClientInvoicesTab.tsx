@@ -80,6 +80,8 @@ export function ClientInvoicesTab({ clientId }: ClientInvoicesTabProps) {
   };
 
   const handleDownloadPdf = async (invoiceId: string, invoiceNumber: string) => {
+    // Open a blank tab immediately to avoid popup blockers
+    const newTab = window.open('', '_blank', 'noopener,noreferrer');
     try {
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/download-invoice-pdf?invoice_id=${invoiceId}`,
@@ -91,22 +93,37 @@ export function ClientInvoicesTab({ clientId }: ClientInvoicesTabProps) {
       );
 
       if (!response.ok) {
-        throw new Error('Failed to download PDF');
+        throw new Error(`Téléchargement PDF échoué (${response.status})`);
       }
 
-      // Create blob URL and open in new tab
+      // Create blob URL and open in the pre-opened tab
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      
-      // Clean up the blob URL after a delay
-      setTimeout(() => window.URL.revokeObjectURL(url), 100);
+
+      if (newTab) {
+        newTab.location.href = url;
+      } else {
+        // Fallback: force download via a temporary link
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.download = `facture-${invoiceNumber}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      // Clean up the blob URL (delay for Safari compatibility)
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
     } catch (error) {
+      if (newTab) {
+        newTab.close();
+      }
       console.error('Error downloading PDF:', error);
-      toast.error('Erreur lors du téléchargement du PDF');
+      toast.error("Erreur lors de l'ouverture du PDF");
     }
   };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
