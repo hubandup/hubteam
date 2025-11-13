@@ -7,7 +7,8 @@ import { AddClientDialog } from '@/components/AddClientDialog';
 import { ImportClientsDialog } from '@/components/ImportClientsDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, LayoutGrid, Columns3 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, LayoutGrid, Columns3, ArrowDownUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -19,6 +20,7 @@ export default function CRM() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'kanban' | 'grid'>('kanban');
+  const [sortBy, setSortBy] = useState<'created_at' | 'revenue_current_year'>('created_at');
 
   useEffect(() => {
     fetchClients();
@@ -56,16 +58,30 @@ export default function CRM() {
   };
 
   const filteredClients = useMemo(() => {
-    if (!searchQuery.trim()) return clients;
+    let result = clients;
     
-    const query = searchQuery.toLowerCase();
-    return clients.filter(client =>
-      client.company?.toLowerCase().includes(query) ||
-      client.first_name?.toLowerCase().includes(query) ||
-      client.last_name?.toLowerCase().includes(query) ||
-      client.email?.toLowerCase().includes(query)
-    );
-  }, [clients, searchQuery]);
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(client =>
+        client.company?.toLowerCase().includes(query) ||
+        client.first_name?.toLowerCase().includes(query) ||
+        client.last_name?.toLowerCase().includes(query) ||
+        client.email?.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply sorting
+    if (sortBy === 'revenue_current_year') {
+      result = [...result].sort((a, b) => {
+        const aRevenue = a.revenue_current_year ?? 0;
+        const bRevenue = b.revenue_current_year ?? 0;
+        return bRevenue - aRevenue; // Descending order
+      });
+    }
+    
+    return result;
+  }, [clients, searchQuery, sortBy]);
 
   const handleStageChange = async (clientId: string, newStage: string) => {
     try {
@@ -144,17 +160,29 @@ export default function CRM() {
         </div>
       </div>
 
-      {/* Search bar - Always visible */}
+      {/* Search bar and filters - Always visible */}
       {clients.length > 0 && (
         <div className="flex-shrink-0 px-6 pb-4 bg-background">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher un client..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
+          <div className="flex gap-3 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher un client..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+              <SelectTrigger className="w-[240px]">
+                <ArrowDownUp className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Trier par..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="created_at">Date de création</SelectItem>
+                <SelectItem value="revenue_current_year">CA année fiscale ↓</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       )}
