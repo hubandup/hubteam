@@ -645,11 +645,28 @@ export default function Dashboard() {
             <CardTitle>Projets par utilisateur</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={projectsByUser}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="name" className="text-xs" />
-                <YAxis className="text-xs" />
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={projectsByUser.map((item, index) => ({
+                    name: item.name,
+                    value: item.projets,
+                  }))}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="hsl(var(--primary))"
+                  dataKey="value"
+                >
+                  {projectsByUser.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={`hsl(${(index * 360) / projectsByUser.length}, 70%, 50%)`}
+                    />
+                  ))}
+                </Pie>
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--background))',
@@ -657,8 +674,8 @@ export default function Dashboard() {
                     borderRadius: '6px'
                   }}
                 />
-                <Bar dataKey="projets" fill="hsl(var(--primary))" name="Projets" />
-              </BarChart>
+                <Legend />
+              </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -669,11 +686,28 @@ export default function Dashboard() {
             <CardTitle>Tâches par utilisateur</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={tasksByUser}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="name" className="text-xs" />
-                <YAxis className="text-xs" />
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={tasksByUser.map((item, index) => ({
+                    name: item.name,
+                    value: item.taches,
+                  }))}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="hsl(var(--secondary))"
+                  dataKey="value"
+                >
+                  {tasksByUser.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={`hsl(${180 + (index * 360) / tasksByUser.length}, 70%, 50%)`}
+                    />
+                  ))}
+                </Pie>
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--background))',
@@ -681,8 +715,8 @@ export default function Dashboard() {
                     borderRadius: '6px'
                   }}
                 />
-                <Bar dataKey="taches" fill="hsl(var(--secondary))" name="Tâches" />
-              </BarChart>
+                <Legend />
+              </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -693,26 +727,44 @@ export default function Dashboard() {
             <CardTitle>Taux de complétion des tâches</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={taskCompletionByUser} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis type="number" domain={[0, 100]} className="text-xs" />
-                <YAxis dataKey="name" type="category" className="text-xs" width={100} />
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={taskCompletionByUser.map((item, index) => ({
+                    name: item.name,
+                    value: item.taux,
+                  }))}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, value }) => `${name}: ${value.toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="hsl(var(--primary))"
+                  dataKey="value"
+                >
+                  {taskCompletionByUser.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={`hsl(${240 + (index * 360) / taskCompletionByUser.length}, 70%, 50%)`}
+                    />
+                  ))}
+                </Pie>
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--background))',
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '6px'
                   }}
-                  formatter={(value: any, name: string, props: any) => {
-                    if (name === 'taux') {
-                      return [`${value}% (${props.payload.terminees}/${props.payload.total})`, 'Taux de complétion'];
+                  formatter={(value: any, name: any, props: any) => {
+                    const item = taskCompletionByUser.find(d => d.name === props.payload.name);
+                    if (item) {
+                      return [`${value.toFixed(0)}% (${item.terminees}/${item.total})`, 'Taux de complétion'];
                     }
                     return [value, name];
                   }}
                 />
-                <Bar dataKey="taux" fill="hsl(var(--success))" name="Taux (%)" />
-              </BarChart>
+                <Legend />
+              </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
