@@ -78,7 +78,7 @@ export default function Settings() {
         </p>
       </div>
 
-      <ResponsiveTabs defaultValue="profile" tabs={allTabs} />
+      <ResponsiveTabs defaultValue="profile" tabs={allTabs} storageKey="settings-tabs" />
     </div>
   );
 }
