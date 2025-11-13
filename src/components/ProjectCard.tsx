@@ -51,12 +51,12 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
+              <CardTitle className="text-lg truncate mb-1">
+                {project.name}
+              </CardTitle>
               <CardDescription className="text-xs font-medium">
                 {clientName}
               </CardDescription>
-              <CardTitle className="text-lg truncate mt-0.5">
-                {project.name}
-              </CardTitle>
             </div>
           </div>
           <Badge className={`flex-shrink-0 border-0 ${statusInfo.color}`}>
