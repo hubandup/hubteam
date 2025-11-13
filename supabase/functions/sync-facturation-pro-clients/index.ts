@@ -40,36 +40,57 @@ Deno.serve(async (req) => {
 
     console.log('Starting bidirectional client synchronization')
 
-    // Step 1: Fetch clients from Facturation.PRO
-    const facturationProResponse = await fetch(
-      `${FACTURATION_PRO_API_URL}/firms/${firmId}/customers.json`,
-      {
-        headers: {
-          'Authorization': `Basic ${btoa(`${apiId}:${apiKey}`)}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    )
+    // Step 1: Fetch all clients from Facturation.PRO with pagination
+    const allClients: FacturationProClient[] = []
+    let page = 1
+    let hasMorePages = true
 
-    if (!facturationProResponse.ok) {
-      const errorText = await facturationProResponse.text()
-      throw new Error(`Facturation.PRO API error: ${errorText}`)
+    while (hasMorePages) {
+      const facturationProResponse = await fetch(
+        `${FACTURATION_PRO_API_URL}/firms/${firmId}/customers.json?page=${page}`,
+        {
+          headers: {
+            'Authorization': `Basic ${btoa(`${apiId}:${apiKey}`)}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      if (!facturationProResponse.ok) {
+        const errorText = await facturationProResponse.text()
+        throw new Error(`Facturation.PRO API error: ${errorText}`)
+      }
+
+      const pageClients: FacturationProClient[] = await facturationProResponse.json()
+      console.log(`Fetched ${pageClients.length} clients from page ${page}`)
+      
+      if (pageClients.length === 0) {
+        hasMorePages = false
+      } else {
+        allClients.push(...pageClients)
+        page++
+      }
     }
 
-    const facturationProClients: FacturationProClient[] = await facturationProResponse.json()
-    console.log(`Fetched ${facturationProClients.length} clients from Facturation.PRO`)
+    console.log(`Total: ${allClients.length} clients fetched from Facturation.PRO`)
+    const facturationProClients = allClients
 
     // Step 2: Sync from Facturation.PRO to CRM
     let syncedFromFacturationPro = 0
+    let createdClients = 0
+    let updatedClients = 0
+    let skippedClients = 0
+    
     for (const fpClient of facturationProClients) {
       const { data: existingClient } = await supabaseClient
         .from('clients')
         .select('id, facturation_pro_id')
         .eq('facturation_pro_id', fpClient.id.toString())
-        .single()
+        .maybeSingle()
 
       if (!fpClient.email) {
         console.warn(`Skipping client ${fpClient.id} - missing email`)
+        skippedClients++
         continue
       }
 
@@ -89,8 +110,10 @@ Deno.serve(async (req) => {
 
         if (updErr) {
           console.error('Failed to update client', existingClient.id, updErr)
+          skippedClients++
           continue
         }
+        updatedClients++
       } else {
         // Create new client
         const { error: insErr } = await supabaseClient
@@ -109,13 +132,15 @@ Deno.serve(async (req) => {
 
         if (insErr) {
           console.error('Failed to insert client', fpClient.id, insErr)
+          skippedClients++
           continue
         }
+        createdClients++
       }
       syncedFromFacturationPro++
     }
 
-    console.log(`Synced ${syncedFromFacturationPro} clients from Facturation.PRO to CRM`)
+    console.log(`Synced ${syncedFromFacturationPro} clients from Facturation.PRO to CRM (${createdClients} created, ${updatedClients} updated, ${skippedClients} skipped)`)
 
     // Step 3: Sync from CRM to Facturation.PRO
     const { data: crmClients } = await supabaseClient
@@ -169,7 +194,11 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
+        totalClients: allClients.length,
         syncedFromFacturationPro,
+        createdClients,
+        updatedClients,
+        skippedClients,
         syncedToFacturationPro: syncedToCRM,
         message: 'Bidirectional client synchronization completed',
       }),
