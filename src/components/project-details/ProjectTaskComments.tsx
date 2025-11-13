@@ -604,15 +604,17 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
 
           <div className="border border-input rounded-lg bg-background">
             <div className="flex gap-2 p-4">
-              <MentionInput
-                value={newComment}
-                onChange={setNewComment}
-                onMentionsChange={setMentions}
-                placeholder="Ajouter un commentaire... (utilisez @ pour mentionner)"
-                rows={3}
-                className="flex-1 resize-none border-0 p-0 focus-visible:ring-0 shadow-none bg-transparent min-h-[80px]"
-                disabled={submitting}
-              />
+              <div className="flex-1">
+                <MentionInput
+                  value={newComment}
+                  onChange={setNewComment}
+                  onMentionsChange={setMentions}
+                  placeholder="Ajouter un commentaire... (utilisez @ pour mentionner)"
+                  rows={4}
+                  className="w-full resize-none border-0 p-0 focus-visible:ring-0 shadow-none bg-transparent min-h-[120px]"
+                  disabled={submitting}
+                />
+              </div>
             </div>
             <div className="flex items-center justify-end gap-2 px-4 pb-4">
               <label htmlFor="task-comment-file" className="cursor-pointer">
