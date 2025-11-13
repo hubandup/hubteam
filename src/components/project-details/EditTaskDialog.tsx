@@ -77,6 +77,8 @@ export function EditTaskDialog({ open, onOpenChange, task, onSuccess }: EditTask
     setLoading(true);
 
     try {
+      const newAssignedTo = (!assignedTo || assignedTo === 'unassigned') ? null : assignedTo;
+      
       const { error } = await supabase
         .from('tasks')
         .update({
@@ -86,7 +88,7 @@ export function EditTaskDialog({ open, onOpenChange, task, onSuccess }: EditTask
           priority,
           start_date: startDate || null,
           end_date: endDate || null,
-          assigned_to: (!assignedTo || assignedTo === 'unassigned') ? null : assignedTo,
+          assigned_to: newAssignedTo,
         })
         .eq('id', task.id);
 
@@ -94,6 +96,22 @@ export function EditTaskDialog({ open, onOpenChange, task, onSuccess }: EditTask
         console.error('Error updating task:', error);
         toast.error(`Erreur: ${error.message}`);
         throw error;
+      }
+
+      // Send push notification if task assignment changed
+      if (newAssignedTo && task.assigned_to !== newAssignedTo) {
+        try {
+          await supabase.functions.invoke('send-push-notification', {
+            body: {
+              userId: newAssignedTo,
+              title: 'Tâche assignée',
+              body: `Une tâche vous a été assignée : ${title.trim()}`,
+              url: `/projects/${task.project_id}`
+            }
+          });
+        } catch (error) {
+          console.error('Error sending push notification:', error);
+        }
       }
 
       toast.success('Tâche mise à jour avec succès');
