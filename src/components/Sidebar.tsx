@@ -1,4 +1,4 @@
-import { LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, MessageSquare, History, HelpCircle, Archive } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, MessageSquare, History, HelpCircle } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -35,8 +35,6 @@ export function Sidebar() {
     { title: 'FAQ', url: '/faq', icon: HelpCircle, module: 'faq' as const },
   ];
 
-  const archivedProjectsItem = { title: 'Projets archivés', url: '/archived-projects', icon: Archive, module: 'projects' as const };
-
   const showSettings = role === 'admin' || role === 'team';
 
   return (
@@ -65,16 +63,6 @@ export function Sidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ) : null
-              )}
-              {role === 'admin' && canRead('projects') && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink to={archivedProjectsItem.url} className="hover:bg-muted/50 ml-6" activeClassName="bg-primary/10 text-primary font-medium">
-                      <archivedProjectsItem.icon className="mr-2 h-4 w-4" />
-                      <span>{archivedProjectsItem.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
               )}
               {showSettings && (
                 <SidebarMenuItem>

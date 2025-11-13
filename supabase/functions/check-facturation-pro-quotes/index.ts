@@ -13,6 +13,7 @@ interface FacturationProQuote {
   title: string
   quote_status: number
   accepted_date?: string
+  invoiced_on?: string
   fully_invoiced?: boolean
   ignore_quote?: boolean
 }
@@ -80,15 +81,32 @@ Deno.serve(async (req) => {
       }
     })
 
-    // Filter for quotes to create projects (accepted or tobeinvoiced)
-    // Note: Temporarily disabled until we identify the correct numeric codes
-    const quotesToProcess: FacturationProQuote[] = [] // quotes.filter(q => q.quote_status === 1 || q.quote_status === 2)
-    console.log(`Found ${quotesToProcess.length} quotes to process`)
+    // Filter for quotes to create projects
+    // Status 1 = À facturer (ready to invoice) -> create project
+    const quotesToProcess = quotes.filter(q => q.quote_status === 1)
+    console.log(`Found ${quotesToProcess.length} quotes to process (À facturer)`)
 
-    // Filter for paid quotes to archive projects
-    // Note: Temporarily disabled until we identify the correct numeric code
-    const paidQuotes: FacturationProQuote[] = [] // quotes.filter(q => q.quote_status === 3)
-    console.log(`Found ${paidQuotes.length} paid quotes to archive`)
+    // Filter for completed quotes from previous fiscal year to archive
+    // Status 9 = Soldé (completed) -> archive if from previous fiscal year
+    // Fiscal year: April 1 to March 31
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    const currentMonth = now.getMonth() // 0-11
+    
+    // Calculate previous fiscal year end date (March 31 of current year if we're past April, or previous year if before April)
+    const previousFiscalYearEnd = new Date(
+      currentMonth >= 3 ? currentYear : currentYear - 1, // Year
+      2, // March (0-indexed)
+      31 // Last day
+    )
+    
+    const completedQuotes = quotes.filter(q => {
+      if (q.quote_status !== 9) return false
+      // Check if quote was completed before the end of previous fiscal year
+      const invoicedDate = q.invoiced_on ? new Date(q.invoiced_on) : null
+      return invoicedDate && invoicedDate <= previousFiscalYearEnd
+    })
+    console.log(`Found ${completedQuotes.length} completed quotes from previous fiscal year to archive`)
 
     let createdProjects = 0
     let archivedProjects = 0
@@ -172,8 +190,8 @@ Deno.serve(async (req) => {
       console.log(`Created project "${quote.title}" for quote ${quote.id} (status: ${quote.quote_status})`)
     }
 
-    // Archive projects for paid quotes
-    for (const quote of paidQuotes) {
+    // Archive projects for completed quotes from previous fiscal year
+    for (const quote of completedQuotes) {
       // Find the project by name
       const { data: project } = await supabaseClient
         .from('projects')
@@ -203,7 +221,7 @@ Deno.serve(async (req) => {
       }
 
       archivedProjects++
-      console.log(`Archived project "${quote.title}" for paid quote ${quote.id}`)
+      console.log(`Archived project "${quote.title}" for completed quote ${quote.id} from previous fiscal year`)
     }
 
     return new Response(
@@ -211,7 +229,7 @@ Deno.serve(async (req) => {
         success: true,
         totalQuotes: quotes.length,
         quotesToProcess: quotesToProcess.length,
-        paidQuotes: paidQuotes.length,
+        completedQuotesFromPreviousFiscalYear: completedQuotes.length,
         createdProjects,
         archivedProjects,
         message: 'Quote check completed',

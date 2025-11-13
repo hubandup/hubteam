@@ -9,21 +9,29 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Search, LayoutGrid, List, Kanban } from 'lucide-react';
+import { Loader2, Search, LayoutGrid, List, Kanban, Archive, ArchiveRestore, Edit, Trash2 } from 'lucide-react';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function Projects() {
   const navigate = useNavigate();
   const { canRead } = usePermissions();
+  const queryClient = useQueryClient();
   const [projects, setProjects] = useState<any[]>([]);
+  const [archivedProjects, setArchivedProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'kanban' | 'list'>('grid');
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProjects();
+    fetchArchivedProjects();
   }, []);
 
   const fetchProjects = async () => {
@@ -51,6 +59,74 @@ export default function Projects() {
       setLoading(false);
     }
   };
+
+  const fetchArchivedProjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select(`
+          *,
+          project_clients (
+            clients (
+              company,
+              logo_url
+            )
+          )
+        `)
+        .eq('archived', true)
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+      setArchivedProjects(data || []);
+    } catch (error) {
+      console.error('Error fetching archived projects:', error);
+    }
+  };
+
+  const unarchiveMutation = useMutation({
+    mutationFn: async (projectId: string) => {
+      const { error } = await supabase
+        .from('projects')
+        .update({ archived: false })
+        .eq('id', projectId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
+      toast.success('Projet désarchivé avec succès');
+      fetchProjects();
+      fetchArchivedProjects();
+    },
+    onError: (error) => {
+      console.error('Error unarchiving project:', error);
+      toast.error('Erreur lors de la désarchivage du projet');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (projectId: string) => {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
+      toast.success('Projet supprimé définitivement');
+      setProjectToDelete(null);
+      fetchArchivedProjects();
+    },
+    onError: (error) => {
+      console.error('Error deleting project:', error);
+      toast.error('Erreur lors de la suppression du projet');
+      setProjectToDelete(null);
+    },
+  });
 
   const handleStatusChange = async (projectId: string, newStatus: string) => {
     try {
@@ -178,9 +254,95 @@ export default function Projects() {
           <TabsTrigger value="completed">
             Terminés ({projects.filter(p => p.status === 'completed').length})
           </TabsTrigger>
+          <TabsTrigger value="archived">
+            <Archive className="h-4 w-4 mr-1" />
+            Archivés ({archivedProjects.length})
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="mt-6">
+        <TabsContent value="archived" className="mt-6">
+          {archivedProjects.length === 0 ? (
+            <div className="text-center py-12">
+              <Archive className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">Aucun projet archivé</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Les projets soldés de l'année fiscale précédente seront automatiquement archivés
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {archivedProjects.map((project) => (
+                <Card key={project.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="text-xl mb-2">{project.name}</CardTitle>
+                        {project.project_clients?.[0]?.clients?.company && (
+                          <CardDescription className="flex items-center gap-2">
+                            {project.project_clients[0].clients.logo_url && (
+                              <img 
+                                src={project.project_clients[0].clients.logo_url} 
+                                alt="" 
+                                className="w-5 h-5 rounded object-cover"
+                              />
+                            )}
+                            {project.project_clients[0].clients.company}
+                          </CardDescription>
+                        )}
+                      </div>
+                      <Badge variant="secondary">
+                        <Archive className="h-3 w-3 mr-1" />
+                        Archivé
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {project.description && (
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                        {project.description}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-end gap-2 mt-4">
+                      <ProtectedAction module="projects" action="update">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/project/${project.id}`)}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Modifier
+                        </Button>
+                      </ProtectedAction>
+                      <ProtectedAction module="projects" action="update">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => unarchiveMutation.mutate(project.id)}
+                          disabled={unarchiveMutation.isPending}
+                        >
+                          <ArchiveRestore className="h-4 w-4 mr-1" />
+                          Désarchiver
+                        </Button>
+                      </ProtectedAction>
+                      <ProtectedAction module="projects" action="delete">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setProjectToDelete(project.id)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Supprimer
+                        </Button>
+                      </ProtectedAction>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value={activeTab !== 'archived' ? activeTab : 'all'} className="mt-6">
           {filteredProjects.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">
@@ -217,6 +379,26 @@ export default function Projects() {
           )}
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer définitivement ce projet ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => projectToDelete && deleteMutation.mutate(projectToDelete)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer définitivement
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
