@@ -212,7 +212,7 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
                             className="shrink-0"
                           >
                             <RotateCcw className="h-4 w-4 mr-2" />
-                            Réouvrir
+                            Terminé
                           </Button>
                         </ProtectedAction>
                       )}
