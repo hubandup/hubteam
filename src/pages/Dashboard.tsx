@@ -307,18 +307,24 @@ export default function Dashboard() {
       // Fetch projects by user (team + admin)
       const { data: teamAdminUsers, error: usersError } = await supabase
         .from('user_roles')
-        .select(`
-          user_id,
-          profiles!inner (
-            first_name,
-            last_name
-          )
-        `)
+        .select('user_id, role')
         .in('role', ['admin', 'team']);
 
       if (usersError) {
         console.error('Error fetching team/admin users:', usersError);
       }
+
+      // Get profiles for these users
+      const userIds = teamAdminUsers?.map(u => u.user_id) || [];
+      const { data: userProfiles } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', userIds);
+
+      // Create a map of user profiles
+      const profilesMap = new Map(
+        userProfiles?.map(p => [p.id, `${p.first_name} ${p.last_name}`]) || []
+      );
 
       // Count projects by user
       const projectCountsByUser: Record<string, { name: string; count: number }> = {};
@@ -326,8 +332,7 @@ export default function Dashboard() {
       if (teamAdminUsers) {
         for (const userRole of teamAdminUsers) {
           const userId = userRole.user_id;
-          const profile = userRole.profiles as any;
-          const userName = `${profile.first_name} ${profile.last_name}`;
+          const userName = profilesMap.get(userId) || 'Utilisateur inconnu';
 
           // Count projects created by this user
           const { count, error: projectsError } = await supabase
@@ -358,8 +363,7 @@ export default function Dashboard() {
       if (teamAdminUsers) {
         for (const userRole of teamAdminUsers) {
           const userId = userRole.user_id;
-          const profile = userRole.profiles as any;
-          const userName = `${profile.first_name} ${profile.last_name}`;
+          const userName = profilesMap.get(userId) || 'Utilisateur inconnu';
 
           // Count tasks assigned to this user
           const { count: taskCount, error: tasksError } = await supabase
@@ -390,8 +394,7 @@ export default function Dashboard() {
       if (teamAdminUsers) {
         for (const userRole of teamAdminUsers) {
           const userId = userRole.user_id;
-          const profile = userRole.profiles as any;
-          const userName = `${profile.first_name} ${profile.last_name}`;
+          const userName = profilesMap.get(userId) || 'Utilisateur inconnu';
 
           // Count total tasks assigned to this user
           const { count: totalTasks } = await supabase
