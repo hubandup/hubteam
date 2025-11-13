@@ -9,10 +9,12 @@ const FACTURATION_PRO_API_URL = 'https://www.facturation.pro'
 
 interface FacturationProQuote {
   id: number
-  client_id: number
+  customer_id: number
   title: string
-  quote_status: string
+  quote_status: number
   accepted_date?: string
+  fully_invoiced?: boolean
+  ignore_quote?: boolean
 }
 
 Deno.serve(async (req) => {
@@ -58,15 +60,34 @@ Deno.serve(async (req) => {
     // Log the fields available in the first quote
     if (quotes.length > 0) {
       console.log('Available quote fields:', Object.keys(quotes[0]))
-      console.log('First quote sample - id:', quotes[0].id, 'client_id:', quotes[0].client_id, 'title:', quotes[0].title?.substring(0, 30), 'quote_status:', quotes[0].quote_status)
+      console.log('First quote sample - id:', quotes[0].id, 'customer_id:', quotes[0].customer_id, 'title:', quotes[0].title?.substring(0, 30), 'quote_status:', quotes[0].quote_status)
     }
 
+    // Log all unique quote_status values to identify the correct codes
+    const uniqueStatuses = [...new Set(quotes.map(q => q.quote_status))]
+    console.log('Unique quote_status values found:', uniqueStatuses)
+
+    // Sample quotes with different statuses
+    uniqueStatuses.forEach(status => {
+      const sample = quotes.find(q => q.quote_status === status)
+      if (sample) {
+        console.log(`Status ${status} example:`, {
+          id: sample.id,
+          title: sample.title?.substring(0, 30),
+          fully_invoiced: sample.fully_invoiced,
+          ignore_quote: sample.ignore_quote
+        })
+      }
+    })
+
     // Filter for quotes to create projects (accepted or tobeinvoiced)
-    const quotesToProcess = quotes.filter(q => q.quote_status === 'accepted' || q.quote_status === 'tobeinvoiced')
-    console.log(`Found ${quotesToProcess.length} quotes to process (accepted or tobeinvoiced)`)
+    // Note: Temporarily disabled until we identify the correct numeric codes
+    const quotesToProcess: FacturationProQuote[] = [] // quotes.filter(q => q.quote_status === 1 || q.quote_status === 2)
+    console.log(`Found ${quotesToProcess.length} quotes to process`)
 
     // Filter for paid quotes to archive projects
-    const paidQuotes = quotes.filter(q => q.quote_status === 'paid')
+    // Note: Temporarily disabled until we identify the correct numeric code
+    const paidQuotes: FacturationProQuote[] = [] // quotes.filter(q => q.quote_status === 3)
     console.log(`Found ${paidQuotes.length} paid quotes to archive`)
 
     let createdProjects = 0
@@ -90,11 +111,11 @@ Deno.serve(async (req) => {
       const { data: client } = await supabaseClient
         .from('clients')
         .select('id')
-        .eq('facturation_pro_id', quote.client_id.toString())
+        .eq('facturation_pro_id', quote.customer_id.toString())
         .single()
 
       if (!client) {
-        console.warn(`Client not found for Facturation.PRO client_id: ${quote.client_id}`)
+        console.warn(`Client not found for Facturation.PRO customer_id: ${quote.customer_id}`)
         continue
       }
 
@@ -111,7 +132,7 @@ Deno.serve(async (req) => {
         .from('projects')
         .insert({
           name: quote.title,
-          description: `Projet créé automatiquement depuis le devis (statut: ${quote.quote_status === 'tobeinvoiced' ? 'À facturer' : 'accepté'}) #${quote.id}`,
+          description: `Projet créé automatiquement depuis le devis #${quote.id}`,
           status: 'active',
           start_date: quote.accepted_date || new Date().toISOString().split('T')[0],
           created_by: firstAdmin?.user_id,
@@ -138,7 +159,7 @@ Deno.serve(async (req) => {
           user_id: admin.user_id,
           type: 'project_created',
           title: 'Nouveau projet créé automatiquement',
-          message: `Le projet "${quote.title}" a été créé depuis un devis ${quote.quote_status === 'tobeinvoiced' ? 'à facturer' : 'accepté'}`,
+          message: `Le projet "${quote.title}" a été créé depuis un devis accepté`,
           link: `/projects/${newProject.id}`,
         }))
 
