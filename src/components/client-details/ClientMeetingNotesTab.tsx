@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Paperclip, Download } from 'lucide-react';
 import { format } from 'date-fns';
@@ -107,6 +108,11 @@ export function ClientMeetingNotesTab({ clientId }: ClientMeetingNotesTabProps) 
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm">{fullName}</span>
+                        {note.is_private && (
+                          <Badge variant="secondary" className="text-xs">
+                            Privé
+                          </Badge>
+                        )}
                         <span className="text-xs text-muted-foreground">
                           {format(new Date(note.created_at), "d MMM yyyy 'à' HH:mm", { locale: fr })}
                         </span>
