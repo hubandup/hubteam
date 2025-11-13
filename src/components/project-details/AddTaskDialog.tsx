@@ -73,7 +73,7 @@ export function AddTaskDialog({
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      const { error } = await supabase
+      const { data: newTask, error } = await supabase
         .from('tasks')
         .insert({
           project_id: projectId,
@@ -85,9 +85,27 @@ export function AddTaskDialog({
           end_date: endDate || null,
           assigned_to: assignedTo || null,
           created_by: user?.id,
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Send push notification if task is assigned
+      if (assignedTo && newTask) {
+        try {
+          await supabase.functions.invoke('send-push-notification', {
+            body: {
+              userId: assignedTo,
+              title: 'Nouvelle tâche assignée',
+              body: `Une nouvelle tâche vous a été assignée : ${title.trim()}`,
+              url: `/projects/${projectId}`
+            }
+          });
+        } catch (error) {
+          console.error('Error sending push notification:', error);
+        }
+      }
 
       toast.success('Tâche créée avec succès');
       onSuccess();

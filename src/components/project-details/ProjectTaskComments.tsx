@@ -250,6 +250,52 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
 
       if (error) throw error;
 
+      // Send push notifications
+      const notificationPromises = [];
+      
+      // 1. Notify task assignee if comment is on a task
+      if (selectedTaskId !== 'none') {
+        const { data: task } = await supabase
+          .from('tasks')
+          .select('assigned_to, title')
+          .eq('id', selectedTaskId)
+          .single();
+        
+        if (task?.assigned_to && task.assigned_to !== user.id) {
+          notificationPromises.push(
+            supabase.functions.invoke('send-push-notification', {
+              body: {
+                userId: task.assigned_to,
+                title: 'Nouveau commentaire',
+                body: `Nouveau commentaire sur la tâche : ${task.title}`,
+                url: `/projects/${projectId}`
+              }
+            })
+          );
+        }
+      }
+      
+      // 2. Notify mentioned users
+      if (mentions.length > 0) {
+        mentions.forEach(userId => {
+          if (userId !== user.id) {
+            notificationPromises.push(
+              supabase.functions.invoke('send-push-notification', {
+                body: {
+                  userId,
+                  title: 'Vous avez été mentionné',
+                  body: 'Vous avez été mentionné dans un commentaire',
+                  url: `/projects/${projectId}`
+                }
+              })
+            );
+          }
+        });
+      }
+      
+      // Execute all notifications in parallel
+      await Promise.allSettled(notificationPromises);
+
       toast.success('Commentaire ajouté avec succès');
       setNewComment('');
       setMentions([]);
@@ -392,6 +438,48 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
         });
 
       if (error) throw error;
+
+      // Send push notifications
+      const notificationPromises = [];
+      
+      // Notify the original comment author
+      const parentComment = comments
+        .flatMap(c => [c, ...(c.replies || [])])
+        .find(c => c.id === parentId);
+      
+      if (parentComment && parentComment.user_id !== user.id) {
+        notificationPromises.push(
+          supabase.functions.invoke('send-push-notification', {
+            body: {
+              userId: parentComment.user_id,
+              title: 'Nouvelle réponse',
+              body: 'Quelqu\'un a répondu à votre commentaire',
+              url: `/projects/${projectId}`
+            }
+          })
+        );
+      }
+      
+      // Notify mentioned users
+      if (replyMentions.length > 0) {
+        replyMentions.forEach(userId => {
+          if (userId !== user.id) {
+            notificationPromises.push(
+              supabase.functions.invoke('send-push-notification', {
+                body: {
+                  userId,
+                  title: 'Vous avez été mentionné',
+                  body: 'Vous avez été mentionné dans une réponse',
+                  url: `/projects/${projectId}`
+                }
+              })
+            );
+          }
+        });
+      }
+      
+      // Execute all notifications in parallel
+      await Promise.allSettled(notificationPromises);
 
       toast.success('Réponse ajoutée avec succès');
       handleCancelReply();
