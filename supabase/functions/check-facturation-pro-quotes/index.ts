@@ -55,6 +55,12 @@ Deno.serve(async (req) => {
     const quotes: FacturationProQuote[] = await quotesResponse.json()
     console.log(`Fetched ${quotes.length} quotes from Facturation.PRO`)
 
+    // Log the fields available in the first quote
+    if (quotes.length > 0) {
+      console.log('Available quote fields:', Object.keys(quotes[0]))
+      console.log('First quote sample - id:', quotes[0].id, 'client_id:', quotes[0].client_id, 'title:', quotes[0].title?.substring(0, 30))
+    }
+
     // Filter for quotes to create projects (accepted or tobeinvoiced)
     const quotesToProcess = quotes.filter(q => q.status === 'accepted' || q.status === 'tobeinvoiced')
     console.log(`Found ${quotesToProcess.length} quotes to process (accepted or tobeinvoiced)`)
