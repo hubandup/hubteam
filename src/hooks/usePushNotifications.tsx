@@ -61,6 +61,7 @@ export function usePushNotifications() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const subscriptionData = subscription.toJSON();
+        // @ts-ignore - Types will be regenerated automatically
         await supabase.from('push_subscriptions').upsert({
           user_id: user.id,
           endpoint: subscriptionData.endpoint,
