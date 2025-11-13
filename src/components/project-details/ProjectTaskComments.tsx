@@ -5,13 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { Loader2, MessageSquare, Send, Paperclip, X, Download, Tag } from 'lucide-react';
+import { Loader2, MessageSquare, Send, Paperclip, X, Download, Tag, Edit2, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
 import { MentionInput } from '@/components/common/MentionInput';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface Comment {
   id: string;
@@ -44,6 +45,11 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
   const [tasks, setTasks] = useState<Array<{ id: string; title: string }>>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editedContent, setEditedContent] = useState('');
+  const [editingMentions, setEditingMentions] = useState<string[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -236,6 +242,67 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
     });
   };
 
+  const handleEditComment = (comment: Comment) => {
+    setEditingCommentId(comment.id);
+    setEditedContent(comment.content);
+    setEditingMentions([]);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditedContent('');
+    setEditingMentions([]);
+  };
+
+  const handleUpdateComment = async (commentId: string) => {
+    if (!editedContent.trim()) {
+      toast.error('Le commentaire ne peut pas être vide');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('task_comments')
+        .update({ content: editedContent.trim() })
+        .eq('id', commentId);
+
+      if (error) throw error;
+
+      toast.success('Commentaire modifié avec succès');
+      handleCancelEdit();
+      fetchComments();
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      toast.error('Erreur lors de la modification du commentaire');
+    }
+  };
+
+  const handleDeleteComment = async () => {
+    if (!commentToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('task_comments')
+        .delete()
+        .eq('id', commentToDelete);
+
+      if (error) throw error;
+
+      toast.success('Commentaire supprimé avec succès');
+      setDeleteDialogOpen(false);
+      setCommentToDelete(null);
+      fetchComments();
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      toast.error('Erreur lors de la suppression du commentaire');
+    }
+  };
+
+  const openDeleteDialog = (commentId: string) => {
+    setCommentToDelete(commentId);
+    setDeleteDialogOpen(true);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -368,6 +435,26 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
                       <span className="text-xs text-muted-foreground">
                         {format(new Date(comment.created_at), 'dd MMM yyyy à HH:mm', { locale: fr })}
                       </span>
+                      {comment.user_id === user?.id && (
+                        <div className="flex items-center gap-1 ml-auto">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditComment(comment)}
+                            className="h-7 w-7 p-0"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openDeleteDialog(comment.id)}
+                            className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                     {comment.tasks && (
                       <Badge variant="outline" className="mt-1 text-xs gap-1">
@@ -375,17 +462,49 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
                         {comment.tasks.title}
                       </Badge>
                     )}
-                    <p className="text-sm text-foreground break-words whitespace-pre-wrap">
-                      {renderCommentContent(comment.content)}
-                    </p>
-                    {comment.attachment_url && (
-                      <button
-                        onClick={() => handleDownload(comment.attachment_url!, comment.attachment_url?.split('/').pop())}
-                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
-                      >
-                        <Paperclip className="h-3 w-3" />
-                        Télécharger la pièce jointe
-                      </button>
+                    
+                    {editingCommentId === comment.id ? (
+                      <div className="space-y-2 pt-2">
+                        <MentionInput
+                          value={editedContent}
+                          onChange={setEditedContent}
+                          onMentionsChange={setEditingMentions}
+                          placeholder="Modifier le commentaire..."
+                          rows={3}
+                          className="w-full"
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleUpdateComment(comment.id)}
+                            disabled={!editedContent.trim()}
+                          >
+                            Enregistrer
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleCancelEdit}
+                          >
+                            Annuler
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm text-foreground break-words whitespace-pre-wrap">
+                          {renderCommentContent(comment.content)}
+                        </p>
+                        {comment.attachment_url && (
+                          <button
+                            onClick={() => handleDownload(comment.attachment_url!, comment.attachment_url?.split('/').pop())}
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+                          >
+                            <Paperclip className="h-3 w-3" />
+                            Télécharger la pièce jointe
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -398,6 +517,23 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
           )}
         </div>
       </CardContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer le commentaire</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setCommentToDelete(null)}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteComment} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
