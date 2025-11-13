@@ -4,6 +4,9 @@ project_id = "ytjxeypquqkrmbmhzfqi"
 [edge_runtime.cron]
 enabled = true
 
+[functions.calculate-client-revenue]
+verify_jwt = false
+
 [[edge_runtime.cron.jobs]]
 name = "check-deadlines"
 schedule = "0 */6 * * *"  # Every 6 hours

@@ -128,6 +128,29 @@ Deno.serve(async (req) => {
       syncedInvoices++
     }
 
+    // Step 4: Calculate and update revenue for each client
+    const { data: clientsWithInvoices } = await supabaseClient
+      .from('clients')
+      .select('id')
+    
+    if (clientsWithInvoices) {
+      for (const client of clientsWithInvoices) {
+        const { data: invoices } = await supabaseClient
+          .from('invoices')
+          .select('amount')
+          .eq('client_id', client.id)
+          .eq('status', 'paid')
+        
+        const revenue = invoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0
+        
+        await supabaseClient
+          .from('clients')
+          .update({ revenue })
+          .eq('id', client.id)
+      }
+      console.log(`Updated revenue for ${clientsWithInvoices.length} clients`)
+    }
+
     console.log(`Synced ${syncedInvoices} invoices, skipped ${skippedInvoices}`)
     if (missingClientIds.size > 0) {
       console.warn(`Missing clients for customer IDs: ${Array.from(missingClientIds).join(', ')}`)

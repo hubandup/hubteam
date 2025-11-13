@@ -89,9 +89,9 @@ Deno.serve(async (req) => {
         .maybeSingle()
 
       if (!fpClient.email) {
-        console.warn(`Skipping client ${fpClient.id} - missing email`)
-        skippedClients++
-        continue
+        console.warn(`Client ${fpClient.id} has no email - using placeholder`)
+        // Use placeholder email for clients without email
+        fpClient.email = `client-${fpClient.id}@placeholder.local`
       }
 
       if (existingClient) {
