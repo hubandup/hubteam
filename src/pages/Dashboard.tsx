@@ -29,6 +29,7 @@ export default function Dashboard() {
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [projectStatusData, setProjectStatusData] = useState<any[]>([]);
   const [monthlyPerformance, setMonthlyPerformance] = useState<any[]>([]);
+  const [projectsByUser, setProjectsByUser] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -301,6 +302,54 @@ export default function Dashboard() {
         { month: 'Déc', projets: projects?.length || 0, taches: tasks?.length || 0, revenue: totalRevenue },
       ];
 
+      // Fetch projects by user (team + admin)
+      const { data: teamAdminUsers, error: usersError } = await supabase
+        .from('user_roles')
+        .select(`
+          user_id,
+          profiles!inner (
+            first_name,
+            last_name
+          )
+        `)
+        .in('role', ['admin', 'team']);
+
+      if (usersError) {
+        console.error('Error fetching team/admin users:', usersError);
+      }
+
+      // Count projects by user
+      const projectCountsByUser: Record<string, { name: string; count: number }> = {};
+
+      if (teamAdminUsers) {
+        for (const userRole of teamAdminUsers) {
+          const userId = userRole.user_id;
+          const profile = userRole.profiles as any;
+          const userName = `${profile.first_name} ${profile.last_name}`;
+
+          // Count projects created by this user
+          const { count, error: projectsError } = await supabase
+            .from('projects')
+            .select('*', { count: 'exact', head: true })
+            .eq('created_by', userId);
+
+          if (!projectsError) {
+            projectCountsByUser[userId] = {
+              name: userName,
+              count: count || 0,
+            };
+          }
+        }
+      }
+
+      // Transform to array for chart
+      const projectsByUserData = Object.values(projectCountsByUser)
+        .sort((a, b) => b.count - a.count)
+        .map(user => ({
+          name: user.name,
+          projets: user.count,
+        }));
+
       setStats({
         leads,
         clients: activeClients,
@@ -315,6 +364,7 @@ export default function Dashboard() {
       setRevenueData(revenueEvolution);
       setProjectStatusData(projectsStatus);
       setMonthlyPerformance(performance);
+      setProjectsByUser(projectsByUserData);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast.error('Erreur lors du chargement du tableau de bord');
@@ -508,6 +558,30 @@ export default function Dashboard() {
                 <Legend />
                 <Bar dataKey="projets" fill="hsl(var(--primary))" name="Projets" />
                 <Bar dataKey="taches" fill="hsl(var(--secondary))" name="Tâches" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Projects by User */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Projets par utilisateur</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={projectsByUser}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="name" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px'
+                  }}
+                />
+                <Bar dataKey="projets" fill="hsl(var(--primary))" name="Projets" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
