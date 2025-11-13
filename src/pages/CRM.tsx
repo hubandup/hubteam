@@ -204,7 +204,7 @@ export default function CRM() {
             <div className="min-w-max">
               <ClientKanbanView
                 clients={filteredClients}
-                onClientClick={() => { /* Désactivation du clic carte en Kanban */ }}
+                onClientClick={(clientId) => navigate(`/client/${clientId}`)}
                 onStageChange={handleStageChange}
               />
             </div>
