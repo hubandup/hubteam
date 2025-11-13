@@ -52,12 +52,11 @@ Deno.serve(async (req) => {
     let updatedCount = 0
 
     for (const client of clients) {
-      // Calculate total revenue from all paid invoices
+      // Calculate total revenue from all invoices
       const { data: allInvoices } = await supabaseClient
         .from('invoices')
         .select('amount')
         .eq('client_id', client.id)
-        .eq('status', 'paid')
       
       const revenue = allInvoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0
 
@@ -66,7 +65,6 @@ Deno.serve(async (req) => {
         .from('invoices')
         .select('amount')
         .eq('client_id', client.id)
-        .eq('status', 'paid')
         .gte('invoice_date', fiscalYearStart)
         .lte('invoice_date', fiscalYearEnd)
       
