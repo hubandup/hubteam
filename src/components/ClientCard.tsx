@@ -76,13 +76,16 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2 text-sm font-medium text-success">
             <DollarSign className="h-4 w-4" />
-            <span>{client.revenue.toLocaleString('fr-FR')} €</span>
+            <span>
+              {client.revenue_current_year !== undefined && client.revenue_current_year !== null 
+                ? client.revenue_current_year.toLocaleString('fr-FR')
+                : client.revenue.toLocaleString('fr-FR')
+              } €
+            </span>
           </div>
-          {client.revenue_current_year !== undefined && client.revenue_current_year !== null && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground ml-6">
-              <span>Année fiscale: {client.revenue_current_year.toLocaleString('fr-FR')} €</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground ml-6">
+            <span>Année fiscale</span>
+          </div>
         </div>
       </CardContent>
       
