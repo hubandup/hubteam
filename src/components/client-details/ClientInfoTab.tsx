@@ -17,6 +17,7 @@ interface ClientInfoTabProps {
     email: string;
     phone?: string;
     revenue: number;
+    revenue_current_year?: number;
     last_contact?: string;
     active: boolean;
     created_at: string;
@@ -154,11 +155,19 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
         <CardContent className="space-y-4">
           <div className="flex items-start gap-3">
             <DollarSign className="h-5 w-5 text-success mt-0.5" />
-            <div>
-              <p className="text-sm text-muted-foreground">Chiffre d'affaires</p>
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground">Chiffre d'affaires total</p>
               <p className="text-2xl font-bold text-success">
                 {client.revenue.toLocaleString('fr-FR')} € HT
               </p>
+              {client.revenue_current_year !== undefined && client.revenue_current_year !== null && (
+                <div className="mt-2 pt-2 border-t">
+                  <p className="text-sm text-muted-foreground">Année fiscale en cours (avril - mars)</p>
+                  <p className="text-lg font-semibold text-primary">
+                    {client.revenue_current_year.toLocaleString('fr-FR')} € HT
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

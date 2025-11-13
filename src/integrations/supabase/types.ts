@@ -336,6 +336,7 @@ export type Database = {
           logo_url: string | null
           phone: string | null
           revenue: number | null
+          revenue_current_year: number | null
           status_id: string | null
           updated_at: string
         }
@@ -357,6 +358,7 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           revenue?: number | null
+          revenue_current_year?: number | null
           status_id?: string | null
           updated_at?: string
         }
@@ -378,6 +380,7 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           revenue?: number | null
+          revenue_current_year?: number | null
           status_id?: string | null
           updated_at?: string
         }

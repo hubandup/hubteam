@@ -18,6 +18,28 @@ Deno.serve(async (req) => {
 
     console.log('Starting revenue calculation for all clients')
 
+    // Calculate current fiscal year period (April 1 - March 31)
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    const currentMonth = now.getMonth() + 1 // getMonth() returns 0-11
+
+    let fiscalYearStart: string
+    let fiscalYearEnd: string
+
+    if (currentMonth >= 4) {
+      // Between April and December: fiscal year is April currentYear to March nextYear
+      fiscalYearStart = `${currentYear}-04-01`
+      fiscalYearEnd = `${currentYear + 1}-03-31`
+    } else {
+      // Between January and March: fiscal year is April lastYear to March currentYear
+      fiscalYearStart = `${currentYear - 1}-04-01`
+      fiscalYearEnd = `${currentYear}-03-31`
+    }
+
+    console.log(`Current date: ${now.toISOString()}`)
+    console.log(`Current month: ${currentMonth}, Current year: ${currentYear}`)
+    console.log(`Fiscal year period: ${fiscalYearStart} to ${fiscalYearEnd}`)
+
     // Get all clients
     const { data: clients } = await supabaseClient
       .from('clients')
@@ -30,19 +52,33 @@ Deno.serve(async (req) => {
     let updatedCount = 0
 
     for (const client of clients) {
-      // Calculate total revenue from paid invoices
-      const { data: invoices } = await supabaseClient
+      // Calculate total revenue from all paid invoices
+      const { data: allInvoices } = await supabaseClient
         .from('invoices')
         .select('amount')
         .eq('client_id', client.id)
         .eq('status', 'paid')
       
-      const revenue = invoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0
+      const revenue = allInvoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0
+
+      // Calculate revenue for current fiscal year
+      const { data: fiscalYearInvoices } = await supabaseClient
+        .from('invoices')
+        .select('amount')
+        .eq('client_id', client.id)
+        .eq('status', 'paid')
+        .gte('invoice_date', fiscalYearStart)
+        .lte('invoice_date', fiscalYearEnd)
       
-      // Update client revenue
+      const revenueCurrentYear = fiscalYearInvoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0
+      
+      // Update client revenue (both total and current year)
       await supabaseClient
         .from('clients')
-        .update({ revenue })
+        .update({ 
+          revenue,
+          revenue_current_year: revenueCurrentYear
+        })
         .eq('id', client.id)
       
       updatedCount++
