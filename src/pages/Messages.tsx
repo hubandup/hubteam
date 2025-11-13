@@ -18,48 +18,49 @@ export default function Messages() {
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      {!isMobile && (
-        <div className="border-b p-4">
-          <div className="flex items-center gap-3">
-            <MessageSquare className="h-6 w-6 text-primary" />
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Messagerie</h1>
-              <p className="text-sm text-muted-foreground">
-                Conversations d'équipe et messages directs
-              </p>
+    <>
+      <div className="h-screen flex flex-col">
+        {!isMobile && (
+          <div className="border-b p-4">
+            <div className="flex items-center gap-3">
+              <MessageSquare className="h-6 w-6 text-primary" />
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">Messagerie</h1>
+                <p className="text-sm text-muted-foreground">
+                  Conversations d'équipe et messages directs
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="flex-1 flex overflow-hidden">
-        {isMobile ? (
-          selectedRoomId ? (
-            <div className="flex-1 flex flex-col">
-              <ChatWindow roomId={selectedRoomId} onBack={() => setSelectedRoomId(null)} />
-            </div>
+        <div className="flex-1 flex overflow-hidden">
+          {isMobile ? (
+            selectedRoomId ? (
+              <div className="flex-1 flex flex-col">
+                <ChatWindow roomId={selectedRoomId} onBack={() => setSelectedRoomId(null)} />
+              </div>
+            ) : (
+              <div className="flex-1">
+                <ChatRoomList
+                  selectedRoomId={selectedRoomId}
+                  onSelectRoom={setSelectedRoomId}
+                />
+              </div>
+            )
           ) : (
-            <div className="flex-1">
+            <>
               <ChatRoomList
                 selectedRoomId={selectedRoomId}
                 onSelectRoom={setSelectedRoomId}
               />
-            </div>
-          )
-        ) : (
-          <>
-            <ChatRoomList
-              selectedRoomId={selectedRoomId}
-              onSelectRoom={setSelectedRoomId}
-            />
-            <ChatWindow roomId={selectedRoomId} />
-          </>
-        )}
+              <ChatWindow roomId={selectedRoomId} />
+            </>
+          )}
+        </div>
       </div>
-
-      {/* Push notification prompt */}
+      
       <PushNotificationPrompt />
-    </div>
+    </>
   );
 }
