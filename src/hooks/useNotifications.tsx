@@ -51,6 +51,18 @@ export function useNotifications() {
     };
   }, [user]);
 
+  // Update app badge when unread count changes
+  useEffect(() => {
+    if ('serviceWorker' in navigator && 'setAppBadge' in navigator) {
+      navigator.serviceWorker.ready.then((registration) => {
+        registration.active?.postMessage({
+          type: 'UPDATE_BADGE',
+          count: unreadCount,
+        });
+      });
+    }
+  }, [unreadCount]);
+
   const fetchNotifications = async () => {
     if (!user) return;
 

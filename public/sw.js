@@ -52,7 +52,18 @@ self.addEventListener('push', (event) => {
       vibrate: [200, 100, 200],
       data: notificationData,
     }
-  );
+  ).then(() => {
+    // Update app badge
+    if ('setAppBadge' in self.navigator) {
+      return self.registration.getNotifications({ tag: 'hub-and-up-notification' })
+        .then(notifications => {
+          const unreadCount = notifications.length;
+          if (unreadCount > 0) {
+            return self.navigator.setAppBadge(unreadCount);
+          }
+        });
+    }
+  });
 
   event.waitUntil(promiseChain);
 });
@@ -65,27 +76,43 @@ self.addEventListener('notificationclick', (event) => {
 
   const urlToOpen = event.notification.data?.url || '/';
 
-  // Open or focus the app window
-  event.waitUntil(
-    self.clients.matchAll({
-      type: 'window',
-      includeUncontrolled: true,
-    }).then((clientList) => {
-      // Check if there's already a window open
-      for (let i = 0; i < clientList.length; i++) {
-        const client = clientList[i];
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          // Focus the existing window and navigate to the URL
-          return client.focus().then(() => {
-            return client.navigate(urlToOpen);
-          });
+  // Update badge count after closing notification
+  const updateBadge = self.registration.getNotifications({ tag: 'hub-and-up-notification' })
+    .then(notifications => {
+      const unreadCount = notifications.length;
+      if ('setAppBadge' in self.navigator) {
+        if (unreadCount > 0) {
+          return self.navigator.setAppBadge(unreadCount);
+        } else {
+          return self.navigator.clearAppBadge();
         }
       }
-      // No window found, open a new one
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(urlToOpen);
-      }
-    })
+    });
+
+  // Open or focus the app window
+  event.waitUntil(
+    Promise.all([
+      updateBadge,
+      self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      }).then((clientList) => {
+        // Check if there's already a window open
+        for (let i = 0; i < clientList.length; i++) {
+          const client = clientList[i];
+          if (client.url.includes(self.location.origin) && 'focus' in client) {
+            // Focus the existing window and navigate to the URL
+            return client.focus().then(() => {
+              return client.navigate(urlToOpen);
+            });
+          }
+        }
+        // No window found, open a new one
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(urlToOpen);
+        }
+      })
+    ])
   );
 });
 
@@ -93,14 +120,28 @@ self.addEventListener('notificationclick', (event) => {
 self.addEventListener('notificationclose', (event) => {
   console.log('Notification closed:', event);
   
+  // Update badge count after dismissing notification
+  const updateBadge = self.registration.getNotifications({ tag: 'hub-and-up-notification' })
+    .then(notifications => {
+      const unreadCount = notifications.length;
+      if ('setAppBadge' in self.navigator) {
+        if (unreadCount > 0) {
+          return self.navigator.setAppBadge(unreadCount);
+        } else {
+          return self.navigator.clearAppBadge();
+        }
+      }
+    });
+  
   // You can track notification dismissals here
-  // For example, send analytics data
   const notificationData = event.notification.data;
   
   if (notificationData?.tracking) {
     // Send tracking data if needed
     console.log('Notification dismissed:', notificationData);
   }
+  
+  event.waitUntil(updateBadge);
 });
 
 // Handle background sync (optional, for offline support)
@@ -121,5 +162,17 @@ self.addEventListener('message', (event) => {
   
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  
+  // Handle badge update requests from the app
+  if (event.data && event.data.type === 'UPDATE_BADGE') {
+    const count = event.data.count || 0;
+    if ('setAppBadge' in self.navigator) {
+      if (count > 0) {
+        self.navigator.setAppBadge(count);
+      } else {
+        self.navigator.clearAppBadge();
+      }
+    }
   }
 });
