@@ -12,10 +12,12 @@ import { Search, LayoutGrid, Columns3, ArrowDownUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function CRM() {
   const navigate = useNavigate();
   const { canRead } = usePermissions();
+  const isMobile = useIsMobile();
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -134,25 +136,29 @@ export default function CRM() {
             <p className="text-muted-foreground">Gérez vos clients et leurs projets</p>
           </div>
           <div className="flex gap-2">
-            <div className="flex gap-1 border rounded-md">
-              <Button
-                variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('kanban')}
-              >
-                <Columns3 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-            </div>
-            <ProtectedAction module="crm" action="create">
-              <ImportClientsValidationDialog onClientsImported={fetchClients} />
-            </ProtectedAction>
+            {!isMobile && (
+              <div className="flex gap-1 border rounded-md">
+                <Button
+                  variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('kanban')}
+                >
+                  <Columns3 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+            {!isMobile && (
+              <ProtectedAction module="crm" action="create">
+                <ImportClientsValidationDialog onClientsImported={fetchClients} />
+              </ProtectedAction>
+            )}
             <ProtectedAction module="crm" action="create">
               <AddClientDialog onClientAdded={fetchClients} />
             </ProtectedAction>
@@ -198,6 +204,18 @@ export default function CRM() {
           <div className="text-center py-12 px-6">
             <p className="text-muted-foreground">Aucun client trouvé</p>
             <p className="text-sm text-muted-foreground mt-2">Essayez une autre recherche</p>
+          </div>
+        ) : isMobile ? (
+          <div className="overflow-y-auto h-full px-6 pb-6">
+            <div className="space-y-4">
+              {filteredClients.map((client) => (
+                <ClientCard
+                  key={client.id}
+                  client={client}
+                  onClick={() => navigate(`/client/${client.id}?tab=info`)}
+                />
+              ))}
+            </div>
           </div>
         ) : viewMode === 'kanban' ? (
           <div className="h-full overflow-x-auto overflow-y-hidden px-6 pb-6 relative">
