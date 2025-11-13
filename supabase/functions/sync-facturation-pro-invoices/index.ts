@@ -38,27 +38,44 @@ Deno.serve(async (req) => {
 
     console.log('Starting invoice synchronization from Facturation.PRO')
 
-    // Fetch all invoices from Facturation.PRO
-    const invoicesResponse = await fetch(
-      `${FACTURATION_PRO_API_URL}/firms/${firmId}/invoices.json`,
-      {
-        headers: {
-          'Authorization': `Basic ${btoa(`${apiId}:${apiKey}`)}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    )
+    // Fetch all invoices from Facturation.PRO with pagination
+    const allInvoices: FacturationProInvoice[] = []
+    let page = 1
+    let hasMorePages = true
 
-    if (!invoicesResponse.ok) {
-      const errorText = await invoicesResponse.text()
-      throw new Error(`Facturation.PRO API error: ${errorText}`)
+    while (hasMorePages) {
+      const invoicesResponse = await fetch(
+        `${FACTURATION_PRO_API_URL}/firms/${firmId}/invoices.json?page=${page}`,
+        {
+          headers: {
+            'Authorization': `Basic ${btoa(`${apiId}:${apiKey}`)}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      if (!invoicesResponse.ok) {
+        const errorText = await invoicesResponse.text()
+        throw new Error(`Facturation.PRO API error: ${errorText}`)
+      }
+
+      const pageInvoices: FacturationProInvoice[] = await invoicesResponse.json()
+      console.log(`Fetched ${pageInvoices.length} invoices from page ${page}`)
+      
+      if (pageInvoices.length === 0) {
+        hasMorePages = false
+      } else {
+        allInvoices.push(...pageInvoices)
+        page++
+      }
     }
 
-    const facturationProInvoices: FacturationProInvoice[] = await invoicesResponse.json()
-    console.log(`Fetched ${facturationProInvoices.length} invoices from Facturation.PRO`)
+    console.log(`Total: ${allInvoices.length} invoices fetched from Facturation.PRO`)
+    const facturationProInvoices = allInvoices
 
     let syncedInvoices = 0
     let skippedInvoices = 0
+    const missingClientIds = new Set<number>()
 
     for (const fpInvoice of facturationProInvoices) {
       // Find the corresponding client in our CRM
@@ -69,7 +86,7 @@ Deno.serve(async (req) => {
         .single()
 
       if (!client) {
-        console.warn(`Client not found for Facturation.PRO customer_id: ${fpInvoice.customer_id}`)
+        missingClientIds.add(fpInvoice.customer_id)
         skippedInvoices++
         continue
       }
@@ -112,12 +129,17 @@ Deno.serve(async (req) => {
     }
 
     console.log(`Synced ${syncedInvoices} invoices, skipped ${skippedInvoices}`)
+    if (missingClientIds.size > 0) {
+      console.warn(`Missing clients for customer IDs: ${Array.from(missingClientIds).join(', ')}`)
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         syncedInvoices,
         skippedInvoices,
+        totalInvoices: facturationProInvoices.length,
+        missingClientIds: Array.from(missingClientIds),
         message: 'Invoice synchronization completed',
       }),
       {
