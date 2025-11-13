@@ -1,4 +1,4 @@
-import { Users, FolderKanban, MessageSquare, Activity } from 'lucide-react';
+import { Users, FolderKanban, MessageSquare, Activity, HelpCircle } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +27,11 @@ export function MobileBottomNav() {
       to: '/messages',
       icon: MessageSquare,
       label: 'Messages',
+    },
+    {
+      to: '/faq',
+      icon: HelpCircle,
+      label: 'FAQ',
     },
   ];
 
