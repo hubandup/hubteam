@@ -151,6 +151,61 @@ export function ChatWindow({ roomId }: ChatWindowProps) {
         }
       }
 
+      // Send email notifications to room members (non-blocking)
+      try {
+        // Get room members (excluding the sender)
+        const { data: roomMembers, error: membersError } = await supabase
+          .from('chat_room_members')
+          .select('user_id')
+          .eq('room_id', roomId)
+          .neq('user_id', user.id);
+
+        if (!membersError && roomMembers && roomMembers.length > 0) {
+          // Get profiles for room members
+          const memberIds = roomMembers.map(m => m.user_id);
+          const { data: memberProfiles } = await supabase
+            .from('profiles')
+            .select('id, email, first_name, last_name')
+            .in('id', memberIds);
+
+          // Get sender profile
+          const { data: senderProfile } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('id', user.id)
+            .single();
+
+          const senderName = senderProfile 
+            ? `${senderProfile.first_name} ${senderProfile.last_name}`
+            : 'Un utilisateur';
+
+          // Create message preview (first 100 chars)
+          const messagePreview = newMessage.trim().substring(0, 100) + (newMessage.trim().length > 100 ? '...' : '');
+          
+          // Send notification to each member with profile
+          if (memberProfiles) {
+            for (const profile of memberProfiles) {
+              if (profile.email) {
+                supabase.functions.invoke('send-message-notification', {
+                  body: {
+                    recipientEmail: profile.email,
+                    recipientName: `${profile.first_name} ${profile.last_name}`,
+                    senderName: senderName,
+                    messagePreview: messagePreview,
+                    roomId: roomId,
+                  },
+                }).catch(err => {
+                  console.error('Error sending email to:', profile.email, err);
+                });
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error sending email notifications:', error);
+        // Don't block message sending if email fails
+      }
+
       setNewMessage('');
       setMentions([]);
     } catch (error: any) {
