@@ -602,7 +602,7 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
             </div>
           </div>
 
-          <div className="flex items-start gap-2 p-4 border border-input rounded-lg bg-background">
+          <div className="flex items-end gap-2 p-4 border border-input rounded-lg bg-background">
             <MentionInput
               value={newComment}
               onChange={setNewComment}
@@ -612,7 +612,7 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
               className="flex-1 resize-none border-0 p-0 focus-visible:ring-0 shadow-none bg-transparent min-h-[80px]"
               disabled={submitting}
             />
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-end pb-1">
               <label htmlFor="task-comment-file" className="cursor-pointer">
                 <Button
                   type="button"
