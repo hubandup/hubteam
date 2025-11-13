@@ -376,7 +376,7 @@ export function ImportClientsValidationDialog({ onClientsImported }: ImportClien
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <FileSpreadsheet className="h-4 w-4 mr-2" />
-          Importer avec validation
+          Importer
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">

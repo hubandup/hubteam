@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { ClientCard } from '@/components/ClientCard';
 import { ClientKanbanView } from '@/components/ClientKanbanView';
 import { AddClientDialog } from '@/components/AddClientDialog';
-import { ImportClientsDialog } from '@/components/ImportClientsDialog';
 import { ImportClientsValidationDialog } from '@/components/ImportClientsValidationDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -153,9 +152,6 @@ export default function CRM() {
             </div>
             <ProtectedAction module="crm" action="create">
               <ImportClientsValidationDialog onClientsImported={fetchClients} />
-            </ProtectedAction>
-            <ProtectedAction module="crm" action="create">
-              <ImportClientsDialog onClientsImported={fetchClients} />
             </ProtectedAction>
             <ProtectedAction module="crm" action="create">
               <AddClientDialog onClientAdded={fetchClients} />
