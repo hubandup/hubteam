@@ -110,7 +110,7 @@ export default function AgencyDetails() {
         </div>
       </div>
 
-      <ResponsiveTabs defaultValue="info" tabs={tabs} />
+      <ResponsiveTabs defaultValue="info" tabs={tabs} storageKey="agency-tabs" />
     </div>
   );
 }

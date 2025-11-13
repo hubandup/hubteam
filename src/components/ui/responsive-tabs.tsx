@@ -25,24 +25,48 @@ interface ResponsiveTabsProps {
   tabs: TabItem[];
   className?: string;
   breakpoint?: number; // Width in pixels to switch to mobile view
+  storageKey?: string; // Key for localStorage to remember last tab
 }
 
 export function ResponsiveTabs({ 
   defaultValue, 
   tabs,
   className,
-  breakpoint = 768
+  breakpoint = 768,
+  storageKey
 }: ResponsiveTabsProps) {
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
-  const initialTab = searchParams.get('tab') || defaultValue;
+  
+  // Get stored tab preference if available
+  const getStoredTab = () => {
+    if (!storageKey) return null;
+    try {
+      return localStorage.getItem(storageKey);
+    } catch {
+      return null;
+    }
+  };
+  
+  // Priority: URL param > stored preference > default
+  const initialTab = searchParams.get('tab') || getStoredTab() || defaultValue;
   const [currentValue, setCurrentValue] = useState(initialTab);
   const userInitiatedRef = useRef(false);
+  
   const handleTabChange = (val: string) => {
     userInitiatedRef.current = true;
     setCurrentValue(val);
+    
+    // Save tab preference to localStorage
+    if (storageKey) {
+      try {
+        localStorage.setItem(storageKey, val);
+      } catch {
+        // Ignore storage errors
+      }
+    }
   };
 
   useEffect(() => {

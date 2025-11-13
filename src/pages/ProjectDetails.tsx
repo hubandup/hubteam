@@ -262,6 +262,7 @@ export default function ProjectDetails() {
       {/* Tabs */}
       <ResponsiveTabs
         defaultValue="info"
+        storageKey="project-tabs"
         tabs={[
           {
             value: 'info',
