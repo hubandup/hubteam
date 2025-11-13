@@ -11,6 +11,15 @@ export function usePushNotifications() {
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       setIsSupported(true);
       setPermission(Notification.permission);
+      
+      // Check for existing subscription
+      navigator.serviceWorker.ready.then(async (registration) => {
+        const existingSubscription = await registration.pushManager.getSubscription();
+        if (existingSubscription) {
+          setSubscription(existingSubscription);
+          console.log('Found existing push subscription');
+        }
+      });
     }
   }, []);
 
@@ -41,19 +50,28 @@ export function usePushNotifications() {
 
   const subscribeToPush = async () => {
     try {
+      // Wait for service worker to be ready
       const registration = await navigator.serviceWorker.ready;
+      console.log('Service Worker is ready:', registration);
       
-      // Note: You'll need to add your VAPID public key here
-      // Generate one with: npx web-push generate-vapid-keys
       const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
       if (!vapidPublicKey) {
         throw new Error('VAPID_PUBLIC_KEY non configurée');
       }
 
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
-      });
+      // Check if already subscribed
+      let subscription = await registration.pushManager.getSubscription();
+      
+      if (!subscription) {
+        // Subscribe to push notifications
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+        });
+        console.log('New push subscription created');
+      } else {
+        console.log('Already subscribed to push notifications');
+      }
 
       setSubscription(subscription);
 
@@ -62,7 +80,7 @@ export function usePushNotifications() {
       if (user) {
         const subscriptionData = subscription.toJSON();
         // @ts-ignore - Types will be regenerated automatically
-        await supabase.from('push_subscriptions').upsert({
+        const { error } = await supabase.from('push_subscriptions').upsert({
           user_id: user.id,
           endpoint: subscriptionData.endpoint,
           p256dh: subscriptionData.keys.p256dh,
@@ -70,6 +88,12 @@ export function usePushNotifications() {
         }, {
           onConflict: 'user_id,endpoint'
         });
+        
+        if (error) {
+          console.error('Error saving subscription:', error);
+          throw error;
+        }
+        
         console.log('Subscription saved to database');
       }
 
