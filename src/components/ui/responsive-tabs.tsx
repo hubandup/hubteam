@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import {
   Select,
@@ -33,7 +34,11 @@ export function ResponsiveTabs({
   breakpoint = 768
 }: ResponsiveTabsProps) {
   const [isMobile, setIsMobile] = useState(false);
-  const [currentValue, setCurrentValue] = useState(defaultValue);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const searchParams = new URLSearchParams(location.search);
+  const initialTab = searchParams.get('tab') || defaultValue;
+  const [currentValue, setCurrentValue] = useState(initialTab);
 
   useEffect(() => {
     const checkWidth = () => {
@@ -44,6 +49,24 @@ export function ResponsiveTabs({
     window.addEventListener('resize', checkWidth);
     return () => window.removeEventListener('resize', checkWidth);
   }, [breakpoint]);
+
+  // Sync tab changes to URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('tab') !== currentValue) {
+      params.set('tab', currentValue);
+      navigate({ search: params.toString() }, { replace: true });
+    }
+  }, [currentValue, location.search, navigate]);
+
+  // Update current tab if URL changes externally
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const urlTab = params.get('tab');
+    if (urlTab && urlTab !== currentValue) {
+      setCurrentValue(urlTab);
+    }
+  }, [location.search]);
 
   const currentTab = tabs.find(tab => tab.value === currentValue);
 

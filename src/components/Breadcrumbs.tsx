@@ -12,6 +12,8 @@ import {
 export function Breadcrumbs() {
   const location = useLocation();
   const pathnames = location.pathname.split('/').filter((x) => x);
+  const params = new URLSearchParams(location.search);
+  const currentTab = params.get('tab');
 
   // Route name and path mapping
   const routeConfig: Record<string, { name: string; path?: string }> = {
@@ -28,10 +30,20 @@ export function Breadcrumbs() {
     faq: { name: 'FAQ', path: '/faq' },
   };
 
+  const tabNames: Record<string, string> = {
+    'info': 'Infos',
+    'meeting-notes': 'Comptes rendus',
+    'projects': 'Projets',
+    'invoices': 'Factures',
+    'tasks': 'Tâches',
+  };
+
   // Don't show breadcrumbs on home page or auth page
   if (pathnames.length === 0 || pathnames[0] === 'auth') {
     return null;
   }
+
+  const isClientPage = pathnames.includes('client');
 
   return (
     <Breadcrumb className="mb-4">
@@ -44,6 +56,20 @@ export function Breadcrumbs() {
             </Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
+
+        {/* Inject CRM level if on a client page */}
+        {isClientPage && (
+          <div className="flex items-center gap-2">
+            <BreadcrumbSeparator>
+              <ChevronRight className="h-4 w-4" />
+            </BreadcrumbSeparator>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/crm">CRM</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+          </div>
+        )}
 
         {pathnames.map((segment, index) => {
           const config = routeConfig[segment];
@@ -74,7 +100,20 @@ export function Breadcrumbs() {
             </div>
           );
         })}
+
+        {/* Append tab name for pages using tabs */}
+        {currentTab && tabNames[currentTab] && (
+          <div className="flex items-center gap-2">
+            <BreadcrumbSeparator>
+              <ChevronRight className="h-4 w-4" />
+            </BreadcrumbSeparator>
+            <BreadcrumbItem>
+              <BreadcrumbPage>{tabNames[currentTab]}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </div>
+        )}
       </BreadcrumbList>
     </Breadcrumb>
   );
 }
+

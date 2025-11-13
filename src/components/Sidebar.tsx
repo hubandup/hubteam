@@ -60,6 +60,7 @@ export function Sidebar() {
                         to={item.url} 
                         end={item.url === '/'} 
                         matchParent={item.matchParent}
+                        activePatterns={item.title === 'CRM' ? ['/client'] : item.title === 'Projets' ? ['/project'] : item.title === 'Agences' ? ['/agency'] : []}
                         className="hover:bg-muted/50" 
                         activeClassName="bg-primary/10 text-primary font-medium"
                       >

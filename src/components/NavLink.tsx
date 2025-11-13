@@ -6,16 +6,17 @@ interface NavLinkCompatProps extends Omit<NavLinkProps, "className"> {
   className?: string;
   activeClassName?: string;
   pendingClassName?: string;
-  matchParent?: boolean; // New prop to match parent routes
+  matchParent?: boolean;
+  activePatterns?: string[]; // extra paths that should mark this link active
 }
 
 const NavLink = forwardRef<HTMLAnchorElement, NavLinkCompatProps>(
-  ({ className, activeClassName, pendingClassName, to, matchParent = false, ...props }, ref) => {
+  ({ className, activeClassName, pendingClassName, to, matchParent = false, activePatterns = [], ...props }, ref) => {
     const location = useLocation();
     const toPath = typeof to === 'string' ? to : to.pathname;
     
-    // Check if current path starts with the target path (for parent matching)
     const isParentActive = matchParent && toPath && toPath !== '/' && location.pathname.startsWith(toPath);
+    const isPatternActive = activePatterns.some((p) => location.pathname.startsWith(p));
     
     return (
       <RouterNavLink
@@ -23,8 +24,8 @@ const NavLink = forwardRef<HTMLAnchorElement, NavLinkCompatProps>(
         to={to}
         className={({ isActive, isPending }) =>
           cn(
-            className, 
-            (isActive || isParentActive) && activeClassName, 
+            className,
+            (isActive || isParentActive || isPatternActive) && activeClassName,
             isPending && pendingClassName
           )
         }
