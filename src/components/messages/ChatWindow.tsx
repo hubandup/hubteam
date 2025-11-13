@@ -189,17 +189,43 @@ export function ChatWindow({ roomId, onBack }: ChatWindowProps) {
                         `${senderProfile?.first_name} ${senderProfile?.last_name}` ||
                         'Someone';
 
-      // Send notifications to other members
+      // Send notifications to other members (email + push)
       if (members && members.length > 0) {
         try {
-          await supabase.functions.invoke('send-message-notification', {
-            body: {
-              recipientIds: members.map(m => m.user_id),
-              senderName,
-              message: newMessage.trim(),
-              roomId,
-            },
-          });
+          // Send push notifications
+          for (const member of members) {
+            await supabase.functions.invoke('send-push-notification', {
+              body: {
+                userId: member.user_id,
+                title: `Nouveau message de ${senderName}`,
+                body: newMessage.trim().substring(0, 100),
+                url: '/messages',
+              },
+            });
+          }
+          
+          // Get member emails for email notifications
+          const { data: memberProfiles } = await supabase
+            .from('profiles')
+            .select('id, email, first_name, last_name')
+            .in('id', members.map(m => m.user_id));
+
+          // Send email notifications
+          if (memberProfiles) {
+            for (const profile of memberProfiles) {
+              if (profile.email) {
+                await supabase.functions.invoke('send-message-notification', {
+                  body: {
+                    recipientEmail: profile.email,
+                    recipientName: `${profile.first_name} ${profile.last_name}`,
+                    senderName,
+                    messagePreview: newMessage.trim().substring(0, 100),
+                    roomId,
+                  },
+                });
+              }
+            }
+          }
         } catch (notifError) {
           console.error('Error sending notifications:', notifError);
         }

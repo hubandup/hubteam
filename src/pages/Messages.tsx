@@ -1,6 +1,7 @@
 import { MessageSquare } from 'lucide-react';
 import { ChatRoomList } from '@/components/messages/ChatRoomList';
 import { ChatWindow } from '@/components/messages/ChatWindow';
+import { PushNotificationPrompt } from '@/components/messages/PushNotificationPrompt';
 import { useState } from 'react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Navigate } from 'react-router-dom';
@@ -56,6 +57,9 @@ export default function Messages() {
           </>
         )}
       </div>
+
+      {/* Push notification prompt */}
+      <PushNotificationPrompt />
     </div>
   );
 }
