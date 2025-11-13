@@ -580,6 +580,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          is_private: boolean
           meeting_date: string | null
           title: string | null
           updated_at: string
@@ -591,6 +592,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          is_private?: boolean
           meeting_date?: string | null
           title?: string | null
           updated_at?: string
@@ -602,6 +604,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          is_private?: boolean
           meeting_date?: string | null
           title?: string | null
           updated_at?: string

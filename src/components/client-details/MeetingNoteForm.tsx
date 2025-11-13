@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Loader2, Paperclip, X, Send } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -17,6 +19,7 @@ export function MeetingNoteForm({ clientId, onNoteAdded }: MeetingNoteFormProps)
   const [content, setContent] = useState('');
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [showAttachmentInput, setShowAttachmentInput] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(true);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -81,6 +84,7 @@ export function MeetingNoteForm({ clientId, onNoteAdded }: MeetingNoteFormProps)
           content: content.trim(),
           attachment_url: attachmentUrl,
           user_id: user.id,
+          is_private: isPrivate,
         });
 
       if (error) throw error;
@@ -89,6 +93,7 @@ export function MeetingNoteForm({ clientId, onNoteAdded }: MeetingNoteFormProps)
       setContent('');
       setAttachmentFile(null);
       setShowAttachmentInput(false);
+      setIsPrivate(true);
       onNoteAdded();
     } catch (error) {
       console.error('Error adding note:', error);
@@ -100,6 +105,20 @@ export function MeetingNoteForm({ clientId, onNoteAdded }: MeetingNoteFormProps)
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
+      <div className="flex items-center gap-2 px-4 pt-3 pb-2">
+        <Checkbox 
+          id="private-comment"
+          checked={isPrivate}
+          onCheckedChange={(checked) => setIsPrivate(checked as boolean)}
+        />
+        <Label 
+          htmlFor="private-comment" 
+          className="text-sm text-muted-foreground cursor-pointer"
+        >
+          Commentaire privé (visible uniquement par Admin/Équipe)
+        </Label>
+      </div>
+      
       <div className="flex items-start gap-2 p-4 border border-input rounded-lg bg-background">
         <Textarea
           value={content}
