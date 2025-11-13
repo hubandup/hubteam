@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
       throw new Error('Missing Facturation.PRO API credentials')
     }
 
-    console.log('Checking for accepted quotes in Facturation.PRO')
+    console.log('Checking for quotes in Facturation.PRO (statuses: À facturer, Soldé, accepted)')
 
     // Fetch all quotes from Facturation.PRO
     const quotesResponse = await fetch(
@@ -55,21 +55,27 @@ Deno.serve(async (req) => {
     const quotes: FacturationProQuote[] = await quotesResponse.json()
     console.log(`Fetched ${quotes.length} quotes from Facturation.PRO`)
 
-    // Filter for accepted quotes
-    const acceptedQuotes = quotes.filter(q => q.status === 'accepted')
-    console.log(`Found ${acceptedQuotes.length} accepted quotes`)
+    // Filter for quotes to create projects (accepted or tobeinvoiced)
+    const quotesToProcess = quotes.filter(q => q.status === 'accepted' || q.status === 'tobeinvoiced')
+    console.log(`Found ${quotesToProcess.length} quotes to process (accepted or tobeinvoiced)`)
+
+    // Filter for paid quotes to archive projects
+    const paidQuotes = quotes.filter(q => q.status === 'paid')
+    console.log(`Found ${paidQuotes.length} paid quotes to archive`)
 
     let createdProjects = 0
+    let archivedProjects = 0
 
-    for (const quote of acceptedQuotes) {
+    // Process quotes to create projects
+    for (const quote of quotesToProcess) {
       // Check if project already exists for this quote
       const { data: existingProject } = await supabaseClient
         .from('projects')
-        .select('id')
+        .select('id, archived')
         .eq('name', quote.title)
         .single()
 
-      if (existingProject) {
+      if (existingProject && !existingProject.archived) {
         console.log(`Project already exists for quote ${quote.id}`)
         continue
       }
@@ -86,23 +92,23 @@ Deno.serve(async (req) => {
         continue
       }
 
-      // Get the first admin user as project creator
-      const { data: adminUser } = await supabaseClient
+      // Get all admin users for notifications
+      const { data: adminUsers } = await supabaseClient
         .from('user_roles')
         .select('user_id')
         .eq('role', 'admin')
-        .limit(1)
-        .single()
+
+      const firstAdmin = adminUsers?.[0]
 
       // Create the project
       const { data: newProject, error: projectError } = await supabaseClient
         .from('projects')
         .insert({
           name: quote.title,
-          description: `Projet créé automatiquement depuis le devis accepté #${quote.id}`,
+          description: `Projet créé automatiquement depuis le devis (statut: ${quote.status === 'tobeinvoiced' ? 'À facturer' : 'accepté'}) #${quote.id}`,
           status: 'active',
           start_date: quote.accepted_date || new Date().toISOString().split('T')[0],
-          created_by: adminUser?.user_id,
+          created_by: firstAdmin?.user_id,
         })
         .select()
         .single()
@@ -120,16 +126,67 @@ Deno.serve(async (req) => {
           client_id: client.id,
         })
 
+      // Create notifications for all admins
+      if (adminUsers && adminUsers.length > 0) {
+        const notifications = adminUsers.map(admin => ({
+          user_id: admin.user_id,
+          type: 'project_created',
+          title: 'Nouveau projet créé automatiquement',
+          message: `Le projet "${quote.title}" a été créé depuis un devis ${quote.status === 'tobeinvoiced' ? 'à facturer' : 'accepté'}`,
+          link: `/projects/${newProject.id}`,
+        }))
+
+        await supabaseClient
+          .from('notifications')
+          .insert(notifications)
+      }
+
       createdProjects++
-      console.log(`Created project "${quote.title}" for accepted quote ${quote.id}`)
+      console.log(`Created project "${quote.title}" for quote ${quote.id} (status: ${quote.status})`)
+    }
+
+    // Archive projects for paid quotes
+    for (const quote of paidQuotes) {
+      // Find the project by name
+      const { data: project } = await supabaseClient
+        .from('projects')
+        .select('id, archived')
+        .eq('name', quote.title)
+        .single()
+
+      if (!project) {
+        console.log(`No project found for paid quote ${quote.id}`)
+        continue
+      }
+
+      if (project.archived) {
+        console.log(`Project for quote ${quote.id} is already archived`)
+        continue
+      }
+
+      // Archive the project
+      const { error: archiveError } = await supabaseClient
+        .from('projects')
+        .update({ archived: true })
+        .eq('id', project.id)
+
+      if (archiveError) {
+        console.error(`Error archiving project for quote ${quote.id}:`, archiveError)
+        continue
+      }
+
+      archivedProjects++
+      console.log(`Archived project "${quote.title}" for paid quote ${quote.id}`)
     }
 
     return new Response(
       JSON.stringify({
         success: true,
         totalQuotes: quotes.length,
-        acceptedQuotes: acceptedQuotes.length,
+        quotesToProcess: quotesToProcess.length,
+        paidQuotes: paidQuotes.length,
         createdProjects,
+        archivedProjects,
         message: 'Quote check completed',
       }),
       {

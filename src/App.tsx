@@ -14,6 +14,7 @@ import Agencies from "./pages/Agencies";
 import AgencyDetails from "./pages/AgencyDetails";
 import Projects from "./pages/Projects";
 import ProjectDetails from "./pages/ProjectDetails";
+import ArchivedProjects from "./pages/ArchivedProjects";
 import Tasks from "./pages/Tasks";
 import Messages from "./pages/Messages";
 import Activity from "./pages/Activity";
@@ -47,6 +48,7 @@ const App = () => {
             <Route path="/agency/:id" element={<ProtectedRoute><Layout><AgencyDetails /></Layout></ProtectedRoute>} />
             <Route path="/projects" element={<ProtectedRoute><Layout><Projects /></Layout></ProtectedRoute>} />
             <Route path="/project/:id" element={<ProtectedRoute><Layout><ProjectDetails /></Layout></ProtectedRoute>} />
+            <Route path="/archived-projects" element={<ProtectedRoute><Layout><ArchivedProjects /></Layout></ProtectedRoute>} />
             <Route path="/tasks" element={<ProtectedRoute><Layout><Tasks /></Layout></ProtectedRoute>} />
             <Route path="/messages" element={<ProtectedRoute><Layout><Messages /></Layout></ProtectedRoute>} />
             <Route path="/activity" element={<ProtectedRoute><Layout><Activity /></Layout></ProtectedRoute>} />
