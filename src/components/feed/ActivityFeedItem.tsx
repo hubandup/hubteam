@@ -294,9 +294,12 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
           </Avatar>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="mb-1">
               <span className="font-medium">{userName}</span>
-              <span className="text-muted-foreground text-sm">{getActionText()}</span>
+            </div>
+            
+            <div className="text-muted-foreground text-sm mb-1">
+              {getActionText()}
             </div>
 
             {getDetailText() && (
