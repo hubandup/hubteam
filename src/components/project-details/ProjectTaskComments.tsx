@@ -608,8 +608,8 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
               onChange={setNewComment}
               onMentionsChange={setMentions}
               placeholder="Ajouter un commentaire... (utilisez @ pour mentionner)"
-              rows={1}
-              className="flex-1 resize-none border-0 p-0 focus-visible:ring-0 shadow-none bg-transparent min-h-[40px]"
+              rows={3}
+              className="flex-1 resize-none border-0 p-0 focus-visible:ring-0 shadow-none bg-transparent min-h-[80px]"
               disabled={submitting}
             />
             <div className="flex items-center gap-2">
