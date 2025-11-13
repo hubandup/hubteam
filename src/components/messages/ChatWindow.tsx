@@ -3,13 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, MessageSquare, ArrowLeft } from 'lucide-react';
+import { Send, MessageSquare, ArrowLeft, Paperclip } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format, isToday, isYesterday, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { RichMentionInput } from '@/components/common/RichMentionInput';
+import { Textarea } from '@/components/ui/textarea';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 interface ChatWindowProps {
   roomId: string | null;
@@ -33,8 +34,9 @@ export function ChatWindow({ roomId, onBack }: ChatWindowProps) {
   const isMobile = useIsMobile();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [mentions, setMentions] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
+  const [roomName, setRoomName] = useState('');
+  const [otherUserAvatar, setOtherUserAvatar] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,6 +46,7 @@ export function ChatWindow({ roomId, onBack }: ChatWindowProps) {
     }
 
     fetchMessages();
+    fetchRoomInfo();
 
     const channel = supabase
       .channel(`chat-${roomId}`)
@@ -69,6 +72,36 @@ export function ChatWindow({ roomId, onBack }: ChatWindowProps) {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const fetchRoomInfo = async () => {
+    if (!roomId || !user) return;
+
+    try {
+      // Get other member
+      const { data: membersData } = await supabase
+        .from('chat_room_members')
+        .select('user_id')
+        .eq('room_id', roomId)
+        .neq('user_id', user.id)
+        .limit(1)
+        .single();
+
+      if (membersData) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('first_name, last_name, avatar_url, display_name')
+          .eq('id', membersData.user_id)
+          .single();
+
+        if (profileData) {
+          setRoomName(profileData.display_name || `${profileData.first_name} ${profileData.last_name}`);
+          setOtherUserAvatar(profileData.avatar_url);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching room info:', error);
+    }
+  };
 
   const fetchMessages = async () => {
     if (!roomId) return;
@@ -138,79 +171,41 @@ export function ChatWindow({ roomId, onBack }: ChatWindowProps) {
 
       if (messageError) throw messageError;
 
-      // Insert mentions if any
-      if (mentions.length > 0 && messageData) {
-        const mentionInserts = mentions.map(userId => ({
-          message_id: messageData.id,
-          user_id: userId,
-        }));
+      // Get all room members except current user for notifications
+      const { data: members } = await supabase
+        .from('chat_room_members')
+        .select('user_id')
+        .eq('room_id', roomId)
+        .neq('user_id', user.id);
 
-        const { error: mentionsError } = await supabase
-          .from('chat_message_mentions')
-          .insert(mentionInserts);
+      // Get current user profile for sender name
+      const { data: senderProfile } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, display_name')
+        .eq('id', user.id)
+        .single();
 
-        if (mentionsError) {
-          console.error('Error inserting mentions:', mentionsError);
+      const senderName = senderProfile?.display_name || 
+                        `${senderProfile?.first_name} ${senderProfile?.last_name}` ||
+                        'Someone';
+
+      // Send notifications to other members
+      if (members && members.length > 0) {
+        try {
+          await supabase.functions.invoke('send-message-notification', {
+            body: {
+              recipientIds: members.map(m => m.user_id),
+              senderName,
+              message: newMessage.trim(),
+              roomId,
+            },
+          });
+        } catch (notifError) {
+          console.error('Error sending notifications:', notifError);
         }
-      }
-
-      // Send email notifications to room members (non-blocking)
-      try {
-        // Get room members (excluding the sender)
-        const { data: roomMembers, error: membersError } = await supabase
-          .from('chat_room_members')
-          .select('user_id')
-          .eq('room_id', roomId)
-          .neq('user_id', user.id);
-
-        if (!membersError && roomMembers && roomMembers.length > 0) {
-          // Get profiles for room members
-          const memberIds = roomMembers.map(m => m.user_id);
-          const { data: memberProfiles } = await supabase
-            .from('profiles')
-            .select('id, email, first_name, last_name')
-            .in('id', memberIds);
-
-          // Get sender profile
-          const { data: senderProfile } = await supabase
-            .from('profiles')
-            .select('first_name, last_name')
-            .eq('id', user.id)
-            .single();
-
-          const senderName = senderProfile 
-            ? `${senderProfile.first_name} ${senderProfile.last_name}`
-            : 'Un utilisateur';
-
-          // Create message preview (first 100 chars)
-          const messagePreview = newMessage.trim().substring(0, 100) + (newMessage.trim().length > 100 ? '...' : '');
-          
-          // Send notification to each member with profile
-          if (memberProfiles) {
-            for (const profile of memberProfiles) {
-              if (profile.email) {
-                supabase.functions.invoke('send-message-notification', {
-                  body: {
-                    recipientEmail: profile.email,
-                    recipientName: `${profile.first_name} ${profile.last_name}`,
-                    senderName: senderName,
-                    messagePreview: messagePreview,
-                    roomId: roomId,
-                  },
-                }).catch(err => {
-                  console.error('Error sending email to:', profile.email, err);
-                });
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error sending email notifications:', error);
-        // Don't block message sending if email fails
       }
 
       setNewMessage('');
-      setMentions([]);
     } catch (error: any) {
       console.error('Error sending message:', error);
       toast.error("Erreur lors de l'envoi du message");
@@ -219,117 +214,182 @@ export function ChatWindow({ roomId, onBack }: ChatWindowProps) {
     }
   };
 
-  const renderMessageContent = (content: string, isOwn: boolean) => {
-    // Replace mention format with highlighted text
-    const mentionRegex = /@\[([^\]]+)\]\(([a-f0-9-]+)\)/g;
-    const parts = content.split(mentionRegex);
+  const formatDateSeparator = (date: Date) => {
+    if (isToday(date)) {
+      return "AUJOURD'HUI";
+    } else if (isYesterday(date)) {
+      return "HIER";
+    } else {
+      return format(date, 'EEEE', { locale: fr }).toUpperCase();
+    }
+  };
+
+  const groupMessagesByDate = () => {
+    const grouped: { [key: string]: Message[] } = {};
     
-    return parts.map((part, index) => {
-      // Every third item starting from index 1 is a user ID (which we skip in rendering)
-      if (index % 3 === 1) {
-        // This is a display name - use background with contrast
-        return (
-          <span 
-            key={index} 
-            className={`font-semibold px-1 rounded ${
-              isOwn 
-                ? 'bg-primary-foreground/20 text-primary-foreground' 
-                : 'bg-primary/10 text-primary'
-            }`}
-          >
-            @{part}
-          </span>
-        );
-      } else if (index % 3 === 2) {
-        // This is a user ID, skip it
-        return null;
+    messages.forEach((message) => {
+      const date = new Date(message.created_at);
+      const dateKey = format(date, 'yyyy-MM-dd');
+      
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
       }
-      // Regular text
-      return <span key={index}>{part}</span>;
+      grouped[dateKey].push(message);
     });
+    
+    return grouped;
   };
 
   if (!roomId) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-muted/20">
-        <div className="text-center">
-          {!isMobile && <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />}
-          <p className="text-muted-foreground">
-            Sélectionnez une conversation pour commencer
-          </p>
-        </div>
+      <div className="flex-1 flex flex-col items-center justify-center bg-muted/20">
+        <MessageSquare className="h-16 w-16 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-semibold text-foreground mb-2">
+          Sélectionnez une conversation
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Choisissez une conversation dans la liste ou créez-en une nouvelle
+        </p>
       </div>
     );
   }
 
+  const groupedMessages = groupMessagesByDate();
+
   return (
-    <div className="flex-1 flex flex-col">
-      {isMobile && onBack && (
-        <div className="flex items-center gap-2 p-4 border-b bg-card">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+    <div className="flex-1 flex flex-col bg-background">
+      {/* Header */}
+      <div className="border-b p-4 flex items-center gap-3">
+        {isMobile && onBack && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onBack}
+          >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h2 className="text-lg font-semibold">Messages</h2>
+        )}
+        <Avatar className="h-16 w-16">
+          <AvatarImage src={otherUserAvatar || undefined} />
+          <AvatarFallback>
+            {roomName.split(' ').map(n => n[0]).join('').toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        <div>
+          <h2 className="text-xl font-bold text-foreground">{roomName}</h2>
         </div>
-      )}
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-        <div className="space-y-4">
-          {messages.map((message) => {
-            const isOwn = message.user_id === user?.id;
+      </div>
+
+      {/* Messages area */}
+      <ScrollArea className="flex-1" ref={scrollRef}>
+        <div className="p-4 space-y-6">
+          {Object.entries(groupedMessages).map(([dateKey, dateMessages]) => {
+            const date = new Date(dateKey);
+            
             return (
-              <div
-                key={message.id}
-                className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
-              >
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={message.profiles.avatar_url || undefined} />
-                  <AvatarFallback>
-                    {message.profiles.first_name[0]}
-                    {message.profiles.last_name[0]}
-                  </AvatarFallback>
-                </Avatar>
-                <div className={`flex flex-col ${isOwn ? 'items-end' : ''}`}>
-                  <div
-                    className={`rounded-lg px-4 py-2 max-w-md ${
-                      isOwn
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
-                    }`}
-                  >
-                    <p className="text-sm">{renderMessageContent(message.content, isOwn)}</p>
+              <div key={dateKey} className="space-y-4">
+                {/* Date separator */}
+                <div className="flex items-center justify-center">
+                  <div className="text-xs font-medium text-muted-foreground px-3 py-1 rounded-full bg-muted/50">
+                    {formatDateSeparator(date)}
                   </div>
-                  <span className="text-xs text-muted-foreground mt-1">
-                    {formatDistanceToNow(new Date(message.created_at), {
-                      addSuffix: true,
-                      locale: fr,
-                    })}
-                  </span>
                 </div>
+
+                {/* Messages for this date */}
+                {dateMessages.map((message) => {
+                  const isOwnMessage = message.user_id === user?.id;
+                  const messageTime = format(new Date(message.created_at), 'HH:mm');
+                  
+                  return (
+                    <div key={message.id} className="space-y-1">
+                      {!isOwnMessage && (
+                        <div className="flex items-center gap-2 pl-16">
+                          <span className="text-sm font-semibold text-foreground">
+                            {message.profiles.first_name} {message.profiles.last_name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            • {messageTime}
+                          </span>
+                        </div>
+                      )}
+                      
+                      <div className={cn(
+                        "flex gap-3",
+                        isOwnMessage && "justify-end"
+                      )}>
+                        {!isOwnMessage && (
+                          <Avatar className="h-10 w-10 flex-shrink-0">
+                            <AvatarImage src={message.profiles.avatar_url || undefined} />
+                            <AvatarFallback className="text-sm">
+                              {message.profiles.first_name[0]}{message.profiles.last_name[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                        
+                        <div className={cn(
+                          "max-w-[75%] rounded-lg px-4 py-2",
+                          isOwnMessage
+                            ? "bg-primary/10 text-foreground"
+                            : "bg-muted"
+                        )}>
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                            {message.content}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {isOwnMessage && (
+                        <div className="flex justify-end pr-3">
+                          <span className="text-xs text-muted-foreground">
+                            ✓ Lu
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             );
           })}
         </div>
       </ScrollArea>
 
-      <form onSubmit={handleSendMessage} className="border-t p-4">
-        <div className="flex gap-2 items-end">
-          <RichMentionInput
+      {/* Message input */}
+      <div className="border-t p-4 bg-background">
+        <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="flex-shrink-0"
+          >
+            <Paperclip className="h-5 w-5" />
+          </Button>
+          
+          <Textarea
             value={newMessage}
-            onChange={setNewMessage}
-            onMentionsChange={setMentions}
-            placeholder="Écrivez votre message... (utilisez @ pour mentionner)"
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Rédiger un message..."
+            className="min-h-[44px] max-h-32 resize-none"
+            disabled={sending}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                handleSendMessage(e as any);
+                handleSendMessage(e);
               }
             }}
           />
-          <Button type="submit" disabled={sending || !newMessage.trim()} className="shrink-0">
-            <Send className="h-4 w-4" />
+          
+          <Button
+            type="submit"
+            size="icon"
+            className="flex-shrink-0 rounded-full h-11 w-11"
+            disabled={!newMessage.trim() || sending}
+          >
+            <Send className="h-5 w-5" />
           </Button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }
