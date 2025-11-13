@@ -117,20 +117,24 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
       
       // Pour les tâches
       if (activity.entity_type === 'tasks') {
+        const taskTitle = activity.new_values.title || 'la tâche';
+        const projectName = activity.new_values.project_name;
+        const projectText = projectName ? ` du projet ${projectName}` : '';
+        
         if (activity.old_values.status !== activity.new_values.status) {
           if (activity.new_values.status === 'done') {
-            return `a terminé la tâche ${entityName || ''}`;
+            return `a terminé la tâche ${taskTitle}${projectText}`;
           }
-          return `a changé le statut de la tâche ${entityName || ''}`;
+          return `a changé le statut de la tâche ${taskTitle}${projectText}`;
         }
         if (activity.old_values.assigned_to !== activity.new_values.assigned_to && activity.new_values.assigned_to) {
           const assignedToName = activity.new_values.assigned_to_name;
           if (assignedToName) {
-            return `a attribué la tâche ${entityName || ''} à ${assignedToName}`;
+            return `a attribué la tâche ${taskTitle} à ${assignedToName}`;
           }
-          return `a attribué la tâche ${entityName || ''}`;
+          return `a attribué la tâche ${taskTitle}`;
         }
-        return `a modifié la tâche ${entityName || ''}`;
+        return `a modifié la tâche ${taskTitle}${projectText}`;
       }
 
       // Pour les project_attachments
@@ -147,7 +151,9 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
         const taskTitle = activity.new_values?.task_title || 'une tâche';
         const comment = activity.new_values?.content;
         if (comment) {
-          const shortComment = comment.length > 50 ? comment.substring(0, 50) + '...' : comment;
+          // Remove mention markup before displaying
+          const cleanComment = comment.replace(/@\[([^\]]+)\]\([^\)]+\)/g, '@$1');
+          const shortComment = cleanComment.length > 60 ? cleanComment.substring(0, 60) + '...' : cleanComment;
           return `a commenté la tâche ${taskTitle} : "${shortComment}"`;
         }
         return `a commenté la tâche ${taskTitle}`;
@@ -165,23 +171,34 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
       }
 
       if (activity.entity_type === 'projects') {
-        return `Un nouveau projet a été créé : ${entityName || ''}`;
+        const projectName = activity.new_values?.name;
+        if (projectName) {
+          return `a créé le projet ${projectName}`;
+        }
+        return 'a créé un nouveau projet';
       }
 
       if (activity.entity_type === 'clients') {
-        return `Un nouveau client a été créé : ${entityName || ''}`;
+        const clientName = activity.new_values?.company;
+        if (clientName) {
+          return `a ajouté le client ${clientName}`;
+        }
+        return 'a ajouté un nouveau client';
       }
 
       if (activity.entity_type === 'tasks') {
+        const taskTitle = activity.new_values?.title;
         const projectName = activity.new_values?.project_name;
         const assignedToName = activity.new_values?.assigned_to_name;
-        if (assignedToName) {
-          return `Une nouvelle tâche a été attribuée à ${assignedToName} : ${entityName || ''}`;
+        const projectText = projectName ? ` dans le projet ${projectName}` : '';
+        
+        if (assignedToName && taskTitle) {
+          return `a créé la tâche ${taskTitle}${projectText} et l'a attribuée à ${assignedToName}`;
         }
-        if (projectName) {
-          return `a créé la tâche ${entityName || ''} dans le projet ${projectName}`;
+        if (taskTitle) {
+          return `a créé la tâche ${taskTitle}${projectText}`;
         }
-        return `a créé la tâche ${entityName || ''}`;
+        return 'a créé une nouvelle tâche';
       }
 
       const entityNameGeneric = {
