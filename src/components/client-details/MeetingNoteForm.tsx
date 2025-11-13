@@ -115,7 +115,7 @@ export function MeetingNoteForm({ clientId, onNoteAdded }: MeetingNoteFormProps)
           htmlFor="private-comment" 
           className="text-sm text-muted-foreground cursor-pointer"
         >
-          Commentaire privé (visible uniquement par Admin/Équipe)
+          Commentaire privé
         </Label>
       </div>
       
