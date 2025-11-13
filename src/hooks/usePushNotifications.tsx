@@ -45,12 +45,14 @@ export function usePushNotifications() {
       
       // Note: You'll need to add your VAPID public key here
       // Generate one with: npx web-push generate-vapid-keys
+      const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+      if (!vapidPublicKey) {
+        throw new Error('VAPID_PUBLIC_KEY non configurée');
+      }
+
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(
-          // Replace with your actual VAPID public key
-          'YOUR_VAPID_PUBLIC_KEY'
-        )
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
       });
 
       setSubscription(subscription);
@@ -58,8 +60,16 @@ export function usePushNotifications() {
       // Save subscription to database
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // You would save this to a push_subscriptions table
-        console.log('Subscription saved:', subscription);
+        const subscriptionData = subscription.toJSON();
+        await supabase.from('push_subscriptions').upsert({
+          user_id: user.id,
+          endpoint: subscriptionData.endpoint,
+          p256dh: subscriptionData.keys.p256dh,
+          auth: subscriptionData.keys.auth,
+        }, {
+          onConflict: 'user_id,endpoint'
+        });
+        console.log('Subscription saved to database');
       }
 
       return subscription;
