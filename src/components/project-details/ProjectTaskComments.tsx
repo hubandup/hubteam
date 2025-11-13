@@ -86,17 +86,7 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
 
   const fetchComments = async () => {
     try {
-      // Get all tasks for this project first
-      const { data: projectTasks, error: tasksError } = await supabase
-        .from('tasks')
-        .select('id')
-        .eq('project_id', projectId);
-
-      if (tasksError) throw tasksError;
-
-      const taskIds = projectTasks?.map(t => t.id) || [];
-
-      // Fetch comments for all tasks in this project OR comments without task
+      // Fetch comments for this project only
       const { data, error } = await supabase
         .from('task_comments')
         .select(`
@@ -107,7 +97,7 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
           task_id,
           attachment_url
         `)
-        .or(`task_id.in.(${taskIds.join(',')}),task_id.is.null`)
+        .eq('project_id', projectId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
