@@ -54,9 +54,14 @@ export function usePushNotifications() {
       const registration = await navigator.serviceWorker.ready;
       console.log('Service Worker is ready:', registration);
       
-      const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+      let vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
       if (!vapidPublicKey) {
-        throw new Error('VAPID_PUBLIC_KEY non configurée');
+        console.warn('VITE_VAPID_PUBLIC_KEY manquante, tentative de récupération depuis le backend...');
+        const { data, error } = await supabase.functions.invoke('get-vapid-public-key');
+        if (error || !data?.publicKey) {
+          throw new Error('Clé VAPID non configurée. Ajoutez VITE_VAPID_PUBLIC_KEY ou exposez-la via la fonction get-vapid-public-key.');
+        }
+        vapidPublicKey = data.publicKey as string;
       }
 
       // Check if already subscribed
