@@ -56,13 +56,13 @@ export default function Dashboard() {
       // Fetch clients stats
       const { data: clients, error: clientsError } = await supabase
         .from('clients')
-        .select('active, revenue');
+        .select('active, revenue, revenue_current_year');
       
       if (clientsError) throw clientsError;
 
       const leads = clients?.filter(c => !c.active).length || 0;
       const activeClients = clients?.filter(c => c.active).length || 0;
-      const totalRevenue = clients?.reduce((sum, c) => sum + (c.revenue || 0), 0) || 0;
+      const totalRevenue = clients?.reduce((sum, c) => sum + (c.revenue_current_year || 0), 0) || 0;
 
       // Fetch projects for progress calculation (without relying on FK-based nested selects)
       const { data: projects, error: projectsError } = await supabase
@@ -134,7 +134,7 @@ export default function Dashboard() {
         .from('clients')
         .select('*')
         .eq('active', true)
-        .order('revenue', { ascending: false })
+        .order('revenue_current_year', { ascending: false })
         .limit(5);
 
       if (topClientsError) throw topClientsError;
@@ -368,12 +368,12 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">CA Global</CardTitle>
+            <CardTitle className="text-sm font-medium">CA Année Fiscale</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalRevenue.toLocaleString('fr-FR')} €</div>
-            <p className="text-xs text-muted-foreground">Tous clients</p>
+            <p className="text-xs text-muted-foreground">Avril - Mars</p>
           </CardContent>
         </Card>
       </div>
@@ -545,7 +545,7 @@ export default function Dashboard() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold text-success">
-                        {client.revenue.toLocaleString('fr-FR')} €
+                        {(client.revenue_current_year || 0).toLocaleString('fr-FR')} €
                       </p>
                     </div>
                   </div>
