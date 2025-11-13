@@ -235,24 +235,29 @@ export default function ProjectDetails() {
       </div>
 
       {/* Progress Bar */}
-      {projectProgress.total > 0 && (
-        <Card className="border-0">
-          <CardContent className="pt-6">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">Progression du projet</span>
-                <span className="text-muted-foreground">
-                  {projectProgress.completed}/{projectProgress.total} tâches terminées
+      <Card className="border-0 bg-gradient-to-r from-primary/5 to-primary/10">
+        <CardContent className="pt-6">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-base font-semibold text-foreground">Progression du projet</span>
+              <div className="flex items-center gap-2">
+                <span className="text-3xl font-bold text-primary">
+                  {projectProgress.percentage}%
                 </span>
               </div>
-              <Progress value={projectProgress.percentage} className="h-3" />
-              <p className="text-xs text-muted-foreground text-right">
-                {projectProgress.percentage}% complété
-              </p>
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <Progress value={projectProgress.percentage} className="h-4" />
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>
+                {projectProgress.completed} tâche{projectProgress.completed !== 1 ? 's' : ''} terminée{projectProgress.completed !== 1 ? 's' : ''}
+              </span>
+              <span>
+                {projectProgress.total} tâche{projectProgress.total !== 1 ? 's' : ''} au total
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Tabs */}
       <ResponsiveTabs
