@@ -5,6 +5,7 @@ import { ClientCard } from '@/components/ClientCard';
 import { ClientKanbanView } from '@/components/ClientKanbanView';
 import { AddClientDialog } from '@/components/AddClientDialog';
 import { ImportClientsDialog } from '@/components/ImportClientsDialog';
+import { ImportClientsValidationDialog } from '@/components/ImportClientsValidationDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -150,6 +151,9 @@ export default function CRM() {
                 <LayoutGrid className="h-4 w-4" />
               </Button>
             </div>
+            <ProtectedAction module="crm" action="create">
+              <ImportClientsValidationDialog onClientsImported={fetchClients} />
+            </ProtectedAction>
             <ProtectedAction module="crm" action="create">
               <ImportClientsDialog onClientsImported={fetchClients} />
             </ProtectedAction>
