@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Paperclip, Download } from 'lucide-react';
+import { Loader2, Paperclip, Download, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { MeetingNoteForm } from './MeetingNoteForm';
@@ -109,7 +109,8 @@ export function ClientMeetingNotesTab({ clientId }: ClientMeetingNotesTabProps) 
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm">{fullName}</span>
                         {note.is_private && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                            <Lock className="h-3 w-3" />
                             Privé
                           </Badge>
                         )}
