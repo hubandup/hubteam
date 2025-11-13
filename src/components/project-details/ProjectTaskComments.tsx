@@ -567,19 +567,12 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
               Associer à une tâche (optionnel)
             </label>
             <div className="flex flex-wrap gap-2">
-              <Badge
-                variant={selectedTaskId === 'none' ? 'default' : 'outline'}
-                className="cursor-pointer px-3 py-1.5 text-sm transition-all hover:scale-105"
-                onClick={() => setSelectedTaskId('none')}
-              >
-                Commentaire libre
-              </Badge>
               {tasks.map((task) => (
                 <Badge
                   key={task.id}
                   variant={selectedTaskId === task.id ? 'default' : 'outline'}
                   className="cursor-pointer px-3 py-1.5 text-sm transition-all hover:scale-105"
-                  onClick={() => setSelectedTaskId(task.id)}
+                  onClick={() => setSelectedTaskId(selectedTaskId === task.id ? 'none' : task.id)}
                 >
                   {task.title}
                 </Badge>
