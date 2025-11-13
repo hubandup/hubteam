@@ -30,6 +30,7 @@ export default function Dashboard() {
   const [projectStatusData, setProjectStatusData] = useState<any[]>([]);
   const [monthlyPerformance, setMonthlyPerformance] = useState<any[]>([]);
   const [projectsByUser, setProjectsByUser] = useState<any[]>([]);
+  const [tasksByUser, setTasksByUser] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -350,6 +351,38 @@ export default function Dashboard() {
           projets: user.count,
         }));
 
+      // Count tasks by user (team + admin)
+      const taskCountsByUser: Record<string, { name: string; count: number }> = {};
+
+      if (teamAdminUsers) {
+        for (const userRole of teamAdminUsers) {
+          const userId = userRole.user_id;
+          const profile = userRole.profiles as any;
+          const userName = `${profile.first_name} ${profile.last_name}`;
+
+          // Count tasks assigned to this user
+          const { count: taskCount, error: tasksError } = await supabase
+            .from('tasks')
+            .select('*', { count: 'exact', head: true })
+            .eq('assigned_to', userId);
+
+          if (!tasksError) {
+            taskCountsByUser[userId] = {
+              name: userName,
+              count: taskCount || 0,
+            };
+          }
+        }
+      }
+
+      // Transform to array for chart
+      const tasksByUserData = Object.values(taskCountsByUser)
+        .sort((a, b) => b.count - a.count)
+        .map(user => ({
+          name: user.name,
+          taches: user.count,
+        }));
+
       setStats({
         leads,
         clients: activeClients,
@@ -365,6 +398,7 @@ export default function Dashboard() {
       setProjectStatusData(projectsStatus);
       setMonthlyPerformance(performance);
       setProjectsByUser(projectsByUserData);
+      setTasksByUser(tasksByUserData);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast.error('Erreur lors du chargement du tableau de bord');
@@ -582,6 +616,30 @@ export default function Dashboard() {
                   }}
                 />
                 <Bar dataKey="projets" fill="hsl(var(--primary))" name="Projets" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Tasks by User */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Tâches par utilisateur</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={tasksByUser}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="name" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px'
+                  }}
+                />
+                <Bar dataKey="taches" fill="hsl(var(--secondary))" name="Tâches" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
