@@ -40,15 +40,15 @@ export function ProjectListView({ projects, onProjectClick }: ProjectListViewPro
             </Avatar>
             
             <div className="flex-1 min-w-0">
-              <div className="flex flex-col gap-1">
-                <span className="text-sm font-medium truncate">{project.name}</span>
-                <span className="text-xs text-muted-foreground">{clientName}</span>
+              <div className="flex flex-col">
+                <h3 className="text-base font-semibold truncate">{project.name}</h3>
+                <p className="text-xs text-muted-foreground font-medium">{clientName}</p>
+                {project.description && (
+                  <p className="text-sm text-muted-foreground truncate mt-1">
+                    {project.description}
+                  </p>
+                )}
               </div>
-              {project.description && (
-                <p className="text-sm text-muted-foreground truncate mt-1">
-                  {project.description}
-                </p>
-              )}
             </div>
 
             {(project.start_date || project.end_date) && (
