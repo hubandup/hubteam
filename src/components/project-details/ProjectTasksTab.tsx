@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Loader2, Calendar, User } from 'lucide-react';
+import { Plus, Loader2, Calendar, User, Check } from 'lucide-react';
 import { AddTaskDialog } from './AddTaskDialog';
 import { EditTaskDialog } from './EditTaskDialog';
 import { format } from 'date-fns';
@@ -93,6 +93,24 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
     setShowEditDialog(true);
   };
 
+  const handleMarkAsDone = async (taskId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent opening edit dialog
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ status: 'done' })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      toast.success('Tâche marquée comme terminée');
+      fetchTasks();
+    } catch (error) {
+      console.error('Error updating task:', error);
+      toast.error('Erreur lors de la mise à jour de la tâche');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -154,6 +172,20 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
                         )}
                       </div>
                     </div>
+
+                    {task.status !== 'done' && (
+                      <ProtectedAction module="tasks" action="update">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => handleMarkAsDone(task.id, e)}
+                          className="shrink-0"
+                        >
+                          <Check className="h-4 w-4 mr-2" />
+                          Terminé
+                        </Button>
+                      </ProtectedAction>
+                    )}
                   </div>
                 </div>
               ))}
