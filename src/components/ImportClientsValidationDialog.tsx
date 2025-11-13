@@ -118,6 +118,34 @@ export function ImportClientsValidationDialog({ onClientsImported }: ImportClien
     return emailRegex.test(email);
   };
 
+  const getPreviewData = () => {
+    if (!rawData.length || Object.keys(columnMapping).length === 0) return [];
+    
+    const previewRows = rawData.slice(1, Math.min(6, rawData.length)); // Skip header, take 5 rows max
+    
+    return previewRows.map((row, idx) => {
+      const company = columnMapping.company !== undefined ? row[columnMapping.company] : '';
+      const email = columnMapping.email !== undefined ? row[columnMapping.email] : '';
+      const contactName = columnMapping.contactName !== undefined ? row[columnMapping.contactName] : '';
+      const phone = columnMapping.phone !== undefined && columnMapping.phone !== -1 ? row[columnMapping.phone] : '';
+      const lastContact = columnMapping.lastContact !== undefined && columnMapping.lastContact !== -1 ? row[columnMapping.lastContact] : '';
+      const followUpDate = columnMapping.followUpDate !== undefined && columnMapping.followUpDate !== -1 ? row[columnMapping.followUpDate] : '';
+      
+      const { first_name, last_name } = splitName(contactName);
+      
+      return {
+        index: idx + 1,
+        company: company || '(vide)',
+        email: email || '(vide)',
+        first_name: first_name || '(vide)',
+        last_name: last_name || '(vide)',
+        phone: phone || '(vide)',
+        last_contact: lastContact || '(vide)',
+        follow_up_date: followUpDate || '(vide)',
+      };
+    });
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -516,6 +544,67 @@ export function ImportClientsValidationDialog({ onClientsImported }: ImportClien
                     </Select>
                   </div>
                 </div>
+
+                {/* Preview Section */}
+                {getPreviewData().length > 0 && (
+                  <div className="mt-6 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-medium">Aperçu des données avec mapping appliqué</h4>
+                      <Badge variant="secondary" className="text-xs">
+                        {getPreviewData().length} première(s) ligne(s)
+                      </Badge>
+                    </div>
+                    <div className="border rounded-lg overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-12">#</TableHead>
+                            <TableHead>Entreprise</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Prénom</TableHead>
+                            <TableHead>Nom</TableHead>
+                            <TableHead>Téléphone</TableHead>
+                            <TableHead>Dernier contact</TableHead>
+                            <TableHead>Prochaine échéance</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {getPreviewData().map((row) => (
+                            <TableRow key={row.index}>
+                              <TableCell className="font-medium text-muted-foreground">
+                                {row.index}
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {row.company}
+                              </TableCell>
+                              <TableCell>
+                                {row.email}
+                              </TableCell>
+                              <TableCell>
+                                {row.first_name}
+                              </TableCell>
+                              <TableCell>
+                                {row.last_name}
+                              </TableCell>
+                              <TableCell>
+                                {row.phone}
+                              </TableCell>
+                              <TableCell>
+                                {row.last_contact}
+                              </TableCell>
+                              <TableCell>
+                                {row.follow_up_date}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Vérifiez que les colonnes correspondent bien aux données affichées avant de valider.
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex justify-end gap-2 pt-4">
                   <Button
