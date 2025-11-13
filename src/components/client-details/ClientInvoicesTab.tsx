@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileText, ExternalLink } from 'lucide-react';
+import { Loader2, FileText, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -15,6 +15,7 @@ interface ClientInvoicesTabProps {
 interface Invoice {
   id: string;
   invoice_number: string;
+  title?: string;
   amount: number;
   status: string;
   invoice_date: string;
@@ -162,6 +163,11 @@ export function ClientInvoicesTab({ clientId }: ClientInvoicesTabProps) {
                       <CardTitle className="text-base">
                         Facture {invoice.invoice_number}
                       </CardTitle>
+                      {invoice.title && (
+                        <p className="text-sm font-medium mt-1">
+                          {invoice.title}
+                        </p>
+                      )}
                       <p className="text-sm text-muted-foreground">
                         {invoice.invoice_date
                           ? format(new Date(invoice.invoice_date), 'dd MMMM yyyy', {
@@ -192,8 +198,8 @@ export function ClientInvoicesTab({ clientId }: ClientInvoicesTabProps) {
                       size="sm"
                       onClick={() => handleDownloadPdf(invoice.id, invoice.invoice_number)}
                     >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Voir le PDF
+                      <Download className="h-4 w-4 mr-2" />
+                      Télécharger le PDF
                     </Button>
                   )}
                 </div>
