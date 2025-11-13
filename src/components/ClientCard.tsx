@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Mail, Phone, DollarSign, Calendar, BellRing } from 'lucide-react';
+import { Building2, Mail, Phone, Euro, Calendar, BellRing } from 'lucide-react';
 import { format, isPast } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -75,7 +75,7 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
         )}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2 text-sm font-medium text-success">
-            <DollarSign className="h-4 w-4" />
+            <Euro className="h-4 w-4" />
             <span>
               {client.revenue_current_year !== undefined && client.revenue_current_year !== null 
                 ? client.revenue_current_year.toLocaleString('fr-FR')

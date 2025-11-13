@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Mail, Phone, DollarSign } from 'lucide-react';
+import { Building2, Mail, Phone, Euro } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface AgencyCardProps {
@@ -59,7 +59,7 @@ export function AgencyCard({ agency, onClick }: AgencyCardProps) {
           </div>
         )}
         <div className="flex items-center gap-2 text-sm font-medium text-success">
-          <DollarSign className="h-4 w-4" />
+          <Euro className="h-4 w-4" />
           <span>{agency.revenue.toLocaleString('fr-FR')} €</span>
         </div>
       </CardContent>

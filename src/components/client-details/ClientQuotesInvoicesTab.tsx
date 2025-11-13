@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, DollarSign, Calendar, Loader2, Upload, ExternalLink, Trash2 } from 'lucide-react';
+import { FileText, Euro, Calendar, Loader2, Upload, ExternalLink, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -290,7 +290,7 @@ export function ClientQuotesInvoicesTab({ clientId }: ClientQuotesInvoicesTabPro
                     {getStatusBadge(quote.status)}
                   </div>
                   <div className="flex items-center gap-1 text-lg font-bold text-primary">
-                    <DollarSign className="h-4 w-4" />
+                    <Euro className="h-4 w-4" />
                     {quote.amount.toLocaleString('fr-FR')} €
                   </div>
                   {renderPdfSection(quote, 'quote')}
@@ -331,7 +331,7 @@ export function ClientQuotesInvoicesTab({ clientId }: ClientQuotesInvoicesTabPro
                     {getStatusBadge(invoice.status)}
                   </div>
                   <div className="flex items-center gap-1 text-lg font-bold text-primary">
-                    <DollarSign className="h-4 w-4" />
+                    <Euro className="h-4 w-4" />
                     {invoice.amount.toLocaleString('fr-FR')} €
                   </div>
                   {renderPdfSection(invoice, 'invoice')}
