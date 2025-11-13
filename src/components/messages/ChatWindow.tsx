@@ -283,9 +283,9 @@ export function ChatWindow({ roomId, onBack }: ChatWindowProps) {
   const groupedMessages = groupMessagesByDate();
 
   return (
-    <div className="flex-1 flex flex-col bg-background">
+    <div className="flex-1 flex flex-col bg-background h-screen md:h-auto">
       {/* Header */}
-      <div className="border-b p-4 flex items-center gap-3">
+      <div className="border-b p-4 flex items-center gap-3 flex-shrink-0">
         {isMobile && onBack && (
           <Button
             variant="ghost"
@@ -307,8 +307,9 @@ export function ChatWindow({ roomId, onBack }: ChatWindowProps) {
       </div>
 
       {/* Messages area */}
-      <ScrollArea className="flex-1" ref={scrollRef}>
-        <div className="p-4 space-y-6">
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full" ref={scrollRef}>
+          <div className="p-4 space-y-6 pb-20 md:pb-6">
           {Object.entries(groupedMessages).map(([dateKey, dateMessages]) => {
             const date = new Date(dateKey);
             
@@ -377,11 +378,12 @@ export function ChatWindow({ roomId, onBack }: ChatWindowProps) {
               </div>
             );
           })}
-        </div>
-      </ScrollArea>
+          </div>
+        </ScrollArea>
+      </div>
 
       {/* Message input */}
-      <div className="border-t p-4 bg-background">
+      <div className="border-t p-4 bg-background flex-shrink-0">
         <form onSubmit={handleSendMessage} className="flex items-center gap-2">
           <Button
             type="button"

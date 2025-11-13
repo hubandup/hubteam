@@ -209,7 +209,7 @@ export function ChatRoomList({ selectedRoomId, onSelectRoom }: ChatRoomListProps
   };
 
   return (
-    <div className="w-80 border-r flex flex-col bg-background">
+    <div className="w-full md:w-80 border-r flex flex-col bg-background">
       {/* Header */}
       <div className="p-4 border-b flex items-center justify-between">
         <h2 className="text-lg font-semibold">Messages</h2>
