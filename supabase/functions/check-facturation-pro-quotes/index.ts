@@ -11,7 +11,7 @@ interface FacturationProQuote {
   id: number
   client_id: number
   title: string
-  status: string
+  quote_status: string
   accepted_date?: string
 }
 
@@ -58,15 +58,15 @@ Deno.serve(async (req) => {
     // Log the fields available in the first quote
     if (quotes.length > 0) {
       console.log('Available quote fields:', Object.keys(quotes[0]))
-      console.log('First quote sample - id:', quotes[0].id, 'client_id:', quotes[0].client_id, 'title:', quotes[0].title?.substring(0, 30))
+      console.log('First quote sample - id:', quotes[0].id, 'client_id:', quotes[0].client_id, 'title:', quotes[0].title?.substring(0, 30), 'quote_status:', quotes[0].quote_status)
     }
 
     // Filter for quotes to create projects (accepted or tobeinvoiced)
-    const quotesToProcess = quotes.filter(q => q.status === 'accepted' || q.status === 'tobeinvoiced')
+    const quotesToProcess = quotes.filter(q => q.quote_status === 'accepted' || q.quote_status === 'tobeinvoiced')
     console.log(`Found ${quotesToProcess.length} quotes to process (accepted or tobeinvoiced)`)
 
     // Filter for paid quotes to archive projects
-    const paidQuotes = quotes.filter(q => q.status === 'paid')
+    const paidQuotes = quotes.filter(q => q.quote_status === 'paid')
     console.log(`Found ${paidQuotes.length} paid quotes to archive`)
 
     let createdProjects = 0
@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
         .from('projects')
         .insert({
           name: quote.title,
-          description: `Projet créé automatiquement depuis le devis (statut: ${quote.status === 'tobeinvoiced' ? 'À facturer' : 'accepté'}) #${quote.id}`,
+          description: `Projet créé automatiquement depuis le devis (statut: ${quote.quote_status === 'tobeinvoiced' ? 'À facturer' : 'accepté'}) #${quote.id}`,
           status: 'active',
           start_date: quote.accepted_date || new Date().toISOString().split('T')[0],
           created_by: firstAdmin?.user_id,
@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
           user_id: admin.user_id,
           type: 'project_created',
           title: 'Nouveau projet créé automatiquement',
-          message: `Le projet "${quote.title}" a été créé depuis un devis ${quote.status === 'tobeinvoiced' ? 'à facturer' : 'accepté'}`,
+          message: `Le projet "${quote.title}" a été créé depuis un devis ${quote.quote_status === 'tobeinvoiced' ? 'à facturer' : 'accepté'}`,
           link: `/projects/${newProject.id}`,
         }))
 
@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
       }
 
       createdProjects++
-      console.log(`Created project "${quote.title}" for quote ${quote.id} (status: ${quote.status})`)
+      console.log(`Created project "${quote.title}" for quote ${quote.id} (status: ${quote.quote_status})`)
     }
 
     // Archive projects for paid quotes
