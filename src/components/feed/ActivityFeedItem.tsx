@@ -95,13 +95,22 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
         if (changes.length > 0) {
           return `a modifié ${changes.join(', ')} de ${entityName || 'un client'}`;
         }
-        return `a modifié ${entityName || 'un client'}`;
+        return `a modifié le client ${entityName || ''}`;
       }
       
       // Pour les projets
       if (activity.entity_type === 'projects') {
         if (activity.old_values.status !== activity.new_values.status) {
-          return `a changé le statut du projet ${entityName || ''}`;
+          const statusText = {
+            'completed': 'est terminé',
+            'in_progress': 'est en cours',
+            'on_hold': 'est en pause',
+            'cancelled': 'est annulé'
+          }[activity.new_values.status] || 'a changé de statut';
+          return `Le projet ${entityName || ''} ${statusText}`;
+        }
+        if (activity.old_values.archived !== activity.new_values.archived && activity.new_values.archived) {
+          return `a archivé le projet ${entityName || ''}`;
         }
         return `a modifié le projet ${entityName || ''}`;
       }
@@ -109,10 +118,17 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
       // Pour les tâches
       if (activity.entity_type === 'tasks') {
         if (activity.old_values.status !== activity.new_values.status) {
+          if (activity.new_values.status === 'done') {
+            return `a terminé la tâche ${entityName || ''}`;
+          }
           return `a changé le statut de la tâche ${entityName || ''}`;
         }
-        if (activity.old_values.assigned_to !== activity.new_values.assigned_to) {
-          return `a assigné la tâche ${entityName || ''}`;
+        if (activity.old_values.assigned_to !== activity.new_values.assigned_to && activity.new_values.assigned_to) {
+          const assignedToName = activity.new_values.assigned_to_name;
+          if (assignedToName) {
+            return `a attribué la tâche ${entityName || ''} à ${assignedToName}`;
+          }
+          return `a attribué la tâche ${entityName || ''}`;
         }
         return `a modifié la tâche ${entityName || ''}`;
       }
@@ -148,10 +164,27 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
         return `a ajouté un fichier dans le projet ${projectName}${fileName ? ` : ${fileName}` : ''}`;
       }
 
+      if (activity.entity_type === 'projects') {
+        return `Un nouveau projet a été créé : ${entityName || ''}`;
+      }
+
+      if (activity.entity_type === 'clients') {
+        return `Un nouveau client a été créé : ${entityName || ''}`;
+      }
+
+      if (activity.entity_type === 'tasks') {
+        const projectName = activity.new_values?.project_name;
+        const assignedToName = activity.new_values?.assigned_to_name;
+        if (assignedToName) {
+          return `Une nouvelle tâche a été attribuée à ${assignedToName} : ${entityName || ''}`;
+        }
+        if (projectName) {
+          return `a créé la tâche ${entityName || ''} dans le projet ${projectName}`;
+        }
+        return `a créé la tâche ${entityName || ''}`;
+      }
+
       const entityNameGeneric = {
-        tasks: `la tâche ${entityName || ''}`,
-        projects: `le projet ${entityName || ''}`,
-        clients: `le client ${entityName || ''}`,
         agencies: `l'agence ${entityName || ''}`,
       }[activity.entity_type] || 'un élément';
       
