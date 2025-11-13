@@ -37,6 +37,15 @@ interface ImportClientsValidationDialogProps {
 
 type ImportAction = 'skip' | 'update' | 'import';
 
+interface ColumnMapping {
+  company?: number;
+  email?: number;
+  contactName?: number;
+  phone?: number;
+  lastContact?: number;
+  followUpDate?: number;
+}
+
 interface ParsedClient {
   id: string;
   company: string;
@@ -58,6 +67,10 @@ export function ImportClientsValidationDialog({ onClientsImported }: ImportClien
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [parsedClients, setParsedClients] = useState<ParsedClient[]>([]);
+  const [detectedColumns, setDetectedColumns] = useState<string[]>([]);
+  const [columnMapping, setColumnMapping] = useState<ColumnMapping>({});
+  const [showMapping, setShowMapping] = useState(false);
+  const [rawData, setRawData] = useState<any[][]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const splitName = (fullName: string): { first_name: string; last_name: string } => {
@@ -111,6 +124,7 @@ export function ImportClientsValidationDialog({ onClientsImported }: ImportClien
 
     setLoading(true);
     setParsedClients([]);
+    setShowMapping(false);
 
     try {
       const reader = new FileReader();
@@ -121,81 +135,14 @@ export function ImportClientsValidationDialog({ onClientsImported }: ImportClien
           const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
           const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
 
-          // Skip header row
+          // Get header row (first row)
+          const headers = (jsonData[0] as any[]).map((h, idx) => h?.toString() || `Colonne ${idx + 1}`);
           const rows = jsonData.slice(1) as any[][];
 
-          // Fetch existing clients for duplicate detection
-          const { data: existingClients } = await supabase
-            .from('clients')
-            .select('id, email, company');
-
-          const emailMap = new Map(existingClients?.map(c => [c.email.toLowerCase(), c]) || []);
-          const companyMap = new Map(existingClients?.map(c => [c.company.toLowerCase(), c]) || []);
-
-          const parsed: ParsedClient[] = [];
-
-          for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
-            
-            // Map columns: Nom, Date création, Dernier contact, E-mail, Nom du contact, Prochaine échéance, Responsable, Téléphone
-            const company = row[0]?.toString().trim();
-            const email = row[3]?.toString().trim().toLowerCase();
-            const contactName = row[4]?.toString().trim();
-            const phone = row[7]?.toString().trim();
-            const lastContact = parseDate(row[2]?.toString());
-            const followUpDate = parseDate(row[5]?.toString());
-
-            // Skip empty rows
-            if (!company && !email && !contactName) continue;
-
-            // Skip rows with invalid data
-            if (!company || !email || !validateEmail(email)) {
-              toast.error(`Ligne ${i + 2}: Données invalides (entreprise ou email manquant/invalide)`);
-              continue;
-            }
-
-            const { first_name, last_name } = splitName(contactName);
-
-            // Check for duplicates
-            let isDuplicate = false;
-            let duplicateReason = '';
-            let existingClientId = '';
-            let defaultAction: ImportAction = 'import';
-
-            const existingByEmail = emailMap.get(email);
-            const existingByCompany = companyMap.get(company.toLowerCase());
-
-            if (existingByEmail) {
-              isDuplicate = true;
-              duplicateReason = 'Email existant';
-              existingClientId = existingByEmail.id;
-              defaultAction = 'skip';
-            } else if (existingByCompany) {
-              isDuplicate = true;
-              duplicateReason = 'Entreprise existante';
-              existingClientId = existingByCompany.id;
-              defaultAction = 'skip';
-            }
-
-            parsed.push({
-              id: `import-${i}`,
-              company,
-              email,
-              first_name,
-              last_name,
-              phone,
-              last_contact: lastContact,
-              follow_up_date: followUpDate,
-              action: defaultAction,
-              isDuplicate,
-              duplicateReason,
-              existingClientId,
-              selected: !isDuplicate, // Auto-select non-duplicates
-            });
-          }
-
-          setParsedClients(parsed);
-          toast.success(`${parsed.length} clients analysés`);
+          setDetectedColumns(headers);
+          setRawData(rows);
+          setShowMapping(true);
+          toast.success(`${headers.length} colonnes détectées`);
         } catch (error) {
           console.error('Parse error:', error);
           toast.error('Erreur lors de l\'analyse du fichier');
@@ -208,6 +155,95 @@ export function ImportClientsValidationDialog({ onClientsImported }: ImportClien
     } catch (error) {
       console.error('File read error:', error);
       toast.error('Erreur lors de la lecture du fichier');
+      setLoading(false);
+    }
+  };
+
+  const handleValidateMapping = async () => {
+    if (columnMapping.company === undefined || columnMapping.email === undefined || columnMapping.contactName === undefined) {
+      toast.error('Les champs Entreprise, Email et Nom du contact sont obligatoires');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Fetch existing clients for duplicate detection
+      const { data: existingClients } = await supabase
+        .from('clients')
+        .select('id, email, company');
+
+      const emailMap = new Map(existingClients?.map(c => [c.email.toLowerCase(), c]) || []);
+      const companyMap = new Map(existingClients?.map(c => [c.company.toLowerCase(), c]) || []);
+
+      const parsed: ParsedClient[] = [];
+
+      for (let i = 0; i < rawData.length; i++) {
+        const row = rawData[i];
+        
+        const company = row[columnMapping.company]?.toString().trim();
+        const email = row[columnMapping.email]?.toString().trim().toLowerCase();
+        const contactName = row[columnMapping.contactName]?.toString().trim();
+        const phone = columnMapping.phone !== undefined ? row[columnMapping.phone]?.toString().trim() : undefined;
+        const lastContact = columnMapping.lastContact !== undefined ? parseDate(row[columnMapping.lastContact]?.toString()) : undefined;
+        const followUpDate = columnMapping.followUpDate !== undefined ? parseDate(row[columnMapping.followUpDate]?.toString()) : undefined;
+
+        // Skip empty rows
+        if (!company && !email && !contactName) continue;
+
+        // Skip rows with invalid data
+        if (!company || !email || !validateEmail(email)) {
+          toast.error(`Ligne ${i + 2}: Données invalides (entreprise ou email manquant/invalide)`);
+          continue;
+        }
+
+        const { first_name, last_name } = splitName(contactName);
+
+        // Check for duplicates
+        let isDuplicate = false;
+        let duplicateReason = '';
+        let existingClientId = '';
+        let defaultAction: ImportAction = 'import';
+
+        const existingByEmail = emailMap.get(email);
+        const existingByCompany = companyMap.get(company.toLowerCase());
+
+        if (existingByEmail) {
+          isDuplicate = true;
+          duplicateReason = 'Email existant';
+          existingClientId = existingByEmail.id;
+          defaultAction = 'skip';
+        } else if (existingByCompany) {
+          isDuplicate = true;
+          duplicateReason = 'Entreprise existante';
+          existingClientId = existingByCompany.id;
+          defaultAction = 'skip';
+        }
+
+        parsed.push({
+          id: `import-${i}`,
+          company,
+          email,
+          first_name,
+          last_name,
+          phone,
+          last_contact: lastContact,
+          follow_up_date: followUpDate,
+          action: defaultAction,
+          isDuplicate,
+          duplicateReason,
+          existingClientId,
+          selected: !isDuplicate,
+        });
+      }
+
+      setParsedClients(parsed);
+      setShowMapping(false);
+      toast.success(`${parsed.length} clients analysés`);
+    } catch (error) {
+      console.error('Parse error:', error);
+      toast.error('Erreur lors de l\'analyse des données');
+    } finally {
       setLoading(false);
     }
   };
@@ -345,6 +381,164 @@ export function ImportClientsValidationDialog({ onClientsImported }: ImportClien
               Charger le fichier Excel
             </Button>
           </div>
+
+          {showMapping && (
+            <Card>
+              <CardContent className="pt-6 space-y-4">
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">Mapper les colonnes</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Sélectionnez la colonne correspondant à chaque champ CRM
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">
+                      Entreprise <span className="text-destructive">*</span>
+                    </label>
+                    <Select
+                      value={columnMapping.company?.toString()}
+                      onValueChange={(value) => setColumnMapping(prev => ({ ...prev, company: parseInt(value) }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner une colonne" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {detectedColumns.map((col, idx) => (
+                          <SelectItem key={idx} value={idx.toString()}>
+                            {col}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">
+                      Email <span className="text-destructive">*</span>
+                    </label>
+                    <Select
+                      value={columnMapping.email?.toString()}
+                      onValueChange={(value) => setColumnMapping(prev => ({ ...prev, email: parseInt(value) }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner une colonne" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {detectedColumns.map((col, idx) => (
+                          <SelectItem key={idx} value={idx.toString()}>
+                            {col}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">
+                      Nom du contact <span className="text-destructive">*</span>
+                    </label>
+                    <Select
+                      value={columnMapping.contactName?.toString()}
+                      onValueChange={(value) => setColumnMapping(prev => ({ ...prev, contactName: parseInt(value) }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner une colonne" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {detectedColumns.map((col, idx) => (
+                          <SelectItem key={idx} value={idx.toString()}>
+                            {col}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Téléphone</label>
+                    <Select
+                      value={columnMapping.phone?.toString()}
+                      onValueChange={(value) => setColumnMapping(prev => ({ ...prev, phone: parseInt(value) }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner une colonne (optionnel)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="-1">Aucune</SelectItem>
+                        {detectedColumns.map((col, idx) => (
+                          <SelectItem key={idx} value={idx.toString()}>
+                            {col}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Dernier contact</label>
+                    <Select
+                      value={columnMapping.lastContact?.toString()}
+                      onValueChange={(value) => setColumnMapping(prev => ({ ...prev, lastContact: parseInt(value) }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner une colonne (optionnel)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="-1">Aucune</SelectItem>
+                        {detectedColumns.map((col, idx) => (
+                          <SelectItem key={idx} value={idx.toString()}>
+                            {col}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Prochaine échéance</label>
+                    <Select
+                      value={columnMapping.followUpDate?.toString()}
+                      onValueChange={(value) => setColumnMapping(prev => ({ ...prev, followUpDate: parseInt(value) }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner une colonne (optionnel)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="-1">Aucune</SelectItem>
+                        {detectedColumns.map((col, idx) => (
+                          <SelectItem key={idx} value={idx.toString()}>
+                            {col}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowMapping(false);
+                      setColumnMapping({});
+                      setDetectedColumns([]);
+                      setRawData([]);
+                    }}
+                  >
+                    Annuler
+                  </Button>
+                  <Button onClick={handleValidateMapping} disabled={loading}>
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : null}
+                    Valider le mapping
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {parsedClients.length > 0 && (
             <>
