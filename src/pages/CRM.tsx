@@ -204,7 +204,7 @@ export default function CRM() {
             <div className="min-w-max">
               <ClientKanbanView
                 clients={filteredClients}
-                onClientClick={(clientId) => navigate(`/client/${clientId}`)}
+                onClientClick={(clientId) => navigate(`/client/${clientId}?tab=info`)}
                 onStageChange={handleStageChange}
               />
             </div>
@@ -216,7 +216,7 @@ export default function CRM() {
                 <ClientCard
                   key={client.id}
                   client={client}
-                  onClick={() => navigate(`/client/${client.id}`)}
+                  onClick={() => navigate(`/client/${client.id}?tab=info`)}
                 />
               ))}
             </div>
