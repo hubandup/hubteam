@@ -25,8 +25,27 @@ import Auth from "./pages/Auth";
 import SetPassword from "./pages/SetPassword";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
+import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
+
+// Component to redirect PWA users to Feed
+const PWARedirect = ({ children }: { children: React.ReactNode }) => {
+  const [isPWA, setIsPWA] = useState(false);
+
+  useEffect(() => {
+    // Check if app is running as PWA
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isInWebAppiOS = (window.navigator as any).standalone === true;
+    setIsPWA(isStandalone || isInWebAppiOS);
+  }, []);
+
+  if (isPWA) {
+    return <Navigate to="/feed" replace />;
+  }
+
+  return <>{children}</>;
+};
 
 const App = () => {
   useDesignSettings();
@@ -41,8 +60,8 @@ const App = () => {
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/set-password" element={<SetPassword />} />
-            <Route path="/" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
-            <Route path="/dashboard" element={<Navigate to="/" replace />} />
+            <Route path="/" element={<ProtectedRoute><Layout><PWARedirect><Dashboard /></PWARedirect></Layout></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Layout><PWARedirect><Dashboard /></PWARedirect></Layout></ProtectedRoute>} />
             <Route path="/feed" element={<ProtectedRoute><Layout><Feed /></Layout></ProtectedRoute>} />
             <Route path="/crm" element={<ProtectedRoute><Layout><CRM /></Layout></ProtectedRoute>} />
             <Route path="/client/:id" element={<ProtectedRoute><Layout><ClientDetails /></Layout></ProtectedRoute>} />
