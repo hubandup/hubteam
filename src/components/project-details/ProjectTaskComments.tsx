@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { Loader2, MessageSquare, Send, Paperclip, X, Download, Tag, Edit2, Trash2 } from 'lucide-react';
+import { Loader2, MessageSquare, Send, Paperclip, X, Download, Tag, Edit2, Trash2, Reply } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,6 +21,7 @@ interface Comment {
   user_id: string;
   task_id: string | null;
   attachment_url: string | null;
+  parent_id: string | null;
   profiles: {
     first_name: string;
     last_name: string;
@@ -29,6 +30,7 @@ interface Comment {
   tasks: {
     title: string;
   } | null;
+  replies?: Comment[];
 }
 
 interface ProjectTaskCommentsProps {
@@ -50,6 +52,9 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
   const [editingMentions, setEditingMentions] = useState<string[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState('');
+  const [replyMentions, setReplyMentions] = useState<string[]>([]);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -103,7 +108,8 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
           created_at,
           user_id,
           task_id,
-          attachment_url
+          attachment_url,
+          parent_id
         `)
         .eq('project_id', projectId)
         .order('created_at', { ascending: false });
@@ -132,12 +138,41 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
           return { 
             ...comment, 
             profiles: profile || { first_name: '', last_name: '', avatar_url: null },
-            tasks: taskData
+            tasks: taskData,
+            replies: []
           };
         })
       );
 
-      setComments(commentsWithDetails as Comment[]);
+      // Organize comments into threads (parent comments with their replies)
+      const topLevelComments: Comment[] = [];
+      const commentMap = new Map<string, Comment>();
+
+      // First pass: create a map of all comments
+      commentsWithDetails.forEach((comment) => {
+        commentMap.set(comment.id, comment);
+      });
+
+      // Second pass: organize into threads
+      commentsWithDetails.forEach((comment) => {
+        if (comment.parent_id) {
+          // This is a reply, add it to parent's replies
+          const parent = commentMap.get(comment.parent_id);
+          if (parent) {
+            if (!parent.replies) parent.replies = [];
+            parent.replies.push(comment);
+            // Sort replies by date (oldest first for natural conversation flow)
+            parent.replies.sort((a, b) => 
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            );
+          }
+        } else {
+          // This is a top-level comment
+          topLevelComments.push(comment);
+        }
+      });
+
+      setComments(topLevelComments as Comment[]);
     } catch (error) {
       console.error('Error fetching comments:', error);
       toast.error('Erreur lors du chargement des commentaires');
@@ -303,6 +338,219 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
     setDeleteDialogOpen(true);
   };
 
+  const handleReply = (commentId: string) => {
+    setReplyingTo(commentId);
+    setReplyContent('');
+    setReplyMentions([]);
+  };
+
+  const handleCancelReply = () => {
+    setReplyingTo(null);
+    setReplyContent('');
+    setReplyMentions([]);
+  };
+
+  const handleSubmitReply = async (parentId: string) => {
+    if (!replyContent.trim() || !user) {
+      toast.error('Veuillez saisir une réponse');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const { error } = await supabase
+        .from('task_comments')
+        .insert({
+          content: replyContent.trim(),
+          task_id: null, // Replies inherit context from parent
+          user_id: user.id,
+          attachment_url: null,
+          project_id: projectId,
+          parent_id: parentId,
+        });
+
+      if (error) throw error;
+
+      toast.success('Réponse ajoutée avec succès');
+      handleCancelReply();
+      fetchComments();
+    } catch (error) {
+      console.error('Error adding reply:', error);
+      toast.error("Erreur lors de l'ajout de la réponse");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const renderComment = (comment: Comment, depth: number = 0) => {
+    const isEditing = editingCommentId === comment.id;
+    const isReplying = replyingTo === comment.id;
+    const indentClass = depth > 0 ? 'ml-12 border-l-2 border-border pl-4' : '';
+
+    return (
+      <div key={comment.id} className={`${indentClass}`}>
+        <div className="flex gap-3 py-3">
+          <Avatar className="h-10 w-10 flex-shrink-0">
+            {comment.profiles?.avatar_url && (
+              <AvatarImage 
+                src={comment.profiles.avatar_url} 
+                alt={`${comment.profiles?.first_name} ${comment.profiles?.last_name}`} 
+              />
+            )}
+            <AvatarFallback className="bg-primary/10 text-primary text-sm">
+              {comment.profiles?.first_name?.[0]}{comment.profiles?.last_name?.[0]}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 space-y-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-medium">
+                {comment.profiles?.first_name} {comment.profiles?.last_name}
+              </p>
+              <span className="text-xs text-muted-foreground">
+                {format(new Date(comment.created_at), 'dd MMM yyyy à HH:mm', { locale: fr })}
+              </span>
+              {comment.user_id === user?.id && (
+                <div className="flex items-center gap-1 ml-auto">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEditComment(comment)}
+                    className="h-7 w-7 p-0"
+                  >
+                    <Edit2 className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => openDeleteDialog(comment.id)}
+                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            {comment.tasks && (
+              <Badge variant="outline" className="mt-1 text-xs gap-1">
+                <Tag className="h-3 w-3" />
+                {comment.tasks.title}
+              </Badge>
+            )}
+            
+            {isEditing ? (
+              <div className="space-y-2 pt-2">
+                <MentionInput
+                  value={editedContent}
+                  onChange={setEditedContent}
+                  onMentionsChange={setEditingMentions}
+                  placeholder="Modifier le commentaire..."
+                  rows={3}
+                  className="w-full"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleUpdateComment(comment.id)}
+                    disabled={!editedContent.trim()}
+                  >
+                    Enregistrer
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                  >
+                    Annuler
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-foreground break-words whitespace-pre-wrap">
+                  {renderCommentContent(comment.content)}
+                </p>
+                {comment.attachment_url && (
+                  <button
+                    onClick={() => handleDownload(comment.attachment_url!, comment.attachment_url?.split('/').pop())}
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+                  >
+                    <Paperclip className="h-3 w-3" />
+                    Télécharger la pièce jointe
+                  </button>
+                )}
+                <div className="flex items-center gap-2 mt-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleReply(comment.id)}
+                    className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    <Reply className="h-3 w-3 mr-1" />
+                    Répondre
+                  </Button>
+                  {comment.replies && comment.replies.length > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      {comment.replies.length} {comment.replies.length === 1 ? 'réponse' : 'réponses'}
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Reply form */}
+        {isReplying && (
+          <div className="ml-12 mb-3 space-y-2">
+            <div className="flex items-start gap-2 p-3 border border-input rounded-lg bg-muted/50">
+              <MentionInput
+                value={replyContent}
+                onChange={setReplyContent}
+                onMentionsChange={setReplyMentions}
+                placeholder="Écrire une réponse..."
+                rows={2}
+                className="flex-1 resize-none border-0 p-0 focus-visible:ring-0 shadow-none bg-transparent"
+                disabled={submitting}
+              />
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  onClick={handleCancelReply}
+                  className="h-8 w-8 shrink-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="icon"
+                  onClick={() => handleSubmitReply(comment.id)}
+                  disabled={submitting || !replyContent.trim()}
+                  className="h-8 w-8 shrink-0 rounded-lg bg-primary hover:bg-primary/90"
+                >
+                  {submitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Render replies recursively */}
+        {comment.replies && comment.replies.length > 0 && (
+          <div className="space-y-2">
+            {comment.replies.map((reply) => renderComment(reply, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -414,101 +662,7 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
             </div>
           ) : comments.length > 0 ? (
             <div className="space-y-4">
-              {comments.map((comment) => (
-                <div key={comment.id} className="flex gap-3 py-3">
-                  <Avatar className="h-10 w-10 flex-shrink-0">
-                    {comment.profiles?.avatar_url && (
-                      <AvatarImage 
-                        src={comment.profiles.avatar_url} 
-                        alt={`${comment.profiles?.first_name} ${comment.profiles?.last_name}`} 
-                      />
-                    )}
-                    <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                      {comment.profiles?.first_name?.[0]}{comment.profiles?.last_name?.[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 space-y-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-medium">
-                        {comment.profiles?.first_name} {comment.profiles?.last_name}
-                      </p>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(comment.created_at), 'dd MMM yyyy à HH:mm', { locale: fr })}
-                      </span>
-                      {comment.user_id === user?.id && (
-                        <div className="flex items-center gap-1 ml-auto">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditComment(comment)}
-                            className="h-7 w-7 p-0"
-                          >
-                            <Edit2 className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openDeleteDialog(comment.id)}
-                            className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                    {comment.tasks && (
-                      <Badge variant="outline" className="mt-1 text-xs gap-1">
-                        <Tag className="h-3 w-3" />
-                        {comment.tasks.title}
-                      </Badge>
-                    )}
-                    
-                    {editingCommentId === comment.id ? (
-                      <div className="space-y-2 pt-2">
-                        <MentionInput
-                          value={editedContent}
-                          onChange={setEditedContent}
-                          onMentionsChange={setEditingMentions}
-                          placeholder="Modifier le commentaire..."
-                          rows={3}
-                          className="w-full"
-                        />
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => handleUpdateComment(comment.id)}
-                            disabled={!editedContent.trim()}
-                          >
-                            Enregistrer
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={handleCancelEdit}
-                          >
-                            Annuler
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-sm text-foreground break-words whitespace-pre-wrap">
-                          {renderCommentContent(comment.content)}
-                        </p>
-                        {comment.attachment_url && (
-                          <button
-                            onClick={() => handleDownload(comment.attachment_url!, comment.attachment_url?.split('/').pop())}
-                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
-                          >
-                            <Paperclip className="h-3 w-3" />
-                            Télécharger la pièce jointe
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
+              {comments.map((comment) => renderComment(comment))}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground text-center py-8">

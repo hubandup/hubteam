@@ -1016,6 +1016,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          parent_id: string | null
           project_id: string | null
           task_id: string | null
           updated_at: string
@@ -1026,6 +1027,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          parent_id?: string | null
           project_id?: string | null
           task_id?: string | null
           updated_at?: string
@@ -1036,12 +1038,20 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          parent_id?: string | null
           project_id?: string | null
           task_id?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "task_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "task_comments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "task_comments_project_id_fkey"
             columns: ["project_id"]
