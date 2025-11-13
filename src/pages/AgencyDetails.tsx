@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Info, FolderKanban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ResponsiveTabs, type TabItem } from '@/components/ui/responsive-tabs';
 import { AgencyInfoTab } from '@/components/agency-details/AgencyInfoTab';
 import { AgencyProjectsTab } from '@/components/agency-details/AgencyProjectsTab';
 
@@ -13,12 +13,30 @@ export default function AgencyDetails() {
   const navigate = useNavigate();
   const [agency, setAgency] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [projectsCount, setProjectsCount] = useState(0);
 
   useEffect(() => {
     if (id) {
       fetchAgencyDetails();
+      fetchProjectsCount();
     }
   }, [id]);
+
+  const fetchProjectsCount = async () => {
+    if (!id) return;
+
+    try {
+      const { count, error } = await supabase
+        .from('project_agencies')
+        .select('*', { count: 'exact', head: true })
+        .eq('agency_id', id);
+
+      if (error) throw error;
+      setProjectsCount(count || 0);
+    } catch (error) {
+      console.error('Error fetching projects count:', error);
+    }
+  };
 
   const fetchAgencyDetails = async () => {
     try {
@@ -51,6 +69,22 @@ export default function AgencyDetails() {
     return null;
   }
 
+  const tabs: TabItem[] = [
+    {
+      value: 'info',
+      label: 'Informations',
+      icon: <Info className="h-4 w-4" />,
+      content: <AgencyInfoTab agency={agency} onUpdate={fetchAgencyDetails} />
+    },
+    {
+      value: 'projects',
+      label: 'Projets',
+      icon: <FolderKanban className="h-4 w-4" />,
+      badge: projectsCount,
+      content: <AgencyProjectsTab agencyId={agency.id} />
+    }
+  ];
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-4">
@@ -61,26 +95,22 @@ export default function AgencyDetails() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">{agency.name}</h1>
-          <p className="text-muted-foreground">Agence partenaire</p>
+        <div className="flex items-center gap-4 flex-1">
+          {agency.logo_url && (
+            <img
+              src={agency.logo_url}
+              alt={`${agency.name} logo`}
+              className="w-16 h-16 rounded-lg object-cover"
+            />
+          )}
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">{agency.name}</h1>
+            <p className="text-muted-foreground">Agence partenaire</p>
+          </div>
         </div>
       </div>
 
-      <Tabs defaultValue="info" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="info">Informations</TabsTrigger>
-          <TabsTrigger value="projects">Projets</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="info" className="mt-6">
-          <AgencyInfoTab agency={agency} onUpdate={fetchAgencyDetails} />
-        </TabsContent>
-
-        <TabsContent value="projects" className="mt-6">
-          <AgencyProjectsTab agencyId={agency.id} />
-        </TabsContent>
-      </Tabs>
+      <ResponsiveTabs defaultValue="info" tabs={tabs} />
     </div>
   );
 }

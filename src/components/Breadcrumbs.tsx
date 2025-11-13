@@ -36,6 +36,9 @@ export function Breadcrumbs() {
     'projects': 'Projets',
     'invoices': 'Factures',
     'tasks': 'Tâches',
+    'team': 'Équipe',
+    'comments': 'Commentaires',
+    'attachments': 'Pièces jointes',
   };
 
   // Don't show breadcrumbs on home page or auth page
@@ -44,6 +47,8 @@ export function Breadcrumbs() {
   }
 
   const isClientPage = pathnames.includes('client');
+  const isProjectPage = pathnames.includes('project');
+  const isAgencyPage = pathnames.includes('agency');
 
   return (
     <Breadcrumb className="mb-4">
@@ -57,7 +62,7 @@ export function Breadcrumbs() {
           </BreadcrumbLink>
         </BreadcrumbItem>
 
-        {/* Inject CRM level if on a client page */}
+        {/* Inject parent level breadcrumb for detail pages */}
         {isClientPage && (
           <div className="flex items-center gap-2">
             <BreadcrumbSeparator>
@@ -66,6 +71,32 @@ export function Breadcrumbs() {
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
                 <Link to="/crm">CRM</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+          </div>
+        )}
+
+        {isProjectPage && (
+          <div className="flex items-center gap-2">
+            <BreadcrumbSeparator>
+              <ChevronRight className="h-4 w-4" />
+            </BreadcrumbSeparator>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/projects">Projets</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+          </div>
+        )}
+
+        {isAgencyPage && (
+          <div className="flex items-center gap-2">
+            <BreadcrumbSeparator>
+              <ChevronRight className="h-4 w-4" />
+            </BreadcrumbSeparator>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/agencies">Agences</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
           </div>
