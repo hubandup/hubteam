@@ -27,9 +27,9 @@ export function Sidebar() {
 
   const mainItems = [
     { title: 'Tableau de bord', url: '/', icon: LayoutDashboard, module: 'dashboard' as const },
-    { title: 'CRM', url: '/crm', icon: Users, module: 'crm' as const },
-    { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const },
-    { title: 'Projets', url: '/projects', icon: FolderKanban, module: 'projects' as const },
+    { title: 'CRM', url: '/crm', icon: Users, module: 'crm' as const, matchParent: true },
+    { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const, matchParent: true },
+    { title: 'Projets', url: '/projects', icon: FolderKanban, module: 'projects' as const, matchParent: true },
     { title: 'Messages', url: '/messages', icon: MessageSquare, module: 'messages' as const },
     { title: 'Activité', url: '/activity', icon: History, module: 'dashboard' as const },
     { title: 'FAQ', url: '/faq', icon: HelpCircle, module: 'faq' as const },
@@ -56,7 +56,13 @@ export function Sidebar() {
                 canRead(item.module) ? (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
-                      <NavLink to={item.url} end className="hover:bg-muted/50" activeClassName="bg-primary/10 text-primary font-medium">
+                      <NavLink 
+                        to={item.url} 
+                        end={item.url === '/'} 
+                        matchParent={item.matchParent}
+                        className="hover:bg-muted/50" 
+                        activeClassName="bg-primary/10 text-primary font-medium"
+                      >
                         <item.icon className="mr-2 h-4 w-4" />
                         <span>{item.title}</span>
                       </NavLink>
