@@ -116,7 +116,7 @@ export function AddTeamMemberDialog({
       }
 
       const { error } = await supabase
-        .from('project_team_members')
+        .from('project_team_members' as any)
         .insert({
           project_id: projectId,
           member_type: memberType,
