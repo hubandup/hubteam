@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Trash2, Mail, UserPlus } from 'lucide-react';
+import { Plus, Trash2, Mail, UserPlus, UserCheck } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -21,12 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 interface Contact {
   id: string;
   first_name: string;
   last_name: string;
   email: string;
+  is_user?: boolean;
 }
 
 interface AgencyContactsManagerProps {
@@ -49,14 +51,31 @@ export function AgencyContactsManager({ agencyId }: AgencyContactsManagerProps) 
 
   const fetchContacts = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: contactsData, error } = await supabase
         .from('agency_contacts')
         .select('*')
         .eq('agency_id', agencyId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setContacts(data || []);
+
+      // Check if each contact is already a user
+      const contactsWithUserStatus = await Promise.all(
+        (contactsData || []).map(async (contact) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', contact.email)
+            .maybeSingle();
+
+          return {
+            ...contact,
+            is_user: !!profileData,
+          };
+        })
+      );
+
+      setContacts(contactsWithUserStatus);
     } catch (error) {
       console.error('Error fetching contacts:', error);
       toast.error('Erreur lors du chargement des contacts');
@@ -215,10 +234,18 @@ export function AgencyContactsManager({ agencyId }: AgencyContactsManagerProps) 
                 className="flex items-start justify-between p-3 border rounded-lg"
               >
                 <div className="flex-1">
-                  <p className="font-medium">
-                    {contact.first_name} {contact.last_name}
-                  </p>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-medium">
+                      {contact.first_name} {contact.last_name}
+                    </p>
+                    {contact.is_user && (
+                      <Badge variant="secondary" className="flex items-center gap-1">
+                        <UserCheck className="h-3 w-3" />
+                        Utilisateur
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Mail className="h-4 w-4" />
                     <span>{contact.email}</span>
                   </div>
@@ -231,6 +258,7 @@ export function AgencyContactsManager({ agencyId }: AgencyContactsManagerProps) 
                       setSelectedContact(contact);
                       setInviteDialogOpen(true);
                     }}
+                    disabled={contact.is_user}
                   >
                     <UserPlus className="h-4 w-4 mr-2" />
                     Inviter
