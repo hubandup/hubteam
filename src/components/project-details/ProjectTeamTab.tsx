@@ -10,7 +10,7 @@ import { ProtectedAction } from '@/components/ProtectedAction';
 
 interface TeamMember {
   id: string;
-  member_type: 'profile' | 'agency_contact' | 'client';
+  member_type: 'profile' | 'agency_contact' | 'client' | 'client_contact';
   member_id: string;
   member_name: string;
   member_email: string;
@@ -69,6 +69,13 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
               .eq('id', member.member_id)
               .single();
             memberData = data;
+          } else if (member.member_type === 'client_contact') {
+            const { data } = await supabase
+              .from('client_contacts' as any)
+              .select('first_name, last_name, email, title')
+              .eq('id', member.member_id)
+              .single();
+            memberData = data;
           } else if (member.member_type === 'client') {
             const { data } = await supabase
               .from('clients')
@@ -84,7 +91,7 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
             member_id: member.member_id,
             member_name: `${memberData?.first_name || ''} ${memberData?.last_name || ''}`,
             member_email: memberData?.email || '',
-            member_company: memberData?.company || memberData?.agencies?.name,
+            member_company: memberData?.company || memberData?.agencies?.name || memberData?.title,
           };
         })
       );
@@ -121,6 +128,8 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
         return <User className="h-4 w-4" />;
       case 'agency_contact':
         return <Building2 className="h-4 w-4" />;
+      case 'client_contact':
+        return <User className="h-4 w-4" />;
       case 'client':
         return <Users className="h-4 w-4" />;
       default:
@@ -131,11 +140,13 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
   const getMemberTypeLabel = (type: string) => {
     switch (type) {
       case 'profile':
-        return 'Hub & Up';
+        return 'Équipe';
       case 'agency_contact':
-        return 'Agence';
+        return 'Agences';
+      case 'client_contact':
+        return 'Contacts clients';
       case 'client':
-        return 'Client';
+        return 'Clients';
       default:
         return type;
     }
