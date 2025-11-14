@@ -1,4 +1,4 @@
-import { LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, MessageSquare, History, HelpCircle } from 'lucide-react';
+import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, MessageSquare, History, HelpCircle } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -26,7 +26,8 @@ export function Sidebar() {
   const { canRead } = usePermissions();
 
   const mainItems = [
-    { title: 'Tableau de bord', url: '/', icon: LayoutDashboard, module: 'dashboard' as const },
+    { title: 'Accueil', url: '/', icon: Home, module: 'dashboard' as const },
+    { title: 'Tableau de bord', url: '/dashboard', icon: LayoutDashboard, module: 'dashboard' as const },
     { title: 'CRM', url: '/crm', icon: Users, module: 'crm' as const, matchParent: true },
     { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const, matchParent: true },
     { title: 'Projets', url: '/projects', icon: FolderKanban, module: 'projects' as const, matchParent: true },
@@ -58,7 +59,7 @@ export function Sidebar() {
                     <SidebarMenuButton asChild>
                       <NavLink 
                         to={item.url} 
-                        end={item.url === '/'} 
+                        end={item.url === '/' || item.url === '/dashboard'} 
                         matchParent={item.matchParent}
                         activePatterns={item.title === 'CRM' ? ['/client'] : item.title === 'Projets' ? ['/project'] : item.title === 'Agences' ? ['/agency'] : []}
                         className="hover:bg-muted/50" 

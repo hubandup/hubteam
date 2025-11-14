@@ -7,6 +7,7 @@ import { AuthProvider } from "./hooks/useAuth";
 import { useDesignSettings } from "./hooks/useDesignSettings";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Layout } from "./components/Layout";
+import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Feed from "./pages/Feed";
 import CRM from "./pages/CRM";
@@ -60,7 +61,8 @@ const App = () => {
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/set-password" element={<SetPassword />} />
-            <Route path="/" element={<ProtectedRoute><Layout><PWARedirect><Dashboard /></PWARedirect></Layout></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute><Layout><PWARedirect><Home /></PWARedirect></Layout></ProtectedRoute>} />
+            <Route path="/home" element={<ProtectedRoute><Layout><PWARedirect><Home /></PWARedirect></Layout></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Layout><PWARedirect><Dashboard /></PWARedirect></Layout></ProtectedRoute>} />
             <Route path="/feed" element={<ProtectedRoute><Layout><Feed /></Layout></ProtectedRoute>} />
             <Route path="/crm" element={<ProtectedRoute><Layout><CRM /></Layout></ProtectedRoute>} />
