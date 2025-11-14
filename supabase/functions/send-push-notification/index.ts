@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// @ts-ignore npm specifier not supported in local type checking
+import webpush from "npm:web-push@3.6.7";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -51,8 +53,7 @@ serve(async (req) => {
 
     console.log(`Found ${subscriptions.length} subscription(s) for user`);
 
-    const webpush = await import('https://esm.sh/web-push@3.6.6');
-    
+    // Set VAPID details
     webpush.setVapidDetails(
       'mailto:contact@example.com',
       vapidPublicKey,
