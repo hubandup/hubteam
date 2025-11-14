@@ -23,7 +23,7 @@ export default function CRM() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'grid'>('list');
-  const [sortBy, setSortBy] = useState<'created_at' | 'revenue_current_year' | 'alphabetical'>('created_at');
+  const [sortBy, setSortBy] = useState<'created_at' | 'revenue_current_year' | 'alphabetical'>('alphabetical');
   const [filterActive, setFilterActive] = useState(false);
   const [filterWithProjects, setFilterWithProjects] = useState(false);
 
