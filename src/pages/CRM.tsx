@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ClientCard } from '@/components/ClientCard';
 import { ClientKanbanView } from '@/components/ClientKanbanView';
+import { ClientListView } from '@/components/ClientListView';
 import { AddClientDialog } from '@/components/AddClientDialog';
 import { ImportClientsValidationDialog } from '@/components/ImportClientsValidationDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, LayoutGrid, Columns3, ArrowDownUp } from 'lucide-react';
+import { Search, LayoutGrid, Columns3, ArrowDownUp, List } from 'lucide-react';
 import { toast } from 'sonner';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -21,7 +22,7 @@ export default function CRM() {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'kanban' | 'grid'>('kanban');
+  const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'grid'>('list');
   const [sortBy, setSortBy] = useState<'created_at' | 'revenue_current_year'>('created_at');
 
   useEffect(() => {
@@ -145,6 +146,13 @@ export default function CRM() {
           <div className="flex gap-2 mt-4 justify-end">
             <div className="flex gap-1 border rounded-md">
               <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button
                 variant={viewMode === 'kanban' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('kanban')}
@@ -221,6 +229,13 @@ export default function CRM() {
                 />
               ))}
             </div>
+          </div>
+        ) : viewMode === 'list' ? (
+          <div className="overflow-y-auto h-full px-6 pb-6">
+            <ClientListView
+              clients={filteredClients}
+              onClientClick={(clientId) => navigate(`/client/${clientId}?tab=info`)}
+            />
           </div>
         ) : viewMode === 'kanban' ? (
           <div className="h-full overflow-x-auto overflow-y-hidden px-6 pb-6 relative">
