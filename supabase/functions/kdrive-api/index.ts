@@ -43,22 +43,31 @@ serve(async (req) => {
 
     switch (action) {
       case 'check-permissions':
-        // Test access to drives to verify permissions
-        const testResp = await fetch(`${KDRIVE_API_BASE}/1/kdrive`, { headers: kdriveHeaders });
-        const testData = await testResp.json();
-        
-        const hasRequiredScopes = testResp.ok;
+        // Check both kDrive and product listing to infer required scopes
         const missingScopes: string[] = [];
-        
-        if (!hasRequiredScopes) {
-          // Parse error to identify missing scopes
-          if (testData?.error?.context?.scopes) {
-            missingScopes.push(...testData.error.context.scopes);
+        // 1) Check kDrive scopes
+        const driveResp = await fetch(`${KDRIVE_API_BASE}/1/kdrive`, { headers: kdriveHeaders });
+        let driveOk = driveResp.ok;
+        const driveData = await driveResp.json().catch(() => ({}));
+        if (!driveOk) {
+          if (driveData?.error?.context?.scopes) {
+            missingScopes.push(...driveData.error.context.scopes);
           } else {
             missingScopes.push('drive', 'drive:read', 'drive:write');
           }
         }
-        
+        // 2) Check product read (some accounts expose drives under products)
+        const productResp = await fetch(`${KDRIVE_API_BASE}/1/product`, { headers: kdriveHeaders });
+        let productOk = productResp.ok;
+        const productData = await productResp.json().catch(() => ({}));
+        if (!productOk) {
+          if (productData?.error?.context?.scopes) {
+            for (const s of productData.error.context.scopes) if (!missingScopes.includes(s)) missingScopes.push(s);
+          } else if (!missingScopes.includes('product:read')) {
+            missingScopes.push('product:read');
+          }
+        }
+        const hasRequiredScopes = driveOk && productOk;
         return new Response(
           JSON.stringify({ 
             hasRequiredScopes,

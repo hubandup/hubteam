@@ -316,7 +316,7 @@ export function KDriveFolderSelector({ clientId, clientName, onFolderConnected }
                 <AlertDescription>
                   {permissionMessage}
                   <br />
-                  <span className="text-sm">Assurez-vous que le token inclut: drive, drive:read, drive:write</span>
+                  <span className="text-sm">Assurez-vous que le token inclut: drive, drive:read, drive:write, product:read</span>
                 </AlertDescription>
               </Alert>
             )}
