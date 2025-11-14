@@ -1,18 +1,29 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Clock, Bell } from 'lucide-react';
+import { Loader2, Clock, Bell, Building2 } from 'lucide-react';
 import { format, isToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface TodayTask {
   id: string;
   title: string;
   end_date: string | null;
   priority: string;
+  project_id: string | null;
   projects?: {
+    id: string;
     name: string;
+    project_clients?: {
+      clients: {
+        id: string;
+        company: string;
+        logo_url: string | null;
+      };
+    }[];
   };
 }
 
@@ -25,6 +36,7 @@ interface Notification {
 }
 
 export function TodayTasks() {
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState<TodayTask[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,8 +60,17 @@ export function TodayTasks() {
           title,
           end_date,
           priority,
+          project_id,
           projects (
-            name
+            id,
+            name,
+            project_clients (
+              clients (
+                id,
+                company,
+                logo_url
+              )
+            )
           )
         `)
         .eq('assigned_to', user.id)
@@ -133,27 +154,69 @@ export function TodayTasks() {
           {tasks.length === 0 ? (
             <p className="text-sm text-muted-foreground">Aucune tâche urgente</p>
           ) : (
-            <div className="space-y-2">
-              {tasks.map((task) => (
-                <div key={task.id} className="p-3 rounded-lg border bg-card">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{task.title}</p>
-                      {task.projects && (
-                        <p className="text-xs text-muted-foreground">{task.projects.name}</p>
-                      )}
-                      {task.end_date && (
-                        <p className="text-xs text-destructive mt-1">
-                          Échéance: {format(new Date(task.end_date), 'dd/MM/yyyy')}
-                        </p>
-                      )}
+            <div className="space-y-3">
+              {tasks.map((task) => {
+                const client = task.projects?.project_clients?.[0]?.clients;
+                return (
+                  <div 
+                    key={task.id} 
+                    className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                  >
+                    {/* Client Header */}
+                    {client && (
+                      <div 
+                        className="flex items-center gap-2 mb-3 cursor-pointer group"
+                        onClick={() => navigate(`/crm/${client.id}`)}
+                      >
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={client.logo_url || ''} />
+                          <AvatarFallback className="bg-primary/10 text-xs">
+                            {client.company.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm font-semibold text-primary group-hover:underline">
+                          {client.company}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Task Content */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div
+                          className="cursor-pointer hover:text-primary transition-colors"
+                          onClick={() => navigate(`/projects/${task.project_id}?task=${task.id}`)}
+                        >
+                          <p className="text-sm font-medium">{task.title}</p>
+                        </div>
+                        
+                        {task.projects && (
+                          <div
+                            className="cursor-pointer hover:text-primary transition-colors"
+                            onClick={() => navigate(`/projects/${task.projects.id}`)}
+                          >
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Building2 className="h-3 w-3" />
+                              {task.projects.name}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {task.end_date && (
+                          <p className="text-xs text-destructive flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            Échéance: {format(new Date(task.end_date), 'dd/MM/yyyy')}
+                          </p>
+                        )}
+                      </div>
+                      
+                      <Badge className={getPriorityColor(task.priority)} variant="secondary">
+                        {getPriorityLabel(task.priority)}
+                      </Badge>
                     </div>
-                    <Badge className={getPriorityColor(task.priority)} variant="secondary">
-                      {getPriorityLabel(task.priority)}
-                    </Badge>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
