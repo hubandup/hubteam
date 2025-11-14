@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Phone, Euro, Calendar, Building2, Briefcase, TrendingUp, Award } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Mail, Phone, Euro, Calendar, Building2, Briefcase, TrendingUp, Award, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { EditClientDialog } from '@/components/EditClientDialog';
@@ -29,6 +30,9 @@ interface ClientInfoTabProps {
     status_id?: string;
     follow_up_date?: string;
     kanban_stage: string;
+    kdrive_drive_id?: number;
+    kdrive_folder_id?: string;
+    kdrive_folder_path?: string;
   };
   onUpdate: () => void;
 }
@@ -80,6 +84,15 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
     <div className="space-y-6">
       {!isMobile && (
         <div className="flex justify-end gap-2">
+          {client.kdrive_drive_id && client.kdrive_folder_id && (
+            <Button
+              variant="outline"
+              onClick={() => window.open(`https://kdrive.infomaniak.com/app/drive/${client.kdrive_drive_id}/files/${client.kdrive_folder_id}`, '_blank')}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Ouvrir dans KDrive
+            </Button>
+          )}
           <ProtectedAction module="crm" action="update">
             <KDriveFolderSelector 
               clientId={client.id}
