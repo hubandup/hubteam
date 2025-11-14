@@ -5,8 +5,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Folder, Plus, ExternalLink, Loader2 } from 'lucide-react';
+import { Folder, Plus, ExternalLink, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface KDriveFolderSelectorProps {
   clientId: string;
@@ -27,8 +28,32 @@ export function KDriveFolderSelector({ clientId, clientName, onFolderConnected }
   const [selectedDrive, setSelectedDrive] = useState<number | null>(null);
   const [folders, setFolders] = useState<KDriveFolder[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<KDriveFolder | null>(null);
-  const [newFolderName, setNewFolderName] = useState('');
+  const [newFolderName, setNewFolderName] = useState(clientName);
   const [creatingFolder, setCreatingFolder] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState<'checking' | 'ok' | 'error' | null>(null);
+  const [permissionMessage, setPermissionMessage] = useState('');
+
+  const checkPermissions = async () => {
+    setPermissionStatus('checking');
+    try {
+      const { data, error } = await supabase.functions.invoke('kdrive-api', {
+        body: { action: 'check-permissions' }
+      });
+
+      if (error) throw error;
+
+      if (data.hasRequiredScopes) {
+        setPermissionStatus('ok');
+        setPermissionMessage('Token valide avec les permissions nécessaires');
+      } else {
+        setPermissionStatus('error');
+        setPermissionMessage(`Scopes manquants: ${data.missingScopes.join(', ')}`);
+      }
+    } catch (error: any) {
+      setPermissionStatus('error');
+      setPermissionMessage('Impossible de vérifier les permissions');
+    }
+  };
 
   const loadDrives = async () => {
     setLoading(true);
@@ -39,8 +64,19 @@ export function KDriveFolderSelector({ clientId, clientName, onFolderConnected }
 
       if (error) throw error;
 
+      console.log('Drives loaded:', data);
       setDrives(data.data || []);
-      if (data.data && data.data.length > 0) {
+      
+      // Check if client already has a saved drive
+      const { data: clientData } = await supabase
+        .from('clients')
+        .select('kdrive_drive_id')
+        .eq('id', clientId)
+        .single();
+
+      if (clientData?.kdrive_drive_id && data.data?.some((d: any) => d.id === clientData.kdrive_drive_id)) {
+        setSelectedDrive(clientData.kdrive_drive_id);
+      } else if (data.data && data.data.length > 0) {
         setSelectedDrive(data.data[0].id);
       }
     } catch (error: any) {
@@ -54,47 +90,69 @@ export function KDriveFolderSelector({ clientId, clientName, onFolderConnected }
   const searchClientFolder = async (driveId: number) => {
     setLoading(true);
     try {
-      // Search for CLIENTS folder
-      const { data: clientsData, error: clientsError } = await supabase.functions.invoke('kdrive-api', {
+      console.log('Searching for folders in drive:', driveId);
+      
+      // First, list files at root to find CLIENTS folder
+      const { data: rootData, error: rootError } = await supabase.functions.invoke('kdrive-api', {
         body: { 
-          action: 'search-folder',
+          action: 'list-files',
           driveId,
-          folderPath: 'CLIENTS'
+          folderId: 1 // Root folder
         }
       });
 
-      if (clientsError) throw clientsError;
+      if (rootError) {
+        console.error('Root list error:', rootError);
+        throw rootError;
+      }
 
-      // Search for client company folder
-      const { data: companyData, error: companyError } = await supabase.functions.invoke('kdrive-api', {
-        body: { 
-          action: 'search-folder',
-          driveId,
-          folderPath: clientName
-        }
-      });
-
-      if (companyError) throw companyError;
+      console.log('Root files:', rootData);
 
       const foundFolders: KDriveFolder[] = [];
       
-      if (clientsData?.data) {
-        foundFolders.push(...clientsData.data.map((f: any) => ({
-          id: f.id,
-          name: f.name,
-          path: f.path
-        })));
+      // Find CLIENTS folder in root
+      const clientsFolder = rootData?.data?.find((f: any) => 
+        f.type === 'dir' && f.name.toUpperCase() === 'CLIENTS'
+      );
+
+      if (clientsFolder) {
+        foundFolders.push({
+          id: clientsFolder.id,
+          name: clientsFolder.name,
+          path: clientsFolder.path || `/${clientsFolder.name}`
+        });
+
+        // Now list inside CLIENTS folder to find company folders
+        const { data: clientsData, error: clientsError } = await supabase.functions.invoke('kdrive-api', {
+          body: { 
+            action: 'list-files',
+            driveId,
+            folderId: clientsFolder.id
+          }
+        });
+
+        if (!clientsError && clientsData?.data) {
+          console.log('Folders inside CLIENTS:', clientsData.data);
+          
+          // Add all folders from CLIENTS directory
+          const companyFolders = clientsData.data
+            .filter((f: any) => f.type === 'dir')
+            .map((f: any) => ({
+              id: f.id,
+              name: f.name,
+              path: f.path || `/CLIENTS/${f.name}`
+            }));
+          
+          foundFolders.push(...companyFolders);
+        }
       }
 
-      if (companyData?.data) {
-        foundFolders.push(...companyData.data.map((f: any) => ({
-          id: f.id,
-          name: f.name,
-          path: f.path
-        })));
-      }
-
+      console.log('Found folders:', foundFolders);
       setFolders(foundFolders);
+      
+      if (foundFolders.length === 0) {
+        toast.info('Aucun dossier trouvé. Créez-en un nouveau ci-dessous.');
+      }
     } catch (error: any) {
       console.error('Error searching folders:', error);
       toast.error('Erreur lors de la recherche des dossiers');
@@ -108,41 +166,35 @@ export function KDriveFolderSelector({ clientId, clientName, onFolderConnected }
 
     setCreatingFolder(true);
     try {
-      // First, find or create CLIENTS folder
-      const { data: clientsSearch } = await supabase.functions.invoke('kdrive-api', {
+      console.log('Creating folder for client:', newFolderName);
+      
+      // First, check if CLIENTS folder exists
+      const { data: rootData } = await supabase.functions.invoke('kdrive-api', {
         body: { 
-          action: 'search-folder',
+          action: 'list-files',
           driveId: selectedDrive,
-          folderPath: 'CLIENTS'
+          folderId: 1
         }
       });
 
-      let clientsFolderId;
-      
-      if (clientsSearch?.data && clientsSearch.data.length > 0) {
-        clientsFolderId = clientsSearch.data[0].id;
-      } else {
-        // Get root folder info
-        const { data: driveInfo } = await supabase.functions.invoke('kdrive-api', {
-          body: { 
-            action: 'list-files',
-            driveId: selectedDrive,
-            folderId: 1
-          }
-        });
+      let clientsFolderId = rootData?.data?.find((f: any) => 
+        f.type === 'dir' && f.name.toUpperCase() === 'CLIENTS'
+      )?.id;
 
-        // Create CLIENTS folder
-        const { data: clientsFolder, error: createError } = await supabase.functions.invoke('kdrive-api', {
+      // Create CLIENTS folder if it doesn't exist
+      if (!clientsFolderId) {
+        const { data: newClientsFolder, error: createError } = await supabase.functions.invoke('kdrive-api', {
           body: { 
             action: 'create-folder',
             driveId: selectedDrive,
-            parentId: 1, // Root
+            parentId: 1,
             folderPath: 'CLIENTS'
           }
         });
 
         if (createError) throw createError;
-        clientsFolderId = clientsFolder.data.id;
+        clientsFolderId = newClientsFolder.data.id;
+        console.log('Created CLIENTS folder:', clientsFolderId);
       }
 
       // Create company folder inside CLIENTS
@@ -156,6 +208,8 @@ export function KDriveFolderSelector({ clientId, clientName, onFolderConnected }
       });
 
       if (companyError) throw companyError;
+
+      console.log('Created company folder:', companyFolder);
 
       // Update client in database
       const { error: updateError } = await supabase
@@ -209,6 +263,7 @@ export function KDriveFolderSelector({ clientId, clientName, onFolderConnected }
 
   useEffect(() => {
     if (open) {
+      checkPermissions();
       loadDrives();
     }
   }, [open]);
@@ -236,6 +291,54 @@ export function KDriveFolderSelector({ clientId, clientName, onFolderConnected }
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Permission Status */}
+            {permissionStatus === 'checking' && (
+              <Alert>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <AlertTitle>Vérification des permissions...</AlertTitle>
+              </Alert>
+            )}
+            
+            {permissionStatus === 'ok' && (
+              <Alert className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertTitle className="text-green-800 dark:text-green-200">Permissions OK</AlertTitle>
+                <AlertDescription className="text-green-700 dark:text-green-300">
+                  {permissionMessage}
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {permissionStatus === 'error' && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Problème de permissions</AlertTitle>
+                <AlertDescription>
+                  {permissionMessage}
+                  <br />
+                  <span className="text-sm">Assurez-vous que le token inclut: drive, drive:read, drive:write</span>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Drive Selection */}
+            {drives.length > 1 && (
+              <div>
+                <Label>Sélectionnez un kDrive</Label>
+                <select
+                  className="w-full mt-2 p-2 border rounded-md"
+                  value={selectedDrive || ''}
+                  onChange={(e) => setSelectedDrive(Number(e.target.value))}
+                >
+                  {drives.map((drive) => (
+                    <option key={drive.id} value={drive.id}>
+                      {drive.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -278,7 +381,7 @@ export function KDriveFolderSelector({ clientId, clientName, onFolderConnected }
                   <Label>Créer un nouveau dossier</Label>
                   <div className="flex gap-2 mt-2">
                     <Input
-                      placeholder="Nom du dossier (ex: BRISACH)"
+                      placeholder="Nom du dossier"
                       value={newFolderName}
                       onChange={(e) => setNewFolderName(e.target.value)}
                     />
