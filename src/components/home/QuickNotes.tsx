@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { StickyNote, Loader2, Trash2, ArrowRight, Check, ChevronsUpDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { RichMentionInput } from '@/components/common/RichMentionInput';
+import { NoteEditor } from './NoteEditor';
 
 interface QuickNote {
   id: string;
@@ -288,19 +288,19 @@ export function QuickNotes() {
             Notes rapides
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <RichMentionInput
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <NoteEditor
               value={noteContent}
               onChange={setNoteContent}
-              placeholder="Écrire une note rapide... (mentionnez avec @)"
+              placeholder="Écrire une note rapide... (utilisez @ pour mentionner quelqu'un)"
             />
             <Button 
               onClick={handleAddNote} 
               disabled={!noteContent.trim()}
-              className="mt-2 w-full"
+              className="w-full"
             >
-              Ajouter
+              Ajouter la note
             </Button>
           </div>
 

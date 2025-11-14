@@ -11,17 +11,14 @@ export default function Home() {
         <p className="text-muted-foreground mt-1">Votre espace personnel de travail</p>
       </div>
 
+      <div className="grid gap-6 lg:grid-cols-2 mb-6">
+        <TodoList />
+        <QuickNotes />
+      </div>
+      
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="space-y-6">
-          <div className="grid gap-6 sm:grid-cols-2">
-            <TodoList />
-            <QuickNotes />
-          </div>
-          <TodayTasks />
-        </div>
-        <div className="space-y-6">
-          <CalendarView />
-        </div>
+        <TodayTasks />
+        <CalendarView />
       </div>
     </div>
   );
