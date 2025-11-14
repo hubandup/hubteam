@@ -215,6 +215,9 @@ export function TodoList() {
 
   const handleDeleteTodo = async (id: string) => {
     try {
+      // Mise à jour optimiste
+      setTodos(prev => prev.filter(todo => todo.id !== id));
+
       const { error } = await supabase
         .from('todos')
         .delete()
@@ -225,6 +228,8 @@ export function TodoList() {
     } catch (error) {
       console.error('Error deleting todo:', error);
       toast.error('Erreur lors de la suppression');
+      // Recharger les todos en cas d'erreur
+      fetchTodos();
     }
   };
 
