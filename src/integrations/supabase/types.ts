@@ -1012,6 +1012,80 @@ export type Database = {
         }
         Relationships: []
       }
+      quick_note_mentions: {
+        Row: {
+          created_at: string
+          id: string
+          note_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quick_note_mentions_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "quick_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quick_notes: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          meeting_note_id: string | null
+          task_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          meeting_note_id?: string | null
+          task_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          meeting_note_id?: string | null
+          task_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quick_notes_meeting_note_id_fkey"
+            columns: ["meeting_note_id"]
+            isOneToOne: false
+            referencedRelation: "meeting_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quick_notes_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quotes: {
         Row: {
           amount: number

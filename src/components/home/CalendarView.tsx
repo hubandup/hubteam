@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
@@ -10,10 +11,11 @@ import { fr } from 'date-fns/locale';
 interface TaskDate {
   date: string;
   count: number;
-  tasks: { id: string; title: string; priority: string }[];
+  tasks: { id: string; title: string; priority: string; project_id: string | null }[];
 }
 
 export function CalendarView() {
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [taskDates, setTaskDates] = useState<Record<string, TaskDate>>({});
   const [loading, setLoading] = useState(true);
@@ -29,7 +31,7 @@ export function CalendarView() {
 
       const { data: tasks, error } = await supabase
         .from('tasks')
-        .select('id, title, start_date, end_date, priority')
+        .select('id, title, start_date, end_date, priority, project_id')
         .eq('assigned_to', user.id)
         .neq('status', 'done');
 
@@ -48,6 +50,7 @@ export function CalendarView() {
             id: task.id,
             title: task.title,
             priority: task.priority,
+            project_id: task.project_id,
           });
         }
       });
@@ -137,7 +140,11 @@ export function CalendarView() {
             ) : (
               <div className="space-y-2">
                 {selectedDateTasks.tasks.map((task) => (
-                  <div key={task.id} className="flex items-center justify-between p-2 rounded bg-muted/50">
+                  <div 
+                    key={task.id} 
+                    className="flex items-center justify-between p-2 rounded bg-muted/50 cursor-pointer hover:bg-muted transition-colors"
+                    onClick={() => navigate(`/projects/${task.project_id}?task=${task.id}`)}
+                  >
                     <p className="text-sm flex-1 truncate">{task.title}</p>
                     <Badge className={getPriorityColor(task.priority)} variant="secondary">
                       {getPriorityLabel(task.priority)}
