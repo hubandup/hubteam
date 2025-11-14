@@ -24,6 +24,7 @@ import { ProjectTeamTab } from '@/components/project-details/ProjectTeamTab';
 import { ProjectTasksTab } from '@/components/project-details/ProjectTasksTab';
 import { ProjectCommentsTab } from '@/components/project-details/ProjectCommentsTab';
 import { ProjectAttachmentsTab } from '@/components/project-details/ProjectAttachmentsTab';
+import { ProjectKDriveTab } from '@/components/project-details/ProjectKDriveTab';
 import { SelectClientDialog } from '@/components/project-details/SelectClientDialog';
 import { EditProjectInfoDialog } from '@/components/project-details/EditProjectInfoDialog';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -397,6 +398,12 @@ export default function ProjectDetails() {
             icon: <Paperclip className="h-4 w-4" />,
             badge: attachmentsCount,
             content: <ProjectAttachmentsTab projectId={id!} />
+          },
+          {
+            value: 'kdrive',
+            label: 'KDrive',
+            icon: <FileText className="h-4 w-4" />,
+            content: <ProjectKDriveTab projectId={id!} />
           }
         ]}
       />
