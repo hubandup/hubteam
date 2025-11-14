@@ -57,7 +57,7 @@ export function Breadcrumbs() {
           <BreadcrumbLink asChild>
             <Link to="/" className="flex items-center gap-1">
               <Home className="h-4 w-4" />
-              Tableau de bord
+              Accueil
             </Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
