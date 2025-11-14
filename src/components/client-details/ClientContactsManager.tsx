@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Mail, UserPlus, UserCheck } from 'lucide-react';
+import { Plus, Trash2, Mail, UserPlus, UserCheck, Pencil } from 'lucide-react';
 import { z } from 'zod';
 
 interface Contact {
@@ -48,6 +48,7 @@ export function ClientContactsManager({ clientId }: ClientContactsManagerProps) 
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [inviteRole, setInviteRole] = useState<string>('client');
@@ -62,7 +63,7 @@ export function ClientContactsManager({ clientId }: ClientContactsManagerProps) 
   const fetchContacts = async () => {
     try {
       const { data: contactsData, error } = await supabase
-        .from('client_contacts')
+        .from('client_contacts' as any)
         .select('*')
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
@@ -71,7 +72,7 @@ export function ClientContactsManager({ clientId }: ClientContactsManagerProps) 
 
       // Check if each contact is already a user
       const contactsWithUserStatus = await Promise.all(
-        (contactsData || []).map(async (contact) => {
+        (contactsData || []).map(async (contact: any) => {
           const { data: profileData } = await supabase
             .from('profiles')
             .select('id')
@@ -105,7 +106,7 @@ export function ClientContactsManager({ clientId }: ClientContactsManagerProps) 
       // Validate input
       const validatedData = contactSchema.parse(formData);
 
-      const { error } = await supabase.from('client_contacts').insert({
+      const { error } = await supabase.from('client_contacts' as any).insert({
         client_id: clientId,
         first_name: validatedData.first_name,
         last_name: validatedData.last_name,
@@ -131,10 +132,48 @@ export function ClientContactsManager({ clientId }: ClientContactsManagerProps) 
     }
   };
 
+  const handleEditContact = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedContact) return;
+
+    try {
+      // Validate input
+      const validatedData = contactSchema.parse(formData);
+
+      const { error } = await supabase
+        .from('client_contacts' as any)
+        .update({
+          first_name: validatedData.first_name,
+          last_name: validatedData.last_name,
+          title: validatedData.title || null,
+          email: validatedData.email,
+        })
+        .eq('id', selectedContact.id);
+
+      if (error) throw error;
+
+      toast.success('Contact modifié avec succès');
+      setEditDialogOpen(false);
+      setSelectedContact(null);
+      setFormData({ first_name: '', last_name: '', title: '', email: '' });
+      fetchContacts();
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        error.errors.forEach((err) => {
+          toast.error(err.message);
+        });
+      } else {
+        console.error('Error updating contact:', error);
+        toast.error('Erreur lors de la modification du contact');
+      }
+    }
+  };
+
   const handleDeleteContact = async (contactId: string) => {
     try {
       const { error } = await supabase
-        .from('client_contacts')
+        .from('client_contacts' as any)
         .delete()
         .eq('id', contactId);
 
@@ -293,12 +332,27 @@ export function ClientContactsManager({ clientId }: ClientContactsManagerProps) 
                     size="sm"
                     onClick={() => {
                       setSelectedContact(contact);
+                      setFormData({
+                        first_name: contact.first_name,
+                        last_name: contact.last_name,
+                        title: contact.title || '',
+                        email: contact.email,
+                      });
+                      setEditDialogOpen(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedContact(contact);
                       setInviteDialogOpen(true);
                     }}
                     disabled={contact.is_user}
                   >
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Inviter
+                    <UserPlus className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="ghost"
@@ -313,6 +367,74 @@ export function ClientContactsManager({ clientId }: ClientContactsManagerProps) 
           </div>
         )}
       </CardContent>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier le contact</DialogTitle>
+            <DialogDescription>
+              Modifiez les informations du contact
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditContact} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit_first_name">Prénom *</Label>
+              <Input
+                id="edit_first_name"
+                value={formData.first_name}
+                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                required
+                maxLength={100}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_last_name">Nom *</Label>
+              <Input
+                id="edit_last_name"
+                value={formData.last_name}
+                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                required
+                maxLength={100}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_title">Titre</Label>
+              <Input
+                id="edit_title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Ex: Directeur, Responsable marketing..."
+                maxLength={100}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_email">Email *</Label>
+              <Input
+                id="edit_email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+                maxLength={255}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setEditDialogOpen(false);
+                  setSelectedContact(null);
+                  setFormData({ first_name: '', last_name: '', title: '', email: '' });
+                }}
+              >
+                Annuler
+              </Button>
+              <Button type="submit">Enregistrer</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
         <DialogContent>
