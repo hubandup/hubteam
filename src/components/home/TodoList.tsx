@@ -23,6 +23,7 @@ interface Todo {
 interface Project {
   id: string;
   name: string;
+  project_clients?: { client_id: string }[];
 }
 
 interface Client {
@@ -42,6 +43,7 @@ export function TodoList() {
   const [convertProject, setConvertProject] = useState('');
   const [clientFilter, setClientFilter] = useState('all');
   const [hoveredTodoId, setHoveredTodoId] = useState<string | null>(null);
+  const [clientSearch, setClientSearch] = useState('');
 
   useEffect(() => {
     fetchTodos();
@@ -85,7 +87,11 @@ export function TodoList() {
     try {
       const { data, error } = await supabase
         .from('projects')
-        .select('id, name')
+        .select(`
+          id, 
+          name,
+          project_clients(client_id)
+        `)
         .eq('archived', false)
         .order('name');
 
@@ -136,6 +142,11 @@ export function TodoList() {
   };
 
   const handleToggleTodo = async (todo: Todo) => {
+    // Optimistic update
+    setTodos(prev => prev.map(t => 
+      t.id === todo.id ? { ...t, completed: !t.completed } : t
+    ));
+
     try {
       const { error } = await supabase
         .from('todos')
@@ -146,6 +157,10 @@ export function TodoList() {
     } catch (error) {
       console.error('Error toggling todo:', error);
       toast.error('Erreur lors de la mise à jour');
+      // Revert on error
+      setTodos(prev => prev.map(t => 
+        t.id === todo.id ? { ...t, completed: todo.completed } : t
+      ));
     }
   };
 
@@ -230,11 +245,14 @@ export function TodoList() {
     }
   };
 
+  const filteredClients = clients.filter(client =>
+    client.company.toLowerCase().includes(clientSearch.toLowerCase())
+  );
+
   const filteredProjects = clientFilter && clientFilter !== 'all'
-    ? projects.filter(p => {
-        // Check if project has this client
-        return true; // We'll need to join with project_clients
-      })
+    ? projects.filter(p => 
+        p.project_clients?.some(pc => pc.client_id === clientFilter)
+      )
     : projects;
 
   if (loading) {
@@ -277,7 +295,7 @@ export function TodoList() {
             <p className="text-sm text-muted-foreground text-center py-8">Aucune tâche à faire</p>
           ) : (
             <div className="space-y-2">
-              {todos.filter(t => !t.completed).map((todo) => (
+              {todos.map((todo) => (
                 <div
                   key={todo.id}
                   className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors group"
@@ -289,11 +307,13 @@ export function TodoList() {
                     onCheckedChange={() => handleToggleTodo(todo)}
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">
+                    <p className={`text-sm font-medium ${todo.completed ? 'line-through text-muted-foreground' : ''}`}>
                       {todo.title}
                     </p>
                     {todo.description && (
-                      <p className="text-xs text-muted-foreground truncate">{todo.description}</p>
+                      <p className={`text-xs text-muted-foreground truncate ${todo.completed ? 'line-through' : ''}`}>
+                        {todo.description}
+                      </p>
                     )}
                   </div>
                   <div className="flex items-center gap-1">
@@ -384,6 +404,15 @@ export function TodoList() {
                 </p>
               </div>
               <div>
+                <Label>Rechercher un client</Label>
+                <Input
+                  placeholder="Rechercher..."
+                  value={clientSearch}
+                  onChange={(e) => setClientSearch(e.target.value)}
+                  className="mb-2"
+                />
+              </div>
+              <div>
                 <Label>Filtrer par client</Label>
                 <Select value={clientFilter} onValueChange={setClientFilter}>
                   <SelectTrigger>
@@ -391,7 +420,7 @@ export function TodoList() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tous les clients</SelectItem>
-                    {clients.map((client) => (
+                    {filteredClients.map((client) => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.company}
                       </SelectItem>
@@ -418,6 +447,7 @@ export function TodoList() {
                 <Button variant="outline" onClick={() => {
                   setConvertDialogOpen(false);
                   setClientFilter('all');
+                  setClientSearch('');
                 }}>Annuler</Button>
                 <Button onClick={handleConvertToTask}>Convertir en tâche</Button>
               </div>
