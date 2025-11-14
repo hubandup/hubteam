@@ -293,4 +293,19 @@
   .dark input:focus, .dark textarea:focus, .dark select:focus {
     @apply ring-primary border-primary;
   }
+
+  /* ContentEditable placeholder */
+  [contenteditable][data-placeholder]:empty:before {
+    content: attr(data-placeholder);
+    @apply text-muted-foreground pointer-events-none absolute;
+  }
+
+  [contenteditable]:focus {
+    outline: none;
+  }
+
+  /* Mention styling */
+  .mention {
+    @apply bg-primary/10 text-primary px-1 rounded inline-block;
+  }
 }
