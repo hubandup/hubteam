@@ -43,30 +43,37 @@ serve(async (req) => {
 
     switch (action) {
       case 'list-drives':
-        // First get the account/profile info to get account_id
-        const profileResponse = await fetch(`${KDRIVE_API_BASE}/1/profile`, {
+        // List all accessible products (kdrives)
+        response = await fetch(`${KDRIVE_API_BASE}/1/product?with=kdrives`, {
           headers: kdriveHeaders,
         });
         
-        if (!profileResponse.ok) {
-          const profileError = await profileResponse.json();
-          console.error('Profile API error:', profileError);
-          throw new Error('Failed to get profile info');
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Product API error:', errorData);
+          throw new Error('Failed to get kDrive products');
         }
         
-        const profileData = await profileResponse.json();
-        console.log('Profile data:', profileData);
+        const productsData = await response.json();
+        console.log('Products data:', productsData);
         
-        // Get the account_id from profile
-        const accountId = profileData.data?.id;
-        if (!accountId) {
-          throw new Error('No account ID found in profile');
+        // Extract drives from products
+        const drives: any[] = [];
+        if (productsData.data) {
+          for (const product of productsData.data) {
+            if (product.kdrives) {
+              drives.push(...product.kdrives);
+            }
+          }
         }
         
-        // Now fetch drives using the account_id
-        response = await fetch(`${KDRIVE_API_BASE}/1/account/${accountId}/drive`, {
-          headers: kdriveHeaders,
-        });
+        // Return in the expected format
+        return new Response(
+          JSON.stringify({ data: drives }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
         break;
 
       case 'list-files':
