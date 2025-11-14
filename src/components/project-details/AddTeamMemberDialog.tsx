@@ -30,7 +30,7 @@ export function AddTeamMemberDialog({
   projectId,
   onSuccess,
 }: AddTeamMemberDialogProps) {
-  const [memberType, setMemberType] = useState<'profile' | 'agency_contact' | 'client'>('profile');
+  const [memberType, setMemberType] = useState<'profile' | 'agency_contact' | 'client' | 'client_contact'>('profile');
   const [memberId, setMemberId] = useState('');
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -57,6 +57,12 @@ export function AddTeamMemberDialog({
           .select('id, first_name, last_name, email, agencies(name)')
           .order('first_name');
         data = contacts || [];
+      } else if (memberType === 'client_contact') {
+        const { data: clientContacts } = await supabase
+          .from('client_contacts' as any)
+          .select('id, first_name, last_name, email, title')
+          .order('first_name');
+        data = clientContacts || [];
       } else if (memberType === 'client') {
         const { data: clients } = await supabase
           .from('clients')
@@ -146,6 +152,9 @@ export function AddTeamMemberDialog({
     if (memberType === 'client' && member.company) {
       return `${name} (${member.company})`;
     }
+    if (memberType === 'client_contact') {
+      return `${name}${member.title ? ` - ${member.title}` : ''}`;
+    }
     return `${name} (${member.email})`;
   };
 
@@ -169,9 +178,10 @@ export function AddTeamMemberDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="profile">Équipe Hub & Up</SelectItem>
-                <SelectItem value="agency_contact">Contact Agence</SelectItem>
-                <SelectItem value="client">Client</SelectItem>
+                <SelectItem value="profile">Équipe</SelectItem>
+                <SelectItem value="agency_contact">Agences</SelectItem>
+                <SelectItem value="client">Clients</SelectItem>
+                <SelectItem value="client_contact">Contacts clients</SelectItem>
               </SelectContent>
             </Select>
           </div>
