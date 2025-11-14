@@ -35,7 +35,7 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
     try {
       // Fetch team members
       const { data: members, error: membersError } = await supabase
-        .from('project_team_members')
+        .from('project_team_members' as any)
         .select('*')
         .eq('project_id', projectId);
 
@@ -52,7 +52,7 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
 
       // Enrich team members with their details
       const enrichedMembers = await Promise.all(
-        (members || []).map(async (member) => {
+        (members || []).map(async (member: any) => {
           let memberData: any = {};
           
           if (member.member_type === 'profile') {
