@@ -404,6 +404,9 @@ export type Database = {
           follow_up_date: string | null
           id: string
           kanban_stage: string
+          kdrive_drive_id: number | null
+          kdrive_folder_id: string | null
+          kdrive_folder_path: string | null
           last_contact: string | null
           last_name: string
           logo_url: string | null
@@ -426,6 +429,9 @@ export type Database = {
           follow_up_date?: string | null
           id?: string
           kanban_stage?: string
+          kdrive_drive_id?: number | null
+          kdrive_folder_id?: string | null
+          kdrive_folder_path?: string | null
           last_contact?: string | null
           last_name: string
           logo_url?: string | null
@@ -448,6 +454,9 @@ export type Database = {
           follow_up_date?: string | null
           id?: string
           kanban_stage?: string
+          kdrive_drive_id?: number | null
+          kdrive_folder_id?: string | null
+          kdrive_folder_path?: string | null
           last_contact?: string | null
           last_name?: string
           logo_url?: string | null
@@ -951,6 +960,9 @@ export type Database = {
           description: string | null
           end_date: string | null
           id: string
+          kdrive_drive_id: number | null
+          kdrive_folder_id: string | null
+          kdrive_folder_path: string | null
           name: string
           start_date: string | null
           status: string
@@ -963,6 +975,9 @@ export type Database = {
           description?: string | null
           end_date?: string | null
           id?: string
+          kdrive_drive_id?: number | null
+          kdrive_folder_id?: string | null
+          kdrive_folder_path?: string | null
           name: string
           start_date?: string | null
           status?: string
@@ -975,6 +990,9 @@ export type Database = {
           description?: string | null
           end_date?: string | null
           id?: string
+          kdrive_drive_id?: number | null
+          kdrive_folder_id?: string | null
+          kdrive_folder_path?: string | null
           name?: string
           start_date?: string | null
           status?: string

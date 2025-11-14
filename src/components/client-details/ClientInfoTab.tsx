@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ClientContactsManager } from './ClientContactsManager';
+import { KDriveFolderSelector } from './KDriveFolderSelector';
 
 interface ClientInfoTabProps {
   client: {
@@ -78,7 +79,14 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
   return (
     <div className="space-y-6">
       {!isMobile && (
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+          <ProtectedAction module="crm" action="update">
+            <KDriveFolderSelector 
+              clientId={client.id}
+              clientName={client.company}
+              onFolderConnected={onUpdate}
+            />
+          </ProtectedAction>
           <ProtectedAction module="crm" action="update">
             <EditClientDialog client={client} onClientUpdated={onUpdate} />
           </ProtectedAction>
