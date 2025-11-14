@@ -1,4 +1,3 @@
-import { MyWeeklySchedule } from '@/components/home/MyWeeklySchedule';
 import { TodoList } from '@/components/home/TodoList';
 import { TodayTasks } from '@/components/home/TodayTasks';
 import { CalendarView } from '@/components/home/CalendarView';
@@ -15,7 +14,6 @@ export default function Home() {
         <div className="space-y-6">
           <TodoList />
           <TodayTasks />
-          <MyWeeklySchedule />
         </div>
         <div className="space-y-6">
           <CalendarView />
