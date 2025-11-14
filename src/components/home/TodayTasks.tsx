@@ -3,9 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Clock, Bell, Building2 } from 'lucide-react';
-import { format, isToday } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { Loader2, Clock, Building2 } from 'lucide-react';
+import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface TodayTask {
@@ -27,18 +26,9 @@ interface TodayTask {
   };
 }
 
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  created_at: string;
-  read: boolean;
-}
-
 export function TodayTasks() {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<TodayTask[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -80,19 +70,7 @@ export function TodayTasks() {
 
       if (tasksError) throw tasksError;
 
-      // Fetch unread notifications
-      const { data: notifData, error: notifError } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('read', false)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (notifError) throw notifError;
-
       setTasks(tasksData || []);
-      setNotifications(notifData || []);
     } catch (error) {
       console.error('Error fetching today data:', error);
     } finally {
@@ -162,23 +140,33 @@ export function TodayTasks() {
                     key={task.id} 
                     className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                   >
-                    {/* Client Header */}
-                    {client && (
-                      <div 
-                        className="flex items-center gap-2 mb-3 cursor-pointer group"
-                        onClick={() => navigate(`/crm/${client.id}`)}
-                      >
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={client.logo_url || ''} />
-                          <AvatarFallback className="bg-primary/10 text-xs">
-                            {client.company.substring(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm font-semibold text-primary group-hover:underline">
-                          {client.company}
-                        </span>
+                    {/* Header with Client and Due Date */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        {client && (
+                          <>
+                            <Avatar className="h-6 w-6 cursor-pointer" onClick={() => navigate(`/crm/${client.id}`)}>
+                              <AvatarImage src={client.logo_url || ''} />
+                              <AvatarFallback className="bg-primary/10 text-xs">
+                                {client.company.substring(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span 
+                              className="text-sm font-semibold text-primary cursor-pointer hover:underline"
+                              onClick={() => navigate(`/crm/${client.id}`)}
+                            >
+                              {client.company}
+                            </span>
+                          </>
+                        )}
                       </div>
-                    )}
+                      {task.end_date && (
+                        <p className="text-xs text-destructive flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {format(new Date(task.end_date), 'dd/MM/yyyy')}
+                        </p>
+                      )}
+                    </div>
                     
                     {/* Task Content */}
                     <div className="flex items-start justify-between gap-3">
@@ -201,13 +189,6 @@ export function TodayTasks() {
                             </p>
                           </div>
                         )}
-                        
-                        {task.end_date && (
-                          <p className="text-xs text-destructive flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            Échéance: {format(new Date(task.end_date), 'dd/MM/yyyy')}
-                          </p>
-                        )}
                       </div>
                       
                       <Badge className={getPriorityColor(task.priority)} variant="secondary">
@@ -217,32 +198,6 @@ export function TodayTasks() {
                   </div>
                 );
               })}
-            </div>
-          )}
-        </div>
-
-        {/* Notifications Section */}
-        <div>
-          <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-            <Bell className="h-4 w-4" />
-            <span>Notifications récentes</span>
-            {notifications.length > 0 && (
-              <Badge variant="secondary" className="text-xs">{notifications.length}</Badge>
-            )}
-          </h3>
-          {notifications.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aucune notification</p>
-          ) : (
-            <div className="space-y-2">
-              {notifications.map((notif) => (
-                <div key={notif.id} className="p-3 rounded-lg border bg-card">
-                  <p className="text-sm font-medium">{notif.title}</p>
-                  <p className="text-xs text-muted-foreground">{notif.message}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {format(new Date(notif.created_at), 'HH:mm', { locale: fr })}
-                  </p>
-                </div>
-              ))}
             </div>
           )}
         </div>
