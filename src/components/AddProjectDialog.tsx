@@ -44,7 +44,7 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
     try {
       const { data, error } = await supabase
         .from('clients')
-        .select('id, company, first_name, last_name')
+        .select('id, company, first_name, last_name, kdrive_drive_id, kdrive_folder_id, kdrive_folder_path')
         .eq('active', true)
         .order('company');
 
@@ -87,9 +87,47 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
           });
 
         if (clientError) throw clientError;
+
+        // Create KDrive folder automatically if client has KDrive configured
+        const selectedClient = clients.find(c => c.id === formData.client_id);
+        if (selectedClient?.kdrive_drive_id && selectedClient?.kdrive_folder_id) {
+          try {
+            const { data: folderData, error: folderError } = await supabase.functions.invoke('kdrive-api', {
+              body: {
+                action: 'create-folder',
+                driveId: selectedClient.kdrive_drive_id,
+                parentId: selectedClient.kdrive_folder_id,
+                folderPath: formData.name,
+              },
+            });
+
+            if (!folderError && folderData?.data) {
+              // Update project with KDrive folder info
+              const newFolderPath = `${selectedClient.kdrive_folder_path}/${formData.name}`;
+              await supabase
+                .from('projects')
+                .update({
+                  kdrive_drive_id: selectedClient.kdrive_drive_id,
+                  kdrive_folder_id: folderData.data.id,
+                  kdrive_folder_path: newFolderPath,
+                })
+                .eq('id', project.id);
+              
+              toast.success('Projet créé avec dossier KDrive');
+            } else {
+              toast.success('Projet créé (dossier KDrive non créé)');
+            }
+          } catch (kdriveError) {
+            console.error('Error creating KDrive folder:', kdriveError);
+            toast.success('Projet créé (erreur création dossier KDrive)');
+          }
+        } else {
+          toast.success('Projet créé avec succès');
+        }
+      } else {
+        toast.success('Projet créé avec succès');
       }
 
-      toast.success('Projet créé avec succès');
       setOpen(false);
       setFormData({
         name: '',
