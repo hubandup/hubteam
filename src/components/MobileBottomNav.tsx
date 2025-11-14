@@ -1,4 +1,4 @@
-import { Users, FolderKanban, MessageSquare, Activity, HelpCircle } from 'lucide-react';
+import { Home, Users, FolderKanban, MessageSquare, Activity, HelpCircle } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { cn } from '@/lib/utils';
 
@@ -8,6 +8,11 @@ export function MobileBottomNav() {
                 (window.navigator as any).standalone === true;
 
   const navItems = [
+    {
+      to: '/',
+      icon: Home,
+      label: 'Accueil',
+    },
     ...(isPWA ? [{
       to: '/feed',
       icon: Activity,
