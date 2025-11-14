@@ -43,7 +43,28 @@ serve(async (req) => {
 
     switch (action) {
       case 'list-drives':
-        response = await fetch(`${KDRIVE_API_BASE}/1/drive`, {
+        // First get the account/profile info to get account_id
+        const profileResponse = await fetch(`${KDRIVE_API_BASE}/1/profile`, {
+          headers: kdriveHeaders,
+        });
+        
+        if (!profileResponse.ok) {
+          const profileError = await profileResponse.json();
+          console.error('Profile API error:', profileError);
+          throw new Error('Failed to get profile info');
+        }
+        
+        const profileData = await profileResponse.json();
+        console.log('Profile data:', profileData);
+        
+        // Get the account_id from profile
+        const accountId = profileData.data?.id;
+        if (!accountId) {
+          throw new Error('No account ID found in profile');
+        }
+        
+        // Now fetch drives using the account_id
+        response = await fetch(`${KDRIVE_API_BASE}/1/account/${accountId}/drive`, {
           headers: kdriveHeaders,
         });
         break;
