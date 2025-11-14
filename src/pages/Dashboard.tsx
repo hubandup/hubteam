@@ -12,9 +12,11 @@ import { RolePermissionsIndicator } from '@/components/dashboard/RolePermissions
 import { useNavigate } from 'react-router-dom';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useUserRole } from '@/hooks/useUserRole';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { isAdmin, loading: roleLoading } = useUserRole();
   const { canRead, loading: permissionsLoading } = usePermissions();
   const [stats, setStats] = useState({
     leads: 0,
@@ -35,6 +37,20 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!roleLoading && !isAdmin) {
+      navigate('/');
+      toast.error('Accès refusé : page réservée aux administrateurs');
+      return;
+    }
+    
+    if (isAdmin) {
+      fetchDashboardData();
+    }
+  }, [isAdmin, roleLoading, navigate]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    
     fetchDashboardData();
 
     // Subscribe to realtime changes for projects, tasks, and clients
