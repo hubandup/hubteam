@@ -32,6 +32,7 @@ self.addEventListener('push', (event) => {
         icon: data.icon || notificationData.icon,
         badge: data.badge || notificationData.badge,
         url: data.url || notificationData.url,
+        badgeCount: data.badgeCount || 0,
         data: data, // Store full data for click handling
       };
     } catch (error) {
@@ -53,15 +54,13 @@ self.addEventListener('push', (event) => {
       data: notificationData,
     }
   ).then(() => {
-    // Update app badge
-    if ('setAppBadge' in self.navigator) {
-      return self.registration.getNotifications({ tag: 'hub-and-up-notification' })
-        .then(notifications => {
-          const unreadCount = notifications.length;
-          if (unreadCount > 0) {
-            return self.navigator.setAppBadge(unreadCount);
-          }
-        });
+    // Update app badge with the badge count from notification data
+    if ('setAppBadge' in self.navigator && notificationData.badgeCount !== undefined) {
+      if (notificationData.badgeCount > 0) {
+        return self.navigator.setAppBadge(notificationData.badgeCount);
+      } else {
+        return self.navigator.clearAppBadge();
+      }
     }
   });
 
@@ -76,18 +75,20 @@ self.addEventListener('notificationclick', (event) => {
 
   const urlToOpen = event.notification.data?.url || '/';
 
-  // Update badge count after closing notification
-  const updateBadge = self.registration.getNotifications({ tag: 'hub-and-up-notification' })
-    .then(notifications => {
-      const unreadCount = notifications.length;
-      if ('setAppBadge' in self.navigator) {
-        if (unreadCount > 0) {
-          return self.navigator.setAppBadge(unreadCount);
-        } else {
-          return self.navigator.clearAppBadge();
-        }
+  // Get the badge count from notification data and update badge
+  const badgeCount = event.notification.data?.badgeCount;
+  const updateBadge = (() => {
+    if ('setAppBadge' in self.navigator && badgeCount !== undefined) {
+      // Decrement badge count when notification is clicked
+      const newCount = Math.max(0, badgeCount - 1);
+      if (newCount > 0) {
+        return self.navigator.setAppBadge(newCount);
+      } else {
+        return self.navigator.clearAppBadge();
       }
-    });
+    }
+    return Promise.resolve();
+  })();
 
   // Open or focus the app window
   event.waitUntil(
@@ -116,22 +117,24 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-// Handle notification close
 self.addEventListener('notificationclose', (event) => {
   console.log('Notification closed:', event);
   
-  // Update badge count after dismissing notification
-  const updateBadge = self.registration.getNotifications({ tag: 'hub-and-up-notification' })
-    .then(notifications => {
-      const unreadCount = notifications.length;
-      if ('setAppBadge' in self.navigator) {
-        if (unreadCount > 0) {
-          return self.navigator.setAppBadge(unreadCount);
-        } else {
-          return self.navigator.clearAppBadge();
-        }
+  // Get badge count from notification data
+  const badgeCount = event.notification.data?.badgeCount;
+  
+  // Update badge count after dismissing notification (decrement)
+  const updateBadge = (() => {
+    if ('setAppBadge' in self.navigator && badgeCount !== undefined) {
+      const newCount = Math.max(0, badgeCount - 1);
+      if (newCount > 0) {
+        return self.navigator.setAppBadge(newCount);
+      } else {
+        return self.navigator.clearAppBadge();
       }
-    });
+    }
+    return Promise.resolve();
+  })();
   
   // You can track notification dismissals here
   const notificationData = event.notification.data;
