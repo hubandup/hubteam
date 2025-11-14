@@ -43,37 +43,33 @@ serve(async (req) => {
 
     switch (action) {
       case 'list-drives':
-        // List all accessible products (kdrives)
-        response = await fetch(`${KDRIVE_API_BASE}/1/product?with=kdrives`, {
-          headers: kdriveHeaders,
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error('Product API error:', errorData);
-          throw new Error('Failed to get kDrive products');
-        }
-        
-        const productsData = await response.json();
-        console.log('Products data:', productsData);
-        
-        // Extract drives from products
-        const drives: any[] = [];
-        if (productsData.data) {
-          for (const product of productsData.data) {
-            if (product.kdrives) {
-              drives.push(...product.kdrives);
-            }
-          }
-        }
-        
-        // Return in the expected format
-        return new Response(
-          JSON.stringify({ data: drives }),
-          {
+        // Strategy: try dedicated kDrive listing, then fallback to products
+        // 1) Try /1/kdrive
+        let drivesResp = await fetch(`${KDRIVE_API_BASE}/1/kdrive`, { headers: kdriveHeaders });
+        if (drivesResp.ok) {
+          const d = await drivesResp.json();
+          return new Response(JSON.stringify({ data: d.data || [] }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        // 2) Fallback to /1/product and extract kdrives if present
+        const productsResp = await fetch(`${KDRIVE_API_BASE}/1/product`, { headers: kdriveHeaders });
+        if (!productsResp.ok) {
+          const err = await productsResp.json().catch(() => ({}));
+          console.error('Products API error:', err);
+          throw new Error('Failed to list kDrive');
+        }
+        const products = await productsResp.json();
+        const drives: any[] = [];
+        if (products?.data) {
+          for (const p of products.data) {
+            if (p?.kdrives) drives.push(...p.kdrives);
+            if (p?.kdrive) drives.push(p.kdrive);
           }
-        );
+        }
+        return new Response(JSON.stringify({ data: drives }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
         break;
 
       case 'list-files':
