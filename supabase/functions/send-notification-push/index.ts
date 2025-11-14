@@ -87,11 +87,42 @@ serve(async (req) => {
     }
 
     if (!subscriptions || subscriptions.length === 0) {
-      console.log('No push subscriptions found for user:', userId);
-      return new Response(
-        JSON.stringify({ success: true, message: 'No subscriptions found' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-      );
+      console.log('No push subscriptions found for user:', userId, '- sending email instead');
+      
+      // Fallback to email notification
+      try {
+        const { data: emailResult, error: emailError } = await supabase.functions.invoke(
+          'send-notification-email',
+          {
+            body: {
+              userId: userId,
+              title: title,
+              message: message,
+              link: link || '/',
+            },
+          }
+        );
+
+        if (emailError) {
+          console.error('Error sending email notification:', emailError);
+          return new Response(
+            JSON.stringify({ success: false, message: 'Failed to send email notification', error: emailError.message }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+          );
+        }
+
+        console.log('Email notification sent successfully:', emailResult);
+        return new Response(
+          JSON.stringify({ success: true, message: 'Email notification sent', method: 'email' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        );
+      } catch (error: any) {
+        console.error('Failed to send email notification:', error);
+        return new Response(
+          JSON.stringify({ success: false, message: 'No subscriptions and email failed', error: error.message }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        );
+      }
     }
 
     // Call the send-push-notification function
