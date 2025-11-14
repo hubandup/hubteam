@@ -7,6 +7,15 @@ enabled = true
 [functions.calculate-client-revenue]
 verify_jwt = false
 
+[functions.push-subscribe]
+verify_jwt = true
+
+[functions.push-test]
+verify_jwt = true
+
+[functions.send-pending-badge-notifications]
+verify_jwt = false
+
 [[edge_runtime.cron.jobs]]
 name = "check-deadlines"
 schedule = "0 */6 * * *"  # Every 6 hours
@@ -31,6 +40,11 @@ function = "sync-facturation-pro-invoices"
 name = "check-facturation-pro-quotes"
 schedule = "0 * * * *"  # Every hour
 function = "check-facturation-pro-quotes"
+
+[[edge_runtime.cron.jobs]]
+name = "send-pending-badge-notifications"
+schedule = "*/15 * * * *"  # Every 15 minutes
+function = "send-pending-badge-notifications"
 
 [functions.sync-facturation-pro-clients]
 verify_jwt = false

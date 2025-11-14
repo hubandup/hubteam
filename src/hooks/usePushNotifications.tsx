@@ -2,12 +2,23 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+// Check if app is running as PWA
+function isPWA(): boolean {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         (window.navigator as any).standalone === true ||
+         document.referrer.includes('android-app://');
+}
+
 export function usePushNotifications() {
   const [isSupported, setIsSupported] = useState(false);
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [permission, setPermission] = useState<NotificationPermission>('default');
+  const [isPWAMode, setIsPWAMode] = useState(false);
 
   useEffect(() => {
+    const pwaMode = isPWA();
+    setIsPWAMode(pwaMode);
+    
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       setIsSupported(true);
       setPermission(Notification.permission);
@@ -27,6 +38,11 @@ export function usePushNotifications() {
     if (!isSupported) {
       toast.error('Les notifications push ne sont pas supportées sur cet appareil');
       return false;
+    }
+
+    // Warn if not in PWA mode
+    if (!isPWAMode) {
+      toast.info('Pour une meilleure expérience, installez l\'application sur votre écran d\'accueil');
     }
 
     try {
@@ -80,18 +96,24 @@ export function usePushNotifications() {
 
       setSubscription(subscription);
 
-      // Save subscription to database
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
+      // Save subscription via API endpoint
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
         const subscriptionData = subscription.toJSON();
-        // @ts-ignore - Types will be regenerated automatically
-        const { error } = await supabase.from('push_subscriptions').upsert({
-          user_id: user.id,
-          endpoint: subscriptionData.endpoint,
-          p256dh: subscriptionData.keys.p256dh,
-          auth: subscriptionData.keys.auth,
-        }, {
-          onConflict: 'user_id,endpoint'
+        
+        const { error } = await supabase.functions.invoke('push-subscribe', {
+          body: {
+            subscription: {
+              endpoint: subscriptionData.endpoint,
+              keys: {
+                p256dh: subscriptionData.keys?.p256dh || '',
+                auth: subscriptionData.keys?.auth || '',
+              }
+            }
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
         });
         
         if (error) {
@@ -99,7 +121,7 @@ export function usePushNotifications() {
           throw error;
         }
         
-        console.log('Subscription saved to database');
+        console.log('Subscription saved via API');
       }
 
       return subscription;
@@ -128,6 +150,7 @@ export function usePushNotifications() {
     subscription,
     requestPermission,
     unsubscribe,
+    isPWAMode,
   };
 }
 
