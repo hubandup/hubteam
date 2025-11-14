@@ -152,7 +152,7 @@ export function TodayTasks() {
                               </AvatarFallback>
                             </Avatar>
                             <span 
-                              className="text-sm font-semibold text-primary cursor-pointer hover:underline"
+                              className="text-sm font-semibold text-primary cursor-pointer hover:underline uppercase"
                               onClick={() => navigate(`/crm/${client.id}`)}
                             >
                               {client.company}

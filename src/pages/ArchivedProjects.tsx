@@ -117,7 +117,7 @@ export default function ArchivedProjects() {
                       <CardTitle className="text-xl">{project.name}</CardTitle>
                       {client && (
                         <p className="text-sm text-muted-foreground mt-1">
-                          Client: {client.company}
+                          Client: <span className="uppercase">{client.company}</span>
                         </p>
                       )}
                       {project.description && (

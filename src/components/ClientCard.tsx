@@ -41,7 +41,7 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
               />
             )}
             <div className="min-w-0 flex-1">
-              <CardTitle className="text-lg">
+              <CardTitle className="text-lg uppercase">
                 {client.company}
               </CardTitle>
               <CardDescription className="mt-1 truncate">

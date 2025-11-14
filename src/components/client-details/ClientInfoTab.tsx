@@ -95,7 +95,7 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
             <Building2 className="h-5 w-5 text-muted-foreground mt-0.5" />
             <div>
               <p className="text-sm text-muted-foreground">Entreprise</p>
-              <p className="font-medium">{client.company}</p>
+              <p className="font-medium uppercase">{client.company}</p>
             </div>
           </div>
 

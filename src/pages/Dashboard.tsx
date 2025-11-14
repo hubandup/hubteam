@@ -842,7 +842,7 @@ export default function Dashboard() {
                       {index + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{client.company}</p>
+                      <p className="text-sm font-medium truncate uppercase">{client.company}</p>
                       <p className="text-xs text-muted-foreground">
                         {client.first_name} {client.last_name}
                       </p>

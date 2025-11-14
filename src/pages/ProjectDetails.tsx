@@ -235,7 +235,7 @@ export default function ProjectDetails() {
           </div>
           {client && (
             <p className="text-muted-foreground mt-1">
-              {client.company} - {client.first_name} {client.last_name}
+              <span className="uppercase">{client.company}</span> - {client.first_name} {client.last_name}
             </p>
           )}
         </div>
@@ -288,7 +288,7 @@ export default function ProjectDetails() {
                         <div>
                           <p className="text-sm text-muted-foreground">Client</p>
                           <p className="font-medium">
-                            {client.company} - {client.first_name} {client.last_name}
+                            <span className="uppercase">{client.company}</span> - {client.first_name} {client.last_name}
                           </p>
                         </div>
                       </div>

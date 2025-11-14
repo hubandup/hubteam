@@ -149,7 +149,7 @@ export function SelectClientDialog({
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 text-left">
-                        <p className="font-semibold">{client.company}</p>
+                        <p className="font-semibold uppercase">{client.company}</p>
                         <p className="text-sm text-muted-foreground">
                           {client.first_name} {client.last_name}
                         </p>

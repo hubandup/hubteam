@@ -141,7 +141,7 @@ export default function ClientDetails() {
             />
           )}
           <div>
-            <h1 className="text-3xl font-bold text-foreground">
+            <h1 className="text-3xl font-bold text-foreground uppercase">
               {client.company}
             </h1>
             <p className="text-muted-foreground">{client.first_name} {client.last_name}</p>

@@ -402,7 +402,7 @@ export function TodoList() {
                     aria-expanded={clientPopoverOpen}
                     className="w-full justify-between"
                   >
-                    {selectedClient ? selectedClient.company : "Sélectionner un client..."}
+                    {selectedClient ? <span className="uppercase">{selectedClient.company}</span> : "Sélectionner un client..."}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
@@ -427,7 +427,7 @@ export function TodoList() {
                               selectedClient?.id === client.id ? "opacity-100" : "opacity-0"
                             )}
                           />
-                          {client.company}
+                          <span className="uppercase">{client.company}</span>
                         </CommandItem>
                       ))}
                     </CommandGroup>

@@ -146,7 +146,7 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
                 <SelectContent>
                   {clients.map((client) => (
                     <SelectItem key={client.id} value={client.id}>
-                      {client.company} - {client.first_name} {client.last_name}
+                      <span className="uppercase">{client.company}</span> - {client.first_name} {client.last_name}
                     </SelectItem>
                   ))}
                 </SelectContent>
