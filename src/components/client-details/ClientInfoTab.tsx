@@ -8,6 +8,7 @@ import { EditClientDialog } from '@/components/EditClientDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ClientContactsManager } from './ClientContactsManager';
 
 interface ClientInfoTabProps {
   client: {
@@ -210,6 +211,8 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
         </Card>
       )}
       </div>
+
+      <ClientContactsManager clientId={client.id} />
     </div>
   );
 }
