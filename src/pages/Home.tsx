@@ -13,11 +13,11 @@ export default function Home() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
+          <TodoList />
           <TodayTasks />
           <MyWeeklySchedule />
         </div>
         <div className="space-y-6">
-          <TodoList />
           <CalendarView />
         </div>
       </div>
