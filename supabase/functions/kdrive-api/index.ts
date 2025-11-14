@@ -42,6 +42,35 @@ serve(async (req) => {
     let response;
 
     switch (action) {
+      case 'check-permissions':
+        // Test access to drives to verify permissions
+        const testResp = await fetch(`${KDRIVE_API_BASE}/1/kdrive`, { headers: kdriveHeaders });
+        const testData = await testResp.json();
+        
+        const hasRequiredScopes = testResp.ok;
+        const missingScopes: string[] = [];
+        
+        if (!hasRequiredScopes) {
+          // Parse error to identify missing scopes
+          if (testData?.error?.context?.scopes) {
+            missingScopes.push(...testData.error.context.scopes);
+          } else {
+            missingScopes.push('drive', 'drive:read', 'drive:write');
+          }
+        }
+        
+        return new Response(
+          JSON.stringify({ 
+            hasRequiredScopes,
+            missingScopes,
+            message: hasRequiredScopes ? 'All required scopes present' : 'Missing scopes'
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+        
+      case 'list-drives':
       case 'list-drives':
         // Strategy: try dedicated kDrive listing, then fallback to products
         // 1) Try /1/kdrive
