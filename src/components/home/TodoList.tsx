@@ -3,13 +3,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Loader2, ListTodo, Trash2, Edit, ArrowRight } from 'lucide-react';
+import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Plus, Loader2, ListTodo, Trash2, ArrowRight, Check, ChevronsUpDown } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface Todo {
   id: string;
@@ -36,14 +38,15 @@ export function TodoList() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [convertDialogOpen, setConvertDialogOpen] = useState(false);
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
+  const [editingTodoId, setEditingTodoId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
   const [newTitle, setNewTitle] = useState('');
   const [convertProject, setConvertProject] = useState('');
-  const [clientFilter, setClientFilter] = useState('all');
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [clientPopoverOpen, setClientPopoverOpen] = useState(false);
   const [hoveredTodoId, setHoveredTodoId] = useState<string | null>(null);
-  const [clientSearch, setClientSearch] = useState('');
 
   useEffect(() => {
     fetchTodos();
@@ -124,69 +127,91 @@ export function TodoList() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { error } = await supabase
+      const newTodo = {
+        title: newTitle.trim(),
+        user_id: user.id,
+        completed: false,
+        description: null,
+        project_id: null,
+        created_at: new Date().toISOString(),
+      };
+
+      const { data, error } = await supabase
         .from('todos')
-        .insert({
-          user_id: user.id,
-          title: newTitle,
-        });
+        .insert([newTodo])
+        .select()
+        .single();
 
       if (error) throw error;
-
-      toast.success('Tâche ajoutée');
+      
+      // Ajout optimiste dans l'état local
+      if (data) {
+        setTodos(prev => [data, ...prev]);
+      }
+      
       setNewTitle('');
+      toast.success('Tâche ajoutée');
     } catch (error) {
       console.error('Error adding todo:', error);
-      toast.error('Erreur lors de l\'ajout');
+      toast.error('Erreur lors de l\'ajout de la tâche');
     }
   };
 
-  const handleToggleTodo = async (todo: Todo) => {
-    // Optimistic update
-    setTodos(prev => prev.map(t => 
-      t.id === todo.id ? { ...t, completed: !t.completed } : t
-    ));
-
+  const handleToggleTodo = async (id: string, currentCompleted: boolean) => {
     try {
+      // Mise à jour optimiste
+      setTodos(prev => prev.map(todo => 
+        todo.id === id ? { ...todo, completed: !currentCompleted } : todo
+      ));
+
       const { error } = await supabase
         .from('todos')
-        .update({ completed: !todo.completed })
-        .eq('id', todo.id);
+        .update({ completed: !currentCompleted })
+        .eq('id', id);
 
       if (error) throw error;
     } catch (error) {
       console.error('Error toggling todo:', error);
       toast.error('Erreur lors de la mise à jour');
-      // Revert on error
-      setTodos(prev => prev.map(t => 
-        t.id === todo.id ? { ...t, completed: todo.completed } : t
+      // Revenir à l'état précédent en cas d'erreur
+      setTodos(prev => prev.map(todo => 
+        todo.id === id ? { ...todo, completed: currentCompleted } : todo
       ));
     }
   };
 
-  const handleUpdateTodo = async () => {
-    if (!selectedTodo || !selectedTodo.title.trim()) return;
+  const handleStartEdit = (todo: Todo) => {
+    setEditingTodoId(todo.id);
+    setEditingTitle(todo.title);
+  };
+
+  const handleSaveEdit = async (todoId: string) => {
+    if (!editingTitle.trim()) return;
 
     try {
       const { error } = await supabase
         .from('todos')
-        .update({
-          title: selectedTodo.title,
-          description: selectedTodo.description,
-        })
-        .eq('id', selectedTodo.id);
+        .update({ title: editingTitle.trim() })
+        .eq('id', todoId);
 
       if (error) throw error;
-
-      toast.success('Tâche modifiée');
-      setEditDialogOpen(false);
-      setSelectedTodo(null);
+      
+      setTodos(prev => prev.map(t => 
+        t.id === todoId ? { ...t, title: editingTitle.trim() } : t
+      ));
+      
+      setEditingTodoId(null);
+      toast.success('Tâche mise à jour');
     } catch (error) {
       console.error('Error updating todo:', error);
-      toast.error('Erreur lors de la modification');
+      toast.error('Erreur lors de la mise à jour');
     }
   };
 
+  const handleCancelEdit = () => {
+    setEditingTodoId(null);
+    setEditingTitle('');
+  };
 
   const handleDeleteTodo = async (id: string) => {
     try {
@@ -204,10 +229,7 @@ export function TodoList() {
   };
 
   const handleConvertToTask = async () => {
-    if (!selectedTodo || !convertProject) {
-      toast.error('Veuillez sélectionner un projet');
-      return;
-    }
+    if (!selectedTodo || !convertProject) return;
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -215,15 +237,14 @@ export function TodoList() {
 
       const { error: taskError } = await supabase
         .from('tasks')
-        .insert({
-          project_id: convertProject,
+        .insert([{
           title: selectedTodo.title,
           description: selectedTodo.description,
+          project_id: convertProject,
           status: 'todo',
           priority: 'medium',
-          assigned_to: user.id,
           created_by: user.id,
-        });
+        }]);
 
       if (taskError) throw taskError;
 
@@ -234,24 +255,19 @@ export function TodoList() {
 
       if (deleteError) throw deleteError;
 
-      toast.success('Tâche convertie en tâche de projet');
+      toast.success('Tâche convertie avec succès');
       setConvertDialogOpen(false);
-      setSelectedTodo(null);
       setConvertProject('');
-      setClientFilter('all');
+      setSelectedClient(null);
     } catch (error) {
       console.error('Error converting todo:', error);
       toast.error('Erreur lors de la conversion');
     }
   };
 
-  const filteredClients = clients.filter(client =>
-    client.company.toLowerCase().includes(clientSearch.toLowerCase())
-  );
-
-  const filteredProjects = clientFilter && clientFilter !== 'all'
-    ? projects.filter(p => 
-        p.project_clients?.some(pc => pc.client_id === clientFilter)
+  const filteredProjects = selectedClient
+    ? projects.filter(project => 
+        project.project_clients?.some(pc => pc.client_id === selectedClient.id)
       )
     : projects;
 
@@ -298,59 +314,66 @@ export function TodoList() {
               {todos.map((todo) => (
                 <div
                   key={todo.id}
-                  className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors group"
+                  className="flex items-start gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors group"
                   onMouseEnter={() => setHoveredTodoId(todo.id)}
                   onMouseLeave={() => setHoveredTodoId(null)}
                 >
                   <Checkbox
                     checked={todo.completed}
-                    onCheckedChange={() => handleToggleTodo(todo)}
+                    onCheckedChange={() => handleToggleTodo(todo.id, todo.completed)}
+                    className="mt-1"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium ${todo.completed ? 'line-through text-muted-foreground' : ''}`}>
-                      {todo.title}
-                    </p>
-                    {todo.description && (
-                      <p className={`text-xs text-muted-foreground truncate ${todo.completed ? 'line-through' : ''}`}>
-                        {todo.description}
+                    {editingTodoId === todo.id ? (
+                      <Input
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveEdit(todo.id);
+                          if (e.key === 'Escape') handleCancelEdit();
+                        }}
+                        onBlur={() => handleSaveEdit(todo.id)}
+                        autoFocus
+                        className="h-7 text-sm"
+                      />
+                    ) : (
+                      <p 
+                        className={cn(
+                          "text-sm break-words cursor-pointer hover:text-primary transition-colors",
+                          todo.completed && "line-through text-muted-foreground"
+                        )}
+                        onClick={() => handleStartEdit(todo)}
+                      >
+                        {todo.title}
                       </p>
                     )}
+                    {todo.description && (
+                      <p className="text-xs text-muted-foreground mt-1">{todo.description}</p>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    {hoveredTodoId === todo.id && (
+                  {hoveredTodoId === todo.id && editingTodoId !== todo.id && (
+                    <div className="flex gap-1 opacity-100 transition-opacity">
                       <Button
+                        size="icon"
                         variant="ghost"
-                        size="sm"
-                        className="h-8 opacity-0 group-hover:opacity-100 transition-opacity"
                         onClick={() => {
                           setSelectedTodo(todo);
                           setConvertDialogOpen(true);
                         }}
+                        className="h-7 w-7"
                       >
-                        <ArrowRight className="h-4 w-4 mr-1" />
-                        Attribuer
+                        <ArrowRight className="h-3.5 w-3.5" />
                       </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => {
-                        setSelectedTodo(todo);
-                        setEditDialogOpen(true);
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive"
-                      onClick={() => handleDeleteTodo(todo.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleDeleteTodo(todo.id)}
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -358,101 +381,87 @@ export function TodoList() {
         </CardContent>
       </Card>
 
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Modifier la tâche</DialogTitle>
-          </DialogHeader>
-          {selectedTodo && (
-            <div className="space-y-4">
-              <div>
-                <Label>Titre *</Label>
-                <Input
-                  value={selectedTodo.title}
-                  onChange={(e) => setSelectedTodo({ ...selectedTodo, title: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>Description</Label>
-                <Textarea
-                  value={selectedTodo.description || ''}
-                  onChange={(e) => setSelectedTodo({ ...selectedTodo, description: e.target.value })}
-                  rows={3}
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annuler</Button>
-                <Button onClick={handleUpdateTodo}>Enregistrer</Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Convert to Task Dialog */}
       <Dialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Attribuer à un projet</DialogTitle>
           </DialogHeader>
-          {selectedTodo && (
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Tâche: <span className="font-medium text-foreground">{selectedTodo.title}</span>
-                </p>
-              </div>
-              <div>
-                <Label>Rechercher un client</Label>
-                <Input
-                  placeholder="Rechercher..."
-                  value={clientSearch}
-                  onChange={(e) => setClientSearch(e.target.value)}
-                  className="mb-2"
-                />
-              </div>
-              <div>
-                <Label>Filtrer par client</Label>
-                <Select value={clientFilter} onValueChange={setClientFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Tous les clients" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les clients</SelectItem>
-                    {filteredClients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.company}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Projet *</Label>
-                <Select value={convertProject} onValueChange={setConvertProject}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un projet" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredProjects.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => {
-                  setConvertDialogOpen(false);
-                  setClientFilter('all');
-                  setClientSearch('');
-                }}>Annuler</Button>
-                <Button onClick={handleConvertToTask}>Convertir en tâche</Button>
-              </div>
+          <div className="space-y-4">
+            <div>
+              <Label>Client</Label>
+              <Popover open={clientPopoverOpen} onOpenChange={setClientPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={clientPopoverOpen}
+                    className="w-full justify-between"
+                  >
+                    {selectedClient ? selectedClient.company : "Sélectionner un client..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Rechercher un client..." />
+                    <CommandEmpty>Aucun client trouvé.</CommandEmpty>
+                    <CommandGroup className="max-h-64 overflow-auto">
+                      {clients.map((client) => (
+                        <CommandItem
+                          key={client.id}
+                          value={client.company}
+                          onSelect={() => {
+                            setSelectedClient(client);
+                            setConvertProject('');
+                            setClientPopoverOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedClient?.id === client.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {client.company}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
-          )}
+            <div>
+              <Label>Projet</Label>
+              <Select 
+                value={convertProject} 
+                onValueChange={setConvertProject}
+                disabled={!selectedClient}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={selectedClient ? "Sélectionner un projet" : "Sélectionnez d'abord un client"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredProjects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => {
+                setConvertDialogOpen(false);
+                setSelectedClient(null);
+                setConvertProject('');
+              }}>
+                Annuler
+              </Button>
+              <Button onClick={handleConvertToTask} disabled={!convertProject}>
+                Convertir
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>
