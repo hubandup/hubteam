@@ -21,17 +21,24 @@ export default function Home() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('display_name, first_name, last_name')
+        .select('first_name')
         .eq('id', user.id)
         .single();
 
       if (profile) {
-        const name = profile.display_name || `${profile.first_name} ${profile.last_name}`;
-        setUserName(name);
+        setUserName(profile.first_name);
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour >= 18 || hour < 6) {
+      return 'Bonsoir';
+    }
+    return 'Bonjour';
   };
 
   const today = format(new Date(), "EEEE d MMMM yyyy", { locale: fr });
@@ -40,7 +47,7 @@ export default function Home() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">
-          Bienvenue sur HubTeam {userName}
+          {getGreeting()} {userName}
         </h1>
         <p className="text-muted-foreground mt-1 capitalize">{today}</p>
       </div>
