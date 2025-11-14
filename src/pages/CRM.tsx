@@ -23,7 +23,9 @@ export default function CRM() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'grid'>('list');
-  const [sortBy, setSortBy] = useState<'created_at' | 'revenue_current_year'>('created_at');
+  const [sortBy, setSortBy] = useState<'created_at' | 'revenue_current_year' | 'alphabetical'>('created_at');
+  const [filterActive, setFilterActive] = useState(false);
+  const [filterWithProjects, setFilterWithProjects] = useState(false);
 
   useEffect(() => {
     fetchClients();
@@ -31,13 +33,24 @@ export default function CRM() {
 
   const fetchClients = async () => {
     try {
-      // Fetch clients and action statuses in parallel
-      const [{ data: clientsData, error: clientsError }, { data: statusesData, error: statusesError }] = await Promise.all([
-        supabase.from('clients').select('*').order('created_at', { ascending: false }),
-        supabase.from('client_statuses').select('id, name, color')
-      ]);
+      // Fetch clients with projects count
+      const { data: clientsData, error: clientsError } = await supabase
+        .from('clients')
+        .select(`
+          *,
+          project_clients(
+            project_id,
+            projects(id, status)
+          )
+        `)
+        .order('created_at', { ascending: false });
 
       if (clientsError) throw clientsError;
+
+      const { data: statusesData, error: statusesError } = await supabase
+        .from('client_statuses')
+        .select('id, name, color');
+
       if (statusesError) throw statusesError;
 
       const statusById = (statusesData || []).reduce<Record<string, { name: string; color: string }>>((acc, s) => {
@@ -45,11 +58,18 @@ export default function CRM() {
         return acc;
       }, {});
 
-      const withAction = (clientsData || []).map((c) => ({
-        ...c,
-        action_name: c.status_id ? statusById[c.status_id]?.name : undefined,
-        action_color: c.status_id ? statusById[c.status_id]?.color : undefined,
-      }));
+      const withAction = (clientsData || []).map((c) => {
+        const activeProjects = c.project_clients?.filter(
+          (pc: any) => pc.projects?.status === 'active'
+        ) || [];
+        
+        return {
+          ...c,
+          action_name: c.status_id ? statusById[c.status_id]?.name : undefined,
+          action_color: c.status_id ? statusById[c.status_id]?.color : undefined,
+          hasActiveProjects: activeProjects.length > 0,
+        };
+      });
 
       setClients(withAction);
     } catch (error) {
@@ -74,6 +94,16 @@ export default function CRM() {
       );
     }
     
+    // Apply active filter
+    if (filterActive) {
+      result = result.filter(client => client.active === true);
+    }
+    
+    // Apply projects filter
+    if (filterWithProjects) {
+      result = result.filter(client => client.hasActiveProjects === true);
+    }
+    
     // Apply sorting
     if (sortBy === 'revenue_current_year') {
       result = [...result].sort((a, b) => {
@@ -81,10 +111,16 @@ export default function CRM() {
         const bRevenue = b.revenue_current_year ?? 0;
         return bRevenue - aRevenue; // Descending order
       });
+    } else if (sortBy === 'alphabetical') {
+      result = [...result].sort((a, b) => {
+        const aName = a.company?.toLowerCase() || '';
+        const bName = b.company?.toLowerCase() || '';
+        return aName.localeCompare(bName);
+      });
     }
     
     return result;
-  }, [clients, searchQuery, sortBy]);
+  }, [clients, searchQuery, sortBy, filterActive, filterWithProjects]);
 
   const handleStageChange = async (clientId: string, newStage: string) => {
     try {
@@ -179,7 +215,7 @@ export default function CRM() {
 
       {/* Search bar and filters - Always visible */}
       {clients.length > 0 && (
-        <div className="flex-shrink-0 px-6 pb-4 bg-background">
+        <div className="flex-shrink-0 px-6 pb-4 bg-background space-y-3">
           <div className="flex gap-3 items-center">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -198,11 +234,30 @@ export default function CRM() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="created_at">Date de création</SelectItem>
+                  <SelectItem value="alphabetical">Ordre alphabétique</SelectItem>
                   <SelectItem value="revenue_current_year">CA année fiscale ↓</SelectItem>
                 </SelectContent>
               </Select>
             )}
           </div>
+          {!isMobile && (
+            <div className="flex gap-2">
+              <Button
+                variant={filterActive ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilterActive(!filterActive)}
+              >
+                Actifs uniquement
+              </Button>
+              <Button
+                variant={filterWithProjects ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilterWithProjects(!filterWithProjects)}
+              >
+                Projets en cours
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

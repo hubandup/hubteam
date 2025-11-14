@@ -721,7 +721,7 @@ export function ImportClientsValidationDialog({ onClientsImported }: ImportClien
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell className="font-medium">{client.company}</TableCell>
+                        <TableCell className="font-medium uppercase">{client.company}</TableCell>
                         <TableCell className="text-muted-foreground">{client.email}</TableCell>
                         <TableCell>
                           {client.first_name} {client.last_name}

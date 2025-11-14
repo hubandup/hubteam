@@ -43,7 +43,7 @@ export function ClientListView({ clients, onClientClick }: ClientListViewProps) 
             
             <div className="flex-1 min-w-0">
               <div className="flex flex-col">
-                <h3 className="text-base font-semibold truncate">{client.company}</h3>
+                <h3 className="text-base font-semibold truncate uppercase">{client.company}</h3>
                 <p className="text-xs text-muted-foreground font-medium">
                   {client.first_name} {client.last_name}
                 </p>

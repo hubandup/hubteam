@@ -336,7 +336,7 @@ export function ImportClientsDialog({ onClientsImported }: ImportClientsDialogPr
                               <td className="p-2">{client.first_name}</td>
                               <td className="p-2">{client.last_name}</td>
                               <td className="p-2">{client.email}</td>
-                              <td className="p-2">{client.company}</td>
+                              <td className="p-2 uppercase">{client.company}</td>
                               <td className="p-2">{client.phone || '-'}</td>
                               <td className="p-2">{client.active ? 'Oui' : 'Non'}</td>
                             </tr>
