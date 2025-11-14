@@ -18,6 +18,14 @@ interface NotificationPayload {
   };
 }
 
+interface DirectNotificationPayload {
+  userId: string;
+  title: string;
+  body: string;
+  url?: string;
+  badgeCount?: number;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -28,16 +36,47 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const payload = await req.json() as NotificationPayload;
-    const notification = payload.record;
+    const payload = await req.json() as NotificationPayload | DirectNotificationPayload;
+    
+    // Check if it's a database trigger payload or a direct API call
+    let userId: string;
+    let title: string;
+    let message: string;
+    let link: string | null;
+    let badgeCount = 0;
+    
+    if ('type' in payload && 'record' in payload) {
+      // Database trigger format
+      const notification = payload.record;
+      userId = notification.user_id;
+      title = notification.title;
+      message = notification.message;
+      link = notification.link;
+      
+      // Get unread count for database trigger calls
+      const { count } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('read', false);
+      
+      badgeCount = count || 0;
+    } else {
+      // Direct API call format
+      userId = payload.userId;
+      title = payload.title;
+      message = payload.body;
+      link = payload.url || null;
+      badgeCount = payload.badgeCount || 0;
+    }
 
-    console.log('Processing notification for push:', notification);
+    console.log('Processing notification for push:', { userId, title, message, link, badgeCount });
 
     // Check if user has push subscriptions
     const { data: subscriptions, error: subError } = await supabase
       .from('push_subscriptions')
       .select('*')
-      .eq('user_id', notification.user_id);
+      .eq('user_id', userId);
 
     if (subError) {
       console.error('Error fetching subscriptions:', subError);
@@ -48,7 +87,7 @@ serve(async (req) => {
     }
 
     if (!subscriptions || subscriptions.length === 0) {
-      console.log('No push subscriptions found for user:', notification.user_id);
+      console.log('No push subscriptions found for user:', userId);
       return new Response(
         JSON.stringify({ success: true, message: 'No subscriptions found' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
@@ -60,10 +99,11 @@ serve(async (req) => {
       'send-push-notification',
       {
         body: {
-          userId: notification.user_id,
-          title: notification.title,
-          body: notification.message,
-          url: notification.link || '/',
+          userId: userId,
+          title: title,
+          body: message,
+          url: link || '/',
+          badgeCount: badgeCount,
         },
       }
     );

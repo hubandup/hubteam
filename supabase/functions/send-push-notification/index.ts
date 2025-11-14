@@ -11,6 +11,7 @@ interface PushNotificationRequest {
   title: string;
   body: string;
   url?: string;
+  badgeCount?: number;
 }
 
 serve(async (req) => {
@@ -26,7 +27,7 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { userId, title, body, url } = await req.json() as PushNotificationRequest;
+    const { userId, title, body, url, badgeCount } = await req.json() as PushNotificationRequest;
 
     console.log('Sending push notification to user:', userId);
 
@@ -64,6 +65,7 @@ serve(async (req) => {
       url: url || '/',
       icon: '/icon-192.png',
       badge: '/icon-192.png',
+      badgeCount: badgeCount || 0,
     });
 
     const results = await Promise.allSettled(

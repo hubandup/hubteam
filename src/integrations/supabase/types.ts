@@ -47,6 +47,38 @@ export type Database = {
         }
         Relationships: []
       }
+      activity_reactions: {
+        Row: {
+          activity_id: string
+          created_at: string
+          id: string
+          reaction_type: string
+          user_id: string
+        }
+        Insert: {
+          activity_id: string
+          created_at?: string
+          id?: string
+          reaction_type: string
+          user_id: string
+        }
+        Update: {
+          activity_id?: string
+          created_at?: string
+          id?: string
+          reaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_reactions_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activity_log"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activity_sectors: {
         Row: {
           color: string
@@ -292,6 +324,47 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_contacts: {
+        Row: {
+          client_id: string
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_contacts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
@@ -626,6 +699,7 @@ export type Database = {
           deadline_approaching: boolean
           id: string
           mention: boolean
+          reaction: boolean
           task_assigned: boolean
           task_comment: boolean
           updated_at: string
@@ -636,6 +710,7 @@ export type Database = {
           deadline_approaching?: boolean
           id?: string
           mention?: boolean
+          reaction?: boolean
           task_assigned?: boolean
           task_comment?: boolean
           updated_at?: string
@@ -646,6 +721,7 @@ export type Database = {
           deadline_approaching?: boolean
           id?: string
           mention?: boolean
+          reaction?: boolean
           task_assigned?: boolean
           task_comment?: boolean
           updated_at?: string
@@ -903,6 +979,36 @@ export type Database = {
           start_date?: string | null
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string | null
+          endpoint: string
+          id: string
+          p256dh: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          p256dh: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1192,7 +1298,11 @@ export type Database = {
       app_role: "admin" | "team" | "client" | "agency"
       permission_action: "read" | "create" | "update" | "delete"
       permission_scope: "all" | "limited" | "own"
-      team_member_type: "profile" | "agency_contact" | "client"
+      team_member_type:
+        | "profile"
+        | "agency_contact"
+        | "client"
+        | "client_contact"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1341,7 +1451,12 @@ export const Constants = {
       app_role: ["admin", "team", "client", "agency"],
       permission_action: ["read", "create", "update", "delete"],
       permission_scope: ["all", "limited", "own"],
-      team_member_type: ["profile", "agency_contact", "client"],
+      team_member_type: [
+        "profile",
+        "agency_contact",
+        "client",
+        "client_contact",
+      ],
     },
   },
 } as const
