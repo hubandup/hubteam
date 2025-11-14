@@ -13,7 +13,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Trash2, Mail } from 'lucide-react';
+import { Plus, Trash2, Mail, UserPlus } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Contact {
   id: string;
@@ -30,6 +37,10 @@ export function AgencyContactsManager({ agencyId }: AgencyContactsManagerProps) 
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [inviteRole, setInviteRole] = useState<string>('agency');
+  const [inviting, setInviting] = useState(false);
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -95,6 +106,40 @@ export function AgencyContactsManager({ agencyId }: AgencyContactsManagerProps) 
     } catch (error) {
       console.error('Error deleting contact:', error);
       toast.error('Erreur lors de la suppression du contact');
+    }
+  };
+
+  const handleInviteContact = async () => {
+    if (!selectedContact) return;
+
+    setInviting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Vous devez être connecté pour inviter un utilisateur');
+        return;
+      }
+
+      const { error } = await supabase.functions.invoke('invite-user', {
+        body: {
+          email: selectedContact.email,
+          role: inviteRole,
+          firstName: selectedContact.first_name,
+          lastName: selectedContact.last_name,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success('Invitation envoyée avec succès');
+      setInviteDialogOpen(false);
+      setSelectedContact(null);
+      setInviteRole('agency');
+    } catch (error) {
+      console.error('Error inviting user:', error);
+      toast.error("Erreur lors de l'envoi de l'invitation");
+    } finally {
+      setInviting(false);
     }
   };
 
@@ -178,18 +223,84 @@ export function AgencyContactsManager({ agencyId }: AgencyContactsManagerProps) 
                     <span>{contact.email}</span>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDeleteContact(contact.id)}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedContact(contact);
+                      setInviteDialogOpen(true);
+                    }}
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Inviter
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteContact(contact.id)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
         )}
       </CardContent>
+
+      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Inviter {selectedContact?.first_name} {selectedContact?.last_name}</DialogTitle>
+            <DialogDescription>
+              Envoyer une invitation pour rejoindre la plateforme
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="invite-email">Email</Label>
+              <Input
+                id="invite-email"
+                type="email"
+                value={selectedContact?.email || ''}
+                disabled
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="invite-role">Rôle</Label>
+              <Select value={inviteRole} onValueChange={setInviteRole}>
+                <SelectTrigger id="invite-role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="agency">Agence</SelectItem>
+                  <SelectItem value="client">Client</SelectItem>
+                  <SelectItem value="team">Équipe</SelectItem>
+                  <SelectItem value="admin">Administrateur</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setInviteDialogOpen(false);
+                  setSelectedContact(null);
+                  setInviteRole('agency');
+                }}
+                disabled={inviting}
+              >
+                Annuler
+              </Button>
+              <Button onClick={handleInviteContact} disabled={inviting}>
+                {inviting ? 'Envoi...' : "Envoyer l'invitation"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
