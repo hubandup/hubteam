@@ -40,7 +40,7 @@ export function TodoList() {
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [convertProject, setConvertProject] = useState('');
-  const [clientFilter, setClientFilter] = useState('');
+  const [clientFilter, setClientFilter] = useState('all');
   const [hoveredTodoId, setHoveredTodoId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -223,14 +223,14 @@ export function TodoList() {
       setConvertDialogOpen(false);
       setSelectedTodo(null);
       setConvertProject('');
-      setClientFilter('');
+      setClientFilter('all');
     } catch (error) {
       console.error('Error converting todo:', error);
       toast.error('Erreur lors de la conversion');
     }
   };
 
-  const filteredProjects = clientFilter
+  const filteredProjects = clientFilter && clientFilter !== 'all'
     ? projects.filter(p => {
         // Check if project has this client
         return true; // We'll need to join with project_clients
@@ -390,7 +390,7 @@ export function TodoList() {
                     <SelectValue placeholder="Tous les clients" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tous les clients</SelectItem>
+                    <SelectItem value="all">Tous les clients</SelectItem>
                     {clients.map((client) => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.company}
@@ -417,7 +417,7 @@ export function TodoList() {
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => {
                   setConvertDialogOpen(false);
-                  setClientFilter('');
+                  setClientFilter('all');
                 }}>Annuler</Button>
                 <Button onClick={handleConvertToTask}>Convertir en tâche</Button>
               </div>
