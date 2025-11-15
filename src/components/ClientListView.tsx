@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Mail, Phone, Euro } from 'lucide-react';
+import { Building2, Mail, Phone, Euro, FolderOpen } from 'lucide-react';
 
 interface ClientListViewProps {
   clients: any[];
@@ -43,7 +43,14 @@ export function ClientListView({ clients, onClientClick }: ClientListViewProps) 
             
             <div className="flex-1 min-w-0">
               <div className="flex flex-col">
-                <h3 className="text-base font-semibold truncate uppercase">{client.company}</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-semibold truncate uppercase">{client.company}</h3>
+                  {client.kdrive_folder_id && (
+                    <div title="Connecté à kDrive">
+                      <FolderOpen className="h-4 w-4 text-primary flex-shrink-0" />
+                    </div>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground font-medium">
                   {client.first_name} {client.last_name}
                 </p>

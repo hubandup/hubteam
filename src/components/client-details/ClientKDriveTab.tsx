@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Loader2, Upload, Download, FolderIcon, FileIcon, FolderPlus, Trash2, ArrowUp, Home } from 'lucide-react';
+import { Loader2, Upload, Download, FolderIcon, FileIcon, FolderPlus, Trash2, ArrowUp, Home, CheckSquare, Square, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
+import { Checkbox } from '@/components/ui/checkbox';
 import { KDriveFolderSelector } from './KDriveFolderSelector';
 import { useUserRole } from '@/hooks/useUserRole';
 import {
@@ -56,6 +57,8 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
   const [hasMore, setHasMore] = useState(false);
   const [offset, setOffset] = useState(0);
   const [limit] = useState(50);
+  const [selectedFiles, setSelectedFiles] = useState<Set<number>>(new Set());
+  const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: number; name: string; path: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
@@ -80,6 +83,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
           path: clientData.kdrive_folder_path || '/',
           parentId: null
         });
+        setBreadcrumbs([{ id: parseInt(clientData.kdrive_folder_id), name: 'Racine', path: clientData.kdrive_folder_path || '/' }]);
         await loadFiles(clientData.kdrive_drive_id, clientData.kdrive_folder_id);
       } else if (clientData.kdrive_folder_id && !clientData.kdrive_drive_id) {
         // Folder is selected but drive is missing: set path for UI and prompt connection
@@ -210,12 +214,22 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     }
   };
 
-  const handleFolderClick = async (folderId: number, folderPath: string, parentId: number | null = null) => {
+  const handleFolderClick = async (folderId: number, folderName: string, folderPath: string, parentId: number | null = null) => {
     if (!client) return;
     setCurrentFolder({ id: folderId, path: folderPath, parentId });
     setFiles([]);
     setOffset(0);
     setHasMore(false);
+    setSelectedFiles(new Set());
+    
+    // Update breadcrumbs
+    const existingIndex = breadcrumbs.findIndex(b => b.id === folderId);
+    if (existingIndex >= 0) {
+      setBreadcrumbs(breadcrumbs.slice(0, existingIndex + 1));
+    } else {
+      setBreadcrumbs([...breadcrumbs, { id: folderId, name: folderName, path: folderPath }]);
+    }
+    
     await loadFiles(client.kdrive_drive_id, folderId.toString(), false, 0);
   };
 
@@ -229,6 +243,8 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     setFiles([]);
     setOffset(0);
     setHasMore(false);
+    setSelectedFiles(new Set());
+    setBreadcrumbs([{ id: parseInt(client.kdrive_folder_id), name: 'Racine', path: client.kdrive_folder_path || '/' }]);
     await loadFiles(client.kdrive_drive_id, client.kdrive_folder_id, false, 0);
   };
 
@@ -248,6 +264,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
       
       const parentPath = (data as any)?.file?.path || '/';
       const grandParentId = (data as any)?.file?.parent_id || null;
+      const parentName = (data as any)?.file?.name || 'Dossier';
       
       setCurrentFolder({ 
         id: currentFolder.parentId, 
@@ -257,6 +274,14 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
       setFiles([]);
       setOffset(0);
       setHasMore(false);
+      setSelectedFiles(new Set());
+      
+      // Update breadcrumbs
+      const existingIndex = breadcrumbs.findIndex(b => b.id === currentFolder.parentId);
+      if (existingIndex >= 0) {
+        setBreadcrumbs(breadcrumbs.slice(0, existingIndex + 1));
+      }
+      
       await loadFiles(client.kdrive_drive_id, currentFolder.parentId.toString(), false, 0);
     } catch (error) {
       console.error('Error navigating to parent:', error);
@@ -309,6 +334,11 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
 
       toast.success(`${deleteItem.type === 'dir' ? 'Dossier' : 'Fichier'} supprimé avec succès`);
       setDeleteItem(null);
+      setSelectedFiles(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(deleteItem.id);
+        return newSet;
+      });
       await loadFiles(client.kdrive_drive_id, currentFolder.id.toString());
     } catch (error) {
       console.error('Error deleting:', error);
@@ -316,6 +346,88 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedFiles.size === 0 || !client || !currentFolder) return;
+
+    const selectedArray = Array.from(selectedFiles);
+    const confirmed = window.confirm(`Êtes-vous sûr de vouloir supprimer ${selectedArray.length} élément(s) ?`);
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      const deletePromises = selectedArray.map(fileId => {
+        const file = files.find(f => f.id === fileId);
+        if (!file) return Promise.resolve();
+
+        return supabase.functions.invoke('kdrive-api', {
+          body: {
+            action: file.type === 'dir' ? 'delete-folder' : 'delete-file',
+            driveId: client.kdrive_drive_id,
+            fileId: fileId.toString(),
+          },
+        });
+      });
+
+      await Promise.all(deletePromises);
+      toast.success(`${selectedArray.length} élément(s) supprimé(s) avec succès`);
+      setSelectedFiles(new Set());
+      await loadFiles(client.kdrive_drive_id, currentFolder.id.toString());
+    } catch (error) {
+      console.error('Error bulk deleting:', error);
+      toast.error('Erreur lors de la suppression groupée');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleBulkDownload = async () => {
+    if (selectedFiles.size === 0 || !client) return;
+
+    const selectedArray = Array.from(selectedFiles);
+    toast.info(`Téléchargement de ${selectedArray.length} fichier(s)...`);
+
+    for (const fileId of selectedArray) {
+      const file = files.find(f => f.id === fileId);
+      if (file && file.type === 'file') {
+        await handleDownload(fileId, file.name);
+      }
+    }
+  };
+
+  const toggleFileSelection = (fileId: number) => {
+    setSelectedFiles(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(fileId)) {
+        newSet.delete(fileId);
+      } else {
+        newSet.add(fileId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedFiles.size === files.length) {
+      setSelectedFiles(new Set());
+    } else {
+      setSelectedFiles(new Set(files.map(f => f.id)));
+    }
+  };
+
+  const handleBreadcrumbClick = async (breadcrumb: { id: number; name: string; path: string }) => {
+    if (!client) return;
+    setCurrentFolder({ id: breadcrumb.id, path: breadcrumb.path, parentId: null });
+    setFiles([]);
+    setOffset(0);
+    setHasMore(false);
+    setSelectedFiles(new Set());
+    
+    const index = breadcrumbs.findIndex(b => b.id === breadcrumb.id);
+    setBreadcrumbs(breadcrumbs.slice(0, index + 1));
+    
+    await loadFiles(client.kdrive_drive_id, breadcrumb.id.toString(), false, 0);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -371,9 +483,28 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
           )}
         </div>
       )}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="flex gap-1">
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-sm">
+          <FolderIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <div className="flex items-center gap-1 overflow-x-auto">
+            {breadcrumbs.map((breadcrumb, index) => (
+              <div key={breadcrumb.id} className="flex items-center gap-1">
+                <button
+                  onClick={() => handleBreadcrumbClick(breadcrumb)}
+                  className="text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+                >
+                  {breadcrumb.name}
+                </button>
+                {index < breadcrumbs.length - 1 && (
+                  <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
@@ -393,41 +524,58 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
                 <ArrowUp className="h-4 w-4" />
               </Button>
             )}
-          </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground overflow-hidden">
-            <FolderIcon className="h-4 w-4 flex-shrink-0" />
-            <span className="truncate">{currentFolder?.path || '/'}</span>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsCreateFolderOpen(true)}
-            disabled={!client?.kdrive_drive_id || !currentFolder}
-          >
-            <FolderPlus className="h-4 w-4 mr-2" />
-            Nouveau dossier
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={uploading || !client?.kdrive_drive_id || !currentFolder}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {uploading ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Upload className="h-4 w-4 mr-2" />
+            {selectedFiles.size > 0 && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkDownload}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Télécharger ({selectedFiles.size})
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkDelete}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Supprimer ({selectedFiles.size})
+                </Button>
+              </>
             )}
-            Téléverser
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
-          />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsCreateFolderOpen(true)}
+              disabled={!client?.kdrive_drive_id || !currentFolder}
+            >
+              <FolderPlus className="h-4 w-4 mr-2" />
+              Nouveau dossier
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={uploading || !client?.kdrive_drive_id || !currentFolder}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {uploading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4 mr-2" />
+              )}
+              Téléverser
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+            />
+          </div>
         </div>
       </div>
 
@@ -457,61 +605,80 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
         )}
       </div>
 
-      <div className="grid gap-2">
+      <div className="space-y-2">
+        {files.length > 0 && (
+          <div className="flex items-center gap-2 p-2 border rounded-lg bg-muted/30">
+            <Checkbox
+              checked={selectedFiles.size === files.length}
+              onCheckedChange={toggleSelectAll}
+            />
+            <span className="text-sm text-muted-foreground">
+              {selectedFiles.size > 0 ? `${selectedFiles.size} élément(s) sélectionné(s)` : 'Tout sélectionner'}
+            </span>
+          </div>
+        )}
+
         {files.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">
             Aucun fichier ou dossier
           </p>
         ) : (
-          files.map((file) => (
-            <Card key={file.id} className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {file.type === 'dir' ? (
-                    <FolderIcon className="h-5 w-5 text-primary" />
-                  ) : (
-                    <FileIcon className="h-5 w-5 text-muted-foreground" />
-                  )}
-                  <div>
-                    <p className="font-medium">{file.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {file.type === 'dir' ? 'Dossier' : formatFileSize(file.size)}
-                    </p>
+          <div className="grid gap-2">
+            {files.map((file) => (
+              <Card key={file.id} className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      checked={selectedFiles.has(file.id)}
+                      onCheckedChange={() => toggleFileSelection(file.id)}
+                    />
+                    {file.type === 'dir' ? (
+                      <FolderIcon className="h-5 w-5 text-primary" />
+                    ) : (
+                      <FileIcon className="h-5 w-5 text-muted-foreground" />
+                    )}
+                    <div>
+                      <p className="font-medium">{file.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {file.type === 'dir' ? 'Dossier' : formatFileSize(file.size)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {file.type === 'dir' ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleFolderClick(
+                          file.id,
+                          file.name,
+                          (file as any).path || `${currentFolder?.path || ''}/${file.name}`,
+                          currentFolder?.id || null
+                        )}
+                      >
+                        Ouvrir
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDownload(file.id, file.name)}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDeleteItem({ id: file.id, name: file.name, type: file.type })}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  {file.type === 'dir' ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleFolderClick(
-                        file.id,
-                        (file as any).path || `${currentFolder?.path || ''}/${file.name}`,
-                        currentFolder?.id || null
-                      )}
-                    >
-                      Ouvrir
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDownload(file.id, file.name)}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setDeleteItem({ id: file.id, name: file.name, type: file.type })}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))
+              </Card>
+            ))}
+          </div>
         )}
       </div>
 
