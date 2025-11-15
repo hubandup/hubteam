@@ -9,6 +9,7 @@ const corsHeaders = {
 
 const KDRIVE_API_BASE = 'https://api.infomaniak.com';
 const KDRIVE_TOKEN = Deno.env.get('KDRIVE_API_TOKEN');
+const KDRIVE_PRODUCT_ID = Deno.env.get('KDRIVE_PRODUCT_ID') || '969307'; // Hub & Up
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -43,208 +44,271 @@ serve(async (req) => {
 
     switch (action) {
       case 'check-permissions':
-        // Check both kDrive and product listing to infer required scopes
-        const missingScopes: string[] = [];
-        let errorDetails = '';
-        
-        // 1) Check kDrive scopes
-        const driveResp = await fetch(`${KDRIVE_API_BASE}/1/kdrive`, { headers: kdriveHeaders });
-        let driveOk = driveResp.ok;
-        const driveData = await driveResp.json().catch(() => ({}));
-        
-        console.log('KDrive endpoint response:', { status: driveResp.status, ok: driveOk, data: driveData });
-        
-        if (!driveOk) {
-          errorDetails = driveData?.error?.description || driveData?.error?.code || 'Unknown error';
-          if (driveData?.error?.context?.scopes) {
-            missingScopes.push(...driveData.error.context.scopes);
-          }
-        }
-        
-        // 2) Check product read (some accounts expose drives under products)
+        // Only check product endpoint since we use product-based access
         const productResp = await fetch(`${KDRIVE_API_BASE}/1/product`, { headers: kdriveHeaders });
-        let productOk = productResp.ok;
+        const productOk = productResp.ok;
         const productData = await productResp.json().catch(() => ({}));
         
         console.log('Product endpoint response:', { status: productResp.status, ok: productOk, data: productData });
         
         if (!productOk) {
-          if (!errorDetails) {
-            errorDetails = productData?.error?.description || productData?.error?.code || 'Unknown error';
-          }
-          if (productData?.error?.context?.scopes) {
-            for (const s of productData.error.context.scopes) {
-              if (!missingScopes.includes(s)) missingScopes.push(s);
-            }
-          }
-        }
-        
-        const hasRequiredScopes = driveOk && productOk;
-        
-        return new Response(
-          JSON.stringify({ 
-            hasRequiredScopes,
-            missingScopes: missingScopes.length > 0 ? missingScopes : undefined,
-            errorDetails: !hasRequiredScopes ? errorDetails : undefined,
-            message: hasRequiredScopes 
-              ? 'Token valide avec les permissions nécessaires' 
-              : 'Le token n\'a pas les permissions requises pour accéder à kDrive'
-          }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
-        
-      case 'list-drives':
-      case 'list-drives':
-        // Strategy: try dedicated kDrive listing, then fallback to products
-        // 1) Try /1/kdrive
-        let drivesResp = await fetch(`${KDRIVE_API_BASE}/1/kdrive`, { headers: kdriveHeaders });
-        if (drivesResp.ok) {
-          const d = await drivesResp.json();
-          return new Response(JSON.stringify({ data: d.data || [] }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-        // 2) Fallback to /1/product and extract kdrives if present
-        const productsResp = await fetch(`${KDRIVE_API_BASE}/1/product`, { headers: kdriveHeaders });
-        if (!productsResp.ok) {
-          const err = await productsResp.json().catch(() => ({}));
-          console.error('Products API error:', err);
-          throw new Error('Failed to list kDrive');
-        }
-        const products = await productsResp.json();
-        const drives: any[] = [];
-        if (products?.data) {
-          for (const p of products.data) {
-            if (p?.kdrives) drives.push(...p.kdrives);
-            if (p?.kdrive) drives.push(p.kdrive);
-          }
-        }
-        return new Response(JSON.stringify({ data: drives }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-        break;
-
-      case 'list-files':
-        if (!driveId || !folderId) {
-          throw new Error('driveId and folderId are required');
-        }
-        response = await fetch(
-          `${KDRIVE_API_BASE}/2/drive/${driveId}/files/${folderId}?with=capabilities,categories,conversion,dropbox,path,users`,
-          {
-            headers: kdriveHeaders,
-          }
-        );
-        break;
-
-      case 'create-folder':
-        if (!driveId || !parentId || !folderPath) {
-          throw new Error('driveId, parentId, and folderPath are required');
-        }
-        response = await fetch(`${KDRIVE_API_BASE}/2/drive/${driveId}/files/${parentId}/directory`, {
-          method: 'POST',
-          headers: kdriveHeaders,
-          body: JSON.stringify({
-            name: folderPath.split('/').pop(),
-          }),
-        });
-        break;
-
-      case 'search-folder':
-        if (!driveId || !folderPath) {
-          throw new Error('driveId and folderPath are required');
-        }
-        // Search for folder by path
-        response = await fetch(
-          `${KDRIVE_API_BASE}/2/drive/${driveId}/files/search?query=${encodeURIComponent(folderPath)}&types=dir`,
-          {
-            headers: kdriveHeaders,
-          }
-        );
-        break;
-
-      case 'upload-file':
-        if (!driveId || !folderId || !fileName || !fileContent) {
-          throw new Error('driveId, folderId, fileName, and fileContent are required');
-        }
-        
-        // Decode base64 content
-        const binaryData = Uint8Array.from(atob(fileContent), c => c.charCodeAt(0));
-        
-        const formData = new FormData();
-        formData.append('file', new Blob([binaryData]), fileName);
-        
-        response = await fetch(`${KDRIVE_API_BASE}/2/drive/${driveId}/files/${folderId}/upload`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${KDRIVE_TOKEN}`,
-          },
-          body: formData,
-        });
-        break;
-
-      case 'download-file':
-        if (!driveId || !folderId) {
-          throw new Error('driveId and folderId are required');
-        }
-        response = await fetch(`${KDRIVE_API_BASE}/2/drive/${driveId}/files/${folderId}/download`, {
-          headers: kdriveHeaders,
-        });
-        
-        if (response.ok) {
-          const blob = await response.blob();
-          const arrayBuffer = await blob.arrayBuffer();
-          const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-          
+          const errorDetails = productData?.error?.description || productData?.error?.code || 'Unknown error';
           return new Response(
             JSON.stringify({ 
-              success: true, 
-              content: base64,
-              contentType: response.headers.get('content-type') 
+              hasRequiredScopes: false,
+              errorDetails,
+              message: 'Le token n\'a pas les permissions requises pour accéder aux produits'
             }),
-            {
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Check if our configured product exists
+        const products = productData?.data || [];
+        const configuredProduct = products.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
+        
+        if (!configuredProduct) {
+          return new Response(
+            JSON.stringify({ 
+              hasRequiredScopes: false,
+              errorDetails: `Produit kDrive ${KDRIVE_PRODUCT_ID} non trouvé`,
+              message: 'Le produit kDrive configuré n\'est pas accessible avec ce token'
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ 
+            hasRequiredScopes: true,
+            message: 'Token valide avec accès au kDrive Hub & Up'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+        
+      case 'list-drives':
+        // Return the fixed drive from products
+        const productsResp = await fetch(`${KDRIVE_API_BASE}/1/product`, { headers: kdriveHeaders });
+        
+        if (!productsResp.ok) {
+          console.error('Failed to load products:', productsResp.status);
+          return new Response(
+            JSON.stringify({ data: [], error: 'Failed to load products' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const productsData = await productsResp.json();
+        const allProducts = productsData?.data || [];
+        const driveProduct = allProducts.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
+
+        if (!driveProduct) {
+          console.error('Configured kDrive product not found');
+          return new Response(
+            JSON.stringify({ data: [], error: 'Configured kDrive not found' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Return drive info based on product
+        const drive = {
+          id: driveProduct.id,
+          name: driveProduct.customer_name || 'Hub & Up',
+          account_id: driveProduct.account_id,
+        };
+
+        console.log('Returning drive:', drive);
+
+        return new Response(
+          JSON.stringify({ data: [drive] }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+
+      case 'list-files':
+        const targetDriveId = driveId || KDRIVE_PRODUCT_ID;
+        const targetFolderId = folderId || 1; // Root folder by default
+        
+        response = await fetch(
+          `${KDRIVE_API_BASE}/2/drive/${targetDriveId}/files/${targetFolderId}/directory`,
+          { headers: kdriveHeaders }
+        );
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Error listing files:', response.status, errorData);
+          return new Response(
+            JSON.stringify({ error: 'Failed to list files', details: errorData }),
+            { 
+              status: response.status,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
             }
           );
         }
         break;
 
-      case 'get-folder-info':
-        if (!driveId || !folderId) {
-          throw new Error('driveId and folderId are required');
+      case 'create-folder':
+        const createDriveId = driveId || KDRIVE_PRODUCT_ID;
+        const createParentId = parentId || 1;
+        
+        response = await fetch(
+          `${KDRIVE_API_BASE}/2/drive/${createDriveId}/files/${createParentId}/directory`,
+          {
+            method: 'POST',
+            headers: kdriveHeaders,
+            body: JSON.stringify({ name: fileName })
+          }
+        );
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Error creating folder:', response.status, errorData);
+          return new Response(
+            JSON.stringify({ error: 'Failed to create folder', details: errorData }),
+            { 
+              status: response.status,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
         }
-        response = await fetch(`${KDRIVE_API_BASE}/2/drive/${driveId}/files/${folderId}`, {
-          headers: kdriveHeaders,
-        });
+        break;
+
+      case 'search-folder':
+        const searchDriveId = driveId || KDRIVE_PRODUCT_ID;
+        
+        response = await fetch(
+          `${KDRIVE_API_BASE}/2/drive/${searchDriveId}/files/search?query=${encodeURIComponent(folderPath || '')}`,
+          { headers: kdriveHeaders }
+        );
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Error searching folder:', response.status, errorData);
+          return new Response(
+            JSON.stringify({ error: 'Failed to search folder', details: errorData }),
+            { 
+              status: response.status,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        break;
+
+      case 'upload-file':
+        const uploadDriveId = driveId || KDRIVE_PRODUCT_ID;
+        const uploadFolderId = folderId || 1;
+        
+        // Decode base64 content
+        const binaryString = atob(fileContent);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        response = await fetch(
+          `${KDRIVE_API_BASE}/2/drive/${uploadDriveId}/files/${uploadFolderId}/upload`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${KDRIVE_TOKEN}`,
+              'Content-Type': 'application/octet-stream',
+              'X-Filename': encodeURIComponent(fileName || 'file'),
+            },
+            body: bytes
+          }
+        );
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Error uploading file:', response.status, errorData);
+          return new Response(
+            JSON.stringify({ error: 'Failed to upload file', details: errorData }),
+            { 
+              status: response.status,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        break;
+
+      case 'download-file':
+        const downloadDriveId = driveId || KDRIVE_PRODUCT_ID;
+        const fileId = folderId; // For download, folderId is actually the file ID
+        
+        response = await fetch(
+          `${KDRIVE_API_BASE}/2/drive/${downloadDriveId}/files/${fileId}/download`,
+          { headers: kdriveHeaders }
+        );
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Error downloading file:', response.status, errorData);
+          return new Response(
+            JSON.stringify({ error: 'Failed to download file', details: errorData }),
+            { 
+              status: response.status,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        
+        // Convert to base64
+        const arrayBuffer = await response.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        let binary = '';
+        for (let i = 0; i < uint8Array.byteLength; i++) {
+          binary += String.fromCharCode(uint8Array[i]);
+        }
+        const base64 = btoa(binary);
+        
+        return new Response(
+          JSON.stringify({ data: base64 }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+
+      case 'get-folder-info':
+        const infoDriveId = driveId || KDRIVE_PRODUCT_ID;
+        const infoFolderId = folderId || 1;
+        
+        response = await fetch(
+          `${KDRIVE_API_BASE}/2/drive/${infoDriveId}/files/${infoFolderId}`,
+          { headers: kdriveHeaders }
+        );
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Error getting folder info:', response.status, errorData);
+          return new Response(
+            JSON.stringify({ error: 'Failed to get folder info', details: errorData }),
+            { 
+              status: response.status,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
         break;
 
       default:
-        throw new Error('Invalid action');
-    }
-
-    if (!response) {
-      throw new Error('No response from KDrive API');
+        return new Response(
+          JSON.stringify({ error: 'Invalid action' }),
+          { 
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
     }
 
     const data = await response.json();
-    
-    if (!response.ok) {
-      console.error('KDrive API error:', data);
-      throw new Error(data.error || 'KDrive API error');
-    }
-
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error: any) {
-    console.error('Error in kdrive-api function:', error);
+    console.error('KDrive API error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      {
+      JSON.stringify({ error: error.message || 'Internal server error' }),
+      { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
   }
