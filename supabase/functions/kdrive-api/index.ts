@@ -472,9 +472,29 @@ serve(async (req) => {
     }
 
     let data = await response.json();
+    console.log('Raw API response for list-files:', { 
+      action, 
+      targetFolderId: listTargetFolderId, 
+      dataLength: data?.data?.length,
+      sampleItems: data?.data?.slice(0, 3).map((f: any) => ({ id: f.id, name: f.name, parent_id: f.parent_id, type: f.type }))
+    });
+    
     if (action === 'list-files' && listTargetFolderId !== undefined && data && Array.isArray(data.data)) {
       const targetIdNum = Number(listTargetFolderId);
-      const filtered = data.data.filter((item: any) => item.parent_id === targetIdNum || String(item.parent_id) === String(listTargetFolderId));
+      const targetIdStr = String(listTargetFolderId);
+      console.log('Filtering with:', { targetIdNum, targetIdStr, totalItems: data.data.length });
+      
+      const filtered = data.data.filter((item: any) => {
+        const itemParentNum = Number(item.parent_id);
+        const itemParentStr = String(item.parent_id);
+        const matches = itemParentNum === targetIdNum || itemParentStr === targetIdStr;
+        if (!matches) {
+          console.log('Filtered out:', { name: item.name, parent_id: item.parent_id, expected: targetIdStr });
+        }
+        return matches;
+      });
+      
+      console.log('After filtering:', { filteredLength: filtered.length });
       data = { ...data, data: filtered };
     }
     return new Response(JSON.stringify(data), {
