@@ -433,7 +433,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
             variant="ghost"
             size="icon"
             onClick={() => setIsCreateFolderOpen(true)}
-            disabled={!client?.kdrive_drive_id || !currentFolder}
+            disabled={!currentFolder}
             title="Nouveau dossier"
           >
             <FolderPlus className="h-4 w-4" />
@@ -441,7 +441,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
           <Button
             variant="ghost"
             size="icon"
-            disabled={uploading || !client?.kdrive_drive_id || !currentFolder}
+            disabled={uploading || !currentFolder}
             onClick={() => {
               console.log('Upload button clicked, showDropZone:', showDropZone);
               setShowDropZone(!showDropZone);
