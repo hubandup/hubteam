@@ -67,6 +67,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
   const [limit] = useState(50);
   const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: number; name: string; path: string }>>([]);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [showDropZone, setShowDropZone] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -359,6 +360,21 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     await loadFiles(client.kdrive_drive_id, breadcrumb.id.toString(), false, 0);
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileUpload(e.dataTransfer.files);
+      setShowDropZone(false);
+    }
+  };
+
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return "-";
     const sizes = ["B", "KB", "MB", "GB"];
@@ -406,7 +422,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={handleGoToRoot}
             title="Retour à la racine"
             disabled={!client?.kdrive_drive_id}
@@ -424,12 +440,12 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
           </Button>
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             disabled={uploading || !client?.kdrive_drive_id || !currentFolder}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => setShowDropZone(!showDropZone)}
+            title="Téléverser des fichiers"
           >
-            {uploading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-            Téléverser
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
           </Button>
           <input
             ref={fileInputRef}
@@ -446,6 +462,20 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
           A↔Z {sortOrder === "asc" ? "↓" : "↑"}
         </Button>
       </div>
+
+      {showDropZone && (
+        <div
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          className="rounded-lg border-2 border-dashed border-primary bg-primary/5 p-8 text-center cursor-pointer"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <div className="flex flex-col items-center gap-2">
+            <Upload className="h-8 w-8 text-primary" />
+            <p className="text-sm font-medium text-primary">Glissez-déposez un fichier ici ou cliquez pour sélectionner</p>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-2">
 
