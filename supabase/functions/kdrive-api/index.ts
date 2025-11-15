@@ -75,33 +75,46 @@ serve(async (req) => {
           );
         }
 
-        // Now verify API v2 access to the target folder
-        const driveIdToTest = configuredProduct.unique_id;
-        const targetTestFolder = folderId || rootFolderId || 1;
+        // Verify API v3 access using last_modified endpoint (same as user's successful curl)
+        const driveIdToTest = configuredProduct.id; // Use product ID, not unique_id
+        console.log('Testing API v3 access:', { 
+          url: `${KDRIVE_API_BASE}/3/drive/${driveIdToTest}/files/last_modified?limit=1`,
+          driveId: driveIdToTest,
+          token: KDRIVE_TOKEN ? `${KDRIVE_TOKEN.substring(0, 10)}...` : 'MISSING'
+        });
+        
         const filesTest = await fetch(
-          `${KDRIVE_API_BASE}/2/drive/${driveIdToTest}/files?parent_id=${targetTestFolder}`,
+          `${KDRIVE_API_BASE}/3/drive/${driveIdToTest}/files/last_modified?limit=1`,
           { headers: kdriveHeaders }
         );
 
         if (!filesTest.ok) {
           const err = await filesTest.json().catch(() => ({}));
           const errorDetails = err?.error?.description || err?.error?.code || `HTTP ${filesTest.status}`;
+          console.error('API v3 test failed:', { status: filesTest.status, error: err });
           return new Response(
             JSON.stringify({ 
               hasRequiredScopes: false,
               errorDetails,
               message: filesTest.status === 401 
-                ? "Le token n'a pas les droits API v2 (lecture) sur ce kDrive"
-                : "Échec d'accès au dossier cible via l'API v2"
+                ? "Le token n'a pas les droits API v3 (lecture) sur ce kDrive"
+                : "Échec d'accès au kDrive via l'API v3",
+              debugInfo: {
+                testedUrl: `${KDRIVE_API_BASE}/3/drive/${driveIdToTest}/files/last_modified`,
+                driveId: driveIdToTest,
+                status: filesTest.status
+              }
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
+        
+        console.log('API v3 test successful');
 
         return new Response(
           JSON.stringify({ 
             hasRequiredScopes: true,
-            message: 'Token valide avec accès API v2 au kDrive et au dossier'
+            message: 'Token valide avec accès API v3 au kDrive'
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
@@ -130,12 +143,12 @@ serve(async (req) => {
           );
         }
 
-        // IMPORTANT: Use unique_id as the drive ID for API v2 calls, not the product ID
+        // Use product ID directly (not unique_id which doesn't exist in API response)
         const drive = {
-          id: driveProduct.unique_id, // This is the actual kDrive ID for API calls
+          id: driveProduct.id, // Use product ID for API v3 calls
           name: driveProduct.customer_name || 'Hub & Up',
           account_id: driveProduct.account_id,
-          product_id: driveProduct.id, // Keep product ID for reference
+          product_id: driveProduct.id,
         };
 
         console.log('Returning drive:', drive);
@@ -146,7 +159,7 @@ serve(async (req) => {
         );
 
       case 'list-files':
-        // Build candidate drive IDs: provided one (if any) and the configured product's unique_id
+        // Build candidate drive IDs: use product ID (not unique_id)
         let providedDriveId = driveId;
         let productDriveId: string | undefined;
         try {
@@ -154,7 +167,7 @@ serve(async (req) => {
           if (productsResp.ok) {
             const productsData = await productsResp.json();
             const driveProduct = productsData?.data?.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
-            productDriveId = driveProduct?.unique_id?.toString();
+            productDriveId = driveProduct?.id?.toString();
           }
         } catch (_) {}
 
@@ -213,7 +226,7 @@ serve(async (req) => {
           if (productsResp.ok) {
             const productsData = await productsResp.json();
             const driveProduct = productsData?.data?.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
-            createDriveId = driveProduct?.unique_id;
+            createDriveId = driveProduct?.id;
           }
         }
         
@@ -259,7 +272,7 @@ serve(async (req) => {
           if (productsResp.ok) {
             const productsData = await productsResp.json();
             const driveProduct = productsData?.data?.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
-            searchDriveId = driveProduct?.unique_id;
+            searchDriveId = driveProduct?.id;
           }
         }
         
@@ -299,7 +312,7 @@ serve(async (req) => {
           if (productsResp.ok) {
             const productsData = await productsResp.json();
             const driveProduct = productsData?.data?.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
-            uploadDriveId = driveProduct?.unique_id;
+            uploadDriveId = driveProduct?.id;
           }
         }
         
@@ -356,7 +369,7 @@ serve(async (req) => {
           if (productsResp.ok) {
             const productsData = await productsResp.json();
             const driveProduct = productsData?.data?.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
-            downloadDriveId = driveProduct?.unique_id;
+            downloadDriveId = driveProduct?.id;
           }
         }
         
@@ -411,7 +424,7 @@ serve(async (req) => {
           if (productsResp.ok) {
             const productsData = await productsResp.json();
             const driveProduct = productsData?.data?.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
-            infoDriveId = driveProduct?.unique_id;
+            infoDriveId = driveProduct?.id;
           }
         }
         
