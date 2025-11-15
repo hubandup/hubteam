@@ -71,24 +71,20 @@ export function KDriveFolderSelector({ clientId, clientName, onFolderConnected }
 
       if (error) throw error;
 
-      console.log('Drives loaded:', data);
-      setDrives(data.data || []);
+      console.log('Drive loaded:', data);
       
-      // Check if client already has a saved drive
-      const { data: clientData } = await supabase
-        .from('clients')
-        .select('kdrive_drive_id')
-        .eq('id', clientId)
-        .single();
-
-      if (clientData?.kdrive_drive_id && data.data?.some((d: any) => d.id === clientData.kdrive_drive_id)) {
-        setSelectedDrive(clientData.kdrive_drive_id);
-      } else if (data.data && data.data.length > 0) {
-        setSelectedDrive(data.data[0].id);
+      if (data.data && data.data.length > 0) {
+        const fixedDrive = data.data[0]; // Always use the fixed Hub & Up drive
+        setDrives([fixedDrive]);
+        setSelectedDrive(fixedDrive.id);
+        
+        console.log('Using fixed kDrive:', fixedDrive);
+      } else {
+        toast.error('Aucun drive kDrive configuré');
       }
     } catch (error: any) {
-      console.error('Error loading drives:', error);
-      toast.error('Erreur lors du chargement des drives');
+      console.error('Error loading drive:', error);
+      toast.error('Erreur lors du chargement du drive kDrive');
     } finally {
       setLoading(false);
     }
@@ -319,35 +315,32 @@ export function KDriveFolderSelector({ clientId, clientName, onFolderConnected }
             {permissionStatus === 'error' && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Problème de permissions</AlertTitle>
+                <AlertTitle>Problème de connexion</AlertTitle>
                 <AlertDescription>
                   {permissionMessage}
                   <br />
                   <span className="text-sm mt-2 block">
-                    Pour créer un token valide : <br />
-                    1. Allez dans le Manager Infomaniak → API Tokens<br />
-                    2. Créez un nouveau token en sélectionnant le produit <strong>"kDrive"</strong><br />
-                    3. Copiez le token et mettez-le à jour dans les secrets
+                    Assurez-vous que le token a accès au produit kDrive "Hub & Up" (ID: 969307)
                   </span>
                 </AlertDescription>
               </Alert>
             )}
 
-            {/* Drive Selection */}
-            {drives.length > 1 && (
-              <div>
-                <Label>Sélectionnez un kDrive</Label>
-                <select
-                  className="w-full mt-2 p-2 border rounded-md"
-                  value={selectedDrive || ''}
-                  onChange={(e) => setSelectedDrive(Number(e.target.value))}
-                >
-                  {drives.map((drive) => (
-                    <option key={drive.id} value={drive.id}>
-                      {drive.name}
-                    </option>
-                  ))}
-                </select>
+            {/* Drive Info */}
+            {drives.length === 0 && !loading && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Aucun drive trouvé</AlertTitle>
+                <AlertDescription>
+                  Le kDrive Hub & Up n'est pas accessible. Vérifiez la configuration du token.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {drives.length > 0 && (
+              <div className="bg-muted p-3 rounded-md">
+                <p className="text-sm font-medium">Drive kDrive: {drives[0].name}</p>
+                <p className="text-xs text-muted-foreground">ID: {drives[0].id}</p>
               </div>
             )}
 
