@@ -110,11 +110,12 @@ serve(async (req) => {
           );
         }
 
-        // Return drive info based on product
+        // IMPORTANT: Use unique_id as the drive ID for API v2 calls, not the product ID
         const drive = {
-          id: driveProduct.id,
+          id: driveProduct.unique_id, // This is the actual kDrive ID for API calls
           name: driveProduct.customer_name || 'Hub & Up',
           account_id: driveProduct.account_id,
+          product_id: driveProduct.id, // Keep product ID for reference
         };
 
         console.log('Returning drive:', drive);
@@ -125,8 +126,30 @@ serve(async (req) => {
         );
 
       case 'list-files':
-        const targetDriveId = driveId || KDRIVE_PRODUCT_ID;
+        // If no driveId provided, get it from the product
+        let targetDriveId = driveId;
+        if (!targetDriveId) {
+          const productsResp = await fetch(`${KDRIVE_API_BASE}/1/product`, { headers: kdriveHeaders });
+          if (productsResp.ok) {
+            const productsData = await productsResp.json();
+            const driveProduct = productsData?.data?.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
+            targetDriveId = driveProduct?.unique_id;
+          }
+        }
+        
+        if (!targetDriveId) {
+          return new Response(
+            JSON.stringify({ error: 'Drive ID not found' }),
+            { 
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        
         const targetFolderId = folderId || 1; // Root folder by default
+        
+        console.log('Listing files for drive:', targetDriveId, 'folder:', targetFolderId);
         
         response = await fetch(
           `${KDRIVE_API_BASE}/2/drive/${targetDriveId}/files/${targetFolderId}/directory`,
@@ -147,7 +170,27 @@ serve(async (req) => {
         break;
 
       case 'create-folder':
-        const createDriveId = driveId || KDRIVE_PRODUCT_ID;
+        // Get the actual drive ID from product if not provided
+        let createDriveId = driveId;
+        if (!createDriveId) {
+          const productsResp = await fetch(`${KDRIVE_API_BASE}/1/product`, { headers: kdriveHeaders });
+          if (productsResp.ok) {
+            const productsData = await productsResp.json();
+            const driveProduct = productsData?.data?.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
+            createDriveId = driveProduct?.unique_id;
+          }
+        }
+        
+        if (!createDriveId) {
+          return new Response(
+            JSON.stringify({ error: 'Drive ID not found' }),
+            { 
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        
         const createParentId = parentId || 1;
         
         response = await fetch(
@@ -173,7 +216,26 @@ serve(async (req) => {
         break;
 
       case 'search-folder':
-        const searchDriveId = driveId || KDRIVE_PRODUCT_ID;
+        // Get the actual drive ID from product if not provided
+        let searchDriveId = driveId;
+        if (!searchDriveId) {
+          const productsResp = await fetch(`${KDRIVE_API_BASE}/1/product`, { headers: kdriveHeaders });
+          if (productsResp.ok) {
+            const productsData = await productsResp.json();
+            const driveProduct = productsData?.data?.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
+            searchDriveId = driveProduct?.unique_id;
+          }
+        }
+        
+        if (!searchDriveId) {
+          return new Response(
+            JSON.stringify({ error: 'Drive ID not found' }),
+            { 
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
         
         response = await fetch(
           `${KDRIVE_API_BASE}/2/drive/${searchDriveId}/files/search?query=${encodeURIComponent(folderPath || '')}`,
@@ -194,7 +256,27 @@ serve(async (req) => {
         break;
 
       case 'upload-file':
-        const uploadDriveId = driveId || KDRIVE_PRODUCT_ID;
+        // Get the actual drive ID from product if not provided
+        let uploadDriveId = driveId;
+        if (!uploadDriveId) {
+          const productsResp = await fetch(`${KDRIVE_API_BASE}/1/product`, { headers: kdriveHeaders });
+          if (productsResp.ok) {
+            const productsData = await productsResp.json();
+            const driveProduct = productsData?.data?.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
+            uploadDriveId = driveProduct?.unique_id;
+          }
+        }
+        
+        if (!uploadDriveId) {
+          return new Response(
+            JSON.stringify({ error: 'Drive ID not found' }),
+            { 
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        
         const uploadFolderId = folderId || 1;
         
         // Decode base64 content
@@ -231,7 +313,27 @@ serve(async (req) => {
         break;
 
       case 'download-file':
-        const downloadDriveId = driveId || KDRIVE_PRODUCT_ID;
+        // Get the actual drive ID from product if not provided
+        let downloadDriveId = driveId;
+        if (!downloadDriveId) {
+          const productsResp = await fetch(`${KDRIVE_API_BASE}/1/product`, { headers: kdriveHeaders });
+          if (productsResp.ok) {
+            const productsData = await productsResp.json();
+            const driveProduct = productsData?.data?.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
+            downloadDriveId = driveProduct?.unique_id;
+          }
+        }
+        
+        if (!downloadDriveId) {
+          return new Response(
+            JSON.stringify({ error: 'Drive ID not found' }),
+            { 
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        
         const fileId = folderId; // For download, folderId is actually the file ID
         
         response = await fetch(
@@ -266,7 +368,27 @@ serve(async (req) => {
         );
 
       case 'get-folder-info':
-        const infoDriveId = driveId || KDRIVE_PRODUCT_ID;
+        // Get the actual drive ID from product if not provided
+        let infoDriveId = driveId;
+        if (!infoDriveId) {
+          const productsResp = await fetch(`${KDRIVE_API_BASE}/1/product`, { headers: kdriveHeaders });
+          if (productsResp.ok) {
+            const productsData = await productsResp.json();
+            const driveProduct = productsData?.data?.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
+            infoDriveId = driveProduct?.unique_id;
+          }
+        }
+        
+        if (!infoDriveId) {
+          return new Response(
+            JSON.stringify({ error: 'Drive ID not found' }),
+            { 
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        
         const infoFolderId = folderId || 1;
         
         response = await fetch(
