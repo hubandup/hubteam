@@ -31,7 +31,7 @@ serve(async (req) => {
       });
     }
 
-    const { action, driveId, folderId, folderPath, fileName, fileContent, parentId } = await req.json();
+    const { action, driveId, folderId, folderPath, fileName, fileContent, parentId, rootFolderId } = await req.json();
 
     console.log('KDrive API request:', { action, driveId, folderId, folderPath, fileName });
 
@@ -147,7 +147,7 @@ serve(async (req) => {
           );
         }
         
-        const targetFolderId = folderId || 1; // Root folder by default
+        const targetFolderId = folderId || rootFolderId || 1; // Use provided folder, root folder, or drive root
         
         console.log('Listing files for drive:', targetDriveId, 'folder:', targetFolderId);
         
@@ -218,7 +218,7 @@ serve(async (req) => {
           );
         }
         
-        const createParentId = parentId || 1;
+        const createParentId = parentId || rootFolderId || 1;
         
         response = await fetch(
           `${KDRIVE_API_BASE}/2/drive/${createDriveId}/files/${createParentId}/directory`,
