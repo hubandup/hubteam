@@ -387,7 +387,7 @@ const attempts = [
           );
         }
         
-        const downloadFileId = folderId; // For download, folderId is actually the file ID
+        const downloadFileId = fileId || folderId; // Support both legacy (folderId) and explicit fileId
         
         response = await fetch(
           `${KDRIVE_API_BASE}/2/drive/${downloadDriveId}/files/${downloadFileId}/download`,

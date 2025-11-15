@@ -100,12 +100,13 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
       if (error) throw error;
       
       // Get parent_id from the first file if available
-      const parentId = data.files?.[0]?.parent_id || null;
-      if (currentFolder && parentId) {
+      const arr = Array.isArray(data?.data) ? data.data : Array.isArray((data as any)?.files) ? (data as any).files : [];
+      const parentId = arr?.[0]?.parent_id ?? null;
+      if (currentFolder) {
         setCurrentFolder(prev => prev ? { ...prev, parentId } : null);
       }
       
-      setFiles(data.files || []);
+      setFiles(arr || []);
     } catch (error) {
       console.error('Error loading files:', error);
       toast.error('Erreur lors du chargement des fichiers');
@@ -165,7 +166,12 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
 
       if (error) throw error;
 
-      const blob = new Blob([Uint8Array.from(atob(data.content), c => c.charCodeAt(0))]);
+      const base64 = (data as any)?.data as string;
+      if (!base64) throw new Error('Contenu manquant');
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes]);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -450,7 +456,11 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleFolderClick(file.id, file.path, currentFolder?.id || null)}
+                      onClick={() => handleFolderClick(
+                        file.id,
+                        (file as any).path || `${currentFolder?.path || ''}/${file.name}`,
+                        currentFolder?.id || null
+                      )}
                     >
                       Ouvrir
                     </Button>
