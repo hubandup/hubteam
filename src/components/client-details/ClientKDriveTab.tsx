@@ -89,6 +89,8 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
           parentId: null
         });
         toast.info("Le dossier kDrive est sélectionné mais aucun drive n'est attribué. Un administrateur doit le connecter pour afficher le contenu.");
+        // Still attempt to list files by letting the backend infer the drive
+        await loadFiles(undefined, clientData.kdrive_folder_id);
       }
     } catch (error) {
       console.error('Error loading client folder:', error);
@@ -100,17 +102,12 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
 
   const loadFiles = async (driveId: number | undefined, folderId: string, append = false, customOffset?: number) => {
     try {
-      if (!driveId) {
-        setFiles(prev => (append ? prev : []));
-        setHasMore(false);
-        toast.error('Drive non connecté pour ce client');
-        return;
-      }
+      const effectiveDriveId = (driveId as any) ?? undefined;
 
       const { data, error } = await supabase.functions.invoke('kdrive-api', {
         body: {
           action: 'list-files',
-          driveId,
+          driveId: effectiveDriveId,
           folderId,
           limit,
           offset: typeof customOffset === 'number' ? customOffset : offset,
