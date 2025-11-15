@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Mail, Phone, Euro, Calendar, BellRing } from 'lucide-react';
+import { Building2, Mail, Phone, Euro, Calendar, BellRing, FolderOpen } from 'lucide-react';
 import { format, isPast } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -23,6 +23,7 @@ interface ClientCardProps {
     action?: string;
     action_name?: string;
     action_color?: string;
+    kdrive_folder_id?: string;
   };
   onClick: () => void;
 }
@@ -41,9 +42,16 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
               />
             )}
             <div className="min-w-0 flex-1">
-              <CardTitle className="text-lg uppercase">
-                {client.company}
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-lg uppercase">
+                  {client.company}
+                </CardTitle>
+                {client.kdrive_folder_id && (
+                  <div title="Connecté à kDrive">
+                    <FolderOpen className="h-4 w-4 text-primary flex-shrink-0" />
+                  </div>
+                )}
+              </div>
               <CardDescription className="mt-1 truncate">
                 {client.first_name} {client.last_name}
               </CardDescription>
