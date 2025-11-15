@@ -475,9 +475,7 @@ serve(async (req) => {
     if (action === 'list-files' && listTargetFolderId !== undefined && data && Array.isArray(data.data)) {
       const targetIdNum = Number(listTargetFolderId);
       const filtered = data.data.filter((item: any) => item.parent_id === targetIdNum || String(item.parent_id) === String(listTargetFolderId));
-      if (filtered.length > 0) {
-        data = { ...data, data: filtered };
-      }
+      data = { ...data, data: filtered };
     }
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

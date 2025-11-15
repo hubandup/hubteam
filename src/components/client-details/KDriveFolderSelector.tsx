@@ -18,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 
 // Fixed kDrive configuration
 const KDRIVE_DRIVE_ID = 6963095; // Hub & Up
-const KDRIVE_ROOT_FOLDER_ID = "50121"; // CRM root folder
+const KDRIVE_ROOT_FOLDER_ID = "3"; // Common documents root folder
 
 interface KDriveFile {
   id: string;
@@ -41,12 +41,12 @@ export function KDriveFolderSelector({
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [folders, setFolders] = useState<KDriveFile[]>([]);
-  const [newFolderName, setNewFolderName] = useState(clientName);
+  const [newFolderName, setNewFolderName] = useState("");
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [currentFolderId, setCurrentFolderId] = useState(KDRIVE_ROOT_FOLDER_ID);
-  const [currentPath, setCurrentPath] = useState("CRM");
+  const [currentPath, setCurrentPath] = useState("Common documents");
   const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string; name: string }>>([
-    { id: KDRIVE_ROOT_FOLDER_ID, name: "CRM" }
+    { id: KDRIVE_ROOT_FOLDER_ID, name: "Common documents" }
   ]);
 
   useEffect(() => {
@@ -108,7 +108,13 @@ export function KDriveFolderSelector({
 
   const createFolder = async () => {
     if (!newFolderName.trim()) {
-      toast.error("Veuillez saisir un nom de dossier");
+      toast.error("Veuillez saisir un nom ou chemin de dossier");
+      return;
+    }
+
+    const segments = newFolderName.split("/").map(s => s.trim()).filter(Boolean);
+    if (segments.length > 1) {
+      await createFolderPath(segments);
       return;
     }
 
@@ -148,6 +154,53 @@ export function KDriveFolderSelector({
     } catch (error: any) {
       console.error("Erreur:", error);
       toast.error(error.message || "Erreur lors de la création");
+    } finally {
+      setIsCreatingFolder(false);
+    }
+  };
+
+  // Create nested folders from segments relative to currentFolderId
+  const createFolderPath = async (segments: string[]) => {
+    setIsCreatingFolder(true);
+    try {
+      let parentId: string | number = currentFolderId;
+      let pathParts = [...breadcrumbs.map(b => b.name)];
+
+      for (const seg of segments) {
+        // Try to find existing folder in current parent via search
+        const search = await supabase.functions.invoke("kdrive-api", {
+          body: { action: "search-folder", folderPath: seg }
+        });
+        let existing = (search.data?.data || []).find((f: any) => f.type === "dir" && String(f.parent_id) === String(parentId) && f.name === seg);
+
+        if (!existing) {
+          const created = await supabase.functions.invoke("kdrive-api", {
+            body: { action: "create-folder", fileName: seg, parentId, rootFolderId: KDRIVE_ROOT_FOLDER_ID }
+          });
+          if (created.error) throw created.error;
+          existing = created.data?.data;
+        }
+
+        if (!existing?.id) throw new Error("Création/repérage du dossier échoué");
+
+        // Advance
+        parentId = existing.id;
+        pathParts.push(seg);
+      }
+
+      setNewFolderName("");
+      setCurrentFolderId(String(parentId));
+      setBreadcrumbs(prev => {
+        const root = prev[0];
+        const tail = segments.map((s, i) => ({ id: i === segments.length - 1 ? String(parentId) : `${root.id}-${i}`, name: s }));
+        return [root, ...tail];
+      });
+      setCurrentPath(pathParts.join("/"));
+      await loadFolders();
+      toast.success("Chemin créé avec succès");
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.message || "Échec de la création du chemin");
     } finally {
       setIsCreatingFolder(false);
     }
@@ -230,7 +283,7 @@ export function KDriveFolderSelector({
             {/* Create new folder */}
             <div className="flex gap-2">
               <Input
-                placeholder="Nom du dossier client..."
+                placeholder="Chemin du dossier (ex: CLIENTS/NouveauClient)"
                 value={newFolderName}
                 onChange={(e) => setNewFolderName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && createFolder()}
