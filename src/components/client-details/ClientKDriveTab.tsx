@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Loader2, Upload, Download, FolderIcon, FileIcon, FolderPlus } from 'lucide-react';
+import { Loader2, Upload, Download, FolderIcon, FileIcon, FolderPlus, Trash2, ArrowUp, Home } from 'lucide-react';
 import { toast } from 'sonner';
 import { KDriveFolderSelector } from './KDriveFolderSelector';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -14,6 +14,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -35,11 +45,16 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
   const [loading, setLoading] = useState(true);
   const [files, setFiles] = useState<KDriveFile[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [currentFolder, setCurrentFolder] = useState<{ id: number; path: string } | null>(null);
+  const [currentFolder, setCurrentFolder] = useState<{ id: number; path: string; parentId: number | null } | null>(null);
   const [client, setClient] = useState<any>(null);
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<{ id: number; name: string; type: 'dir' | 'file' } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadClientFolder();
@@ -59,7 +74,8 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
       if (clientData.kdrive_folder_id && clientData.kdrive_drive_id) {
         setCurrentFolder({
           id: parseInt(clientData.kdrive_folder_id),
-          path: clientData.kdrive_folder_path || '/'
+          path: clientData.kdrive_folder_path || '/',
+          parentId: null
         });
         await loadFiles(clientData.kdrive_drive_id, clientData.kdrive_folder_id);
       }
@@ -82,6 +98,13 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
       });
 
       if (error) throw error;
+      
+      // Get parent_id from the first file if available
+      const parentId = data.files?.[0]?.parent_id || null;
+      if (currentFolder && parentId) {
+        setCurrentFolder(prev => prev ? { ...prev, parentId } : null);
+      }
+      
       setFiles(data.files || []);
     } catch (error) {
       console.error('Error loading files:', error);
@@ -89,10 +112,10 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!event.target.files || event.target.files.length === 0 || !client || !currentFolder) return;
+  const handleFileUpload = async (files: FileList) => {
+    if (!files || files.length === 0 || !client || !currentFolder) return;
 
-    const file = event.target.files[0];
+    const file = files[0];
     setUploading(true);
 
     try {
@@ -122,6 +145,9 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
       toast.error('Erreur lors du téléversement du fichier');
     } finally {
       setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -156,10 +182,49 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     }
   };
 
-  const handleFolderClick = async (folderId: number, folderPath: string) => {
+  const handleFolderClick = async (folderId: number, folderPath: string, parentId: number | null = null) => {
     if (!client) return;
-    setCurrentFolder({ id: folderId, path: folderPath });
+    setCurrentFolder({ id: folderId, path: folderPath, parentId });
     await loadFiles(client.kdrive_drive_id, folderId.toString());
+  };
+
+  const handleGoToRoot = async () => {
+    if (!client) return;
+    setCurrentFolder({
+      id: parseInt(client.kdrive_folder_id),
+      path: client.kdrive_folder_path || '/',
+      parentId: null
+    });
+    await loadFiles(client.kdrive_drive_id, client.kdrive_folder_id);
+  };
+
+  const handleGoToParent = async () => {
+    if (!client || !currentFolder?.parentId) return;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('kdrive-api', {
+        body: {
+          action: 'get-file-details',
+          driveId: client.kdrive_drive_id,
+          fileId: currentFolder.parentId.toString(),
+        },
+      });
+
+      if (error) throw error;
+      
+      const parentPath = data.file?.path || '/';
+      const grandParentId = data.file?.parent_id || null;
+      
+      setCurrentFolder({ 
+        id: currentFolder.parentId, 
+        path: parentPath,
+        parentId: grandParentId
+      });
+      await loadFiles(client.kdrive_drive_id, currentFolder.parentId.toString());
+    } catch (error) {
+      console.error('Error navigating to parent:', error);
+      toast.error('Erreur lors de la navigation');
+    }
   };
 
   const createFolder = async () => {
@@ -187,6 +252,54 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
       toast.error('Erreur lors de la création du dossier');
     } finally {
       setIsCreatingFolder(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteItem || !client || !currentFolder) return;
+
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase.functions.invoke('kdrive-api', {
+        body: {
+          action: deleteItem.type === 'dir' ? 'delete-folder' : 'delete-file',
+          driveId: client.kdrive_drive_id,
+          fileId: deleteItem.id.toString(),
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success(`${deleteItem.type === 'dir' ? 'Dossier' : 'Fichier'} supprimé avec succès`);
+      setDeleteItem(null);
+      await loadFiles(client.kdrive_drive_id, currentFolder.id.toString());
+    } catch (error) {
+      console.error('Error deleting:', error);
+      toast.error('Erreur lors de la suppression');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileUpload(e.dataTransfer.files);
     }
   };
 
@@ -226,10 +339,32 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <FolderIcon className="h-4 w-4" />
-          <span>{currentFolder?.path || '/'}</span>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleGoToRoot}
+              title="Retour à la racine"
+            >
+              <Home className="h-4 w-4" />
+            </Button>
+            {currentFolder?.parentId && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleGoToParent}
+                title="Dossier parent"
+              >
+                <ArrowUp className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground overflow-hidden">
+            <FolderIcon className="h-4 w-4 flex-shrink-0" />
+            <span className="truncate">{currentFolder?.path || '/'}</span>
+          </div>
         </div>
         <div className="flex gap-2">
           <Button
@@ -244,7 +379,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
             variant="outline"
             size="sm"
             disabled={uploading}
-            onClick={() => document.getElementById('file-upload')?.click()}
+            onClick={() => fileInputRef.current?.click()}
           >
             {uploading ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -254,12 +389,38 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
             Téléverser
           </Button>
           <input
-            id="file-upload"
+            ref={fileInputRef}
             type="file"
             className="hidden"
-            onChange={handleFileUpload}
+            onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
           />
         </div>
+      </div>
+
+      <div 
+        ref={dropZoneRef}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`rounded-lg border-2 border-dashed transition-colors ${
+          isDragging 
+            ? 'border-primary bg-primary/5' 
+            : 'border-border bg-muted/20'
+        } p-8 text-center`}
+      >
+        {isDragging ? (
+          <div className="flex flex-col items-center gap-2">
+            <Upload className="h-8 w-8 text-primary" />
+            <p className="text-sm font-medium text-primary">Déposez le fichier ici</p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2">
+            <Upload className="h-8 w-8 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              Glissez-déposez un fichier ici ou cliquez sur Téléverser
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-2">
@@ -289,7 +450,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleFolderClick(file.id, file.path)}
+                      onClick={() => handleFolderClick(file.id, file.path, currentFolder?.id || null)}
                     >
                       Ouvrir
                     </Button>
@@ -302,6 +463,13 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
                       <Download className="h-4 w-4" />
                     </Button>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDeleteItem({ id: file.id, name: file.name, type: file.type })}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
                 </div>
               </div>
             </Card>
@@ -351,6 +519,36 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteItem} onOpenChange={() => setDeleteItem(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer {deleteItem?.type === 'dir' ? 'le dossier' : 'le fichier'}{' '}
+              <strong>{deleteItem?.name}</strong> ?
+              {deleteItem?.type === 'dir' && ' Tout son contenu sera également supprimé.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Suppression...
+                </>
+              ) : (
+                'Supprimer'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
