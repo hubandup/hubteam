@@ -476,9 +476,12 @@ const attempts = [
     console.log('Raw API response for list-files:', { 
       action, 
       targetFolderId: listTargetFolderId, 
-      dataLength: data?.data?.length,
+      dataLength: Array.isArray(data?.data) ? data.data.length : 'NOT_ARRAY',
       debugNoFilter,
-      allItems: data?.data?.map((f: any) => ({ id: f.id, name: f.name, parent_id: f.parent_id, type: f.type }))
+      dataType: typeof data?.data,
+      isArray: Array.isArray(data?.data),
+      allItems: Array.isArray(data?.data) ? data.data.map((f: any) => ({ id: f.id, name: f.name, parent_id: f.parent_id, type: f.type })) : data?.data,
+      rawResponse: data
     });
     
     if (action === 'list-files' && !debugNoFilter && listTargetFolderId !== undefined && data && Array.isArray(data.data)) {
