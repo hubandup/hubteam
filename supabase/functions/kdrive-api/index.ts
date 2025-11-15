@@ -75,16 +75,16 @@ serve(async (req) => {
           );
         }
 
-        // Verify API v3 access using last_modified endpoint (same as user's successful curl)
+        // Verify API v3 access using last_modified endpoint (minimum limit is 5)
         const driveIdToTest = configuredProduct.id; // Use product ID, not unique_id
         console.log('Testing API v3 access:', { 
-          url: `${KDRIVE_API_BASE}/3/drive/${driveIdToTest}/files/last_modified?limit=1`,
+          url: `${KDRIVE_API_BASE}/3/drive/${driveIdToTest}/files/last_modified?limit=5`,
           driveId: driveIdToTest,
           token: KDRIVE_TOKEN ? `${KDRIVE_TOKEN.substring(0, 10)}...` : 'MISSING'
         });
         
         const filesTest = await fetch(
-          `${KDRIVE_API_BASE}/3/drive/${driveIdToTest}/files/last_modified?limit=1`,
+          `${KDRIVE_API_BASE}/3/drive/${driveIdToTest}/files/last_modified?limit=5`,
           { headers: kdriveHeaders }
         );
 
