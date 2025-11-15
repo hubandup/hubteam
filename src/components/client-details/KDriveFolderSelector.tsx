@@ -156,7 +156,7 @@ export function KDriveFolderSelector({
         .update({
           kdrive_folder_id: folder.id,
           kdrive_folder_path: `CRM/${folder.name}`,
-          kdrive_drive_id: KDRIVE_DRIVE_ID,
+          // kdrive_drive_id intentionally omitted; resolved server-side
         })
         .eq("id", clientId);
 

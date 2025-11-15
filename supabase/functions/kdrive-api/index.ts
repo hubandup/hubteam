@@ -126,49 +126,55 @@ serve(async (req) => {
         );
 
       case 'list-files':
-        // If no driveId provided, get it from the product
-        let targetDriveId = driveId;
-        if (!targetDriveId) {
+        // Build candidate drive IDs: provided one (if any) and the configured product's unique_id
+        let providedDriveId = driveId;
+        let productDriveId: string | undefined;
+        try {
           const productsResp = await fetch(`${KDRIVE_API_BASE}/1/product`, { headers: kdriveHeaders });
           if (productsResp.ok) {
             const productsData = await productsResp.json();
             const driveProduct = productsData?.data?.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
-            targetDriveId = driveProduct?.unique_id;
+            productDriveId = driveProduct?.unique_id?.toString();
           }
-        }
-        
-        if (!targetDriveId) {
+        } catch (_) {}
+
+        const candidateDriveIds = Array.from(new Set([providedDriveId, productDriveId].filter(Boolean))) as string[];
+        if (candidateDriveIds.length === 0) {
           return new Response(
             JSON.stringify({ error: 'Drive ID not found' }),
-            { 
+            {
               status: 400,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             }
           );
         }
-        
+
         const targetFolderId = folderId || rootFolderId || 1; // Use provided folder, root folder, or drive root
-        
-        console.log('Listing files for drive:', targetDriveId, 'folder:', targetFolderId);
-        
-        const attempts = [
-          `${KDRIVE_API_BASE}/2/drive/${targetDriveId}/files?parent_id=${targetFolderId}`,
-          `${KDRIVE_API_BASE}/2/drive/${targetDriveId}/files/${targetFolderId}/children`,
-          `${KDRIVE_API_BASE}/2/drive/${targetDriveId}/files/${targetFolderId}/directory`,
-        ];
+        console.log('Listing files candidates:', { candidateDriveIds, targetFolderId });
 
         const tryErrors: any[] = [];
-        for (const url of attempts) {
-          const r = await fetch(url, { headers: kdriveHeaders });
-          if (r.ok) {
-            response = r;
-            console.log('List-files succeeded with:', url);
-            break;
-          } else {
-            const err = await r.json().catch(() => ({}));
-            tryErrors.push({ url, status: r.status, error: err });
-            console.error('List-files failed attempt:', { url, status: r.status, err });
+        for (const did of candidateDriveIds) {
+          console.log('Trying driveId:', did);
+          const attempts = [
+            `${KDRIVE_API_BASE}/2/drive/${did}/files?parent_id=${targetFolderId}`,
+            `${KDRIVE_API_BASE}/2/drive/${did}/files/${targetFolderId}/children`,
+            `${KDRIVE_API_BASE}/2/drive/${did}/files/${targetFolderId}/directory`,
+          ];
+
+          for (const url of attempts) {
+            const r = await fetch(url, { headers: kdriveHeaders });
+            if (r.ok) {
+              response = r;
+              console.log('List-files succeeded with:', url);
+              break;
+            } else {
+              const err = await r.json().catch(() => ({}));
+              tryErrors.push({ driveIdTried: did, url, status: r.status, error: err });
+              console.error('List-files failed attempt:', { driveId: did, url, status: r.status, err });
+            }
           }
+
+          if (response) break; // stop if succeeded for this drive
         }
 
         if (!response) {
