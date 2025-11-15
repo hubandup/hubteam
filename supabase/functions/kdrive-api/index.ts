@@ -44,35 +44,55 @@ serve(async (req) => {
 
     switch (action) {
       case 'check-permissions':
-        // Only check product endpoint since we use product-based access
+        // Check product endpoint and v2 files access
         const productResp = await fetch(`${KDRIVE_API_BASE}/1/product`, { headers: kdriveHeaders });
         const productOk = productResp.ok;
         const productData = await productResp.json().catch(() => ({}));
-        
-        console.log('Product endpoint response:', { status: productResp.status, ok: productOk, data: productData });
-        
+        console.log('Product endpoint response:', { status: productResp.status, ok: productOk });
+
         if (!productOk) {
           const errorDetails = productData?.error?.description || productData?.error?.code || 'Unknown error';
           return new Response(
             JSON.stringify({ 
               hasRequiredScopes: false,
               errorDetails,
-              message: 'Le token n\'a pas les permissions requises pour accéder aux produits'
+              message: "Le token n'a pas les permissions requises pour accéder aux produits"
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
 
-        // Check if our configured product exists
         const products = productData?.data || [];
         const configuredProduct = products.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
-        
         if (!configuredProduct) {
           return new Response(
             JSON.stringify({ 
               hasRequiredScopes: false,
               errorDetails: `Produit kDrive ${KDRIVE_PRODUCT_ID} non trouvé`,
-              message: 'Le produit kDrive configuré n\'est pas accessible avec ce token'
+              message: "Le produit kDrive configuré n'est pas accessible avec ce token"
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Now verify API v2 access to the target folder
+        const driveIdToTest = configuredProduct.unique_id;
+        const targetTestFolder = folderId || rootFolderId || 1;
+        const filesTest = await fetch(
+          `${KDRIVE_API_BASE}/2/drive/${driveIdToTest}/files?parent_id=${targetTestFolder}`,
+          { headers: kdriveHeaders }
+        );
+
+        if (!filesTest.ok) {
+          const err = await filesTest.json().catch(() => ({}));
+          const errorDetails = err?.error?.description || err?.error?.code || `HTTP ${filesTest.status}`;
+          return new Response(
+            JSON.stringify({ 
+              hasRequiredScopes: false,
+              errorDetails,
+              message: filesTest.status === 401 
+                ? "Le token n'a pas les droits API v2 (lecture) sur ce kDrive"
+                : "Échec d'accès au dossier cible via l'API v2"
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
@@ -81,7 +101,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             hasRequiredScopes: true,
-            message: 'Token valide avec accès au kDrive Hub & Up'
+            message: 'Token valide avec accès API v2 au kDrive et au dossier'
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );

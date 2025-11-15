@@ -63,7 +63,7 @@ export function KDriveFolderSelector({
 
       // Pré-vérification des permissions du token kDrive
       const permCheck = await supabase.functions.invoke("kdrive-api", {
-        body: { action: "check-permissions" },
+        body: { action: "check-permissions", rootFolderId: KDRIVE_ROOT_FOLDER_ID },
       });
 
       const hasScopes = permCheck.data?.hasRequiredScopes;
