@@ -43,12 +43,17 @@ export function KDriveFolderSelector({
   const [folders, setFolders] = useState<KDriveFile[]>([]);
   const [newFolderName, setNewFolderName] = useState(clientName);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [currentFolderId, setCurrentFolderId] = useState(KDRIVE_ROOT_FOLDER_ID);
+  const [currentPath, setCurrentPath] = useState("CRM");
+  const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string; name: string }>>([
+    { id: KDRIVE_ROOT_FOLDER_ID, name: "CRM" }
+  ]);
 
   useEffect(() => {
     if (isOpen) {
       loadFolders();
     }
-  }, [isOpen]);
+  }, [isOpen, currentFolderId]);
 
   const loadFolders = async () => {
     setIsLoading(true);
@@ -79,8 +84,7 @@ export function KDriveFolderSelector({
       const response = await supabase.functions.invoke("kdrive-api", {
         body: {
           action: "list-files",
-          // Ne pas passer driveId, l'edge function le déduit du produit configuré
-          folderId: KDRIVE_ROOT_FOLDER_ID,
+          folderId: currentFolderId,
           rootFolderId: KDRIVE_ROOT_FOLDER_ID,
         },
       });
@@ -120,7 +124,7 @@ export function KDriveFolderSelector({
         body: {
           action: "create-folder",
           fileName: newFolderName,
-          parentId: KDRIVE_ROOT_FOLDER_ID,
+          parentId: currentFolderId,
           rootFolderId: KDRIVE_ROOT_FOLDER_ID,
         },
       });
@@ -135,9 +139,9 @@ export function KDriveFolderSelector({
       toast.success(`Dossier "${newFolderName}" créé`);
       setNewFolderName("");
       
-      // Auto-select the newly created folder
+      // Navigate to the newly created folder
       if (newFolder?.id) {
-        await selectFolder(newFolder);
+        navigateToFolder(newFolder);
       } else {
         loadFolders();
       }
@@ -149,20 +153,33 @@ export function KDriveFolderSelector({
     }
   };
 
-  const selectFolder = async (folder: KDriveFile) => {
+  const navigateToFolder = (folder: KDriveFile) => {
+    setCurrentFolderId(folder.id);
+    setCurrentPath(`${currentPath}/${folder.name}`);
+    setBreadcrumbs([...breadcrumbs, { id: folder.id, name: folder.name }]);
+  };
+
+  const navigateToBreadcrumb = (index: number) => {
+    const targetBreadcrumb = breadcrumbs[index];
+    setCurrentFolderId(targetBreadcrumb.id);
+    setBreadcrumbs(breadcrumbs.slice(0, index + 1));
+    setCurrentPath(breadcrumbs.slice(0, index + 1).map(b => b.name).join("/"));
+  };
+
+  const selectCurrentFolder = async () => {
     try {
       const { error } = await supabase
         .from("clients")
         .update({
-          kdrive_folder_id: folder.id,
-          kdrive_folder_path: `CRM/${folder.name}`,
+          kdrive_folder_id: currentFolderId,
+          kdrive_folder_path: currentPath,
           // kdrive_drive_id intentionally omitted; resolved server-side
         })
         .eq("id", clientId);
 
       if (error) throw error;
 
-      toast.success(`Dossier "${folder.name}" associé au client`);
+      toast.success(`Dossier "${currentPath}" associé au client`);
       setIsOpen(false);
       onFolderConnected();
     } catch (error: any) {
@@ -187,7 +204,20 @@ export function KDriveFolderSelector({
           <DialogHeader>
             <DialogTitle>Sélectionner un dossier kDrive</DialogTitle>
             <DialogDescription>
-              Dossier racine : CRM (Hub & Up)
+              <div className="flex items-center gap-1 flex-wrap">
+                {breadcrumbs.map((crumb, index) => (
+                  <span key={crumb.id} className="flex items-center gap-1">
+                    <button
+                      onClick={() => navigateToBreadcrumb(index)}
+                      className="hover:underline"
+                      disabled={index === breadcrumbs.length - 1}
+                    >
+                      {crumb.name}
+                    </button>
+                    {index < breadcrumbs.length - 1 && <span>/</span>}
+                  </span>
+                ))}
+              </div>
             </DialogDescription>
           </DialogHeader>
 
@@ -223,7 +253,7 @@ export function KDriveFolderSelector({
                 </div>
               ) : folders.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Aucun dossier disponible. Créez-en un nouveau ci-dessus.
+                  Aucun sous-dossier disponible. Créez-en un nouveau ci-dessus ou sélectionnez ce dossier.
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -232,7 +262,7 @@ export function KDriveFolderSelector({
                       key={folder.id}
                       variant="ghost"
                       className="w-full justify-start gap-2"
-                      onClick={() => selectFolder(folder)}
+                      onClick={() => navigateToFolder(folder)}
                     >
                       <Folder className="h-4 w-4" />
                       <span>{folder.name}</span>
@@ -243,9 +273,12 @@ export function KDriveFolderSelector({
             </ScrollArea>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex justify-between">
             <Button variant="outline" onClick={() => setIsOpen(false)}>
               Annuler
+            </Button>
+            <Button onClick={selectCurrentFolder}>
+              Sélectionner ce dossier
             </Button>
           </DialogFooter>
         </DialogContent>
