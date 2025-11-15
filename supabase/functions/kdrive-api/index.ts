@@ -31,7 +31,7 @@ serve(async (req) => {
       });
     }
 
-    const { action, driveId, folderId, folderPath, fileName, fileContent, parentId, rootFolderId } = await req.json();
+    const { action, driveId, folderId, folderPath, fileName, fileContent, parentId, rootFolderId, debugNoFilter } = await req.json();
 
     console.log('KDrive API request:', { action, driveId, folderId, folderPath, fileName });
 
@@ -476,10 +476,11 @@ serve(async (req) => {
       action, 
       targetFolderId: listTargetFolderId, 
       dataLength: data?.data?.length,
-      sampleItems: data?.data?.slice(0, 3).map((f: any) => ({ id: f.id, name: f.name, parent_id: f.parent_id, type: f.type }))
+      debugNoFilter,
+      allItems: data?.data?.map((f: any) => ({ id: f.id, name: f.name, parent_id: f.parent_id, type: f.type }))
     });
     
-    if (false && action === 'list-files' && listTargetFolderId !== undefined && data && Array.isArray(data.data)) {
+    if (action === 'list-files' && !debugNoFilter && listTargetFolderId !== undefined && data && Array.isArray(data.data)) {
       const targetIdNum = Number(listTargetFolderId);
       const targetIdStr = String(listTargetFolderId);
       console.log('Filtering with:', { targetIdNum, targetIdStr, totalItems: data.data.length });
@@ -496,6 +497,8 @@ serve(async (req) => {
       
       console.log('After filtering:', { filteredLength: filtered.length });
       data = { ...data, data: filtered };
+    } else if (debugNoFilter) {
+      console.log('Debug mode: no filtering applied');
     }
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

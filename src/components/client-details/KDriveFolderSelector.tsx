@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 // Fixed kDrive configuration
 const KDRIVE_DRIVE_ID = 6963095; // Hub & Up
 const KDRIVE_ROOT_FOLDER_ID = "3"; // Common documents root folder
+const DEBUG_NO_FILTER = false; // Set to true to disable server-side filtering
 
 interface KDriveFile {
   id: string;
@@ -86,6 +87,7 @@ export function KDriveFolderSelector({
           action: "list-files",
           folderId: currentFolderId,
           rootFolderId: KDRIVE_ROOT_FOLDER_ID,
+          debugNoFilter: DEBUG_NO_FILTER,
         },
       });
 
