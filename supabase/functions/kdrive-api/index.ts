@@ -41,6 +41,7 @@ serve(async (req) => {
     };
 
     let response;
+    let listTargetFolderId: string | number | undefined;
 
     switch (action) {
       case 'check-permissions':
@@ -183,15 +184,17 @@ serve(async (req) => {
         }
 
         const targetFolderId = folderId || rootFolderId || 1; // Use provided folder, root folder, or drive root
+        listTargetFolderId = targetFolderId;
         console.log('Listing files candidates:', { candidateDriveIds, targetFolderId });
 
         const tryErrors: any[] = [];
         for (const did of candidateDriveIds) {
           console.log('Trying driveId:', did);
           const attempts = [
-            `${KDRIVE_API_BASE}/2/drive/${did}/files?parent_id=${targetFolderId}`,
+            `${KDRIVE_API_BASE}/3/drive/${did}/files/${targetFolderId}/children?limit=200`,
+            `${KDRIVE_API_BASE}/3/drive/${did}/files?parent_id=${targetFolderId}&limit=200`,
             `${KDRIVE_API_BASE}/2/drive/${did}/files/${targetFolderId}/children`,
-            `${KDRIVE_API_BASE}/2/drive/${did}/files/${targetFolderId}/directory`,
+            `${KDRIVE_API_BASE}/2/drive/${did}/files?parent_id=${targetFolderId}`,
           ];
 
           for (const url of attempts) {
@@ -468,7 +471,14 @@ serve(async (req) => {
         );
     }
 
-    const data = await response.json();
+    let data = await response.json();
+    if (action === 'list-files' && listTargetFolderId !== undefined && data && Array.isArray(data.data)) {
+      const targetIdNum = Number(listTargetFolderId);
+      const filtered = data.data.filter((item: any) => item.parent_id === targetIdNum || String(item.parent_id) === String(listTargetFolderId));
+      if (filtered.length > 0) {
+        data = { ...data, data: filtered };
+      }
+    }
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
