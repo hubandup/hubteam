@@ -341,26 +341,55 @@ serve(async (req) => {
           bytes[i] = binaryString.charCodeAt(i);
         }
         
-        response = await fetch(
-          `${KDRIVE_API_BASE}/2/drive/${uploadDriveId}/files/${uploadFolderId}/upload`,
+        // Try multiple API versions for upload
+        const uploadAttempts = [
           {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${KDRIVE_TOKEN}`,
-              'Content-Type': 'application/octet-stream',
-              'X-Filename': encodeURIComponent(fileName || 'file'),
-            },
-            body: bytes
+            url: `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/files/${uploadFolderId}/upload`,
+            description: 'v3 upload'
+          },
+          {
+            url: `${KDRIVE_API_BASE}/2/drive/${uploadDriveId}/files/${uploadFolderId}/upload`,
+            description: 'v2 upload'
+          },
+          {
+            url: `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/files/upload?directory_id=${uploadFolderId}`,
+            description: 'v3 with query param'
           }
-        );
+        ];
         
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.error('Error uploading file:', response.status, errorData);
+        let uploadError = null;
+        
+        for (const attempt of uploadAttempts) {
+          console.log(`Trying upload endpoint: ${attempt.description} - ${attempt.url}`);
+          
+          response = await fetch(
+            attempt.url,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${KDRIVE_TOKEN}`,
+                'Content-Type': 'application/octet-stream',
+                'X-Filename': encodeURIComponent(fileName || 'file'),
+              },
+              body: bytes
+            }
+          );
+          
+          if (response.ok) {
+            console.log(`Upload succeeded with: ${attempt.description}`);
+            break;
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            console.error(`Upload failed for ${attempt.description}:`, response.status, errorData);
+            uploadError = { attempt: attempt.description, status: response.status, error: errorData };
+          }
+        }
+        
+        if (!response || !response.ok) {
           return new Response(
-            JSON.stringify({ error: 'Failed to upload file', details: errorData }),
+            JSON.stringify({ error: 'Failed to upload file', details: uploadError }),
             { 
-              status: response.status,
+              status: response?.status || 500,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
             }
           );
