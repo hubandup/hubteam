@@ -151,48 +151,31 @@ serve(async (req) => {
         
         console.log('Listing files for drive:', targetDriveId, 'folder:', targetFolderId);
         
-        const directoryUrl = `${KDRIVE_API_BASE}/2/drive/${targetDriveId}/files/${targetFolderId}/directory`;
-        response = await fetch(directoryUrl, { headers: kdriveHeaders });
-        
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          const isMethodNotFound = response.status === 404 || errorData?.error?.code === 'method_not_found';
-          console.error('Error listing files (primary endpoint)', response.status, errorData);
-          
-          if (isMethodNotFound) {
-            // Fallback to alternate endpoint observed in kDrive v2
-            const childrenUrl = `${KDRIVE_API_BASE}/2/drive/${targetDriveId}/files/${targetFolderId}/children`;
-            const altResp = await fetch(childrenUrl, { headers: kdriveHeaders });
-            
-            if (!altResp.ok) {
-              const altErrorData = await altResp.json().catch(() => ({}));
-              console.error('Error listing files (fallback endpoint)', altResp.status, altErrorData);
-              return new Response(
-                JSON.stringify({ 
-                  error: 'Failed to list files', 
-                  details: {
-                    primary: { status: response.status, error: errorData },
-                    fallback: { status: altResp.status, error: altErrorData }
-                  }
-                }),
-                { 
-                  status: altResp.status,
-                  headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-                }
-              );
-            }
-            
-            // Use successful fallback response
-            response = altResp;
+        const attempts = [
+          `${KDRIVE_API_BASE}/2/drive/${targetDriveId}/files?parent_id=${targetFolderId}`,
+          `${KDRIVE_API_BASE}/2/drive/${targetDriveId}/files/${targetFolderId}/children`,
+          `${KDRIVE_API_BASE}/2/drive/${targetDriveId}/files/${targetFolderId}/directory`,
+        ];
+
+        const tryErrors: any[] = [];
+        for (const url of attempts) {
+          const r = await fetch(url, { headers: kdriveHeaders });
+          if (r.ok) {
+            response = r;
+            console.log('List-files succeeded with:', url);
+            break;
           } else {
-            return new Response(
-              JSON.stringify({ error: 'Failed to list files', details: errorData }),
-              { 
-                status: response.status,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-              }
-            );
+            const err = await r.json().catch(() => ({}));
+            tryErrors.push({ url, status: r.status, error: err });
+            console.error('List-files failed attempt:', { url, status: r.status, err });
           }
+        }
+
+        if (!response) {
+          return new Response(
+            JSON.stringify({ error: 'Failed to list files', attempts: tryErrors }),
+            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
         break;
 
