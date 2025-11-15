@@ -81,6 +81,14 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
           parentId: null
         });
         await loadFiles(clientData.kdrive_drive_id, clientData.kdrive_folder_id);
+      } else if (clientData.kdrive_folder_id && !clientData.kdrive_drive_id) {
+        // Folder is selected but drive is missing: set path for UI and prompt connection
+        setCurrentFolder({
+          id: parseInt(clientData.kdrive_folder_id),
+          path: clientData.kdrive_folder_path || '/',
+          parentId: null
+        });
+        toast.info("Le dossier kDrive est sélectionné mais aucun drive n'est attribué. Un administrateur doit le connecter pour afficher le contenu.");
       }
     } catch (error) {
       console.error('Error loading client folder:', error);
@@ -92,6 +100,13 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
 
   const loadFiles = async (driveId: number | undefined, folderId: string, append = false, customOffset?: number) => {
     try {
+      if (!driveId) {
+        setFiles(prev => (append ? prev : []));
+        setHasMore(false);
+        toast.error('Drive non connecté pour ce client');
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('kdrive-api', {
         body: {
           action: 'list-files',
@@ -345,9 +360,11 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
 
   return (
     <div className="space-y-4">
-      {!client?.kdrive_folder_id && (
+      {(!client?.kdrive_folder_id || !client?.kdrive_drive_id) && (
         <div className="rounded-md border border-border bg-muted/30 p-3 text-sm flex items-center justify-between gap-2">
-          <span className="text-muted-foreground">Dossier non connecté pour ce client. Navigation autorisée.</span>
+          <span className="text-muted-foreground">
+            {(!client?.kdrive_folder_id) ? 'Aucun dossier kDrive connecté pour ce client.' : "Le drive kDrive n’est pas attribué pour ce dossier."}
+          </span>
           {isAdmin && (
             <KDriveFolderSelector
               clientId={clientId}
@@ -365,6 +382,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
               size="sm"
               onClick={handleGoToRoot}
               title="Retour à la racine"
+              disabled={!client?.kdrive_drive_id}
             >
               <Home className="h-4 w-4" />
             </Button>
@@ -389,6 +407,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
             variant="outline"
             size="sm"
             onClick={() => setIsCreateFolderOpen(true)}
+            disabled={!client?.kdrive_drive_id || !currentFolder}
           >
             <FolderPlus className="h-4 w-4 mr-2" />
             Nouveau dossier
@@ -396,7 +415,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
           <Button
             variant="outline"
             size="sm"
-            disabled={uploading}
+            disabled={uploading || !client?.kdrive_drive_id || !currentFolder}
             onClick={() => fileInputRef.current?.click()}
           >
             {uploading ? (
