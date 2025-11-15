@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Loader2, Upload, Download, FolderIcon, FileIcon, FolderPlus, Trash2, ArrowUp, Home, CheckSquare, Square } from 'lucide-react';
+import { Loader2, Upload, Download, FolderIcon, FileIcon, FolderPlus, Trash2, ArrowUp, Home, CheckSquare, Square, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { KDriveFolderSelector } from './KDriveFolderSelector';
@@ -58,6 +58,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
   const [offset, setOffset] = useState(0);
   const [limit] = useState(50);
   const [selectedFiles, setSelectedFiles] = useState<Set<number>>(new Set());
+  const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: number; name: string; path: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
@@ -82,6 +83,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
           path: clientData.kdrive_folder_path || '/',
           parentId: null
         });
+        setBreadcrumbs([{ id: parseInt(clientData.kdrive_folder_id), name: clientData.company, path: clientData.kdrive_folder_path || '/' }]);
         await loadFiles(clientData.kdrive_drive_id, clientData.kdrive_folder_id);
       } else if (clientData.kdrive_folder_id && !clientData.kdrive_drive_id) {
         // Folder is selected but drive is missing: set path for UI and prompt connection
@@ -220,6 +222,14 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     setHasMore(false);
     setSelectedFiles(new Set());
     
+    // Update breadcrumbs
+    const existingIndex = breadcrumbs.findIndex(b => b.id === folderId);
+    if (existingIndex >= 0) {
+      setBreadcrumbs(breadcrumbs.slice(0, existingIndex + 1));
+    } else {
+      setBreadcrumbs([...breadcrumbs, { id: folderId, name: folderName, path: folderPath }]);
+    }
+    
     await loadFiles(client.kdrive_drive_id, folderId.toString(), false, 0);
   };
 
@@ -234,6 +244,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     setOffset(0);
     setHasMore(false);
     setSelectedFiles(new Set());
+    setBreadcrumbs([{ id: parseInt(client.kdrive_folder_id), name: client.company, path: client.kdrive_folder_path || '/' }]);
     await loadFiles(client.kdrive_drive_id, client.kdrive_folder_id, false, 0);
   };
 
@@ -264,6 +275,11 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
       setOffset(0);
       setHasMore(false);
       setSelectedFiles(new Set());
+      
+      // Update breadcrumbs - remove the last one
+      if (breadcrumbs.length > 1) {
+        setBreadcrumbs(breadcrumbs.slice(0, -1));
+      }
       
       await loadFiles(client.kdrive_drive_id, currentFolder.parentId.toString(), false, 0);
     } catch (error) {
@@ -397,6 +413,20 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     } else {
       setSelectedFiles(new Set(files.map(f => f.id)));
     }
+  };
+
+  const handleBreadcrumbClick = async (breadcrumb: { id: number; name: string; path: string }) => {
+    if (!client) return;
+    setCurrentFolder({ id: breadcrumb.id, path: breadcrumb.path, parentId: null });
+    setFiles([]);
+    setOffset(0);
+    setHasMore(false);
+    setSelectedFiles(new Set());
+    
+    const index = breadcrumbs.findIndex(b => b.id === breadcrumb.id);
+    setBreadcrumbs(breadcrumbs.slice(0, index + 1));
+    
+    await loadFiles(client.kdrive_drive_id, breadcrumb.id.toString(), false, 0);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -573,60 +603,59 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
             Aucun fichier ou dossier
           </p>
         ) : (
-          <div className="grid gap-2">
+          <div className="border rounded-lg divide-y">
             {files.map((file) => (
-              <Card key={file.id} className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      checked={selectedFiles.has(file.id)}
-                      onCheckedChange={() => toggleFileSelection(file.id)}
-                    />
+              <div key={file.id} className="flex items-center justify-between p-3 hover:bg-muted/30 transition-colors">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Checkbox
+                    checked={selectedFiles.has(file.id)}
+                    onCheckedChange={() => toggleFileSelection(file.id)}
+                  />
+                  {file.type === 'dir' ? (
+                    <FolderIcon className="h-5 w-5 text-primary flex-shrink-0" />
+                  ) : (
+                    <FileIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
                     {file.type === 'dir' ? (
-                      <FolderIcon className="h-5 w-5 text-primary" />
-                    ) : (
-                      <FileIcon className="h-5 w-5 text-muted-foreground" />
-                    )}
-                    <div>
-                      <p className="font-medium">{file.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {file.type === 'dir' ? 'Dossier' : formatFileSize(file.size)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    {file.type === 'dir' ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <button
                         onClick={() => handleFolderClick(
                           file.id,
                           file.name,
                           (file as any).path || `${currentFolder?.path || ''}/${file.name}`,
                           currentFolder?.id || null
                         )}
+                        className="font-medium hover:text-primary transition-colors text-left truncate block w-full"
                       >
-                        Ouvrir
-                      </Button>
+                        {file.name}
+                      </button>
                     ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDownload(file.id, file.name)}
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
+                      <p className="font-medium truncate">{file.name}</p>
                     )}
+                    <p className="text-sm text-muted-foreground">
+                      {file.type === 'dir' ? 'Dossier' : formatFileSize(file.size)}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  {file.type === 'file' && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setDeleteItem({ id: file.id, name: file.name, type: file.type })}
+                      onClick={() => handleDownload(file.id, file.name)}
                     >
-                      <Trash2 className="h-4 w-4 text-destructive" />
+                      <Download className="h-4 w-4" />
                     </Button>
-                  </div>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDeleteItem({ id: file.id, name: file.name, type: file.type })}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         )}

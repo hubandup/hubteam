@@ -94,13 +94,6 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
             </Button>
           )}
           <ProtectedAction module="crm" action="update">
-            <KDriveFolderSelector 
-              clientId={client.id}
-              clientName={client.company}
-              onFolderConnected={onUpdate}
-            />
-          </ProtectedAction>
-          <ProtectedAction module="crm" action="update">
             <EditClientDialog client={client} onClientUpdated={onUpdate} />
           </ProtectedAction>
         </div>
