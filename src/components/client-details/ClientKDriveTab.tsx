@@ -484,7 +484,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
   return (
     <div className="space-y-4">
       {!client?.kdrive_folder_id && (
-        <div className="rounded-md border border-accent/30 bg-accent/10 p-3 text-sm flex items-center justify-between gap-2">
+        <div className="rounded-md border border-warning/50 bg-warning/20 p-3 text-sm flex items-center justify-between gap-2">
           <span className="text-muted-foreground">Le drive kDrive n'est pas attribué pour ce dossier.</span>
           {isAdmin && (
             <KDriveFolderSelector
