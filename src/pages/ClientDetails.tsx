@@ -75,7 +75,7 @@ export default function ClientDetails() {
               folderId: clientData.kdrive_folder_id,
             },
           });
-          setKdriveFilesCount(kdriveData?.files?.length || 0);
+          setKdriveFilesCount(Array.isArray(kdriveData?.data) ? kdriveData.data.length : 0);
         } catch (error) {
           console.error('Error fetching kDrive files:', error);
         }
