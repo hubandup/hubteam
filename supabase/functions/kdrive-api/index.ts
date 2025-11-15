@@ -190,12 +190,13 @@ serve(async (req) => {
         const tryErrors: any[] = [];
         for (const did of candidateDriveIds) {
           console.log('Trying driveId:', did);
-          const attempts = [
-            `${KDRIVE_API_BASE}/3/drive/${did}/files/${targetFolderId}/children?limit=200`,
-            `${KDRIVE_API_BASE}/3/drive/${did}/files?parent_id=${targetFolderId}&limit=200`,
-            `${KDRIVE_API_BASE}/2/drive/${did}/files/${targetFolderId}/children`,
-            `${KDRIVE_API_BASE}/2/drive/${did}/files?parent_id=${targetFolderId}`,
-          ];
+const attempts = [
+  `${KDRIVE_API_BASE}/3/drive/${did}/files/${targetFolderId}/files?limit=200`,
+  `${KDRIVE_API_BASE}/3/drive/${did}/files/${targetFolderId}/children?limit=200`,
+  `${KDRIVE_API_BASE}/3/drive/${did}/files?parent_id=${targetFolderId}&limit=200`,
+  `${KDRIVE_API_BASE}/2/drive/${did}/files/${targetFolderId}/children`,
+  `${KDRIVE_API_BASE}/2/drive/${did}/files?parent_id=${targetFolderId}`,
+];
 
           for (const url of attempts) {
             const r = await fetch(url, { headers: kdriveHeaders });

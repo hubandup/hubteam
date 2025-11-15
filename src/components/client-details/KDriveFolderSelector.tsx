@@ -17,8 +17,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
 // Fixed kDrive configuration
-const KDRIVE_DRIVE_ID = 6963095; // Hub & Up
-const KDRIVE_ROOT_FOLDER_ID = "3"; // Common documents root folder
+const KDRIVE_DRIVE_ID = 969307; // Hub & Up (product id)
+const KDRIVE_ROOT_FOLDER_ID = "50121"; // Common documents root folder (kDrive folder id)
 const DEBUG_NO_FILTER = false; // Set to true to disable server-side filtering
 
 interface KDriveFile {
