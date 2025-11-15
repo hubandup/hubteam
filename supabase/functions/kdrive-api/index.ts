@@ -31,7 +31,7 @@ serve(async (req) => {
       });
     }
 
-    const { action, driveId, folderId, folderPath, fileName, fileContent, parentId, rootFolderId, debugNoFilter, fileId } = await req.json();
+    const { action, driveId, folderId, folderPath, fileName, fileContent, parentId, rootFolderId, debugNoFilter, fileId, limit, offset } = await req.json();
 
     console.log('KDrive API request:', { action, driveId, folderId, folderPath, fileName });
 
@@ -185,18 +185,20 @@ serve(async (req) => {
 
         const targetFolderId = folderId || rootFolderId || 1; // Use provided folder, root folder, or drive root
         listTargetFolderId = targetFolderId;
-        console.log('Listing files candidates:', { candidateDriveIds, targetFolderId });
+        const limitParam = typeof limit === 'number' ? limit : 50;
+        const offsetParam = typeof offset === 'number' ? offset : 0;
+        console.log('Listing files candidates:', { candidateDriveIds, targetFolderId, limitParam, offsetParam });
 
         const tryErrors: any[] = [];
         for (const did of candidateDriveIds) {
           console.log('Trying driveId:', did);
-const attempts = [
-  `${KDRIVE_API_BASE}/3/drive/${did}/files/${targetFolderId}/files?limit=200`,
-  `${KDRIVE_API_BASE}/3/drive/${did}/files/${targetFolderId}/children?limit=200`,
-  `${KDRIVE_API_BASE}/3/drive/${did}/files?parent_id=${targetFolderId}&limit=200`,
-  `${KDRIVE_API_BASE}/2/drive/${did}/files/${targetFolderId}/children`,
-  `${KDRIVE_API_BASE}/2/drive/${did}/files?parent_id=${targetFolderId}`,
-];
+          const attempts = [
+            `${KDRIVE_API_BASE}/3/drive/${did}/files/${targetFolderId}/files?limit=${limitParam}&offset=${offsetParam}`,
+            `${KDRIVE_API_BASE}/3/drive/${did}/files/${targetFolderId}/children?limit=${limitParam}&offset=${offsetParam}`,
+            `${KDRIVE_API_BASE}/3/drive/${did}/files?parent_id=${targetFolderId}&limit=${limitParam}&offset=${offsetParam}`,
+            `${KDRIVE_API_BASE}/2/drive/${did}/files/${targetFolderId}/children`,
+            `${KDRIVE_API_BASE}/2/drive/${did}/files?parent_id=${targetFolderId}`,
+          ];
 
           for (const url of attempts) {
             const r = await fetch(url, { headers: kdriveHeaders });
