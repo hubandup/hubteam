@@ -154,16 +154,21 @@ export function KDriveFolderSelector({
   };
 
   const navigateToFolder = (folder: KDriveFile) => {
+    if (folder.id === currentFolderId) return;
     setCurrentFolderId(folder.id);
-    setCurrentPath(`${currentPath}/${folder.name}`);
-    setBreadcrumbs([...breadcrumbs, { id: folder.id, name: folder.name }]);
+    setCurrentPath((p) => `${p}/${folder.name}`);
+    setBreadcrumbs((b) => [...b, { id: folder.id, name: folder.name }]);
   };
 
   const navigateToBreadcrumb = (index: number) => {
-    const targetBreadcrumb = breadcrumbs[index];
-    setCurrentFolderId(targetBreadcrumb.id);
-    setBreadcrumbs(breadcrumbs.slice(0, index + 1));
-    setCurrentPath(breadcrumbs.slice(0, index + 1).map(b => b.name).join("/"));
+    setBreadcrumbs((b) => {
+      const sliced = b.slice(0, index + 1);
+      const targetId = sliced[sliced.length - 1].id;
+      const newPath = sliced.map((x) => x.name).join("/");
+      setCurrentFolderId(targetId);
+      setCurrentPath(newPath);
+      return sliced;
+    });
   };
 
   const selectCurrentFolder = async () => {
@@ -206,7 +211,7 @@ export function KDriveFolderSelector({
             <DialogDescription>
               <div className="flex items-center gap-1 flex-wrap">
                 {breadcrumbs.map((crumb, index) => (
-                  <span key={crumb.id} className="flex items-center gap-1">
+                  <span key={`${crumb.id}-${index}`} className="flex items-center gap-1">
                     <button
                       onClick={() => navigateToBreadcrumb(index)}
                       className="hover:underline"
