@@ -31,7 +31,7 @@ serve(async (req) => {
       });
     }
 
-    const { action, driveId, folderId, folderPath, fileName, fileContent, parentId, rootFolderId, debugNoFilter } = await req.json();
+    const { action, driveId, folderId, folderPath, fileName, fileContent, parentId, rootFolderId, debugNoFilter, fileId } = await req.json();
 
     console.log('KDrive API request:', { action, driveId, folderId, folderPath, fileName });
 
@@ -387,10 +387,10 @@ const attempts = [
           );
         }
         
-        const fileId = folderId; // For download, folderId is actually the file ID
+        const downloadFileId = folderId; // For download, folderId is actually the file ID
         
         response = await fetch(
-          `${KDRIVE_API_BASE}/2/drive/${downloadDriveId}/files/${fileId}/download`,
+          `${KDRIVE_API_BASE}/2/drive/${downloadDriveId}/files/${downloadFileId}/download`,
           { headers: kdriveHeaders }
         );
         
@@ -461,6 +461,57 @@ const attempts = [
           );
         }
         break;
+
+      case 'get-file-details':
+        response = await fetch(
+          `${KDRIVE_API_BASE}/2/drive/${driveId}/files/${fileId}`,
+          { headers: kdriveHeaders }
+        );
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Error getting file details:', response.status, errorData);
+          return new Response(
+            JSON.stringify({ error: 'Failed to get file details', details: errorData }),
+            { 
+              status: response.status,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        
+        const fileDetailsData = await response.json();
+        return new Response(
+          JSON.stringify({ file: fileDetailsData.data }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+
+      case 'delete-file':
+      case 'delete-folder':
+        const deleteResponse = await fetch(
+          `${KDRIVE_API_BASE}/2/drive/${driveId}/files/${fileId}/trash`,
+          { 
+            method: 'POST',
+            headers: kdriveHeaders 
+          }
+        );
+        
+        if (!deleteResponse.ok) {
+          const errorData = await deleteResponse.json().catch(() => ({}));
+          console.error('Error deleting item:', deleteResponse.status, errorData);
+          return new Response(
+            JSON.stringify({ error: 'Failed to delete item', details: errorData }),
+            { 
+              status: deleteResponse.status,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        
+        return new Response(
+          JSON.stringify({ success: true }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
 
       default:
         return new Response(
