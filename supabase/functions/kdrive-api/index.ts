@@ -479,7 +479,7 @@ serve(async (req) => {
       sampleItems: data?.data?.slice(0, 3).map((f: any) => ({ id: f.id, name: f.name, parent_id: f.parent_id, type: f.type }))
     });
     
-    if (action === 'list-files' && listTargetFolderId !== undefined && data && Array.isArray(data.data)) {
+    if (false && action === 'list-files' && listTargetFolderId !== undefined && data && Array.isArray(data.data)) {
       const targetIdNum = Number(listTargetFolderId);
       const targetIdStr = String(listTargetFolderId);
       console.log('Filtering with:', { targetIdNum, targetIdStr, totalItems: data.data.length });
