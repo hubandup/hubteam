@@ -484,7 +484,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
   return (
     <div className="space-y-4">
       {!client?.kdrive_folder_id && (
-        <div className="rounded-md border border-border bg-muted/30 p-3 text-sm flex items-center justify-between gap-2">
+        <div className="rounded-md border border-accent/30 bg-accent/10 p-3 text-sm flex items-center justify-between gap-2">
           <span className="text-muted-foreground">Le drive kDrive n'est pas attribué pour ce dossier.</span>
           {isAdmin && (
             <KDriveFolderSelector
@@ -500,7 +500,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
         <div className="flex items-center gap-1 text-sm text-muted-foreground flex-wrap">
           {breadcrumbs.map((crumb, index) => (
             <div key={crumb.id} className="flex items-center gap-1">
-              <button onClick={() => handleBreadcrumbClick(index)} className="hover:text-primary transition-colors">
+              <button onClick={() => handleBreadcrumbClick(crumb)} className="hover:text-primary transition-colors">
                 {crumb.name}
               </button>
               {index < breadcrumbs.length - 1 && <ChevronRight className="h-4 w-4" />}
