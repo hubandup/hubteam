@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Loader2, Upload, Download, FolderIcon, FileIcon, FolderPlus, Trash2, ArrowUp, Home, CheckSquare, Square, ChevronRight } from 'lucide-react';
+import { Loader2, Upload, Download, FolderIcon, FileIcon, FolderPlus, Trash2, ArrowUp, Home, CheckSquare, Square } from 'lucide-react';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { KDriveFolderSelector } from './KDriveFolderSelector';
@@ -58,7 +58,6 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
   const [offset, setOffset] = useState(0);
   const [limit] = useState(50);
   const [selectedFiles, setSelectedFiles] = useState<Set<number>>(new Set());
-  const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: number; name: string; path: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
@@ -83,7 +82,6 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
           path: clientData.kdrive_folder_path || '/',
           parentId: null
         });
-        setBreadcrumbs([{ id: parseInt(clientData.kdrive_folder_id), name: 'Racine', path: clientData.kdrive_folder_path || '/' }]);
         await loadFiles(clientData.kdrive_drive_id, clientData.kdrive_folder_id);
       } else if (clientData.kdrive_folder_id && !clientData.kdrive_drive_id) {
         // Folder is selected but drive is missing: set path for UI and prompt connection
@@ -222,14 +220,6 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     setHasMore(false);
     setSelectedFiles(new Set());
     
-    // Update breadcrumbs
-    const existingIndex = breadcrumbs.findIndex(b => b.id === folderId);
-    if (existingIndex >= 0) {
-      setBreadcrumbs(breadcrumbs.slice(0, existingIndex + 1));
-    } else {
-      setBreadcrumbs([...breadcrumbs, { id: folderId, name: folderName, path: folderPath }]);
-    }
-    
     await loadFiles(client.kdrive_drive_id, folderId.toString(), false, 0);
   };
 
@@ -244,7 +234,6 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     setOffset(0);
     setHasMore(false);
     setSelectedFiles(new Set());
-    setBreadcrumbs([{ id: parseInt(client.kdrive_folder_id), name: 'Racine', path: client.kdrive_folder_path || '/' }]);
     await loadFiles(client.kdrive_drive_id, client.kdrive_folder_id, false, 0);
   };
 
@@ -275,12 +264,6 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
       setOffset(0);
       setHasMore(false);
       setSelectedFiles(new Set());
-      
-      // Update breadcrumbs
-      const existingIndex = breadcrumbs.findIndex(b => b.id === currentFolder.parentId);
-      if (existingIndex >= 0) {
-        setBreadcrumbs(breadcrumbs.slice(0, existingIndex + 1));
-      }
       
       await loadFiles(client.kdrive_drive_id, currentFolder.parentId.toString(), false, 0);
     } catch (error) {
@@ -416,20 +399,6 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     }
   };
 
-  const handleBreadcrumbClick = async (breadcrumb: { id: number; name: string; path: string }) => {
-    if (!client) return;
-    setCurrentFolder({ id: breadcrumb.id, path: breadcrumb.path, parentId: null });
-    setFiles([]);
-    setOffset(0);
-    setHasMore(false);
-    setSelectedFiles(new Set());
-    
-    const index = breadcrumbs.findIndex(b => b.id === breadcrumb.id);
-    setBreadcrumbs(breadcrumbs.slice(0, index + 1));
-    
-    await loadFiles(client.kdrive_drive_id, breadcrumb.id.toString(), false, 0);
-  };
-
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -483,27 +452,8 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
           )}
         </div>
       )}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 text-sm">
-          <FolderIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-          <div className="flex items-center gap-1 overflow-x-auto">
-            {breadcrumbs.map((breadcrumb, index) => (
-              <div key={breadcrumb.id} className="flex items-center gap-1">
-                <button
-                  onClick={() => handleBreadcrumbClick(breadcrumb)}
-                  className="text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
-                >
-                  {breadcrumb.name}
-                </button>
-                {index < breadcrumbs.length - 1 && (
-                  <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
