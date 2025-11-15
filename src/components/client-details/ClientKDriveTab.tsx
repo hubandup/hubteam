@@ -53,6 +53,9 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{ id: number; name: string; type: 'dir' | 'file' } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const [limit] = useState(50);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
@@ -87,26 +90,33 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     }
   };
 
-  const loadFiles = async (driveId: number, folderId: string) => {
+  const loadFiles = async (driveId: number | undefined, folderId: string, append = false, customOffset?: number) => {
     try {
       const { data, error } = await supabase.functions.invoke('kdrive-api', {
         body: {
           action: 'list-files',
           driveId,
           folderId,
+          limit,
+          offset: typeof customOffset === 'number' ? customOffset : offset,
         },
       });
 
       if (error) throw error;
       
-      // Get parent_id from the first file if available
-      const arr = Array.isArray(data?.data) ? data.data : Array.isArray((data as any)?.files) ? (data as any).files : [];
+      // Extract array and pagination
+      const arr = Array.isArray(data?.data) ? data.data : [];
+      setHasMore(Boolean((data as any)?.has_more));
+      const newOffset = (typeof customOffset === 'number' ? customOffset : offset) + arr.length;
+      setOffset(newOffset);
+
+      // Get parent_id from first entry if available
       const parentId = arr?.[0]?.parent_id ?? null;
       if (currentFolder) {
         setCurrentFolder(prev => prev ? { ...prev, parentId } : null);
       }
       
-      setFiles(arr || []);
+      setFiles(prev => append ? [...prev, ...arr] : arr);
     } catch (error) {
       console.error('Error loading files:', error);
       toast.error('Erreur lors du chargement des fichiers');
@@ -191,7 +201,10 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
   const handleFolderClick = async (folderId: number, folderPath: string, parentId: number | null = null) => {
     if (!client) return;
     setCurrentFolder({ id: folderId, path: folderPath, parentId });
-    await loadFiles(client.kdrive_drive_id, folderId.toString());
+    setFiles([]);
+    setOffset(0);
+    setHasMore(false);
+    await loadFiles(client.kdrive_drive_id, folderId.toString(), false, 0);
   };
 
   const handleGoToRoot = async () => {
@@ -201,7 +214,10 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
       path: client.kdrive_folder_path || '/',
       parentId: null
     });
-    await loadFiles(client.kdrive_drive_id, client.kdrive_folder_id);
+    setFiles([]);
+    setOffset(0);
+    setHasMore(false);
+    await loadFiles(client.kdrive_drive_id, client.kdrive_folder_id, false, 0);
   };
 
   const handleGoToParent = async () => {
@@ -218,15 +234,18 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
 
       if (error) throw error;
       
-      const parentPath = data.file?.path || '/';
-      const grandParentId = data.file?.parent_id || null;
+      const parentPath = (data as any)?.file?.path || '/';
+      const grandParentId = (data as any)?.file?.parent_id || null;
       
       setCurrentFolder({ 
         id: currentFolder.parentId, 
         path: parentPath,
         parentId: grandParentId
       });
-      await loadFiles(client.kdrive_drive_id, currentFolder.parentId.toString());
+      setFiles([]);
+      setOffset(0);
+      setHasMore(false);
+      await loadFiles(client.kdrive_drive_id, currentFolder.parentId.toString(), false, 0);
     } catch (error) {
       console.error('Error navigating to parent:', error);
       toast.error('Erreur lors de la navigation');
@@ -324,27 +343,20 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     );
   }
 
-  if (!client?.kdrive_folder_id) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 space-y-4">
-        <p className="text-muted-foreground text-center">
-          {isAdmin 
-            ? "Ce client n'est pas encore connecté à un dossier kDrive"
-            : "Contactez votre administrateur pour associer le dossier kDrive à ce client"}
-        </p>
-        {isAdmin && (
-          <KDriveFolderSelector
-            clientId={clientId}
-            clientName={client?.company || 'Client'}
-            onFolderConnected={loadClientFolder}
-          />
-        )}
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
+      {!client?.kdrive_folder_id && (
+        <div className="rounded-md border border-border bg-muted/30 p-3 text-sm flex items-center justify-between gap-2">
+          <span className="text-muted-foreground">Dossier non connecté pour ce client. Navigation autorisée.</span>
+          {isAdmin && (
+            <KDriveFolderSelector
+              clientId={clientId}
+              clientName={client?.company || 'Client'}
+              onFolderConnected={loadClientFolder}
+            />
+          )}
+        </div>
+      )}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <div className="flex gap-1">
@@ -486,6 +498,14 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
           ))
         )}
       </div>
+
+      {hasMore && (
+        <div className="flex justify-center pt-2">
+          <Button variant="outline" onClick={() => client && loadFiles(client.kdrive_drive_id, (currentFolder?.id || 0).toString(), true)}>
+            Charger plus
+          </Button>
+        </div>
+      )}
 
       <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
         <DialogContent>
