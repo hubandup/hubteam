@@ -47,7 +47,14 @@ export function KDriveFolderSelector({ clientId, clientName, onFolderConnected }
         setPermissionMessage('Token valide avec les permissions nécessaires');
       } else {
         setPermissionStatus('error');
-        setPermissionMessage(`Scopes manquants: ${data.missingScopes.join(', ')}`);
+        let errorMsg = data.message || 'Problème de permissions';
+        if (data.errorDetails) {
+          errorMsg += ` - ${data.errorDetails}`;
+        }
+        if (data.missingScopes && data.missingScopes.length > 0) {
+          errorMsg += ` (scopes: ${data.missingScopes.join(', ')})`;
+        }
+        setPermissionMessage(errorMsg);
       }
     } catch (error: any) {
       setPermissionStatus('error');
@@ -316,7 +323,12 @@ export function KDriveFolderSelector({ clientId, clientName, onFolderConnected }
                 <AlertDescription>
                   {permissionMessage}
                   <br />
-                  <span className="text-sm">Assurez-vous que le token inclut: drive, drive:read, drive:write, product:read</span>
+                  <span className="text-sm mt-2 block">
+                    Pour créer un token valide : <br />
+                    1. Allez dans le Manager Infomaniak → API Tokens<br />
+                    2. Créez un nouveau token en sélectionnant le produit <strong>"kDrive"</strong><br />
+                    3. Copiez le token et mettez-le à jour dans les secrets
+                  </span>
                 </AlertDescription>
               </Alert>
             )}

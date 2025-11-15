@@ -45,34 +45,50 @@ serve(async (req) => {
       case 'check-permissions':
         // Check both kDrive and product listing to infer required scopes
         const missingScopes: string[] = [];
+        let errorDetails = '';
+        
         // 1) Check kDrive scopes
         const driveResp = await fetch(`${KDRIVE_API_BASE}/1/kdrive`, { headers: kdriveHeaders });
         let driveOk = driveResp.ok;
         const driveData = await driveResp.json().catch(() => ({}));
+        
+        console.log('KDrive endpoint response:', { status: driveResp.status, ok: driveOk, data: driveData });
+        
         if (!driveOk) {
+          errorDetails = driveData?.error?.description || driveData?.error?.code || 'Unknown error';
           if (driveData?.error?.context?.scopes) {
             missingScopes.push(...driveData.error.context.scopes);
-          } else {
-            missingScopes.push('drive', 'drive:read', 'drive:write');
           }
         }
+        
         // 2) Check product read (some accounts expose drives under products)
         const productResp = await fetch(`${KDRIVE_API_BASE}/1/product`, { headers: kdriveHeaders });
         let productOk = productResp.ok;
         const productData = await productResp.json().catch(() => ({}));
+        
+        console.log('Product endpoint response:', { status: productResp.status, ok: productOk, data: productData });
+        
         if (!productOk) {
+          if (!errorDetails) {
+            errorDetails = productData?.error?.description || productData?.error?.code || 'Unknown error';
+          }
           if (productData?.error?.context?.scopes) {
-            for (const s of productData.error.context.scopes) if (!missingScopes.includes(s)) missingScopes.push(s);
-          } else if (!missingScopes.includes('product:read')) {
-            missingScopes.push('product:read');
+            for (const s of productData.error.context.scopes) {
+              if (!missingScopes.includes(s)) missingScopes.push(s);
+            }
           }
         }
+        
         const hasRequiredScopes = driveOk && productOk;
+        
         return new Response(
           JSON.stringify({ 
             hasRequiredScopes,
-            missingScopes,
-            message: hasRequiredScopes ? 'All required scopes present' : 'Missing scopes'
+            missingScopes: missingScopes.length > 0 ? missingScopes : undefined,
+            errorDetails: !hasRequiredScopes ? errorDetails : undefined,
+            message: hasRequiredScopes 
+              ? 'Token valide avec les permissions nécessaires' 
+              : 'Le token n\'a pas les permissions requises pour accéder à kDrive'
           }),
           {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
