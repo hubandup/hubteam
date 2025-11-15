@@ -442,7 +442,10 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
             variant="ghost"
             size="icon"
             disabled={uploading || !client?.kdrive_drive_id || !currentFolder}
-            onClick={() => setShowDropZone(!showDropZone)}
+            onClick={() => {
+              console.log('Upload button clicked, showDropZone:', showDropZone);
+              setShowDropZone(!showDropZone);
+            }}
             title="Téléverser des fichiers"
           >
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
@@ -467,8 +470,12 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
         <div
           onDragOver={handleDragOver}
           onDrop={handleDrop}
-          className="rounded-lg border-2 border-dashed border-primary bg-primary/5 p-8 text-center cursor-pointer"
-          onClick={() => fileInputRef.current?.click()}
+          className="rounded-lg border-2 border-dashed border-primary bg-primary/5 p-8 text-center cursor-pointer transition-all"
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log('Drop zone clicked');
+            fileInputRef.current?.click();
+          }}
         >
           <div className="flex flex-col items-center gap-2">
             <Upload className="h-8 w-8 text-primary" />
