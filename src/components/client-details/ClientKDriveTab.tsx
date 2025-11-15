@@ -249,34 +249,19 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
   };
 
   const handleGoToParent = async () => {
-    if (!client || !currentFolder?.parentId) return;
+    if (!currentFolder?.parentId || !client) return;
     
     try {
-      const { data, error } = await supabase.functions.invoke('kdrive-api', {
-        body: {
-          action: 'get-file-details',
-          driveId: client.kdrive_drive_id,
-          fileId: currentFolder.parentId.toString(),
-        },
-      });
-
-      if (error) throw error;
-      
-      const parentPath = (data as any)?.file?.path || '/';
-      const grandParentId = (data as any)?.file?.parent_id || null;
-      const parentName = (data as any)?.file?.name || 'Dossier';
-      
-      setCurrentFolder({ 
-        id: currentFolder.parentId, 
-        path: parentPath,
-        parentId: grandParentId
+      setCurrentFolder({
+        id: currentFolder.parentId,
+        path: '/',
+        parentId: null
       });
       setFiles([]);
       setOffset(0);
       setHasMore(false);
       setSelectedFiles(new Set());
       
-      // Update breadcrumbs - remove the last one
       if (breadcrumbs.length > 1) {
         setBreadcrumbs(breadcrumbs.slice(0, -1));
       }
