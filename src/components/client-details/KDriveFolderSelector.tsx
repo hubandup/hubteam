@@ -53,16 +53,33 @@ export function KDriveFolderSelector({
   const loadFolders = async () => {
     setIsLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         toast.error("Session expirée");
+        return;
+      }
+
+      // Pré-vérification des permissions du token kDrive
+      const permCheck = await supabase.functions.invoke("kdrive-api", {
+        body: { action: "check-permissions" },
+      });
+
+      const hasScopes = permCheck.data?.hasRequiredScopes;
+      if (!hasScopes) {
+        const details = permCheck.data?.errorDetails || permCheck.error?.message;
+        console.error("Permissions kDrive insuffisantes:", details);
+        toast.error(
+          `Token kDrive invalide ou insuffisant${details ? `: ${details}` : ""}`
+        );
         return;
       }
 
       const response = await supabase.functions.invoke("kdrive-api", {
         body: {
           action: "list-files",
-          driveId: KDRIVE_DRIVE_ID,
+          // Ne pas passer driveId, l'edge function le déduit du produit configuré
           folderId: KDRIVE_ROOT_FOLDER_ID,
           rootFolderId: KDRIVE_ROOT_FOLDER_ID,
         },
@@ -102,7 +119,6 @@ export function KDriveFolderSelector({
       const response = await supabase.functions.invoke("kdrive-api", {
         body: {
           action: "create-folder",
-          driveId: KDRIVE_DRIVE_ID,
           fileName: newFolderName,
           parentId: KDRIVE_ROOT_FOLDER_ID,
           rootFolderId: KDRIVE_ROOT_FOLDER_ID,
