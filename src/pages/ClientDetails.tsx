@@ -8,6 +8,7 @@ import { ResponsiveTabs, type TabItem } from '@/components/ui/responsive-tabs';
 import { ClientInfoTab } from '@/components/client-details/ClientInfoTab';
 import { ClientMeetingNotesTab } from '@/components/client-details/ClientMeetingNotesTab';
 import { ClientProjectsTab } from '@/components/client-details/ClientProjectsTab';
+import { ClientKDriveTab } from '@/components/client-details/ClientKDriveTab';
 import { ClientInvoicesTab } from '@/components/client-details/ClientInvoicesTab';
 
 export default function ClientDetails() {
@@ -17,6 +18,7 @@ export default function ClientDetails() {
   const [loading, setLoading] = useState(true);
   const [meetingNotesCount, setMeetingNotesCount] = useState(0);
   const [projectsCount, setProjectsCount] = useState(0);
+  const [kdriveFilesCount, setKdriveFilesCount] = useState(0);
   const [invoicesCount, setInvoicesCount] = useState(0);
 
   useEffect(() => {
@@ -56,6 +58,28 @@ export default function ClientDetails() {
 
       if (projectsError) throw projectsError;
       setProjectsCount(projects || 0);
+
+      // Count kDrive files if connected
+      const { data: clientData } = await supabase
+        .from('clients')
+        .select('kdrive_folder_id, kdrive_drive_id')
+        .eq('id', id)
+        .single();
+
+      if (clientData?.kdrive_folder_id && clientData?.kdrive_drive_id) {
+        try {
+          const { data: kdriveData } = await supabase.functions.invoke('kdrive-api', {
+            body: {
+              action: 'list-files',
+              driveId: clientData.kdrive_drive_id,
+              folderId: clientData.kdrive_folder_id,
+            },
+          });
+          setKdriveFilesCount(kdriveData?.files?.length || 0);
+        } catch (error) {
+          console.error('Error fetching kDrive files:', error);
+        }
+      }
     } catch (error) {
       console.error('Error fetching badge counts:', error);
     }
@@ -112,6 +136,13 @@ export default function ClientDetails() {
       icon: <FolderKanban className="h-4 w-4" />,
       badge: projectsCount,
       content: <ClientProjectsTab clientId={client.id} />
+    },
+    {
+      value: 'kdrive',
+      label: 'kDrive',
+      icon: <FolderKanban className="h-4 w-4" />,
+      badge: kdriveFilesCount,
+      content: <ClientKDriveTab clientId={client.id} />
     },
     {
       value: 'invoices',
