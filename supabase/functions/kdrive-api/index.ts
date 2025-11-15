@@ -151,21 +151,48 @@ serve(async (req) => {
         
         console.log('Listing files for drive:', targetDriveId, 'folder:', targetFolderId);
         
-        response = await fetch(
-          `${KDRIVE_API_BASE}/2/drive/${targetDriveId}/files/${targetFolderId}/directory`,
-          { headers: kdriveHeaders }
-        );
+        const directoryUrl = `${KDRIVE_API_BASE}/2/drive/${targetDriveId}/files/${targetFolderId}/directory`;
+        response = await fetch(directoryUrl, { headers: kdriveHeaders });
         
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          console.error('Error listing files:', response.status, errorData);
-          return new Response(
-            JSON.stringify({ error: 'Failed to list files', details: errorData }),
-            { 
-              status: response.status,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          const isMethodNotFound = response.status === 404 || errorData?.error?.code === 'method_not_found';
+          console.error('Error listing files (primary endpoint)', response.status, errorData);
+          
+          if (isMethodNotFound) {
+            // Fallback to alternate endpoint observed in kDrive v2
+            const childrenUrl = `${KDRIVE_API_BASE}/2/drive/${targetDriveId}/files/${targetFolderId}/children`;
+            const altResp = await fetch(childrenUrl, { headers: kdriveHeaders });
+            
+            if (!altResp.ok) {
+              const altErrorData = await altResp.json().catch(() => ({}));
+              console.error('Error listing files (fallback endpoint)', altResp.status, altErrorData);
+              return new Response(
+                JSON.stringify({ 
+                  error: 'Failed to list files', 
+                  details: {
+                    primary: { status: response.status, error: errorData },
+                    fallback: { status: altResp.status, error: altErrorData }
+                  }
+                }),
+                { 
+                  status: altResp.status,
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+                }
+              );
             }
-          );
+            
+            // Use successful fallback response
+            response = altResp;
+          } else {
+            return new Response(
+              JSON.stringify({ error: 'Failed to list files', details: errorData }),
+              { 
+                status: response.status,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              }
+            );
+          }
         }
         break;
 
