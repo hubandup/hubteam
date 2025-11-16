@@ -30,16 +30,37 @@ export function AddTeamMemberDialog({
   projectId,
   onSuccess,
 }: AddTeamMemberDialogProps) {
-  const [memberType, setMemberType] = useState<'profile' | 'agency_contact' | 'client' | 'client_contact'>('profile');
+  const [memberType, setMemberType] = useState<'profile' | 'agency_contact' | 'client'>('profile');
   const [memberId, setMemberId] = useState('');
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [projectClientId, setProjectClientId] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
+      fetchProjectClient();
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (open && (memberType !== 'client' || projectClientId)) {
       fetchMembers();
     }
-  }, [open, memberType]);
+  }, [open, memberType, projectClientId]);
+
+  const fetchProjectClient = async () => {
+    try {
+      const { data } = await supabase
+        .from('project_clients')
+        .select('client_id')
+        .eq('project_id', projectId)
+        .maybeSingle();
+      
+      setProjectClientId(data?.client_id || null);
+    } catch (error) {
+      console.error('Error fetching project client:', error);
+    }
+  };
 
   const fetchMembers = async () => {
     try {
@@ -57,18 +78,15 @@ export function AddTeamMemberDialog({
           .select('id, first_name, last_name, email, agencies(name)')
           .order('first_name');
         data = contacts || [];
-      } else if (memberType === 'client_contact') {
-        const { data: clientContacts } = await supabase
-          .from('client_contacts' as any)
-          .select('id, first_name, last_name, email, title')
-          .order('first_name');
-        data = clientContacts || [];
       } else if (memberType === 'client') {
-        const { data: clients } = await supabase
-          .from('clients')
-          .select('id, first_name, last_name, email, company')
-          .order('first_name');
-        data = clients || [];
+        if (projectClientId) {
+          const { data: clientContacts } = await supabase
+            .from('client_contacts')
+            .select('id, first_name, last_name, email, title')
+            .eq('client_id', projectClientId)
+            .order('first_name');
+          data = clientContacts || [];
+        }
       }
 
       setMembers(data);
@@ -119,7 +137,7 @@ export function AddTeamMemberDialog({
         .from('project_team_members' as any)
         .insert({
           project_id: projectId,
-          member_type: memberType,
+          member_type: memberType === 'client' ? 'client_contact' : memberType,
           member_id: memberId,
         });
 
@@ -149,10 +167,7 @@ export function AddTeamMemberDialog({
     if (memberType === 'agency_contact' && member.agencies) {
       return `${name} (${member.agencies.name})`;
     }
-    if (memberType === 'client' && member.company) {
-      return `${name} (${member.company})`;
-    }
-    if (memberType === 'client_contact') {
+    if (memberType === 'client') {
       return `${name}${member.title ? ` - ${member.title}` : ''}`;
     }
     return `${name} (${member.email})`;
@@ -181,7 +196,6 @@ export function AddTeamMemberDialog({
                 <SelectItem value="profile">Équipe</SelectItem>
                 <SelectItem value="agency_contact">Agences</SelectItem>
                 <SelectItem value="client">Clients</SelectItem>
-                <SelectItem value="client_contact">Contacts clients</SelectItem>
               </SelectContent>
             </Select>
           </div>
