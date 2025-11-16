@@ -31,9 +31,9 @@ serve(async (req) => {
       });
     }
 
-    const { action, driveId, folderId, folderPath, fileName, fileContent, fileSize, parentId, rootFolderId, debugNoFilter, fileId, limit, offset, folderName, fileIds } = await req.json();
+    const { action, driveId, folderId, folderPath, fileName, fileContent, fileSize, parentId, rootFolderId, debugNoFilter, fileId, limit, offset, folderName, fileIds, newName } = await req.json();
 
-    console.log('KDrive API request:', { action, driveId, folderId, folderPath, fileName });
+    console.log('KDrive API request:', { action, driveId, folderId, folderPath, fileName, fileId, newName });
 
     const kdriveHeaders = {
       'Authorization': `Bearer ${KDRIVE_TOKEN}`,
@@ -1115,6 +1115,132 @@ serve(async (req) => {
           JSON.stringify({ success: true }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+
+      case 'rename':
+        if (!fileId || !newName) {
+          return new Response(JSON.stringify({ error: 'fileId and newName are required' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        console.log('=== RENAME FILE REQUEST ===');
+        console.log('Drive ID:', driveId);
+        console.log('File ID:', fileId);
+        console.log('New Name:', newName);
+
+        const renameAttempts = [
+          { path: `/3/drive/${driveId}/files/${fileId}/rename`, method: 'POST' },
+          { path: `/3/drive/${driveId}/file/${fileId}/rename`, method: 'POST' },
+          { path: `/2/drive/${driveId}/files/${fileId}/rename`, method: 'POST' },
+          { path: `/3/drive/${driveId}/files/${fileId}`, method: 'PATCH' },
+        ];
+
+        let renameError = null;
+
+        for (const attempt of renameAttempts) {
+          try {
+            const renameUrl = `${KDRIVE_API_BASE}${attempt.path}`;
+            const renamePayload = JSON.stringify({ name: newName });
+
+            console.log('--- Rename Attempt ---');
+            console.log('URL:', renameUrl);
+            console.log('Method:', attempt.method);
+            console.log('Payload:', renamePayload);
+
+            const renameResp = await fetch(renameUrl, {
+              method: attempt.method,
+              headers: kdriveHeaders,
+              body: renamePayload,
+            });
+
+            console.log('Response status:', renameResp.status);
+            const renameData = await renameResp.json().catch(() => null);
+            console.log('Response body:', JSON.stringify(renameData, null, 2));
+
+            if (renameResp.ok && (renameData?.result === 'success' || renameData?.data)) {
+              console.log('✓ Rename succeeded');
+              return new Response(JSON.stringify({ result: 'success', fileId, newName }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            }
+
+            renameError = renameData;
+          } catch (err) {
+            console.error('Rename attempt failed:', err);
+            renameError = { error: String(err) };
+          }
+        }
+
+        return new Response(JSON.stringify({ error: 'Failed to rename file', details: renameError }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+
+      case 'get-file-url':
+        if (!fileId) {
+          return new Response(JSON.stringify({ error: 'fileId is required' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        console.log('=== GET FILE URL REQUEST ===');
+        console.log('Drive ID:', driveId);
+        console.log('File ID:', fileId);
+
+        const fileUrlAttempts = [
+          { path: `/3/drive/${driveId}/files/${fileId}/download` },
+          { path: `/3/drive/${driveId}/file/${fileId}/download` },
+          { path: `/2/drive/${driveId}/files/${fileId}/download` },
+        ];
+
+        for (const attempt of fileUrlAttempts) {
+          try {
+            const fileUrl = `${KDRIVE_API_BASE}${attempt.path}`;
+            console.log('--- File URL Attempt ---');
+            console.log('URL:', fileUrl);
+
+            const fileResp = await fetch(fileUrl, {
+              method: 'GET',
+              headers: kdriveHeaders,
+            });
+
+            console.log('Response status:', fileResp.status);
+            const fileData = await fileResp.json().catch(() => null);
+            console.log('Response body:', JSON.stringify(fileData, null, 2));
+
+            // Check if we got a download URL in the response
+            if (fileResp.ok && fileData?.data?.url) {
+              console.log('✓ Got download URL');
+              return new Response(JSON.stringify({ 
+                result: 'success', 
+                url: fileData.data.url,
+                mimeType: fileData.data.mime_type || null
+              }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            }
+
+            // If the response is a redirect, follow it
+            if (fileResp.status === 302 || fileResp.status === 301) {
+              const redirectUrl = fileResp.headers.get('location');
+              if (redirectUrl) {
+                console.log('✓ Got redirect URL');
+                return new Response(JSON.stringify({ result: 'success', url: redirectUrl }), {
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                });
+              }
+            }
+          } catch (err) {
+            console.error('File URL attempt failed:', err);
+          }
+        }
+
+        return new Response(JSON.stringify({ error: 'Failed to get file URL' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
 
       default:
         return new Response(
