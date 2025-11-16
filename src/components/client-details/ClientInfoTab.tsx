@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Mail, Phone, Calendar, Building2, Briefcase, TrendingUp, ExternalLink, Clock, FolderKanban, CheckCircle2, PhoneCall, MessageSquare, CalendarDays } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Mail, Phone, Calendar, Building2, Briefcase, TrendingUp, ExternalLink, Clock, FolderKanban, CheckCircle2, PhoneCall, MessageSquare, CalendarDays, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { EditClientDialog } from '@/components/EditClientDialog';
@@ -14,7 +15,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { ClientContactsManager } from './ClientContactsManager';
 import { KDriveFolderSelector } from './KDriveFolderSelector';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useRoleConfig } from '@/hooks/useRoleConfig';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface ClientInfoTabProps {
   client: {
@@ -70,6 +73,7 @@ interface TeamMember {
 export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
   const isMobile = useIsMobile();
   const { isAgency, isClient } = useUserRole();
+  const { getRoleLabel } = useRoleConfig();
   const [activitySector, setActivitySector] = useState<any>(null);
   const [clientStatus, setClientStatus] = useState<any>(null);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
@@ -77,16 +81,43 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
   const [projectProgress, setProjectProgress] = useState<number>(0);
   const [totalProjects, setTotalProjects] = useState<number>(0);
   const [teamMember, setTeamMember] = useState<TeamMember | null>(null);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
   useEffect(() => {
     fetchSectorAndStatus();
     if (isClient) {
       fetchClientData();
     }
+    if (!isClient && !isAgency) {
+      fetchTeamMembers();
+    }
     if (client.main_contact_id) {
       fetchMainContact();
     }
-  }, [client, isClient]);
+  }, [client, isClient, isAgency]);
+
+  const fetchTeamMembers = async () => {
+    const { data: rolesData } = await supabase
+      .from('user_roles')
+      .select('user_id, role')
+      .in('role', ['admin', 'team']);
+
+    if (rolesData) {
+      const userIds = rolesData.map(r => r.user_id);
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email, avatar_url')
+        .in('id', userIds);
+
+      if (profilesData) {
+        const members = profilesData.map(profile => ({
+          ...profile,
+          role: rolesData.find(r => r.user_id === profile.id)?.role || 'team'
+        }));
+        setTeamMembers(members);
+      }
+    }
+  };
 
   const fetchMainContact = async () => {
     if (!client.main_contact_id) return;
@@ -108,6 +139,23 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
         ...profileData,
         role: roleData?.role || 'team'
       });
+    }
+  };
+
+  const handleMainContactChange = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({ main_contact_id: userId || null })
+        .eq('id', client.id);
+
+      if (error) throw error;
+
+      toast.success('Interlocuteur Hub & Up mis à jour');
+      onUpdate();
+    } catch (error) {
+      console.error('Error updating main contact:', error);
+      toast.error('Erreur lors de la mise à jour');
     }
   };
 
@@ -291,6 +339,31 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
               </div>
             </div>
           )}
+
+          {!isClient && !isAgency && (
+            <div className="flex items-start gap-3">
+              <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground mb-2">Interlocuteur Hub & Up</p>
+                <Select
+                  value={client.main_contact_id || ''}
+                  onValueChange={handleMainContactChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un interlocuteur" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Aucun</SelectItem>
+                    {teamMembers.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.first_name} {member.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -445,7 +518,7 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
                   {teamMember.first_name} {teamMember.last_name}
                 </p>
                 <Badge variant="secondary" className="mt-1">
-                  {teamMember.role === 'admin' ? 'Administrateur' : 'Équipe'}
+                  {getRoleLabel(teamMember.role)}
                 </Badge>
               </div>
 
