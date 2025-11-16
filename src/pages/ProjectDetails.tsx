@@ -23,7 +23,7 @@ import { fr } from 'date-fns/locale';
 import { ProjectTeamTab } from '@/components/project-details/ProjectTeamTab';
 import { ProjectTasksTab } from '@/components/project-details/ProjectTasksTab';
 import { ProjectCommentsTab } from '@/components/project-details/ProjectCommentsTab';
-import { ProjectKDriveTab } from '@/components/project-details/ProjectKDriveTab';
+import { ClientKDriveTab } from '@/components/client-details/ClientKDriveTab';
 import { SelectClientDialog } from '@/components/project-details/SelectClientDialog';
 import { EditProjectInfoDialog } from '@/components/project-details/EditProjectInfoDialog';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -385,7 +385,13 @@ export default function ProjectDetails() {
             value: 'kdrive',
             label: 'KDrive',
             icon: <FileText className="h-4 w-4" />,
-            content: <ProjectKDriveTab projectId={id!} />
+            content: project?.project_clients?.[0]?.clients?.id ? (
+              <ClientKDriveTab clientId={project.project_clients[0].clients.id} />
+            ) : (
+              <div className="flex items-center justify-center p-8 text-muted-foreground">
+                Ce projet n'a pas de client associé
+              </div>
+            )
           }
         ]}
       />
