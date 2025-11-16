@@ -346,7 +346,10 @@ serve(async (req) => {
         const uploadFolderId = folderId || 1;
         
         // Decode base64 content
-        const binaryString = atob(fileContent);
+        const base64Data = (typeof fileContent === 'string' && fileContent.includes(','))
+          ? fileContent.split(',').pop()!
+          : fileContent;
+        const binaryString = atob(base64Data);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
           bytes[i] = binaryString.charCodeAt(i);
@@ -357,13 +360,19 @@ serve(async (req) => {
         console.info(`Creating upload session for file: ${fileName} in folder: ${uploadFolderId}`);
         
         const uploadPayload = {
-          directory_id: uploadFolderId, // Send as string, API will convert
+          directory_id: String(uploadFolderId),
           file_name: fileName || 'file',
           conflict: 'rename',
           total_size: bytes.length
-        };
+        } as Record<string, string | number>;
         
         console.info('Upload session payload:', uploadPayload);
+        
+        // Some kDrive endpoints expect x-www-form-urlencoded instead of JSON
+        const formBody = new URLSearchParams(Object.entries(uploadPayload).reduce((acc, [k, v]) => {
+          acc[k] = String(v);
+          return acc;
+        }, {} as Record<string, string>));
         
         const sessionResp = await fetch(
           `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload`,
@@ -371,9 +380,9 @@ serve(async (req) => {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${KDRIVE_TOKEN}`,
-              'Content-Type': 'application/json',
+              'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: JSON.stringify(uploadPayload)
+            body: formBody.toString()
           }
         );
         
