@@ -8,6 +8,7 @@ import { Plus, Trash2, User, Building2, Users, ExternalLink } from 'lucide-react
 import { Badge } from '@/components/ui/badge';
 import { AddTeamMemberDialog } from './AddTeamMemberDialog';
 import { ProtectedAction } from '@/components/ProtectedAction';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface TeamMember {
   id: string;
@@ -23,6 +24,7 @@ interface ProjectTeamTabProps {
 }
 
 export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
+  const { isClient } = useUserRole();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [agencies, setAgencies] = useState<any[]>([]);
   const [clientInfo, setClientInfo] = useState<{ id: string; company: string } | null>(null);
@@ -218,7 +220,7 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
 
   return (
     <div className="space-y-6">
-      {clientInfo && (
+      {!isClient && clientInfo && (
         <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border">
           <div className="flex items-center gap-2">
             <User className="h-4 w-4 text-muted-foreground" />
