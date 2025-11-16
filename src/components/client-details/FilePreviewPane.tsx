@@ -53,9 +53,20 @@ export function FilePreviewPane({ file, onClose, onGetFileUrl }: FilePreviewPane
 
     try {
       const result = await onGetFileUrl(file.id);
-      // Use the proxy URL directly so the browser streams the PDF
-      setFileUrl(result.url);
-      setMimeType(result.mimeType || null);
+      const proxyUrl = result.url;
+      
+      // Fetch via proxy and create a blob URL for reliable display
+      const response = await fetch(proxyUrl);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      
+      setFileUrl(blobUrl);
+      setMimeType(blob.type || result.mimeType || null);
     } catch (err) {
       console.error('Failed to load file URL:', err);
       setError('Impossible de charger le fichier');
@@ -124,16 +135,12 @@ export function FilePreviewPane({ file, onClose, onGetFileUrl }: FilePreviewPane
 
             {isPdf && (
               <div className="rounded-lg overflow-hidden border bg-muted">
-                <object
-                  data={fileUrl}
-                  type="application/pdf"
+                <iframe
+                  src={fileUrl}
                   className="w-full h-96"
                   title={file.name}
-                >
-                  <p className="p-4 text-center text-sm text-muted-foreground">
-                    Impossible d'afficher le PDF. <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Ouvrir dans un nouvel onglet</a>
-                  </p>
-                </object>
+                  style={{ border: 'none' }}
+                />
               </div>
             )}
 
@@ -161,6 +168,7 @@ export function FilePreviewPane({ file, onClose, onGetFileUrl }: FilePreviewPane
               variant="outline"
               className="w-full"
               onClick={() => {
+                // fileUrl is already a blob URL, just download it
                 const a = document.createElement('a');
                 a.href = fileUrl;
                 a.download = file.name;
