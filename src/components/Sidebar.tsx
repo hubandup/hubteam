@@ -60,8 +60,9 @@ export function Sidebar() {
 
   const mainItems = [
     { title: 'Accueil', url: '/', icon: Home, module: 'dashboard' as const },
+    ...(role === 'client' && clientId ? [{ title: 'Ma fiche client', url: `/client/${clientId}`, icon: Users, module: 'crm' as const, matchParent: true }] : []),
     { title: 'Tableau de bord', url: '/dashboard', icon: LayoutDashboard, module: 'dashboard' as const },
-    { title: 'CRM', url: role === 'client' && clientId ? `/client/${clientId}` : '/crm', icon: Users, module: 'crm' as const, matchParent: true },
+    { title: 'CRM', url: '/crm', icon: Users, module: 'crm' as const, matchParent: true },
     { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const, matchParent: true },
     { title: 'Projets', url: '/projects', icon: FolderKanban, module: 'projects' as const, matchParent: true },
     { title: 'Messages', url: '/messages', icon: MessageSquare, module: 'messages' as const },
