@@ -53,25 +53,27 @@ export function Sidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainItems.map((item) => 
-                canRead(item.module) ? (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <NavLink 
-                        to={item.url} 
-                        end={item.url === '/' || item.url === '/dashboard'} 
-                        matchParent={item.matchParent}
-                        activePatterns={item.title === 'CRM' ? ['/client'] : item.title === 'Projets' ? ['/project'] : item.title === 'Agences' ? ['/agency'] : []}
-                        className="hover:bg-muted/50" 
-                        activeClassName="bg-primary/10 text-primary font-medium"
-                      >
-                        <item.icon className="mr-2 h-4 w-4" />
-                        <span>{item.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ) : null
-              )}
+              {mainItems
+                .filter(item => item.title !== 'Tableau de bord' || role === 'admin')
+                .map((item) => 
+                  canRead(item.module) ? (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild>
+                        <NavLink 
+                          to={item.url} 
+                          end={item.url === '/' || item.url === '/dashboard'} 
+                          matchParent={item.matchParent}
+                          activePatterns={item.title === 'CRM' ? ['/client'] : item.title === 'Projets' ? ['/project'] : item.title === 'Agences' ? ['/agency'] : []}
+                          className="hover:bg-muted/50" 
+                          activeClassName="bg-primary/10 text-primary font-medium"
+                        >
+                          <item.icon className="mr-2 h-4 w-4" />
+                          <span>{item.title}</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ) : null
+                )}
               {showSettings && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
