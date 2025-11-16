@@ -352,16 +352,19 @@ serve(async (req) => {
           bytes[i] = binaryString.charCodeAt(i);
         }
         
-        // Use official kDrive upload session flow
-        // Step 1: Create upload session
+        // Use kDrive API v3 upload flow with upload tokens
+        // Step 1: Create upload session and get upload token
+        console.info(`Creating upload session for file: ${fileName} in folder: ${uploadFolderId}`);
+        
         const sessionResp = await fetch(
-          `${KDRIVE_API_BASE}/2/drive/${uploadDriveId}/files/upload/session`,
+          `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload`,
           {
             method: 'POST',
             headers: kdriveHeaders,
             body: JSON.stringify({
-              directory_id: uploadFolderId,
+              directory_id: parseInt(String(uploadFolderId)),
               file_name: fileName || 'file',
+              conflict: 'rename',
               total_size: bytes.length
             })
           }
@@ -380,11 +383,11 @@ serve(async (req) => {
         }
         
         const sessionData = await sessionResp.json();
-        const uploadUrl = sessionData?.data?.upload_url;
+        console.info('Session response:', sessionData);
         
-        if (!uploadUrl) {
+        if (sessionData.result !== 'success' || !sessionData.data?.upload_token) {
           return new Response(
-            JSON.stringify({ error: 'No upload URL returned', details: sessionData }),
+            JSON.stringify({ error: 'No upload token returned', details: sessionData }),
             { 
               status: 500,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -392,34 +395,57 @@ serve(async (req) => {
           );
         }
         
-        // Step 2: Upload file data to the session URL
-        const uploadResp = await fetch(uploadUrl, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/octet-stream',
-            'Content-Length': String(bytes.length)
-          },
-          body: bytes
-        });
+        const uploadToken = sessionData.data.upload_token;
+        console.info(`Upload token received: ${uploadToken.substring(0, 10)}...`);
         
-        if (!uploadResp.ok) {
-          const errorData = await uploadResp.text().catch(() => '');
-          console.error('File upload to session failed:', uploadResp.status, errorData);
+        // Step 2: Upload file chunk using the upload token
+        const chunkResp = await fetch(
+          `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload/${uploadToken}/chunk`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${KDRIVE_TOKEN}`,
+              'Content-Type': 'application/octet-stream',
+              'Content-Length': String(bytes.length)
+            },
+            body: bytes
+          }
+        );
+        
+        if (!chunkResp.ok) {
+          const errorData = await chunkResp.json().catch(() => ({}));
+          console.error('Chunk upload failed:', chunkResp.status, errorData);
           return new Response(
-            JSON.stringify({ error: 'Failed to upload file data', details: errorData }),
+            JSON.stringify({ error: 'Failed to upload file chunk', details: errorData }),
             { 
-              status: uploadResp.status,
+              status: chunkResp.status,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
             }
           );
         }
         
-        // Step 3: Finalize the upload session
+        const chunkData = await chunkResp.json();
+        console.info('Chunk upload response:', chunkData);
+        
+        if (chunkData.result !== 'success') {
+          return new Response(
+            JSON.stringify({ error: 'Chunk upload failed', details: chunkData }),
+            { 
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        
+        // Step 3: Finalize the upload
         const finalizeResp = await fetch(
-          `${KDRIVE_API_BASE}/2/drive/${uploadDriveId}/files/upload/session/${sessionData.data.id}/finalize`,
+          `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload/${uploadToken}/finish`,
           {
             method: 'POST',
-            headers: kdriveHeaders
+            headers: kdriveHeaders,
+            body: JSON.stringify({
+              file_name: fileName || 'file'
+            })
           }
         );
         
@@ -430,6 +456,19 @@ serve(async (req) => {
             JSON.stringify({ error: 'Failed to finalize upload', details: errorData }),
             { 
               status: finalizeResp.status,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        
+        const finalizeData = await finalizeResp.json();
+        console.info('Upload finalized successfully:', finalizeData);
+        
+        if (finalizeData.result !== 'success') {
+          return new Response(
+            JSON.stringify({ error: 'Finalize failed', details: finalizeData }),
+            { 
+              status: 500,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
             }
           );
