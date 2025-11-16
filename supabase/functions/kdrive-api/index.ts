@@ -706,7 +706,9 @@ serve(async (req) => {
         );
         
         if (!finalizeResp.ok) {
-          const errorData = await finalizeResp.json().catch(() => ({}));
+          const errText = await finalizeResp.text();
+          let errorData: any = {};
+          try { errorData = JSON.parse(errText); } catch (_) { errorData = { raw: errText }; }
           console.error('Upload finalization failed:', finalizeResp.status, errorData);
           return new Response(
             JSON.stringify({ error: 'Failed to finalize upload', details: errorData }),
@@ -717,7 +719,9 @@ serve(async (req) => {
           );
         }
         
-        const finalizeData = await finalizeResp.json();
+        const finalizeText = await finalizeResp.text();
+        let finalizeData: any = {};
+        try { finalizeData = JSON.parse(finalizeText); } catch (_) { finalizeData = { raw: finalizeText }; }
         console.info('Upload finalized successfully:', finalizeData);
         
         if (finalizeData.result !== 'success') {
@@ -730,8 +734,13 @@ serve(async (req) => {
           );
         }
         
-        response = finalizeResp;
-        break;
+        // Return here to avoid re-consuming the response body later
+        return new Response(JSON.stringify(finalizeData), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        });
+        
+        // no break needed since we returned
 
       case 'download-file':
         // Get the actual drive ID from product if not provided
