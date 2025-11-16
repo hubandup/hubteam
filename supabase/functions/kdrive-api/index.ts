@@ -535,7 +535,7 @@ serve(async (req) => {
             try { singleData = JSON.parse(singleText); } catch (_) { /* keep raw */ }
             console.info('Single session response:', { status: singleResp.status, body: singleData || singleText });
             if (singleResp.ok) {
-              uploadTokenStr = singleData?.data?.upload_token || singleData?.upload_token || null;
+              uploadTokenStr = singleData?.data?.token || singleData?.data?.upload_token || singleData?.upload_token || null;
               lastError = singleData;
             }
           } catch (e) {
