@@ -200,7 +200,7 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
         .in('project_id', projectIds);
 
       if (allTasks && allTasks.length > 0) {
-        const completedTasks = allTasks.filter(t => t.status === 'completed').length;
+        const completedTasks = allTasks.filter(t => t.status === 'done').length;
         const progress = Math.round((completedTasks / allTasks.length) * 100);
         setProjectProgress(progress);
       }
