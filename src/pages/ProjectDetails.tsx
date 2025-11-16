@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Plus, Edit, Trash2, FileText, Calendar, Users, MessageSquare, Info } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, FileText, Calendar, Users, MessageSquare, Info, User, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -386,7 +386,23 @@ export default function ProjectDetails() {
             label: 'KDrive',
             icon: <FileText className="h-4 w-4" />,
             content: project?.project_clients?.[0]?.clients?.id ? (
-              <ClientKDriveTab clientId={project.project_clients[0].clients.id} />
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">
+                      {project.project_clients[0].clients.company}
+                    </span>
+                  </div>
+                  <Link to={`/client/${project.project_clients[0].clients.id}`}>
+                    <Button variant="outline" size="sm">
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Voir la fiche client
+                    </Button>
+                  </Link>
+                </div>
+                <ClientKDriveTab clientId={project.project_clients[0].clients.id} />
+              </div>
             ) : (
               <div className="flex items-center justify-center p-8 text-muted-foreground">
                 Ce projet n'a pas de client associé
