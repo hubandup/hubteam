@@ -24,6 +24,12 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <Navigate to="/auth" replace />;
   }
 
+  // Si aucun rôle n'est trouvé après le chargement, rediriger vers auth
+  if (!role && !roleLoading) {
+    console.error('No role found for user:', user.id);
+    return <Navigate to="/auth" replace />;
+  }
+
   // Redirect clients away from /crm page
   if (role === 'client' && location.pathname === '/crm') {
     return <Navigate to="/" replace />;
