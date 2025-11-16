@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Plus, Edit, Trash2, FileText, Calendar, Users, MessageSquare, Info, User, ExternalLink } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, FileText, Calendar, Users, MessageSquare, Info, User, ExternalLink, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -14,6 +14,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { ResponsiveTabs, type TabItem } from '@/components/ui/responsive-tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -161,6 +167,25 @@ export default function ProjectDetails() {
     }
   };
 
+  const handleStatusChange = async (newStatus: string) => {
+    if (!id) return;
+
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ status: newStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Statut mis à jour avec succès');
+      fetchProjectDetails();
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Erreur lors de la mise à jour du statut');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -174,13 +199,45 @@ export default function ProjectDetails() {
   }
 
   const statusConfig = {
-    'planning': { label: 'Planification', variant: 'secondary' as const },
-    'active': { label: 'Actif', variant: 'default' as const },
-    'completed': { label: 'Terminé', variant: 'outline' as const },
+    'planning': { label: 'À faire', variant: 'secondary' as const, color: 'bg-[hsl(var(--status-planning))] text-[hsl(var(--status-planning-foreground))]' },
+    'reco_in_progress': { label: 'Reco en cours', variant: 'default' as const, color: 'bg-[hsl(var(--status-reco-in-progress))] text-[hsl(var(--status-reco-in-progress-foreground))]' },
+    'active': { label: 'En cours', variant: 'default' as const, color: 'bg-[hsl(var(--status-active))] text-[hsl(var(--status-active-foreground))]' },
+    'urgent': { label: 'Urgent', variant: 'destructive' as const, color: 'bg-[hsl(var(--status-urgent))] text-[hsl(var(--status-urgent-foreground))]' },
+    'completed': { label: 'Terminé', variant: 'outline' as const, color: 'bg-[hsl(var(--status-completed))] text-[hsl(var(--status-completed-foreground))]' },
+    'lost': { label: 'Perdu', variant: 'destructive' as const, color: 'bg-[hsl(var(--status-lost))] text-[hsl(var(--status-lost-foreground))]' },
   };
 
   const statusInfo = statusConfig[project.status as keyof typeof statusConfig] || statusConfig['active'];
   const client = project.project_clients?.[0]?.clients;
+
+  const StatusBadge = () => (
+    <ProtectedAction module="projects" action="update">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="ghost" 
+            className={`h-auto px-3 py-1 rounded-full border-0 hover:opacity-80 ${statusInfo.color}`}
+          >
+            <span className="font-semibold text-sm">{statusInfo.label}</span>
+            <ChevronDown className="h-3 w-3 ml-1" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="bg-background">
+          {Object.entries(statusConfig).map(([key, config]) => (
+            <DropdownMenuItem
+              key={key}
+              onClick={() => handleStatusChange(key)}
+              className="cursor-pointer"
+            >
+              <div className={`px-3 py-1 rounded-full text-sm font-semibold ${config.color}`}>
+                {config.label}
+              </div>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </ProtectedAction>
+  );
 
   return (
     <div className="p-6 space-y-6">
@@ -195,9 +252,7 @@ export default function ProjectDetails() {
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-3xl font-bold text-foreground">{project.name}</h1>
-            <Badge variant={statusInfo.variant}>
-              {statusInfo.label}
-            </Badge>
+            <StatusBadge />
             {!isMobile && (
               <>
                 <ProtectedAction module="projects" action="update">
@@ -350,9 +405,7 @@ export default function ProjectDetails() {
 
                     <div>
                       <p className="text-sm text-muted-foreground mb-2">Statut</p>
-                      <Badge variant={statusInfo.variant}>
-                        {statusInfo.label}
-                      </Badge>
+                      <StatusBadge />
                     </div>
                   </CardContent>
                 </Card>
