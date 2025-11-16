@@ -38,8 +38,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Brevo template ID - configure this in your Brevo dashboard
     // Create a template with variables: {{role}}, {{invitationUrl}}
-    const BREVO_TEMPLATE_ID = 47; // Brevo template ID for invitation emails
-    console.log(`📋 Using Brevo template ID: ${BREVO_TEMPLATE_ID}`);
+    const envTemplateId = Deno.env.get("BREVO_TEMPLATE_ID");
+    const BREVO_TEMPLATE_ID = Number(envTemplateId) || 47; // Brevo template ID for invitation emails
+    console.log(`📋 Using Brevo template ID: ${BREVO_TEMPLATE_ID} (source: ${envTemplateId ? 'env' : 'default'})`);
 
     const emailPayload = {
       sender: {
