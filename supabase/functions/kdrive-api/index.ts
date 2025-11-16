@@ -359,79 +359,124 @@ serve(async (req) => {
         // Step 1: Create upload session and get upload token
         console.info(`Creating upload session for file: ${fileName} in folder: ${uploadFolderId}`);
         
-        const uploadPayload = {
+        // Build payloads for kDrive upload session (batch API expects an array under `files`)
+        const uploadPayloadFlat = {
           directory_id: Number(uploadFolderId),
           file_name: fileName || 'file',
           conflict: 'rename',
           total_size: typeof fileSize === 'number' ? fileSize : bytes.length,
         };
+        const batchPayload = { files: [ uploadPayloadFlat ] };
         
-        const sessionUrl = `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload`;
-        console.info('Create upload session request:', {
-          url: sessionUrl,
-          payload: uploadPayload,
+        // Prefer official session start endpoint (batch)
+        const sessionBatchUrl = `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload/session/batch/start`;
+        console.info('Create upload session (batch) request:', {
+          url: sessionBatchUrl,
+          payload: batchPayload,
         });
         
         let uploadTokenStr: string | null = null;
         let lastError: any = null;
         
-        // Attempt 1: JSON
         try {
-          const sessionResp = await fetch(sessionUrl, {
+          const sessionResp = await fetch(sessionBatchUrl, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${KDRIVE_TOKEN}`,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify(uploadPayload)
+            body: JSON.stringify(batchPayload)
           });
 
+          const respText = await sessionResp.text();
+          let sessionData: any = {};
+          try { sessionData = JSON.parse(respText); } catch (_) { /* keep raw */ }
+          console.info('Session (batch) response:', { status: sessionResp.status, body: sessionData || respText });
+
           if (sessionResp.ok) {
-            const sessionDataJson = await sessionResp.json();
-            console.info('Session response (json):', sessionDataJson);
-            uploadTokenStr = sessionDataJson?.data?.upload_token || null;
-            lastError = sessionDataJson;
+            // Try multiple shapes defensively
+            uploadTokenStr =
+              sessionData?.data?.files?.[0]?.upload_token ||
+              sessionData?.files?.[0]?.upload_token ||
+              sessionData?.data?.[0]?.upload_token ||
+              sessionData?.upload_token ||
+              null;
+            lastError = sessionData;
           } else {
-            lastError = await sessionResp.json().catch(() => ({}));
-            console.error('Upload session (json) failed:', sessionResp.status, lastError);
+            lastError = sessionData;
+            console.error('Upload session (batch) failed:', sessionResp.status, sessionData);
           }
         } catch (e) {
           lastError = e;
-          console.error('Upload session (json) threw:', e);
+          console.error('Upload session (batch) threw:', e);
         }
         
-        // Attempt 2: x-www-form-urlencoded fallback if no token
+        // Legacy fallback: old endpoint with flat body (kept for compatibility while we align the client)
         if (!uploadTokenStr) {
-          const formParams = new URLSearchParams({
-            directory_id: String(uploadPayload.directory_id),
-            file_name: uploadPayload.file_name,
-            conflict: String(uploadPayload.conflict),
-            total_size: String(uploadPayload.total_size),
+          const legacySessionUrl = `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload`;
+          console.info('Falling back to legacy create upload session:', {
+            url: legacySessionUrl,
+            payload: uploadPayloadFlat,
           });
 
-          console.info('Retrying create upload session with x-www-form-urlencoded:', {
-            url: sessionUrl,
-            form: Object.fromEntries(formParams.entries()),
-          });
+          // Attempt 1: JSON
+          try {
+            const sessionResp = await fetch(legacySessionUrl, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${KDRIVE_TOKEN}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(uploadPayloadFlat)
+            });
 
-          const sessionRespForm = await fetch(sessionUrl, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${KDRIVE_TOKEN}`,
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: formParams.toString(),
-          });
+            if (sessionResp.ok) {
+              const sessionDataJson = await sessionResp.json();
+              console.info('Session response (legacy json):', sessionDataJson);
+              uploadTokenStr = sessionDataJson?.data?.upload_token || null;
+              lastError = sessionDataJson;
+            } else {
+              lastError = await sessionResp.json().catch(() => ({}));
+              console.error('Upload session (legacy json) failed:', sessionResp.status, lastError);
+            }
+          } catch (e) {
+            lastError = e;
+            console.error('Upload session (legacy json) threw:', e);
+          }
 
-          if (sessionRespForm.ok) {
-            const sessionDataForm = await sessionRespForm.json();
-            console.info('Session response (form):', sessionDataForm);
-            uploadTokenStr = sessionDataForm?.data?.upload_token || null;
-            lastError = sessionDataForm;
-          } else {
-            const errForm = await sessionRespForm.json().catch(() => ({}));
-            lastError = errForm;
-            console.error('Upload session (form) failed:', sessionRespForm.status, errForm);
+          // Attempt 2: x-www-form-urlencoded fallback if no token
+          if (!uploadTokenStr) {
+            const formParams = new URLSearchParams({
+              directory_id: String(uploadPayloadFlat.directory_id),
+              file_name: uploadPayloadFlat.file_name,
+              conflict: String(uploadPayloadFlat.conflict),
+              total_size: String(uploadPayloadFlat.total_size),
+            });
+
+            console.info('Retrying legacy session with x-www-form-urlencoded:', {
+              url: legacySessionUrl,
+              form: Object.fromEntries(formParams.entries()),
+            });
+
+            const sessionRespForm = await fetch(legacySessionUrl, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${KDRIVE_TOKEN}`,
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+              body: formParams.toString(),
+            });
+
+            if (sessionRespForm.ok) {
+              const sessionDataForm = await sessionRespForm.json();
+              console.info('Session response (legacy form):', sessionDataForm);
+              uploadTokenStr = sessionDataForm?.data?.upload_token || null;
+              lastError = sessionDataForm;
+            } else {
+              const errForm = await sessionRespForm.json().catch(() => ({}));
+              lastError = errForm;
+              console.error('Upload session (legacy form) failed:', sessionRespForm.status, errForm);
+            }
           }
         }
 
