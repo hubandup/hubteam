@@ -554,7 +554,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     const { data, error } = await supabase.functions.invoke("kdrive-api", {
       body: {
         action: "get-file-url",
-        driveId: client.kdrive_drive_id,
+        driveId: client.kdrive_drive_id ?? undefined,
         fileId,
       },
     });
