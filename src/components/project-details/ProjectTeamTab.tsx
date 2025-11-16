@@ -107,12 +107,60 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
 
   const removeMember = async (memberId: string) => {
     try {
+      // Get member details before deleting
+      const { data: memberToDelete } = await supabase
+        .from('project_team_members')
+        .select('member_type, member_id')
+        .eq('id', memberId)
+        .single();
+
+      // Delete the member
       const { error } = await supabase
         .from('project_team_members')
         .delete()
         .eq('id', memberId);
 
       if (error) throw error;
+
+      // If it was an agency contact, check if we should remove the agency
+      if (memberToDelete?.member_type === 'agency_contact') {
+        // Get the agency_id of this contact
+        const { data: contactData } = await supabase
+          .from('agency_contacts')
+          .select('agency_id')
+          .eq('id', memberToDelete.member_id)
+          .single();
+
+        if (contactData?.agency_id) {
+          // Check if there are any remaining agency_contact members from this agency
+          const { data: remainingMembers } = await supabase
+            .from('project_team_members')
+            .select('member_id')
+            .eq('project_id', projectId)
+            .eq('member_type', 'agency_contact');
+
+          // Get all agency IDs of remaining members
+          const remainingAgencyIds = await Promise.all(
+            (remainingMembers || []).map(async (member: any) => {
+              const { data } = await supabase
+                .from('agency_contacts')
+                .select('agency_id')
+                .eq('id', member.member_id)
+                .single();
+              return data?.agency_id;
+            })
+          );
+
+          // If the agency has no more members in this project, remove it from project_agencies
+          if (!remainingAgencyIds.includes(contactData.agency_id)) {
+            await supabase
+              .from('project_agencies')
+              .delete()
+              .eq('project_id', projectId)
+              .eq('agency_id', contactData.agency_id);
+          }
+        }
+      }
       
       toast.success('Membre retiré de l\'équipe');
       fetchTeamData();
