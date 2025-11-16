@@ -4,58 +4,16 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger,
-  DialogDescription,
-  DialogFooter 
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { 
-  Loader2, 
-  FolderIcon, 
-  FileIcon, 
-  Upload, 
-  FolderPlus, 
-  FileText, 
-  Image as ImageIcon, 
-  Video, 
-  Music, 
-  Archive,
-  Home,
-  ChevronRight,
-  Trash2,
-  MoreVertical,
-  Edit,
-  Unlink,
-  Eye,
-  RefreshCw
-} from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Loader2, FolderIcon, FileIcon, Upload, FolderPlus, FileText, Image as ImageIcon, Video, Music, Archive, Home, ChevronRight, Trash2, MoreVertical, Edit, Unlink, Eye, RefreshCw } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { AgencyKDriveFolderSelector } from './AgencyKDriveFolderSelector';
 import { RenameFileDialog } from '../client-details/RenameFileDialog';
 import { FilePreviewPane } from '../client-details/FilePreviewPane';
 import { useUserRole } from '@/hooks/useUserRole';
-
 interface KDriveFile {
   id: number;
   name: string;
@@ -64,26 +22,41 @@ interface KDriveFile {
   created_at?: string;
   path: string;
 }
-
 interface AgencyKDriveTabProps {
   agencyId: string;
   agencyName: string;
 }
-
-export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) {
-  const { isAdmin } = useUserRole();
+export function AgencyKDriveTab({
+  agencyId,
+  agencyName
+}: AgencyKDriveTabProps) {
+  const {
+    isAdmin
+  } = useUserRole();
   const [loading, setLoading] = useState(true);
   const [files, setFiles] = useState<KDriveFile[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [currentFolder, setCurrentFolder] = useState<{ id: number; path: string; parentId: number | null } | null>(null);
+  const [currentFolder, setCurrentFolder] = useState<{
+    id: number;
+    path: string;
+    parentId: number | null;
+  } | null>(null);
   const [driveId, setDriveId] = useState<number | null>(null);
   const [folderPath, setFolderPath] = useState<string | null>(null);
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [agency, setAgency] = useState<any>(null);
-  const [deleteItem, setDeleteItem] = useState<{ id: number; name: string; type: 'dir' | 'file' } | null>(null);
+  const [deleteItem, setDeleteItem] = useState<{
+    id: number;
+    name: string;
+    type: 'dir' | 'file';
+  } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: number; name: string; path: string }>>([]);
+  const [breadcrumbs, setBreadcrumbs] = useState<Array<{
+    id: number;
+    name: string;
+    path: string;
+  }>>([]);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showDropZone, setShowDropZone] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -93,29 +66,26 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isDeletingMultiple, setIsDeletingMultiple] = useState(false);
   const [showDeleteMultipleConfirm, setShowDeleteMultipleConfirm] = useState(false);
-  const [renameItem, setRenameItem] = useState<{ id: number; name: string; type: 'dir' | 'file' } | null>(null);
+  const [renameItem, setRenameItem] = useState<{
+    id: number;
+    name: string;
+    type: 'dir' | 'file';
+  } | null>(null);
   const [previewFile, setPreviewFile] = useState<KDriveFile | null>(null);
-
   useEffect(() => {
     loadAgencyFolder();
   }, [agencyId]);
-
   useEffect(() => {
     setSelectedIds([]);
   }, [currentFolder?.id]);
-
   const loadAgencyFolder = async () => {
     try {
-      const { data: agencyData, error } = await supabase
-        .from('agencies')
-        .select('*')
-        .eq('id', agencyId)
-        .single();
-
+      const {
+        data: agencyData,
+        error
+      } = await supabase.from('agencies').select('*').eq('id', agencyId).single();
       if (error) throw error;
-
       setAgency(agencyData);
-
       if (agencyData?.kdrive_drive_id && agencyData?.kdrive_folder_id) {
         setDriveId(agencyData.kdrive_drive_id);
         const folderId = parseInt(agencyData.kdrive_folder_id);
@@ -126,13 +96,11 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
         });
         setFolderPath(agencyData.kdrive_folder_path);
         setRootFolderName(agencyData.kdrive_folder_path || agencyData.name);
-        
         setBreadcrumbs([{
           id: folderId,
           name: agencyData.kdrive_folder_path || agencyData.name,
           path: agencyData.kdrive_folder_path || agencyData.name
         }]);
-
         await loadFiles(agencyData.kdrive_drive_id, folderId.toString());
       } else {
         setLoading(false);
@@ -143,31 +111,28 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
       setLoading(false);
     }
   };
-
   const loadFiles = async (drive: number, folderId: string) => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.functions.invoke('kdrive-api', {
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('kdrive-api', {
         body: {
           action: 'list-files',
           driveId: drive,
           folderId: folderId
         }
       });
-
       if (error) throw error;
-      
       let filesData = data?.data || [];
-      
+
       // Sort files
       filesData.sort((a: KDriveFile, b: KDriveFile) => {
         if (a.type === 'dir' && b.type !== 'dir') return -1;
         if (a.type !== 'dir' && b.type === 'dir') return 1;
-        return sortOrder === 'asc' 
-          ? a.name.localeCompare(b.name)
-          : b.name.localeCompare(a.name);
+        return sortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
       });
-      
       setFiles(filesData);
     } catch (error) {
       console.error('Error loading files:', error);
@@ -176,16 +141,16 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
       setLoading(false);
     }
   };
-
   const handleFileUpload = async (files: FileList) => {
     if (!files.length || !driveId || !currentFolder) return;
-
     try {
       setUploading(true);
-      
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const { data, error } = await supabase.functions.invoke('kdrive-api', {
+        const {
+          data,
+          error
+        } = await supabase.functions.invoke('kdrive-api', {
           body: {
             action: 'upload-file',
             driveId: driveId,
@@ -195,10 +160,8 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
             fileSize: file.size
           }
         });
-
         if (error) throw error;
       }
-
       toast.success(`${files.length} fichier(s) uploadé(s) avec succès`);
       await loadFiles(driveId, currentFolder.id.toString());
     } catch (error) {
@@ -211,37 +174,33 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
       }
     }
   };
-
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setShowDropZone(false);
     handleFileUpload(e.dataTransfer.files);
   };
-
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setShowDropZone(true);
   };
-
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     setShowDropZone(false);
   };
-
   const handleDownload = async (fileId: number, fileName: string) => {
     if (!driveId) return;
-
     try {
-      const { data, error } = await supabase.functions.invoke('kdrive-api', {
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('kdrive-api', {
         body: {
           action: 'download-file',
           driveId: driveId,
           fileId: fileId.toString()
         }
       });
-
       if (error) throw error;
-
       const blob = new Blob([data]);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -251,31 +210,29 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-
       toast.success('Téléchargement démarré');
     } catch (error) {
       console.error('Error downloading file:', error);
       toast.error('Erreur lors du téléchargement');
     }
   };
-
   const handleFolderClick = async (file: KDriveFile) => {
     if (!driveId || !currentFolder) return;
-    
     const newFolder = {
       id: file.id,
       path: file.path,
       parentId: currentFolder.id
     };
-    
     setCurrentFolder(newFolder);
-    setBreadcrumbs([...breadcrumbs, { id: file.id, name: file.name, path: file.path }]);
+    setBreadcrumbs([...breadcrumbs, {
+      id: file.id,
+      name: file.name,
+      path: file.path
+    }]);
     await loadFiles(driveId, file.id.toString());
   };
-
   const handleBreadcrumbClick = async (index: number) => {
     if (!driveId) return;
-    
     const crumb = breadcrumbs[index];
     setCurrentFolder({
       id: crumb.id,
@@ -285,7 +242,6 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
     setBreadcrumbs(breadcrumbs.slice(0, index + 1));
     await loadFiles(driveId, crumb.id.toString());
   };
-
   const handleGoToRoot = async () => {
     if (!driveId || breadcrumbs.length === 0) return;
     const root = breadcrumbs[0];
@@ -297,18 +253,18 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
     setBreadcrumbs([root]);
     await loadFiles(driveId, root.id.toString());
   };
-
   const handleFileClick = (file: KDriveFile) => {
     if (file.type === 'dir') {
       handleFolderClick(file);
     }
   };
-
   const createFolder = async () => {
     if (!newFolderName.trim() || !driveId || !currentFolder) return;
-
     try {
-      const { data, error } = await supabase.functions.invoke('kdrive-api', {
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('kdrive-api', {
         body: {
           action: 'create-folder',
           driveId: driveId,
@@ -316,9 +272,7 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
           fileName: newFolderName
         }
       });
-
       if (error) throw error;
-
       toast.success('Dossier créé avec succès');
       setNewFolderName('');
       setShowCreateFolder(false);
@@ -328,22 +282,20 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
       toast.error('Erreur lors de la création du dossier');
     }
   };
-
   const handleDelete = async () => {
     if (!deleteItem || !driveId || !currentFolder) return;
-
     try {
       setIsDeleting(true);
-      const { error } = await supabase.functions.invoke('kdrive-api', {
+      const {
+        error
+      } = await supabase.functions.invoke('kdrive-api', {
         body: {
           action: 'delete-files',
           driveId: driveId,
           fileIds: [deleteItem.id.toString()]
         }
       });
-
       if (error) throw error;
-
       toast.success(`${deleteItem.type === 'dir' ? 'Dossier' : 'Fichier'} supprimé avec succès`);
       await loadFiles(driveId, currentFolder.id.toString());
       setDeleteItem(null);
@@ -354,22 +306,20 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
       setIsDeleting(false);
     }
   };
-
   const handleDeleteMultiple = async () => {
     if (!driveId || !currentFolder || selectedIds.length === 0) return;
-
     try {
       setIsDeletingMultiple(true);
-      const { error } = await supabase.functions.invoke('kdrive-api', {
+      const {
+        error
+      } = await supabase.functions.invoke('kdrive-api', {
         body: {
           action: 'delete-files',
           driveId: driveId,
           fileIds: selectedIds.map(id => id.toString())
         }
       });
-
       if (error) throw error;
-
       toast.success(`${selectedIds.length} élément(s) supprimé(s) avec succès`);
       setSelectedIds([]);
       await loadFiles(driveId, currentFolder.id.toString());
@@ -381,12 +331,12 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
       setIsDeletingMultiple(false);
     }
   };
-
   const handleRename = async (newName: string) => {
     if (!renameItem || !driveId || !currentFolder) return;
-
     try {
-      const { error } = await supabase.functions.invoke('kdrive-api', {
+      const {
+        error
+      } = await supabase.functions.invoke('kdrive-api', {
         body: {
           action: 'rename-file',
           driveId: driveId,
@@ -394,9 +344,7 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
           newName: newName
         }
       });
-
       if (error) throw error;
-
       toast.success('Renommé avec succès');
       await loadFiles(driveId, currentFolder.id.toString());
       setRenameItem(null);
@@ -405,22 +353,17 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
       toast.error('Erreur lors du renommage');
     }
   };
-
   const handleRevoke = async () => {
     try {
       setIsRevoking(true);
-      
-      const { error } = await supabase
-        .from('agencies')
-        .update({
-          kdrive_drive_id: null,
-          kdrive_folder_id: null,
-          kdrive_folder_path: null
-        })
-        .eq('id', agencyId);
-
+      const {
+        error
+      } = await supabase.from('agencies').update({
+        kdrive_drive_id: null,
+        kdrive_folder_id: null,
+        kdrive_folder_path: null
+      }).eq('id', agencyId);
       if (error) throw error;
-
       toast.success('Connexion KDrive révoquée');
       setIsRevokeOpen(false);
       await loadAgencyFolder();
@@ -431,13 +374,9 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
       setIsRevoking(false);
     }
   };
-
   const toggleSelection = (id: number) => {
-    setSelectedIds(prev =>
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
-
   const toggleSelectAll = () => {
     if (selectedIds.length === files.length) {
       setSelectedIds([]);
@@ -445,12 +384,10 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
       setSelectedIds(files.map(f => f.id));
     }
   };
-
   const getFileIcon = (file: KDriveFile) => {
     if (file.type === 'dir') {
       return <FolderIcon className="h-5 w-5 text-primary" />;
     }
-
     const extension = file.name.split('.').pop()?.toLowerCase();
     if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(extension || '')) {
       return <ImageIcon className="h-5 w-5 text-blue-500" />;
@@ -469,25 +406,19 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
     }
     return <FileIcon className="h-5 w-5 text-muted-foreground" />;
   };
-
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return '';
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
   };
-
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
+    return <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+      </div>;
   }
-
   if (!driveId || !currentFolder) {
-    return (
-      <Card>
+    return <Card>
         <CardContent className="p-8">
           <div className="text-center mb-6">
             <FolderIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -498,218 +429,104 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
               Connectez un dossier depuis Hub & Up {'>'} Agences
             </p>
           </div>
-          <AgencyKDriveFolderSelector
-            agencyId={agencyId}
-            agencyName={agencyName}
-            currentDriveId={driveId}
-            currentFolderId={currentFolder?.id.toString() || null}
-            currentFolderPath={folderPath}
-            onFolderConnected={loadAgencyFolder}
-          />
+          <AgencyKDriveFolderSelector agencyId={agencyId} agencyName={agencyName} currentDriveId={driveId} currentFolderId={currentFolder?.id.toString() || null} currentFolderPath={folderPath} onFolderConnected={loadAgencyFolder} />
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-
-  return (
-    <div 
-      className="space-y-4"
-      onDrop={handleDrop}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-    >
-      {showDropZone && (
-        <div className="fixed inset-0 bg-primary/10 border-4 border-dashed border-primary z-50 flex items-center justify-center">
+  return <div className="space-y-4" onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave}>
+      {showDropZone && <div className="fixed inset-0 bg-primary/10 border-4 border-dashed border-primary z-50 flex items-center justify-center">
           <div className="text-center">
             <Upload className="h-16 w-16 mx-auto mb-4 text-primary" />
             <p className="text-xl font-semibold">Déposez vos fichiers ici</p>
           </div>
-        </div>
-      )}
+        </div>}
 
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-muted-foreground overflow-x-auto">
               <Home className="h-4 w-4 flex-shrink-0" />
-              {breadcrumbs.map((crumb, index) => (
-                <div key={crumb.id} className="flex items-center gap-2">
+              {breadcrumbs.map((crumb, index) => <div key={crumb.id} className="flex items-center gap-2">
                   <ChevronRight className="h-4 w-4 flex-shrink-0" />
-                  <button
-                    onClick={() => handleBreadcrumbClick(index)}
-                    className="hover:text-foreground transition-colors whitespace-nowrap"
-                  >
+                  <button onClick={() => handleBreadcrumbClick(index)} className="hover:text-foreground transition-colors whitespace-nowrap">
                     {crumb.name}
                   </button>
-                </div>
-              ))}
+                </div>)}
             </div>
             
-            {isAdmin && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsRevokeOpen(true)}
-                className="text-destructive hover:text-destructive"
-              >
-                <Unlink className="h-4 w-4 mr-2" />
-                Révoquer
-              </Button>
-            )}
+            {isAdmin}
           </div>
 
           <div className="flex items-center justify-between gap-4 mt-4">
             <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleGoToRoot}
-                title="Retour à la racine"
-                disabled={!currentFolder}
-              >
+              <Button variant="ghost" size="icon" onClick={handleGoToRoot} title="Retour à la racine" disabled={!currentFolder}>
                 <Home className="h-5 w-5" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowCreateFolder(true)}
-                disabled={!currentFolder}
-                title="Nouveau dossier"
-              >
+              <Button variant="ghost" size="icon" onClick={() => setShowCreateFolder(true)} disabled={!currentFolder} title="Nouveau dossier">
                 <FolderPlus className="h-5 w-5" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                disabled={uploading || !currentFolder}
-                onClick={() => fileInputRef.current?.click()}
-                title="Téléverser des fichiers"
-              >
+              <Button variant="ghost" size="icon" disabled={uploading || !currentFolder} onClick={() => fileInputRef.current?.click()} title="Téléverser des fichiers">
                 {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                disabled={!currentFolder}
-                onClick={() => currentFolder && agency && loadFiles(agency.kdrive_drive_id, currentFolder.id.toString())}
-                title="Rafraîchir"
-                className="text-destructive hover:text-destructive"
-              >
+              <Button variant="ghost" size="icon" disabled={!currentFolder} onClick={() => currentFolder && agency && loadFiles(agency.kdrive_drive_id, currentFolder.id.toString())} title="Rafraîchir" className="text-destructive hover:text-destructive">
                 <RefreshCw className="h-5 w-5" />
               </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
-              />
+              <input ref={fileInputRef} type="file" className="hidden" onChange={e => e.target.files && handleFileUpload(e.target.files)} />
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            >
+            <Button variant="outline" size="sm" onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}>
               A↔Z {sortOrder === 'asc' ? '↓' : '↑'}
             </Button>
           </div>
 
-          {files.length > 0 && (
-            <div className="flex items-center justify-between p-3 bg-muted/30 border rounded-lg mt-4">
+          {files.length > 0 && <div className="flex items-center justify-between p-3 bg-muted/30 border rounded-lg mt-4">
               <div className="flex items-center gap-3">
-                <Checkbox
-                  checked={selectedIds.length === files.length && files.length > 0}
-                  onCheckedChange={toggleSelectAll}
-                />
+                <Checkbox checked={selectedIds.length === files.length && files.length > 0} onCheckedChange={toggleSelectAll} />
                 <span className="text-sm font-medium">
                   {selectedIds.length > 0 ? `${selectedIds.length} sélectionné(s)` : 'Tout sélectionner'}
                 </span>
               </div>
-              {selectedIds.length > 0 && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setShowDeleteMultipleConfirm(true)}
-                  disabled={isDeletingMultiple}
-                >
-                  {isDeletingMultiple ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Trash2 className="h-4 w-4 mr-2" />
-                  )}
+              {selectedIds.length > 0 && <Button variant="destructive" size="sm" onClick={() => setShowDeleteMultipleConfirm(true)} disabled={isDeletingMultiple}>
+                  {isDeletingMultiple ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
                   Supprimer {selectedIds.length} élément(s)
-                </Button>
-              )}
-            </div>
-          )}
+                </Button>}
+            </div>}
         </CardHeader>
 
         <CardContent>
-          {files.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
+          {files.length === 0 ? <div className="text-center py-12 text-muted-foreground">
               <FolderIcon className="h-16 w-16 mx-auto mb-4 opacity-50" />
               <p className="text-lg">Ce dossier est vide</p>
               <p className="text-sm mt-2">Uploadez des fichiers ou créez un nouveau dossier</p>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {files.map((file) => (
-                <div
-                  key={file.id}
-                  className="flex items-center gap-3 p-3 hover:bg-muted/50 rounded-lg transition-colors group"
-                >
-                  <Checkbox
-                    checked={selectedIds.includes(file.id)}
-                    onCheckedChange={() => toggleSelection(file.id)}
-                  />
+            </div> : <div className="space-y-1">
+              {files.map(file => <div key={file.id} className="flex items-center gap-3 p-3 hover:bg-muted/50 rounded-lg transition-colors group">
+                  <Checkbox checked={selectedIds.includes(file.id)} onCheckedChange={() => toggleSelection(file.id)} />
                   
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     {getFileIcon(file)}
                     <div className="flex-1 min-w-0">
-                      <p 
-                        className="font-medium truncate hover:text-primary transition-colors cursor-pointer"
-                        onClick={() => handleFileClick(file)}
-                      >
+                      <p className="font-medium truncate hover:text-primary transition-colors cursor-pointer" onClick={() => handleFileClick(file)}>
                         {file.name}
                       </p>
-                      {file.type === 'file' && file.size && (
-                        <p className="text-sm text-muted-foreground">
+                      {file.type === 'file' && file.size && <p className="text-sm text-muted-foreground">
                           {formatFileSize(file.size)}
-                        </p>
-                      )}
+                        </p>}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {file.type === 'dir' ? (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleFolderClick(file)}
-                      >
+                    {file.type === 'dir' ? <Button size="sm" variant="ghost" onClick={() => handleFolderClick(file)}>
                         Ouvrir
-                      </Button>
-                    ) : (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setPreviewFile(file)}
-                        >
+                      </Button> : <>
+                        <Button size="sm" variant="ghost" onClick={() => setPreviewFile(file)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDownload(file.id, file.name)}
-                        >
+                        <Button size="sm" variant="ghost" onClick={() => handleDownload(file.id, file.name)}>
                           <Upload className="h-4 w-4 rotate-180" />
                         </Button>
-                      </>
-                    )}
+                      </>}
                     
-                    {isAdmin && (
-                      <DropdownMenu>
+                    {isAdmin && <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button size="sm" variant="ghost">
                             <MoreVertical className="h-4 w-4" />
@@ -720,21 +537,15 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
                             <Edit className="h-4 w-4 mr-2" />
                             Renommer
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setDeleteItem(file)}
-                            className="text-destructive"
-                          >
+                          <DropdownMenuItem onClick={() => setDeleteItem(file)} className="text-destructive">
                             <Trash2 className="h-4 w-4 mr-2" />
                             Supprimer
                           </DropdownMenuItem>
                         </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+                      </DropdownMenu>}
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                </div>)}
+            </div>}
         </CardContent>
       </Card>
 
@@ -750,14 +561,10 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
-              {isDeleting ? (
-                <>
+              {isDeleting ? <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Suppression...
-                </>
-              ) : (
-                'Supprimer'
-              )}
+                </> : 'Supprimer'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -775,14 +582,10 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteMultiple} disabled={isDeletingMultiple}>
-              {isDeletingMultiple ? (
-                <>
+              {isDeletingMultiple ? <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Suppression...
-                </>
-              ) : (
-                'Supprimer'
-              )}
+                </> : 'Supprimer'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -800,14 +603,10 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction onClick={handleRevoke} disabled={isRevoking}>
-              {isRevoking ? (
-                <>
+              {isRevoking ? <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Révocation...
-                </>
-              ) : (
-                'Révoquer'
-              )}
+                </> : 'Révoquer'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -820,12 +619,7 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
             <DialogTitle>Créer un nouveau dossier</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-4">
-            <Input
-              placeholder="Nom du dossier"
-              value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && createFolder()}
-            />
+            <Input placeholder="Nom du dossier" value={newFolderName} onChange={e => setNewFolderName(e.target.value)} onKeyDown={e => e.key === 'Enter' && createFolder()} />
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowCreateFolder(false)}>
                 Annuler
@@ -839,18 +633,10 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
       </Dialog>
 
       {/* Rename dialog */}
-      {renameItem && (
-        <RenameFileDialog
-          currentName={renameItem.name}
-          open={!!renameItem}
-          onOpenChange={(open) => !open && setRenameItem(null)}
-          onRename={handleRename}
-        />
-      )}
+      {renameItem && <RenameFileDialog currentName={renameItem.name} open={!!renameItem} onOpenChange={open => !open && setRenameItem(null)} onRename={handleRename} />}
 
       {/* Preview pane */}
-      {previewFile && driveId && (
-        <Dialog open={!!previewFile} onOpenChange={(open) => !open && setPreviewFile(null)}>
+      {previewFile && driveId && <Dialog open={!!previewFile} onOpenChange={open => !open && setPreviewFile(null)}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
             <DialogHeader>
               <DialogTitle>{previewFile.name}</DialogTitle>
@@ -862,18 +648,13 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
               <div className="text-center">
                 <FileIcon className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-muted-foreground">Prévisualisation non disponible</p>
-                <Button 
-                  className="mt-4"
-                  onClick={() => handleDownload(previewFile.id, previewFile.name)}
-                >
+                <Button className="mt-4" onClick={() => handleDownload(previewFile.id, previewFile.name)}>
                   <Upload className="h-4 w-4 mr-2 rotate-180" />
                   Télécharger
                 </Button>
               </div>
             </div>
           </DialogContent>
-        </Dialog>
-      )}
-    </div>
-  );
+        </Dialog>}
+    </div>;
 }
