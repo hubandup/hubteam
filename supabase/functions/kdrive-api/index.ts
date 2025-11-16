@@ -61,11 +61,16 @@ serve(async (req) => {
         const contentType = response.headers.get('content-type') || 'application/octet-stream';
         console.log('✓ Streaming file back, content-type:', contentType);
         
+        // Determine if this is a PDF for proper headers
+        const isPdf = contentType.includes('pdf');
+        
         return new Response(response.body, {
           headers: {
             ...corsHeaders,
             'Content-Type': contentType,
+            'Content-Disposition': isPdf ? 'inline' : 'attachment',
             'Cache-Control': 'public, max-age=3600',
+            'X-Content-Type-Options': 'nosniff',
           },
         });
       }

@@ -110,11 +110,16 @@ export function FilePreviewPane({ file, onClose, onGetFileUrl }: FilePreviewPane
 
             {isPdf && (
               <div className="rounded-lg overflow-hidden border bg-muted">
-                <iframe
-                  src={fileUrl}
+                <object
+                  data={fileUrl}
+                  type="application/pdf"
                   className="w-full h-96"
                   title={file.name}
-                />
+                >
+                  <p className="p-4 text-center text-sm text-muted-foreground">
+                    Impossible d'afficher le PDF. <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Ouvrir dans un nouvel onglet</a>
+                  </p>
+                </object>
               </div>
             )}
 
