@@ -1195,24 +1195,64 @@ serve(async (req) => {
           { path: `/2/drive/${driveId}/files/${fileId}/download` },
         ];
 
+        const allAttemptResults: any[] = [];
+
         for (const attempt of fileUrlAttempts) {
           try {
             const fileUrl = `${KDRIVE_API_BASE}${attempt.path}`;
-            console.log('--- File URL Attempt ---');
+            
+            console.log('========================================');
+            console.log('=== FILE URL ATTEMPT ===');
             console.log('URL:', fileUrl);
+            console.log('Method: GET');
+            console.log('Headers:', {
+              'Authorization': 'Bearer ***',
+              'Content-Type': kdriveHeaders['Content-Type'],
+            });
 
             const fileResp = await fetch(fileUrl, {
               method: 'GET',
               headers: kdriveHeaders,
             });
 
-            console.log('Response status:', fileResp.status);
-            const fileData = await fileResp.json().catch(() => null);
-            console.log('Response body:', JSON.stringify(fileData, null, 2));
+            console.log('--- KDRIVE RESPONSE ---');
+            console.log('Status:', fileResp.status, fileResp.statusText);
+            console.log('Response Headers:', {
+              'content-type': fileResp.headers.get('content-type'),
+              'location': fileResp.headers.get('location'),
+              'content-length': fileResp.headers.get('content-length'),
+            });
+
+            // Try to read as text first to see what we got
+            const rawBody = await fileResp.text();
+            console.log('Raw Response Body (first 500 chars):', rawBody.substring(0, 500));
+            
+            // Try to parse as JSON
+            let fileData = null;
+            try {
+              fileData = JSON.parse(rawBody);
+              console.log('Parsed JSON:', JSON.stringify(fileData, null, 2));
+            } catch (e) {
+              console.log('Response is not JSON');
+            }
+
+            // Store this attempt result
+            allAttemptResults.push({
+              url: fileUrl,
+              method: 'GET',
+              status: fileResp.status,
+              statusText: fileResp.statusText,
+              headers: {
+                'content-type': fileResp.headers.get('content-type'),
+                'location': fileResp.headers.get('location'),
+              },
+              bodyPreview: rawBody.substring(0, 200),
+              parsedData: fileData,
+            });
 
             // Check if we got a download URL in the response
             if (fileResp.ok && fileData?.data?.url) {
-              console.log('✓ Got download URL');
+              console.log('✓ SUCCESS: Got download URL from kDrive');
               return new Response(JSON.stringify({ 
                 result: 'success', 
                 url: fileData.data.url,
@@ -1226,18 +1266,38 @@ serve(async (req) => {
             if (fileResp.status === 302 || fileResp.status === 301) {
               const redirectUrl = fileResp.headers.get('location');
               if (redirectUrl) {
-                console.log('✓ Got redirect URL');
+                console.log('✓ SUCCESS: Got redirect URL');
                 return new Response(JSON.stringify({ result: 'success', url: redirectUrl }), {
                   headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 });
               }
             }
+
+            console.log('❌ This attempt did not return a usable URL');
+            
           } catch (err) {
-            console.error('File URL attempt failed:', err);
+            console.error('❌ File URL attempt exception:', err);
+            allAttemptResults.push({
+              url: `${KDRIVE_API_BASE}${attempt.path}`,
+              method: 'GET',
+              error: String(err),
+            });
           }
         }
 
-        return new Response(JSON.stringify({ error: 'Failed to get file URL' }), {
+        console.log('========================================');
+        console.log('❌ ALL ATTEMPTS FAILED');
+        console.log('Total attempts:', allAttemptResults.length);
+
+        return new Response(JSON.stringify({ 
+          error: 'Failed to get file URL', 
+          details: {
+            message: 'All kDrive API attempts failed',
+            attempts: allAttemptResults,
+            driveId,
+            fileId,
+          }
+        }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
