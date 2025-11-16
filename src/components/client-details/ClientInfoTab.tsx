@@ -11,6 +11,7 @@ import { ProtectedAction } from '@/components/ProtectedAction';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ClientContactsManager } from './ClientContactsManager';
 import { KDriveFolderSelector } from './KDriveFolderSelector';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface ClientInfoTabProps {
   client: {
@@ -39,6 +40,7 @@ interface ClientInfoTabProps {
 
 export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
   const isMobile = useIsMobile();
+  const { isAgency, isClient } = useUserRole();
   const [activitySector, setActivitySector] = useState<any>(null);
   const [clientStatus, setClientStatus] = useState<any>(null);
   const [clientRanking, setClientRanking] = useState<number | null>(null);
@@ -84,7 +86,7 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
     <div className="space-y-6">
       {!isMobile && (
         <div className="flex justify-end gap-2">
-          {client.kdrive_drive_id && client.kdrive_folder_id && (
+          {client.kdrive_drive_id && client.kdrive_folder_id && !isAgency && !isClient && (
             <Button
               variant="outline"
               onClick={() => window.open(`https://kdrive.infomaniak.com/app/drive/${client.kdrive_drive_id}/files/${client.kdrive_folder_id}`, '_blank')}

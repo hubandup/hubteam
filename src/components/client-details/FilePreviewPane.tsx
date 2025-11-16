@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { X, ExternalLink, Download, Loader2, FileIcon } from "lucide-react";
 import { formatFileSize } from "@/lib/utils";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface FilePreviewPaneProps {
   file: {
@@ -17,6 +18,7 @@ interface FilePreviewPaneProps {
 }
 
 export function FilePreviewPane({ file, onClose, onGetFileUrl }: FilePreviewPaneProps) {
+  const { isAgency, isClient } = useUserRole();
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [mimeType, setMimeType] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -160,14 +162,16 @@ export function FilePreviewPane({ file, onClose, onGetFileUrl }: FilePreviewPane
         {/* Actions */}
         {fileUrl && (
           <div className="space-y-2">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => window.open(fileUrl, '_blank')}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Ouvrir dans kDrive
-            </Button>
+            {!isAgency && !isClient && (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => window.open(fileUrl, '_blank')}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Ouvrir dans kDrive
+              </Button>
+            )}
             <Button
               variant="outline"
               className="w-full"

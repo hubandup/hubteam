@@ -624,22 +624,6 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
         </div>
       )}
 
-      {client?.kdrive_folder_id && isAdmin && (
-        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm flex items-center justify-between gap-2">
-          <span className="text-muted-foreground">
-            Dossier kDrive connecté : {client.kdrive_folder_path || "/"} (ID: {client.kdrive_folder_id})
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsRevokeOpen(true)}
-            className="text-destructive hover:text-destructive"
-          >
-            <Unlink className="h-4 w-4 mr-2" />
-            Révoquer
-          </Button>
-        </div>
-      )}
 
       {client?.kdrive_folder_id && breadcrumbs.length > 0 && (
         <div className="flex items-center gap-1 text-sm text-muted-foreground flex-wrap">
@@ -686,6 +670,17 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
           >
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
           </Button>
+          {client?.kdrive_folder_id && isAdmin && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsRevokeOpen(true)}
+              title="Révoquer la connexion kDrive"
+              className="text-destructive hover:text-destructive"
+            >
+              <Unlink className="h-4 w-4" />
+            </Button>
+          )}
           <input
             ref={fileInputRef}
             type="file"
