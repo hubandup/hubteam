@@ -365,6 +365,7 @@ serve(async (req) => {
           file_name: fileName || 'file',
           conflict: 'rename',
           total_size: typeof fileSize === 'number' ? fileSize : bytes.length,
+          total_chunks: 1,
         };
         const batchPayload = { files: [ uploadPayloadFlat ] };
 
@@ -402,6 +403,8 @@ serve(async (req) => {
             url: sessionBatchUrl,
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer ***' },
             bodyString,
+            filesIsArray: Array.isArray((batchPayload as any).files),
+            filesLength: Array.isArray((batchPayload as any).files) ? (batchPayload as any).files.length : undefined,
           });
           const sessionResp = await fetch(sessionBatchUrl, {
             method: 'POST',
