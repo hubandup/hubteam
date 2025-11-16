@@ -362,6 +362,23 @@ export function AgencyKDriveTab({
       toast.error('Erreur lors du renommage');
     }
   };
+
+  const handleGetFileUrl = async (fileId: number): Promise<{ url: string; mimeType?: string }> => {
+    if (!agency) throw new Error("Agency not loaded");
+
+    const { data, error } = await supabase.functions.invoke("kdrive-api", {
+      body: {
+        action: "get-file-url",
+        driveId: driveId ?? 969307,
+        fileId,
+      },
+    });
+
+    if (error) throw error;
+    if (!data?.data?.url) throw new Error("No URL returned");
+
+    return { url: data.data.url, mimeType: data.data.mimeType };
+  };
   const handleRevoke = async () => {
     try {
       setIsRevoking(true);
@@ -646,25 +663,10 @@ export function AgencyKDriveTab({
       {renameItem && <RenameFileDialog currentName={renameItem.name} open={!!renameItem} onOpenChange={open => !open && setRenameItem(null)} onRename={handleRename} />}
 
       {/* Preview pane */}
-      {previewFile && driveId && <Dialog open={!!previewFile} onOpenChange={open => !open && setPreviewFile(null)}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
-            <DialogHeader>
-              <DialogTitle>{previewFile.name}</DialogTitle>
-              <DialogDescription>
-                {previewFile.size && formatFileSize(previewFile.size)}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex justify-center items-center min-h-[400px]">
-              <div className="text-center">
-                <FileIcon className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">Prévisualisation non disponible</p>
-                <Button className="mt-4" onClick={() => handleDownload(previewFile.id, previewFile.name)}>
-                  <Upload className="h-4 w-4 mr-2 rotate-180" />
-                  Télécharger
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>}
+      <FilePreviewPane
+        file={previewFile}
+        onClose={() => setPreviewFile(null)}
+        onGetFileUrl={handleGetFileUrl}
+      />
     </div>;
 }
