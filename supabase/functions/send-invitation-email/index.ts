@@ -29,7 +29,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Brevo template ID - configure this in your Brevo dashboard
     // Create a template with variables: {{role}}, {{invitationUrl}}
-    const BREVO_TEMPLATE_ID = #47; // TODO: Replace with your actual Brevo template ID
+    const BREVO_TEMPLATE_ID = 47; // Brevo template ID for invitation emails
 
     // Send email via Brevo API using template
     const brevoResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
