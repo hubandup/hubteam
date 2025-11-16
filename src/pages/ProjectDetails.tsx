@@ -310,9 +310,9 @@ export default function ProjectDetails() {
                     {project.description && (
                       <div className="flex items-start gap-3">
                         <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
-                        <div>
+                        <div className="flex-1 min-w-0">
                           <p className="text-sm text-muted-foreground">Description</p>
-                          <p className="font-medium">{project.description}</p>
+                          <p className="font-medium break-words whitespace-pre-wrap">{project.description}</p>
                         </div>
                       </div>
                     )}
