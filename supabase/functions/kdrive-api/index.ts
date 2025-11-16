@@ -367,7 +367,20 @@ serve(async (req) => {
           total_size: typeof fileSize === 'number' ? fileSize : bytes.length,
         };
         const batchPayload = { files: [ uploadPayloadFlat ] };
-        
+
+        // Debug: explicit values and types before request
+        const ENABLE_LEGACY_FALLBACK = false;
+        console.info('Upload precheck debug:', {
+          uploadFolderId,
+          typeofUploadFolderId: typeof uploadFolderId,
+          numberDirId: Number(uploadFolderId),
+          isDirIdFinite: Number.isFinite(Number(uploadFolderId)),
+          fileSize,
+          typeofFileSize: typeof fileSize,
+          bytesLength: bytes.length,
+          uploadPayloadFlat,
+        });
+
         // Prefer official session start endpoint (batch)
         const sessionBatchUrl = `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload/session/batch/start`;
         console.info('Create upload session (batch) request:', {
@@ -379,13 +392,21 @@ serve(async (req) => {
         let lastError: any = null;
         
         try {
+          const headersForBatch = {
+            'Authorization': `Bearer ${KDRIVE_TOKEN}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          };
+          const bodyString = JSON.stringify(batchPayload);
+          console.info('Batch request debug:', {
+            url: sessionBatchUrl,
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer ***' },
+            bodyString,
+          });
           const sessionResp = await fetch(sessionBatchUrl, {
             method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${KDRIVE_TOKEN}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(batchPayload)
+            headers: headersForBatch,
+            body: bodyString
           });
 
           const respText = await sessionResp.text();
@@ -412,7 +433,7 @@ serve(async (req) => {
         }
         
         // Legacy fallback: old endpoint with flat body (kept for compatibility while we align the client)
-        if (!uploadTokenStr) {
+          if (ENABLE_LEGACY_FALLBACK && !uploadTokenStr) {
           const legacySessionUrl = `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload`;
           console.info('Falling back to legacy create upload session:', {
             url: legacySessionUrl,
