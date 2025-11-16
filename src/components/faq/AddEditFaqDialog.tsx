@@ -20,7 +20,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RichTextEditor } from './RichTextEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Upload, Eye, Edit } from 'lucide-react';
+import { Upload, Eye, Edit, X } from 'lucide-react';
 import { FAQ_ICONS, getIconComponent } from './faqConstants';
 import type { UserRole } from '@/hooks/useUserRole';
 
@@ -124,6 +124,41 @@ export function AddEditFaqDialog({
     } = supabase.storage.from('faq-pdfs').getPublicUrl(fileName);
 
     return publicUrl;
+  };
+
+  const handleRemovePdf = async () => {
+    if (currentPdfUrl && editingItem) {
+      // Extract file path from URL
+      const urlParts = currentPdfUrl.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      
+      // Delete from storage
+      const { error } = await supabase.storage
+        .from('faq-pdfs')
+        .remove([fileName]);
+
+      if (error) {
+        toast.error("Erreur lors de la suppression du PDF");
+        return;
+      }
+
+      // Update database
+      const { error: updateError } = await supabase
+        .from('faq_items')
+        .update({ pdf_url: null })
+        .eq('id', editingItem.id);
+
+      if (updateError) {
+        toast.error("Erreur lors de la mise à jour");
+        return;
+      }
+
+      setCurrentPdfUrl(null);
+      toast.success("PDF supprimé avec succès");
+    } else {
+      // Just clear the selected file if not saved yet
+      setPdfFile(null);
+    }
   };
 
   const handleSave = async () => {
@@ -294,15 +329,28 @@ export function AddEditFaqDialog({
                   <Upload className="h-4 w-4 mr-2" />
                   {pdfFile ? pdfFile.name : 'Choisir un PDF'}
                 </Button>
-                {currentPdfUrl && !pdfFile && (
-                  <a
-                    href={currentPdfUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-primary hover:underline"
-                  >
-                    PDF actuel
-                  </a>
+                {(currentPdfUrl || pdfFile) && (
+                  <div className="flex items-center gap-2">
+                    {currentPdfUrl && !pdfFile && (
+                      <a
+                        href={currentPdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline"
+                      >
+                        PDF actuel
+                      </a>
+                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRemovePdf}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
