@@ -66,23 +66,13 @@ export function ProjectKDriveTab({ projectId }: ProjectKDriveTabProps) {
 
       setDriveId(client.kdrive_drive_id);
 
-      // Check if project has its own folder
-      if (project.kdrive_folder_id) {
-        setCurrentFolder({
-          id: project.kdrive_folder_id,
-          name: project.name,
-          path: project.kdrive_folder_path || ''
-        });
-        await loadFiles(client.kdrive_drive_id, project.kdrive_folder_id);
-      } else {
-        // Use client folder
-        setCurrentFolder({
-          id: client.kdrive_folder_id,
-          name: client.company,
-          path: client.kdrive_folder_path || ''
-        });
-        await loadFiles(client.kdrive_drive_id, client.kdrive_folder_id);
-      }
+      // Always use client folder
+      setCurrentFolder({
+        id: client.kdrive_folder_id,
+        name: client.company,
+        path: client.kdrive_folder_path || ''
+      });
+      await loadFiles(client.kdrive_drive_id, client.kdrive_folder_id);
     } catch (error: any) {
       console.error('Error loading project folder:', error);
       toast.error('Erreur lors du chargement du dossier');
