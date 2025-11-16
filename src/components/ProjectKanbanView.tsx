@@ -13,7 +13,8 @@ interface ProjectKanbanViewProps {
 }
 
 const statusColumns = [
-  { id: 'planning', label: 'À programmer' },
+  { id: 'planning', label: 'À faire' },
+  { id: 'reco_in_progress', label: 'Reco en cours' },
   { id: 'active', label: 'En cours' },
   { id: 'urgent', label: 'Urgent' },
   { id: 'completed', label: 'Terminé' },
