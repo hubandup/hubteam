@@ -27,54 +27,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Sending invitation email to:", email, "with role:", role);
 
-    // Prepare the email content
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: 'Roboto', Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { text-align: center; padding: 20px 0; }
-            .logo { font-family: 'Instrument Sans', Arial, sans-serif; font-size: 32px; font-weight: bold; color: #014a94; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 8px; margin: 20px 0; }
-            .button { display: inline-block; padding: 12px 30px; background: #014a94; color: white !important; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-            .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <div class="logo">Hub Team</div>
-            </div>
-            
-            <div class="content">
-              <h2>Bienvenue sur Hub Team !</h2>
-              <p>Vous avez été invité(e) à rejoindre notre plateforme en tant que <strong>${role}</strong>.</p>
-              <p>Pour activer votre compte et définir votre mot de passe, veuillez cliquer sur le bouton ci-dessous :</p>
-              <div style="text-align: center;">
-                <a href="${invitationUrl}" class="button">Définir mon mot de passe</a>
-              </div>
-              <p style="margin-top: 20px; font-size: 14px; color: #666;">
-                Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :<br>
-                <a href="${invitationUrl}" style="color: #014a94; word-break: break-all;">${invitationUrl}</a>
-              </p>
-              <p style="margin-top: 20px; font-size: 14px; color: #666;">
-                Ce lien d'invitation expirera dans 24 heures.
-              </p>
-            </div>
-            
-            <div class="footer">
-              <p>Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
-              <p>&copy; ${new Date().getFullYear()} HubandUp. Tous droits réservés.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
+    // Brevo template ID - configure this in your Brevo dashboard
+    // Create a template with variables: {{role}}, {{invitationUrl}}
+    const BREVO_TEMPLATE_ID = 1; // TODO: Replace with your actual Brevo template ID
 
-    // Send email via Brevo API
+    // Send email via Brevo API using template
     const brevoResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
@@ -84,15 +41,18 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         sender: {
           name: "Organisation Hub & Up",
-          email: "orga@hubandup.com", // TODO: Update with your verified sender email
+          email: "orga@hubandup.com",
         },
         to: [
           {
             email: email,
           },
         ],
-        subject: "Invitation à rejoindre HubandUp",
-        htmlContent: htmlContent,
+        templateId: BREVO_TEMPLATE_ID,
+        params: {
+          role: role,
+          invitationUrl: invitationUrl,
+        },
       }),
     });
 
