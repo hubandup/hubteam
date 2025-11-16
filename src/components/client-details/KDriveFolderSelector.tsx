@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Folder, Plus, Loader2, HardDrive } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Folder, Plus, Loader2, HardDrive, Search } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,6 +42,7 @@ export function KDriveFolderSelector({
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [folders, setFolders] = useState<KDriveFile[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [newFolderName, setNewFolderName] = useState("");
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [currentFolderId, setCurrentFolderId] = useState(KDRIVE_ROOT_FOLDER_ID);
@@ -53,8 +54,29 @@ export function KDriveFolderSelector({
   useEffect(() => {
     if (isOpen) {
       loadFolders();
+      setSearchQuery("");
     }
   }, [isOpen, currentFolderId]);
+
+  const filteredFolders = useMemo(() => {
+    if (!searchQuery.trim()) return folders;
+    
+    const query = searchQuery.toLowerCase();
+    return folders
+      .filter(folder => folder.name.toLowerCase().includes(query))
+      .sort((a, b) => {
+        const aIndex = a.name.toLowerCase().indexOf(query);
+        const bIndex = b.name.toLowerCase().indexOf(query);
+        if (aIndex !== bIndex) return aIndex - bIndex;
+        return a.name.localeCompare(b.name);
+      });
+  }, [folders, searchQuery]);
+
+  const exactMatch = useMemo(() => {
+    return folders.some(folder => 
+      folder.name.toLowerCase() === searchQuery.trim().toLowerCase()
+    );
+  }, [folders, searchQuery]);
 
   const loadFolders = async () => {
     setIsLoading(true);
@@ -108,13 +130,14 @@ export function KDriveFolderSelector({
     }
   };
 
-  const createFolder = async () => {
-    if (!newFolderName.trim()) {
+  const createFolder = async (folderName?: string) => {
+    const nameToCreate = folderName || newFolderName;
+    if (!nameToCreate.trim()) {
       toast.error("Veuillez saisir un nom ou chemin de dossier");
       return;
     }
 
-    const segments = newFolderName.split("/").map(s => s.trim()).filter(Boolean);
+    const segments = nameToCreate.split("/").map(s => s.trim()).filter(Boolean);
     if (segments.length > 1) {
       await createFolderPath(segments);
       return;
@@ -282,16 +305,27 @@ export function KDriveFolderSelector({
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Search field */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher un dossier..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
             {/* Create new folder */}
             <div className="flex gap-2">
               <Input
-                placeholder="Chemin du dossier (ex: CLIENTS/NouveauClient)"
+                placeholder="Créer un dossier (ex: CLIENTS/NouveauClient)"
                 value={newFolderName}
                 onChange={(e) => setNewFolderName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && createFolder()}
               />
               <Button
-                onClick={createFolder}
+                onClick={() => createFolder()}
                 disabled={isCreatingFolder || !newFolderName.trim()}
                 size="sm"
               >
@@ -311,13 +345,34 @@ export function KDriveFolderSelector({
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
-              ) : folders.length === 0 ? (
+              ) : filteredFolders.length === 0 && !searchQuery.trim() ? (
                 <div className="text-center py-8 text-muted-foreground">
                   Aucun sous-dossier disponible. Créez-en un nouveau ci-dessus ou sélectionnez ce dossier.
                 </div>
+              ) : filteredFolders.length === 0 && searchQuery.trim() ? (
+                <div className="text-center py-8 space-y-4">
+                  <p className="text-muted-foreground">
+                    Aucun dossier ne correspond à "{searchQuery}"
+                  </p>
+                  {!exactMatch && (
+                    <Button
+                      onClick={() => createFolder(searchQuery)}
+                      disabled={isCreatingFolder}
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      {isCreatingFolder ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Plus className="h-4 w-4" />
+                      )}
+                      Créer le dossier "{searchQuery}"
+                    </Button>
+                  )}
+                </div>
               ) : (
                 <div className="space-y-2">
-                  {folders.map((folder) => (
+                  {filteredFolders.map((folder) => (
                     <Button
                       key={folder.id}
                       variant="ghost"
