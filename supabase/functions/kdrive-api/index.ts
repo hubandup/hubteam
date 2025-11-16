@@ -536,7 +536,15 @@ serve(async (req) => {
             console.info('Single session response:', { status: singleResp.status, body: singleData || singleText });
             if (singleResp.ok) {
               uploadTokenStr = singleData?.data?.token || singleData?.data?.upload_token || singleData?.upload_token || null;
-              lastError = singleData;
+              // Extract the upload_url provided by kDrive for chunk uploads
+              const uploadUrl = singleData?.data?.upload_url || null;
+              if (uploadUrl) {
+                console.info('Upload URL from kDrive:', uploadUrl);
+                // Store it for later use in chunk upload
+                lastError = { ...singleData, _upload_url: uploadUrl };
+              } else {
+                lastError = singleData;
+              }
             }
           } catch (e) {
             console.error('Single session request threw:', e);
@@ -624,10 +632,15 @@ serve(async (req) => {
 
         console.info(`Upload token received: ${uploadTokenStr.substring(0, 10)}...`);
         
-        // Step 2: Upload file chunk using the correct endpoint
-        // kDrive uses /upload/session/{token}/chunk, not /upload/{token}/chunk
-        const chunkUrl = `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload/session/${uploadTokenStr}/chunk`;
-        console.info('Chunk upload URL:', chunkUrl, 'Method: POST');
+        // Step 2: Upload file chunk using the upload_url from kDrive or fallback to API base
+        const uploadBaseUrl = (lastError as any)?._upload_url || `${KDRIVE_API_BASE}`;
+        const chunkUrl = `${uploadBaseUrl}/3/drive/${uploadDriveId}/upload/session/${uploadTokenStr}/chunk`;
+        console.info('Chunk upload debug:', {
+          url: chunkUrl,
+          method: 'POST',
+          uploadBaseUrl,
+          hasUploadUrl: !!(lastError as any)?._upload_url
+        });
         
         const chunkResp = await fetch(
           chunkUrl,
@@ -667,9 +680,12 @@ serve(async (req) => {
           );
         }
         
-        // Step 3: Finalize the upload
-        const finalizeUrl = `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload/session/${uploadTokenStr}/finish`;
-        console.info('Finalize upload URL:', finalizeUrl);
+        // Step 3: Finalize the upload using the same upload base URL
+        const finalizeUrl = `${uploadBaseUrl}/3/drive/${uploadDriveId}/upload/session/${uploadTokenStr}/finish`;
+        console.info('Finalize upload debug:', {
+          url: finalizeUrl,
+          method: 'POST'
+        });
         
         const finalizeResp = await fetch(
           finalizeUrl,
