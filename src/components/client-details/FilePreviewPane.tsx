@@ -53,28 +53,9 @@ export function FilePreviewPane({ file, onClose, onGetFileUrl }: FilePreviewPane
 
     try {
       const result = await onGetFileUrl(file.id);
-      const proxyUrl = result.url;
-      
-      // For PDFs and images, fetch the content and create a blob URL
-      // This allows proper display in <object> and <img> elements
-      const supabase = (await import('@/integrations/supabase/client')).supabase;
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const response = await fetch(proxyUrl, {
-        headers: {
-          'Authorization': `Bearer ${session?.access_token || ''}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch file: ${response.statusText}`);
-      }
-
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      
-      setFileUrl(blobUrl);
-      setMimeType(blob.type || result.mimeType || null);
+      // Use the proxy URL directly so the browser streams the PDF
+      setFileUrl(result.url);
+      setMimeType(result.mimeType || null);
     } catch (err) {
       console.error('Failed to load file URL:', err);
       setError('Impossible de charger le fichier');
