@@ -65,7 +65,7 @@ const handler = async (req: Request): Promise<Response> => {
                       <table width="100%" cellpadding="0" cellspacing="0">
                         <tr>
                           <td align="center">
-                            <a href="${invitationUrl}" style="display: inline-block; padding: 14px 32px; background-color: #000000; color: #ffffff; text-decoration: none; border-radius: 20px; font-size: 16px; font-weight: bold;">
+                            <a href="${invitationUrl}" style="display: inline-block; padding: 14px 32px; background-color: #000000; color: #ffffff; text-decoration: none; border-radius: 25px; font-size: 16px; font-weight: bold;">
                               Accepter l'invitation
                             </a>
                           </td>
