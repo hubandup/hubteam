@@ -419,6 +419,7 @@ export type Database = {
           last_contact: string | null
           last_name: string
           logo_url: string | null
+          main_contact_id: string | null
           phone: string | null
           revenue: number | null
           revenue_current_year: number | null
@@ -444,6 +445,7 @@ export type Database = {
           last_contact?: string | null
           last_name: string
           logo_url?: string | null
+          main_contact_id?: string | null
           phone?: string | null
           revenue?: number | null
           revenue_current_year?: number | null
@@ -469,6 +471,7 @@ export type Database = {
           last_contact?: string | null
           last_name?: string
           logo_url?: string | null
+          main_contact_id?: string | null
           phone?: string | null
           revenue?: number | null
           revenue_current_year?: number | null
@@ -481,6 +484,13 @@ export type Database = {
             columns: ["activity_sector_id"]
             isOneToOne: false
             referencedRelation: "activity_sectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_main_contact_id_fkey"
+            columns: ["main_contact_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {

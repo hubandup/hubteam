@@ -38,6 +38,7 @@ interface ClientInfoTabProps {
     kdrive_drive_id?: number;
     kdrive_folder_id?: string;
     kdrive_folder_path?: string;
+    main_contact_id?: string;
   };
   onUpdate: () => void;
 }
@@ -82,7 +83,33 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
     if (isClient) {
       fetchClientData();
     }
+    if (client.main_contact_id) {
+      fetchMainContact();
+    }
   }, [client, isClient]);
+
+  const fetchMainContact = async () => {
+    if (!client.main_contact_id) return;
+
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, email, avatar_url')
+      .eq('id', client.main_contact_id)
+      .single();
+
+    if (profileData) {
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', profileData.id)
+        .single();
+
+      setTeamMember({
+        ...profileData,
+        role: roleData?.role || 'team'
+      });
+    }
+  };
 
   const fetchSectorAndStatus = async () => {
     if (client.activity_sector_id) {

@@ -44,6 +44,7 @@ const clientSchema = z.object({
   follow_up_date: z.date().optional(),
   last_contact: z.date().optional(),
   kanban_stage: z.string(),
+  main_contact_id: z.string().optional(),
 });
 
 type ClientFormData = z.infer<typeof clientSchema>;
@@ -64,6 +65,7 @@ interface EditClientDialogProps {
     follow_up_date?: string;
     last_contact?: string;
     kanban_stage: string;
+    main_contact_id?: string;
   };
   onClientUpdated: () => void;
 }
@@ -75,6 +77,7 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
   const [logoPreview, setLogoPreview] = useState<string | null>(client.logo_url || null);
   const [activitySectors, setActivitySectors] = useState<any[]>([]);
   const [clientStatuses, setClientStatuses] = useState<any[]>([]);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
 
   const {
     register,
@@ -98,6 +101,7 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
       follow_up_date: client.follow_up_date ? new Date(client.follow_up_date) : undefined,
       last_contact: client.last_contact ? new Date(client.last_contact) : undefined,
       kanban_stage: client.kanban_stage,
+      main_contact_id: client.main_contact_id || '',
     },
   });
 
@@ -107,10 +111,39 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
   const followUpDate = watch('follow_up_date');
   const lastContact = watch('last_contact');
   const kanbanStage = watch('kanban_stage');
+  const mainContactId = watch('main_contact_id');
 
   useEffect(() => {
     fetchSectorsAndStatuses();
+    fetchTeamMembers();
   }, []);
+
+  const fetchTeamMembers = async () => {
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('user_id, role')
+      .in('role', ['admin', 'team']);
+
+    if (roles) {
+      const userIds = roles.map(r => r.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email')
+        .in('id', userIds);
+
+      if (profiles) {
+        const members = profiles.map(p => {
+          const roleData = roles.find(r => r.user_id === p.id);
+          return {
+            id: p.id,
+            name: `${p.first_name} ${p.last_name}`,
+            role: roleData?.role || 'team'
+          };
+        });
+        setTeamMembers(members);
+      }
+    }
+  };
 
   const fetchSectorsAndStatuses = async () => {
     const { data: sectors } = await supabase
@@ -208,6 +241,7 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
           follow_up_date: data.follow_up_date ? data.follow_up_date.toISOString() : null,
           last_contact: data.last_contact ? data.last_contact.toISOString() : null,
           kanban_stage: data.kanban_stage,
+          main_contact_id: data.main_contact_id || null,
         })
         .eq('id', client.id);
 
@@ -463,6 +497,25 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="main_contact_id">Interlocuteur Hub & Up</Label>
+            <Select
+              value={mainContactId}
+              onValueChange={(value) => setValue('main_contact_id', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner un interlocuteur" />
+              </SelectTrigger>
+              <SelectContent>
+                {teamMembers.map((member) => (
+                  <SelectItem key={member.id} value={member.id}>
+                    {member.name} ({member.role === 'admin' ? 'Administrateur' : 'Équipe'})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
