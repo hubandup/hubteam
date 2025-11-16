@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Phone, Euro, Calendar, Building2, FolderOpen, FolderKanban } from 'lucide-react';
+import { Mail, Phone, Euro, Calendar, Building2, FolderKanban } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { EditAgencyDialog } from '@/components/EditAgencyDialog';
 import { AgencyContactsManager } from './AgencyContactsManager';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ProtectedAction } from '@/components/ProtectedAction';
-import { AgencyKDriveFolderSelector } from './AgencyKDriveFolderSelector';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AgencyInfoTabProps {
@@ -191,25 +190,6 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <FolderOpen className="h-5 w-5" />
-            Dossier KDrive
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <AgencyKDriveFolderSelector
-            agencyId={agency.id}
-            agencyName={agency.name}
-            currentDriveId={agency.kdrive_drive_id}
-            currentFolderId={agency.kdrive_folder_id}
-            currentFolderPath={agency.kdrive_folder_path}
-            onFolderConnected={onUpdate}
-          />
-        </CardContent>
-      </Card>
 
       <AgencyContactsManager agencyId={agency.id} />
     </div>
