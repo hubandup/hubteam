@@ -259,13 +259,16 @@ export default function Projects() {
             Tous ({projects.length})
           </TabsTrigger>
           <TabsTrigger value="planning">
-            Planification ({projects.filter(p => p.status === 'planning').length})
+            À programmer ({projects.filter(p => p.status === 'planning').length})
           </TabsTrigger>
           <TabsTrigger value="active">
-            Actifs ({projects.filter(p => p.status === 'active').length})
+            En cours ({projects.filter(p => p.status === 'active').length})
           </TabsTrigger>
           <TabsTrigger value="completed">
             Terminés ({projects.filter(p => p.status === 'completed').length})
+          </TabsTrigger>
+          <TabsTrigger value="lost">
+            Perdu ({projects.filter(p => p.status === 'lost').length})
           </TabsTrigger>
           <TabsTrigger value="archived">
             <Archive className="h-4 w-4 mr-1" />
@@ -361,7 +364,12 @@ export default function Projects() {
               <p className="text-muted-foreground">
                 {activeTab === 'all' 
                   ? 'Aucun projet pour le moment' 
-                  : `Aucun projet ${activeTab === 'planning' ? 'en planification' : activeTab === 'active' ? 'actif' : 'terminé'}`
+                  : `Aucun projet ${
+                      activeTab === 'planning' ? 'à programmer' : 
+                      activeTab === 'active' ? 'en cours' : 
+                      activeTab === 'lost' ? 'perdu' :
+                      'terminé'
+                    }`
                 }
               </p>
               <p className="text-sm text-muted-foreground mt-2">

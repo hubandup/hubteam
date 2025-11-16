@@ -13,10 +13,11 @@ interface ProjectKanbanViewProps {
 }
 
 const statusColumns = [
-  { id: 'planning', label: 'À planifier' },
-  { id: 'active', label: 'Actif' },
+  { id: 'planning', label: 'À programmer' },
+  { id: 'active', label: 'En cours' },
   { id: 'urgent', label: 'Urgent' },
   { id: 'completed', label: 'Terminé' },
+  { id: 'lost', label: 'Perdu' },
 ];
 
 function DraggableProjectCard({ 
