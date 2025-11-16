@@ -71,6 +71,8 @@ serve(async (req) => {
             'Content-Disposition': isPdf ? 'inline' : 'attachment',
             'Cache-Control': 'public, max-age=3600',
             'X-Content-Type-Options': 'nosniff',
+            'X-Frame-Options': 'ALLOWALL',
+            'Content-Security-Policy': 'frame-ancestors *',
           },
         });
       }
