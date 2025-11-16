@@ -924,57 +924,143 @@ serve(async (req) => {
           );
         }
 
-        // Build payload for batch delete - kDrive expects file_ids array
-        const batchDeletePayload = {
-          file_ids: fileIds.map((id: string | number) => Number(id))
-        };
+        // Build numeric array once
+        const fileIdsNum = fileIds.map((id: string | number) => Number(id));
 
-        const deleteUrl = `${KDRIVE_API_BASE}/3/drive/${batchDeleteDriveId}/files/trash`;
-        
-        console.log('═══════════════════════════════════════════════════════════');
-        console.log('[DELETE-FILES] URL exacte:', deleteUrl);
-        console.log('[DELETE-FILES] Méthode HTTP: POST');
-        console.log('[DELETE-FILES] Headers:', {
-          'Authorization': 'Bearer [REDACTED]',
-          'Content-Type': 'application/json'
-        });
-        console.log('[DELETE-FILES] Payload brut:', JSON.stringify(batchDeletePayload, null, 2));
-        console.log('[DELETE-FILES] Nombre de fichiers:', fileIds.length);
-        console.log('═══════════════════════════════════════════════════════════');
+        // Try official-looking batch endpoints first (v3 then v2) with multiple payload shapes
+        const batchAttempts: Array<{
+          url: string;
+          method: 'POST' | 'DELETE';
+          type: 'json' | 'urlencoded';
+          body?: any;
+          label: string;
+        }> = [
+          {
+            url: `${KDRIVE_API_BASE}/3/drive/${batchDeleteDriveId}/files/trash`,
+            method: 'POST',
+            type: 'json',
+            body: { file_ids: fileIdsNum },
+            label: 'v3 files/trash (json file_ids)'
+          },
+          {
+            url: `${KDRIVE_API_BASE}/2/drive/${batchDeleteDriveId}/files/trash`,
+            method: 'POST',
+            type: 'json',
+            body: { file_ids: fileIdsNum },
+            label: 'v2 files/trash (json file_ids)'
+          },
+          {
+            url: `${KDRIVE_API_BASE}/3/drive/${batchDeleteDriveId}/files/delete`,
+            method: 'POST',
+            type: 'json',
+            body: { files: fileIdsNum.map((id) => ({ id })) },
+            label: 'v3 files/delete (json files[])'
+          },
+          {
+            url: `${KDRIVE_API_BASE}/2/drive/${batchDeleteDriveId}/files/delete`,
+            method: 'POST',
+            type: 'json',
+            body: { files: fileIdsNum.map((id) => ({ id })) },
+            label: 'v2 files/delete (json files[])'
+          },
+          {
+            url: `${KDRIVE_API_BASE}/3/drive/${batchDeleteDriveId}/files/trash`,
+            method: 'POST',
+            type: 'urlencoded',
+            body: (() => { const u = new URLSearchParams(); fileIdsNum.forEach((id) => u.append('file_ids[]', String(id))); return u; })(),
+            label: 'v3 files/trash (x-www-form-urlencoded file_ids[])'
+          },
+          {
+            url: `${KDRIVE_API_BASE}/2/drive/${batchDeleteDriveId}/files/trash`,
+            method: 'POST',
+            type: 'urlencoded',
+            body: (() => { const u = new URLSearchParams(); fileIdsNum.forEach((id) => u.append('file_ids[]', String(id))); return u; })(),
+            label: 'v2 files/trash (x-www-form-urlencoded file_ids[])'
+          }
+        ];
 
-        const batchDeleteResp = await fetch(deleteUrl, {
-          method: 'POST',
-          headers: kdriveHeaders,
-          body: JSON.stringify(batchDeletePayload)
-        });
+        let batchSuccess = false;
+        let batchData: any = null;
+        const attemptsLog: any[] = [];
 
-        const batchDeleteText = await batchDeleteResp.text();
-        let batchDeleteData: any = {};
-        try { batchDeleteData = JSON.parse(batchDeleteText); } catch (_) { batchDeleteData = { raw: batchDeleteText }; }
-        
-        console.log('═══════════════════════════════════════════════════════════');
-        console.log('[DELETE-FILES] Status HTTP:', batchDeleteResp.status);
-        console.log('[DELETE-FILES] Réponse complète:', JSON.stringify(batchDeleteData, null, 2));
-        console.log('═══════════════════════════════════════════════════════════');
+        for (const attempt of batchAttempts) {
+          const headers: Record<string,string> = { 'Authorization': `Bearer ${KDRIVE_TOKEN}` };
+          let bodyToSend: string | URLSearchParams | undefined;
+          if (attempt.type === 'json') {
+            headers['Content-Type'] = 'application/json';
+            bodyToSend = JSON.stringify(attempt.body ?? {});
+          } else {
+            headers['Content-Type'] = 'application/x-www-form-urlencoded';
+            bodyToSend = (attempt.body as URLSearchParams).toString();
+          }
 
-        if (!batchDeleteResp.ok) {
-          console.error('[DELETE-FILES] Échec de la suppression');
+          console.log('════════ DELETE-FILES attempt ════════');
+          console.log('Label:', attempt.label);
+          console.log('URL:', attempt.url);
+          console.log('Method:', attempt.method);
+          console.log('Headers:', { Authorization: 'Bearer [REDACTED]', 'Content-Type': headers['Content-Type'] });
+          console.log('Raw body:', attempt.type === 'json' ? bodyToSend : bodyToSend);
+
+          const r = await fetch(attempt.url, { method: attempt.method, headers, body: bodyToSend });
+          const t = await r.text();
+          let d: any = {};
+          try { d = JSON.parse(t); } catch (_) { d = { raw: t }; }
+          console.log('HTTP status:', r.status);
+          console.log('Response:', d);
+          attemptsLog.push({ label: attempt.label, url: attempt.url, status: r.status, response: d });
+
+          if (r.ok) { batchSuccess = true; batchData = d; break; }
+        }
+
+        if (batchSuccess) {
           return new Response(
-            JSON.stringify({ error: 'Failed to delete files', details: batchDeleteData }),
-            { 
-              status: batchDeleteResp.status,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-            }
+            JSON.stringify({ result: 'success', deletedIds: fileIdsNum, details: batchData }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Batch failed, try per-file endpoints (v3 then v2) with different verbs
+        const perFileDeleted: number[] = [];
+        const perFileErrors: any[] = [];
+        for (const fid of fileIdsNum) {
+          const perFileAttempts: Array<{ url: string; method: 'POST' | 'DELETE'; label: string }> = [
+            { url: `${KDRIVE_API_BASE}/3/drive/${batchDeleteDriveId}/files/${fid}/trash`, method: 'POST', label: 'v3 file trash (POST)' },
+            { url: `${KDRIVE_API_BASE}/2/drive/${batchDeleteDriveId}/files/${fid}/trash`, method: 'POST', label: 'v2 file trash (POST)' },
+            { url: `${KDRIVE_API_BASE}/3/drive/${batchDeleteDriveId}/files/${fid}`, method: 'DELETE', label: 'v3 file delete (DELETE)' },
+            { url: `${KDRIVE_API_BASE}/2/drive/${batchDeleteDriveId}/files/${fid}`, method: 'DELETE', label: 'v2 file delete (DELETE)' },
+          ];
+
+          let done = false;
+          for (const a of perFileAttempts) {
+            console.log('— Per-file attempt:', { label: a.label, url: a.url, method: a.method });
+            const r = await fetch(a.url, { method: a.method, headers: { 'Authorization': `Bearer ${KDRIVE_TOKEN}` } });
+            const t = await r.text();
+            let d: any = {};
+            try { d = JSON.parse(t); } catch (_) { d = { raw: t }; }
+            console.log('Per-file status:', r.status, 'response:', d);
+
+            if (r.ok || r.status === 204) { perFileDeleted.push(fid); done = true; break; }
+            perFileErrors.push({ fid, label: a.label, status: r.status, response: d });
+          }
+        }
+
+        if (perFileDeleted.length === fileIdsNum.length) {
+          return new Response(
+            JSON.stringify({ result: 'success', deletedIds: perFileDeleted }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
 
         return new Response(
-          JSON.stringify({ 
-            result: 'success', 
-            deletedIds: fileIds,
-            details: batchDeleteData 
+          JSON.stringify({
+            error: 'Failed to delete files',
+            details: {
+              message: 'All attempts failed. See logs for each URL/method tried.',
+              attempts: attemptsLog,
+              perFileErrors
+            }
           }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
 
       case 'get-file-details':
