@@ -40,7 +40,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         sender: {
-          name: "Organisation Hub & Up",
+          name: "Hub & Up",
           email: "orga@hubandup.com",
         },
         to: [
