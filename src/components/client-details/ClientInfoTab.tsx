@@ -144,9 +144,10 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
 
   const handleMainContactChange = async (userId: string) => {
     try {
+      const contactId = userId === 'none' ? null : userId;
       const { error } = await supabase
         .from('clients')
-        .update({ main_contact_id: userId || null })
+        .update({ main_contact_id: contactId })
         .eq('id', client.id);
 
       if (error) throw error;
@@ -346,14 +347,14 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
               <div className="flex-1">
                 <p className="text-sm text-muted-foreground mb-2">Interlocuteur Hub & Up</p>
                 <Select
-                  value={client.main_contact_id || ''}
+                  value={client.main_contact_id || 'none'}
                   onValueChange={handleMainContactChange}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner un interlocuteur" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Aucun</SelectItem>
+                    <SelectItem value="none">Aucun</SelectItem>
                     {teamMembers.map((member) => (
                       <SelectItem key={member.id} value={member.id}>
                         {member.first_name} {member.last_name}
