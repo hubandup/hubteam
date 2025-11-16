@@ -435,6 +435,86 @@ serve(async (req) => {
           lastError = e;
           console.error('Upload session (batch) threw:', e);
         }
+        // Try batch start with application/x-www-form-urlencoded
+        try {
+          const urlencoded = new URLSearchParams();
+          urlencoded.append('files[0][directory_id]', String(uploadPayloadFlat.directory_id));
+          urlencoded.append('files[0][file_name]', uploadPayloadFlat.file_name);
+          urlencoded.append('files[0][total_size]', String(uploadPayloadFlat.total_size));
+          urlencoded.append('files[0][total_chunks]', '1');
+          urlencoded.append('files[0][conflict]', String(uploadPayloadFlat.conflict));
+          console.info('Batch request (urlencoded) debug:', {
+            url: sessionBatchUrl,
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json', 'Authorization': 'Bearer ***' },
+            bodyString: urlencoded.toString(),
+          });
+          const urlEncResp = await fetch(sessionBatchUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${KDRIVE_TOKEN}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Accept': 'application/json',
+            },
+            body: urlencoded.toString(),
+          });
+          const urlEncText = await urlEncResp.text();
+          let urlEncData: any = {};
+          try { urlEncData = JSON.parse(urlEncText); } catch (_) { /* keep raw */ }
+          console.info('Session (batch urlencoded) response:', { status: urlEncResp.status, body: urlEncData || urlEncText });
+          if (urlEncResp.ok) {
+            uploadTokenStr = urlEncData?.data?.files?.[0]?.upload_token ||
+                             urlEncData?.files?.[0]?.upload_token ||
+                             urlEncData?.data?.[0]?.upload_token ||
+                             urlEncData?.upload_token || null;
+            lastError = urlEncData;
+          }
+        } catch (e) {
+          console.error('Batch urlencoded threw:', e);
+        }
+        
+        // Fallback to multipart/form-data if still no token
+        if (!uploadTokenStr) {
+          try {
+            const form = new FormData();
+            form.append('files[0][directory_id]', String(uploadPayloadFlat.directory_id));
+            form.append('files[0][file_name]', uploadPayloadFlat.file_name);
+            form.append('files[0][total_size]', String(uploadPayloadFlat.total_size));
+            form.append('files[0][total_chunks]', '1');
+            form.append('files[0][conflict]', String(uploadPayloadFlat.conflict));
+            console.info('Batch request (multipart) debug:', {
+              url: sessionBatchUrl,
+              headers: { 'Authorization': 'Bearer ***', 'Accept': 'application/json' },
+              fields: [
+                'files[0][directory_id]',
+                'files[0][file_name]',
+                'files[0][total_size]',
+                'files[0][total_chunks]',
+                'files[0][conflict]'
+              ]
+            });
+            const mpResp = await fetch(sessionBatchUrl, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${KDRIVE_TOKEN}`,
+                'Accept': 'application/json',
+              },
+              body: form,
+            });
+            const mpText = await mpResp.text();
+            let mpData: any = {};
+            try { mpData = JSON.parse(mpText); } catch (_) { /* keep raw */ }
+            console.info('Session (batch multipart) response:', { status: mpResp.status, body: mpData || mpText });
+            if (mpResp.ok) {
+              uploadTokenStr = mpData?.data?.files?.[0]?.upload_token ||
+                               mpData?.files?.[0]?.upload_token ||
+                               mpData?.data?.[0]?.upload_token ||
+                               mpData?.upload_token || null;
+              lastError = mpData;
+            }
+          } catch (e) {
+            console.error('Batch multipart threw:', e);
+          }
+        }
         // Attempt single-file session start if batch didn't yield a token
         if (!uploadTokenStr) {
           const singleSessionUrl = `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload/session/start`;
