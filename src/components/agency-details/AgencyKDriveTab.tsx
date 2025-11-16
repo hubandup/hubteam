@@ -364,6 +364,14 @@ export function AgencyKDriveTab({
         kdrive_folder_path: null
       }).eq('id', agencyId);
       if (error) throw error;
+      
+      // Reset local state
+      setDriveId(null);
+      setCurrentFolder(null);
+      setFiles([]);
+      setBreadcrumbs([]);
+      setSelectedIds([]);
+      
       toast.success('Connexion KDrive révoquée');
       setIsRevokeOpen(false);
       await loadAgencyFolder();
@@ -420,15 +428,6 @@ export function AgencyKDriveTab({
   if (!driveId || !currentFolder) {
     return <Card>
         <CardContent className="p-8">
-          <div className="text-center mb-6">
-            <FolderIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground mb-2">
-              Aucun dossier KDrive n'est configuré pour cette agence.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Connectez un dossier depuis Hub & Up {'>'} Agences
-            </p>
-          </div>
           <AgencyKDriveFolderSelector agencyId={agencyId} agencyName={agencyName} currentDriveId={driveId} currentFolderId={currentFolder?.id.toString() || null} currentFolderPath={folderPath} onFolderConnected={loadAgencyFolder} />
         </CardContent>
       </Card>;
