@@ -11,6 +11,7 @@ import {
   Home,
   ChevronRight,
 } from "lucide-react";
+import { Unlink, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { KDriveFolderSelector } from "./KDriveFolderSelector";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -69,6 +70,9 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [showDropZone, setShowDropZone] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [isPdfOpen, setIsPdfOpen] = useState(false);
+  const [isRevokeOpen, setIsRevokeOpen] = useState(false);
 
   useEffect(() => {
     loadClientFolder();
