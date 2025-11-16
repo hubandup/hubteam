@@ -634,12 +634,15 @@ serve(async (req) => {
         
         // Step 2: Upload file chunk using the upload_url from kDrive or fallback to API base
         const uploadBaseUrl = (lastError as any)?._upload_url || `${KDRIVE_API_BASE}`;
-        const chunkUrl = `${uploadBaseUrl}/3/drive/${uploadDriveId}/upload/session/${uploadTokenStr}/chunk`;
+        // Add chunk_number and chunk_size as query parameters
+        const chunkUrl = `${uploadBaseUrl}/3/drive/${uploadDriveId}/upload/session/${uploadTokenStr}/chunk?chunk_number=1&chunk_size=${bytes.length}`;
         console.info('Chunk upload debug:', {
           url: chunkUrl,
           method: 'POST',
           uploadBaseUrl,
-          hasUploadUrl: !!(lastError as any)?._upload_url
+          hasUploadUrl: !!(lastError as any)?._upload_url,
+          chunkNumber: 1,
+          chunkSize: bytes.length
         });
         
         const chunkResp = await fetch(
