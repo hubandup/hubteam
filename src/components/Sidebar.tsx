@@ -66,7 +66,7 @@ export function Sidebar() {
 
   const mainItems = [
     { title: 'Accueil', url: '/', icon: Home, module: 'dashboard' as const },
-    ...(role === 'client' && clientId ? [{ title: 'Ma fiche client', url: `/client/${clientId}`, icon: Users, module: 'crm' as const, matchParent: true }] : []),
+    ...(role === 'client' && clientId ? [{ title: 'Ma fiche client', url: `/client/${clientId}`, icon: Users, module: 'crm' as const, matchParent: true, isClientItem: true }] : []),
     { title: 'Tableau de bord', url: '/dashboard', icon: LayoutDashboard, module: 'dashboard' as const },
     { title: 'CRM', url: '/crm', icon: Users, module: 'crm' as const, matchParent: true },
     { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const, matchParent: true },
@@ -110,6 +110,11 @@ export function Sidebar() {
                         >
                           <item.icon className="mr-2 h-4 w-4" />
                           <span>{item.title}</span>
+                          {(item as any).isClientItem && (
+                            <span className="ml-auto">
+                              <span className="inline-flex items-center justify-center w-2 h-2 rounded-full bg-primary" />
+                            </span>
+                          )}
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
