@@ -26,11 +26,24 @@ export function FilePreviewPane({ file, onClose, onGetFileUrl }: FilePreviewPane
     if (file) {
       loadFileUrl();
     } else {
+      // Clean up blob URL if it exists
+      if (fileUrl?.startsWith('blob:')) {
+        URL.revokeObjectURL(fileUrl);
+      }
       setFileUrl(null);
       setMimeType(null);
       setError(null);
     }
   }, [file?.id]);
+
+  // Clean up blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (fileUrl?.startsWith('blob:')) {
+        URL.revokeObjectURL(fileUrl);
+      }
+    };
+  }, [fileUrl]);
 
   const loadFileUrl = async () => {
     if (!file) return;
@@ -40,8 +53,28 @@ export function FilePreviewPane({ file, onClose, onGetFileUrl }: FilePreviewPane
 
     try {
       const result = await onGetFileUrl(file.id);
-      setFileUrl(result.url);
-      setMimeType(result.mimeType || null);
+      const proxyUrl = result.url;
+      
+      // For PDFs and images, fetch the content and create a blob URL
+      // This allows proper display in <object> and <img> elements
+      const supabase = (await import('@/integrations/supabase/client')).supabase;
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(proxyUrl, {
+        headers: {
+          'Authorization': `Bearer ${session?.access_token || ''}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      
+      setFileUrl(blobUrl);
+      setMimeType(blob.type || result.mimeType || null);
     } catch (err) {
       console.error('Failed to load file URL:', err);
       setError('Impossible de charger le fichier');
