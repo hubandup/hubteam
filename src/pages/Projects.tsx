@@ -300,7 +300,7 @@ export default function Projects() {
       <div>
         <h1 className="text-3xl font-bold text-foreground">Projets</h1>
         <p className="text-muted-foreground">Gérez tous vos projets</p>
-        {isMobile && (
+        {isMobile && !isClient && (
           <div className="mt-4">
             <ProtectedAction module="projects" action="create">
               <AddProjectDialog onProjectAdded={fetchProjects} />
@@ -308,7 +308,7 @@ export default function Projects() {
           </div>
         )}
       </div>
-      {!isMobile && (
+      {!isMobile && !isClient && (
         <div className="flex justify-end">
           <ProtectedAction module="projects" action="create">
             <AddProjectDialog onProjectAdded={fetchProjects} />
