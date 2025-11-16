@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Mail, Phone, Euro } from 'lucide-react';
+import { Building2, Mail, Phone, Euro, FolderCheck } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface AgencyCardProps {
@@ -13,6 +13,8 @@ interface AgencyCardProps {
     active: boolean;
     created_at: string;
     logo_url?: string;
+    kdrive_drive_id?: number;
+    kdrive_folder_id?: string;
   };
   onClick: () => void;
 }
@@ -32,8 +34,11 @@ export function AgencyCard({ agency, onClick }: AgencyCardProps) {
               <Building2 className="h-12 w-12 text-primary flex-shrink-0" />
             )}
             <div className="min-w-0 flex-1">
-              <CardTitle className="text-lg truncate">
+              <CardTitle className="text-lg truncate flex items-center gap-2">
                 {agency.name}
+                {agency.kdrive_drive_id && agency.kdrive_folder_id && (
+                  <FolderCheck className="h-4 w-4 text-success flex-shrink-0" />
+                )}
               </CardTitle>
               <CardDescription className="mt-1">
                 Agence partenaire
