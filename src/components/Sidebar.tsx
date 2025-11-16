@@ -30,23 +30,29 @@ export function Sidebar() {
 
   useEffect(() => {
     const fetchClientId = async () => {
+      console.log('Sidebar - Role:', role, 'User:', user?.id);
       if (role === 'client' && user) {
         try {
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('email')
             .eq('id', user.id)
             .single();
 
+          console.log('Sidebar - Profile:', profile, 'Error:', profileError);
+
           if (profile?.email) {
-            const { data: client } = await supabase
+            const { data: client, error: clientError } = await supabase
               .from('clients')
               .select('id')
               .eq('email', profile.email)
               .single();
 
+            console.log('Sidebar - Client:', client, 'Error:', clientError);
+
             if (client) {
               setClientId(client.id);
+              console.log('Sidebar - Client ID set:', client.id);
             }
           }
         } catch (error) {
