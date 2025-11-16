@@ -164,7 +164,7 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
   return (
     <>
       <div className="border rounded-lg overflow-hidden">
-        <div className="bg-muted p-2 border-b flex gap-1 flex-wrap">
+        <div className="sticky top-0 z-10 bg-background p-2 border-b flex gap-1 flex-wrap shadow-sm">
           <Button
             type="button"
             size="sm"
