@@ -141,7 +141,7 @@ export function AddEditFaqDialog({
       content,
       category_id: categoryId,
       icon,
-      allowed_roles: allowedRoles,
+      allowed_roles: ['admin' as UserRole, ...allowedRoles.filter(r => r !== 'admin')],
       pdf_url: pdfUrl,
       display_order: editingItem?.display_order ?? 0,
     };
@@ -240,7 +240,7 @@ export function AddEditFaqDialog({
             <div>
               <Label>Rôles autorisés *</Label>
               <div className="grid grid-cols-2 gap-3 mt-2">
-                {(['admin', 'team', 'agency', 'client'] as UserRole[]).map((role) => (
+                {(['team', 'agency', 'client'] as UserRole[]).map((role) => (
                   <div key={role} className="flex items-center space-x-2">
                     <Checkbox
                       id={role}
@@ -251,11 +251,14 @@ export function AddEditFaqDialog({
                       htmlFor={role}
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 capitalize"
                     >
-                      {role === 'admin' ? 'Admin' : role === 'team' ? 'Équipe' : role === 'agency' ? 'Agence' : 'Client'}
+                      {role === 'team' ? 'Équipe' : role === 'agency' ? 'Agence' : 'Client'}
                     </label>
                   </div>
                 ))}
               </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Note : Les admins ont toujours accès à toutes les questions
+              </p>
             </div>
 
             <div>
