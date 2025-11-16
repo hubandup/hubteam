@@ -46,11 +46,11 @@ const handler = async (req: Request): Promise<Response> => {
         <body>
           <div class="container">
             <div class="header">
-              <div class="logo">HubandUp</div>
+              <div class="logo">Hub Team</div>
             </div>
             
             <div class="content">
-              <h2>Bienvenue sur HubandUp !</h2>
+              <h2>Bienvenue sur Hub Team !</h2>
               <p>Vous avez été invité(e) à rejoindre notre plateforme en tant que <strong>${role}</strong>.</p>
               <p>Pour activer votre compte et définir votre mot de passe, veuillez cliquer sur le bouton ci-dessous :</p>
               <div style="text-align: center;">
