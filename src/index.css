@@ -56,6 +56,8 @@
     --status-completed-foreground: 222.2 47.4% 11.2%;
     --status-urgent: 0 75% 55%;
     --status-urgent-foreground: 0 0% 100%;
+    --status-lost: 0 84% 60%;
+    --status-lost-foreground: 0 0% 100%;
     
     /* Sidebar */
     --sidebar-background: 0 0% 98%;
@@ -113,6 +115,8 @@
     --status-completed-foreground: 0 0% 60%;
     --status-urgent: 0 75% 60%;
     --status-urgent-foreground: 0 0% 100%;
+    --status-lost: 0 84% 60%;
+    --status-lost-foreground: 0 0% 100%;
     
     --sidebar-background: 0 0% 5%;
     --sidebar-foreground: 0 0% 95%;

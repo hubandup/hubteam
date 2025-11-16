@@ -10,9 +10,10 @@ interface ProjectListViewProps {
 }
 
 const statusConfig = {
-  planning: { label: 'À planifier', color: 'bg-[hsl(var(--status-planning))] text-[hsl(var(--status-planning-foreground))]' },
-  active: { label: 'Actif', color: 'bg-[hsl(var(--status-active))] text-[hsl(var(--status-active-foreground))]' },
+  planning: { label: 'À programmer', color: 'bg-[hsl(var(--status-planning))] text-[hsl(var(--status-planning-foreground))]' },
+  active: { label: 'En cours', color: 'bg-[hsl(var(--status-active))] text-[hsl(var(--status-active-foreground))]' },
   completed: { label: 'Terminé', color: 'bg-[hsl(var(--status-completed))] text-[hsl(var(--status-completed-foreground))]' },
+  lost: { label: 'Perdu', color: 'bg-[hsl(var(--status-lost))] text-[hsl(var(--status-lost-foreground))]' },
   urgent: { label: 'Urgent', color: 'bg-[hsl(var(--status-urgent))] text-[hsl(var(--status-urgent-foreground))]' },
 };
 
