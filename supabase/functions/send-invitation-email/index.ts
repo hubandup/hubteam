@@ -55,9 +55,9 @@ const handler = async (req: Request): Promise<Response> => {
                 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                   <tr>
                     <td style="padding: 40px;">
-                      <h1 style="color: #333333; font-size: 24px; margin: 0 0 20px 0;">Invitation à rejoindre Hub & Up</h1>
+                      <h1 style="color: #333333; font-size: 24px; margin: 0 0 20px 0;">Invitation à rejoindre Hub Team</h1>
                       <p style="color: #666666; font-size: 16px; line-height: 24px; margin: 0 0 20px 0;">
-                        Vous avez été invité à rejoindre Hub & Up en tant que <strong>${roleLabel}</strong>.
+                        Vous avez été invité à rejoindre Hub Team en tant que <strong>${roleLabel}</strong>.
                       </p>
                       <p style="color: #666666; font-size: 16px; line-height: 24px; margin: 0 0 30px 0;">
                         Cliquez sur le bouton ci-dessous pour accepter l'invitation et créer votre compte :
@@ -101,7 +101,7 @@ const handler = async (req: Request): Promise<Response> => {
         email: "orga@hubandup.com",
       },
       to: [{ email }],
-      subject: "Invitation à rejoindre Hub & Up",
+      subject: "Invitation à rejoindre Hub Team",
       htmlContent,
     };
 
