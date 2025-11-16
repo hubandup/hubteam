@@ -46,7 +46,8 @@ import {
   MoreVertical,
   Edit,
   Unlink,
-  Eye
+  Eye,
+  RefreshCw
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -283,6 +284,24 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
     });
     setBreadcrumbs(breadcrumbs.slice(0, index + 1));
     await loadFiles(driveId, crumb.id.toString());
+  };
+
+  const handleGoToRoot = async () => {
+    if (!driveId || breadcrumbs.length === 0) return;
+    const root = breadcrumbs[0];
+    setCurrentFolder({
+      id: root.id,
+      path: root.path,
+      parentId: null
+    });
+    setBreadcrumbs([root]);
+    await loadFiles(driveId, root.id.toString());
+  };
+
+  const handleFileClick = (file: KDriveFile) => {
+    if (file.type === 'dir') {
+      handleFolderClick(file);
+    }
   };
 
   const createFolder = async () => {
@@ -541,79 +560,88 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
 
           <div className="flex items-center justify-between gap-4 mt-4">
             <div className="flex items-center gap-2">
-              {files.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={selectedIds.length === files.length}
-                    onCheckedChange={toggleSelectAll}
-                  />
-                  <Label className="text-sm text-muted-foreground cursor-pointer" onClick={toggleSelectAll}>
-                    {selectedIds.length > 0 ? `${selectedIds.length} sélectionné(s)` : 'Tout sélectionner'}
-                  </Label>
-                </div>
-              )}
-              
-              {selectedIds.length > 0 && isAdmin && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setShowDeleteMultipleConfirm(true)}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Supprimer ({selectedIds.length})
-                </Button>
-              )}
-            </div>
-
-            <div className="flex gap-2">
-              <Dialog open={showCreateFolder} onOpenChange={setShowCreateFolder}>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="outline">
-                    <FolderPlus className="h-4 w-4 mr-2" />
-                    Nouveau dossier
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Créer un nouveau dossier</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 pt-4">
-                    <Input
-                      placeholder="Nom du dossier"
-                      value={newFolderName}
-                      onChange={(e) => setNewFolderName(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && createFolder()}
-                    />
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setShowCreateFolder(false)}>
-                        Annuler
-                      </Button>
-                      <Button onClick={createFolder} disabled={!newFolderName.trim()}>
-                        Créer
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-              
-              <Button size="sm" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
-                {uploading ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Upload className="h-4 w-4 mr-2" />
-                )}
-                Uploader
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleGoToRoot}
+                title="Retour à la racine"
+                disabled={!currentFolder}
+              >
+                <Home className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowCreateFolder(true)}
+                disabled={!currentFolder}
+                title="Nouveau dossier"
+              >
+                <FolderPlus className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={uploading || !currentFolder}
+                onClick={() => fileInputRef.current?.click()}
+                title="Téléverser des fichiers"
+              >
+                {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={!currentFolder}
+                onClick={() => currentFolder && agency && loadFiles(agency.kdrive_drive_id, currentFolder.id.toString())}
+                title="Rafraîchir"
+                className="text-destructive hover:text-destructive"
+              >
+                <RefreshCw className="h-5 w-5" />
               </Button>
               <input
                 ref={fileInputRef}
                 type="file"
-                multiple
                 className="hidden"
                 onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
-                disabled={uploading}
               />
             </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            >
+              A↔Z {sortOrder === 'asc' ? '↓' : '↑'}
+            </Button>
           </div>
+
+          {files.length > 0 && (
+            <div className="flex items-center justify-between p-3 bg-muted/30 border rounded-lg mt-4">
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  checked={selectedIds.length === files.length && files.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                />
+                <span className="text-sm font-medium">
+                  {selectedIds.length > 0 ? `${selectedIds.length} sélectionné(s)` : 'Tout sélectionner'}
+                </span>
+              </div>
+              {selectedIds.length > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setShowDeleteMultipleConfirm(true)}
+                  disabled={isDeletingMultiple}
+                >
+                  {isDeletingMultiple ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Trash2 className="h-4 w-4 mr-2" />
+                  )}
+                  Supprimer {selectedIds.length} élément(s)
+                </Button>
+              )}
+            </div>
+          )}
         </CardHeader>
 
         <CardContent>
@@ -638,7 +666,12 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     {getFileIcon(file)}
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{file.name}</p>
+                      <p 
+                        className="font-medium truncate hover:text-primary transition-colors cursor-pointer"
+                        onClick={() => handleFileClick(file)}
+                      >
+                        {file.name}
+                      </p>
                       {file.type === 'file' && file.size && (
                         <p className="text-sm text-muted-foreground">
                           {formatFileSize(file.size)}
@@ -779,6 +812,31 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Create folder dialog */}
+      <Dialog open={showCreateFolder} onOpenChange={setShowCreateFolder}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Créer un nouveau dossier</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <Input
+              placeholder="Nom du dossier"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && createFolder()}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowCreateFolder(false)}>
+                Annuler
+              </Button>
+              <Button onClick={createFolder} disabled={!newFolderName.trim()}>
+                Créer
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Rename dialog */}
       {renameItem && (
