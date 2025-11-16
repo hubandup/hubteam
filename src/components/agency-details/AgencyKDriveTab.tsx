@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Loader2, Folder, File, Download, Upload, FolderPlus, FileText, Image, Video, Music, Archive } from 'lucide-react';
+import { AgencyKDriveFolderSelector } from './AgencyKDriveFolderSelector';
 
 interface KDriveFile {
   id: string;
@@ -18,14 +19,16 @@ interface KDriveFile {
 
 interface AgencyKDriveTabProps {
   agencyId: string;
+  agencyName: string;
 }
 
-export function AgencyKDriveTab({ agencyId }: AgencyKDriveTabProps) {
+export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) {
   const [loading, setLoading] = useState(true);
   const [files, setFiles] = useState<KDriveFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const [driveId, setDriveId] = useState<number | null>(null);
+  const [folderPath, setFolderPath] = useState<string | null>(null);
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
 
@@ -37,15 +40,16 @@ export function AgencyKDriveTab({ agencyId }: AgencyKDriveTabProps) {
     try {
       const { data: agency, error } = await supabase
         .from('agencies')
-        .select('kdrive_drive_id, kdrive_folder_id')
+        .select('kdrive_drive_id, kdrive_folder_id, kdrive_folder_path')
         .eq('id', agencyId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
       if (agency?.kdrive_drive_id && agency?.kdrive_folder_id) {
         setDriveId(agency.kdrive_drive_id);
         setCurrentFolder(agency.kdrive_folder_id);
+        setFolderPath(agency.kdrive_folder_path);
         await loadFiles(agency.kdrive_drive_id, agency.kdrive_folder_id);
       } else {
         setLoading(false);
@@ -211,14 +215,24 @@ export function AgencyKDriveTab({ agencyId }: AgencyKDriveTabProps) {
   if (!driveId || !currentFolder) {
     return (
       <Card>
-        <CardContent className="p-8 text-center">
-          <Folder className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <p className="text-muted-foreground">
-            Aucun dossier KDrive n'est configuré pour cette agence.
-          </p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Veuillez configurer le dossier dans l'onglet Informations.
-          </p>
+        <CardContent className="p-8">
+          <div className="text-center mb-6">
+            <Folder className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground mb-2">
+              Aucun dossier KDrive n'est configuré pour cette agence.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Connectez un dossier depuis Hub & Up {'>'} Agences
+            </p>
+          </div>
+          <AgencyKDriveFolderSelector
+            agencyId={agencyId}
+            agencyName={agencyName}
+            currentDriveId={driveId}
+            currentFolderId={currentFolder}
+            currentFolderPath={folderPath}
+            onFolderConnected={loadAgencyFolder}
+          />
         </CardContent>
       </Card>
     );

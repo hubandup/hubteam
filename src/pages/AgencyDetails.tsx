@@ -88,7 +88,7 @@ export default function AgencyDetails() {
       value: 'kdrive',
       label: 'KDrive',
       icon: <FileText className="h-4 w-4" />,
-      content: <AgencyKDriveTab agencyId={agency.id} />
+      content: <AgencyKDriveTab agencyId={agency.id} agencyName={agency.name} />
     }
   ];
 
