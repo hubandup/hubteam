@@ -82,10 +82,20 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
     if (!linkUrl) return;
     
     if (linkText) {
-      const link = `<a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="text-primary underline">${linkText}</a>`;
+      const link = `<a href="${linkUrl}" target="_blank" rel="noopener noreferrer" style="color: hsl(var(--primary)); text-decoration: underline; cursor: pointer;">${linkText}</a>`;
       document.execCommand('insertHTML', false, link);
     } else {
       execCommand('createLink', linkUrl);
+      // Apply styles to the created link
+      const selection = window.getSelection();
+      if (selection && selection.anchorNode) {
+        const link = selection.anchorNode.parentElement;
+        if (link && link.tagName === 'A') {
+          link.setAttribute('target', '_blank');
+          link.setAttribute('rel', 'noopener noreferrer');
+          link.setAttribute('style', 'color: hsl(var(--primary)); text-decoration: underline; cursor: pointer;');
+        }
+      }
     }
     
     setLinkUrl('');
