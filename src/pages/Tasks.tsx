@@ -10,10 +10,12 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { EditTaskDialog } from '@/components/project-details/EditTaskDialog';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useUserRole } from '@/hooks/useUserRole';
 
 export default function Tasks() {
   const navigate = useNavigate();
   const { canRead } = usePermissions();
+  const { isClient } = useUserRole();
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,6 +84,7 @@ export default function Tasks() {
   };
 
   const handleTaskClick = (task: any) => {
+    if (isClient) return; // Clients cannot edit tasks
     setSelectedTask(task);
     setShowEditDialog(true);
   };
@@ -138,7 +141,7 @@ export default function Tasks() {
           {filteredTasks.map((task) => (
             <Card
               key={task.id}
-              className="cursor-pointer hover:bg-accent/50 transition-colors"
+              className={isClient ? "" : "cursor-pointer hover:bg-accent/50 transition-colors"}
               onClick={() => handleTaskClick(task)}
             >
               <CardContent className="p-4">

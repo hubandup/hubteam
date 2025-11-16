@@ -72,7 +72,7 @@ export function Sidebar() {
     { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const, matchParent: true },
     { title: 'Projets', url: '/projects', icon: FolderKanban, module: 'projects' as const, matchParent: true },
     { title: 'Messages', url: '/messages', icon: MessageSquare, module: 'messages' as const },
-    { title: 'Activité', url: '/activity', icon: History, module: 'dashboard' as const },
+    { title: 'Activité', url: '/activity', icon: History, module: 'dashboard' as const, hideForClient: true },
     { title: 'FAQ', url: '/faq', icon: HelpCircle, module: 'faq' as const },
   ];
 
@@ -96,6 +96,7 @@ export function Sidebar() {
               {mainItems
                 .filter(item => item.title !== 'Tableau de bord' || role === 'admin')
                 .filter(item => item.title !== 'CRM' || role !== 'client')
+                .filter(item => !item.hideForClient || role !== 'client')
                 .map((item) =>
                   canRead(item.module) ? (
                     <SidebarMenuItem key={item.title}>
