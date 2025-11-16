@@ -72,7 +72,10 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [isPdfOpen, setIsPdfOpen] = useState(false);
+  const [pdfFileName, setPdfFileName] = useState<string>("");
   const [isRevokeOpen, setIsRevokeOpen] = useState(false);
+  const [isRevoking, setIsRevoking] = useState(false);
+  const [rootFolderName, setRootFolderName] = useState<string | null>(null);
 
   useEffect(() => {
     loadClientFolder();
@@ -95,10 +98,14 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
           path: clientData.kdrive_folder_path || "/",
           parentId: null,
         });
+        
+        // Fetch root folder name from kDrive API
+        await fetchRootFolderName(clientData.kdrive_drive_id, clientData.kdrive_folder_id);
+        
         setBreadcrumbs([
           {
             id: parseInt(clientData.kdrive_folder_id),
-            name: clientData.company,
+            name: rootFolderName || clientData.company,
             path: clientData.kdrive_folder_path || "/",
           },
         ]);
@@ -121,6 +128,25 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
       toast.error("Erreur lors du chargement du dossier");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRootFolderName = async (driveId: number, folderId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("kdrive-api", {
+        body: {
+          action: "get-folder-info",
+          driveId,
+          folderId,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.data?.name) {
+        setRootFolderName(data.data.name);
+      }
+    } catch (error) {
+      console.error("Error fetching root folder name:", error);
     }
   };
 
@@ -234,6 +260,36 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     }
   };
 
+  const handleViewPdf = async (fileId: number, fileName: string) => {
+    if (!client) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke("kdrive-api", {
+        body: {
+          action: "download-file",
+          driveId: client.kdrive_drive_id,
+          fileId: fileId.toString(),
+        },
+      });
+
+      if (error) throw error;
+
+      const base64 = (data as any)?.data as string;
+      if (!base64) throw new Error("Contenu manquant");
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      setPdfUrl(url);
+      setPdfFileName(fileName);
+      setIsPdfOpen(true);
+    } catch (error) {
+      console.error("Error viewing PDF:", error);
+      toast.error("Erreur lors de l'ouverture du PDF");
+    }
+  };
+
   const handleFolderClick = async (
     folderId: number,
     folderName: string,
@@ -268,7 +324,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     setOffset(0);
     setHasMore(false);
     setBreadcrumbs([
-      { id: parseInt(client.kdrive_folder_id), name: client.company, path: client.kdrive_folder_path || "/" },
+      { id: parseInt(client.kdrive_folder_id), name: rootFolderName || client.company, path: client.kdrive_folder_path || "/" },
     ]);
     await loadFiles(client.kdrive_drive_id, client.kdrive_folder_id, false, 0);
   };
@@ -306,7 +362,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
         body: {
           action: "create-folder",
           driveId: client.kdrive_drive_id,
-          parentFolderId: currentFolder.id.toString(),
+          parentId: currentFolder.id.toString(),
           folderName: newFolderName,
         },
       });
@@ -322,6 +378,37 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
       toast.error("Erreur lors de la création du dossier");
     } finally {
       setIsCreatingFolder(false);
+    }
+  };
+
+  const handleRevokeConnection = async () => {
+    if (!client) return;
+
+    setIsRevoking(true);
+    try {
+      const { error } = await supabase
+        .from("clients")
+        .update({
+          kdrive_drive_id: null,
+          kdrive_folder_id: null,
+          kdrive_folder_path: null,
+        })
+        .eq("id", clientId);
+
+      if (error) throw error;
+
+      toast.success("Connexion kDrive révoquée avec succès");
+      setIsRevokeOpen(false);
+      setClient({ ...client, kdrive_drive_id: null, kdrive_folder_id: null, kdrive_folder_path: null });
+      setCurrentFolder(null);
+      setFiles([]);
+      setBreadcrumbs([]);
+      setRootFolderName(null);
+    } catch (error) {
+      console.error("Error revoking connection:", error);
+      toast.error("Erreur lors de la révocation");
+    } finally {
+      setIsRevoking(false);
     }
   };
 
@@ -409,6 +496,23 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
         </div>
       )}
 
+      {client?.kdrive_folder_id && isAdmin && (
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm flex items-center justify-between gap-2">
+          <span className="text-muted-foreground">
+            Dossier kDrive connecté : {client.kdrive_folder_path || "/"} (ID: {client.kdrive_folder_id})
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsRevokeOpen(true)}
+            className="text-destructive hover:text-destructive"
+          >
+            <Unlink className="h-4 w-4 mr-2" />
+            Révoquer
+          </Button>
+        </div>
+      )}
+
       {client?.kdrive_folder_id && breadcrumbs.length > 0 && (
         <div className="flex items-center gap-1 text-sm text-muted-foreground flex-wrap">
           {breadcrumbs.map((crumb, index) => (
@@ -429,7 +533,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
             size="icon"
             onClick={handleGoToRoot}
             title="Retour à la racine"
-            disabled={!client?.kdrive_drive_id}
+            disabled={!currentFolder}
           >
             <Home className="h-4 w-4" />
           </Button>
@@ -499,7 +603,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
               return sortOrder === "asc" ? compareResult : -compareResult;
             }).map((file) => (
               <div key={file.id} className="flex items-center justify-between p-3 hover:bg-muted/30 transition-colors">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
                   {file.type === "dir" ? (
                     <FolderIcon className="h-5 w-5 text-primary flex-shrink-0" />
                   ) : (
@@ -527,6 +631,28 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
                       {file.type === "dir" ? "Dossier" : formatFileSize(file.size)}
                     </p>
                   </div>
+                  {file.type === "file" && (
+                    <div className="flex items-center gap-2">
+                      {file.name.toLowerCase().endsWith('.pdf') && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewPdf(file.id, file.name)}
+                          title="Voir le PDF"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDownload(file.id, file.name)}
+                        title="Télécharger"
+                      >
+                        Télécharger
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -615,6 +741,80 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={isRevokeOpen} onOpenChange={setIsRevokeOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Révoquer la connexion kDrive</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir révoquer la connexion kDrive pour ce client ?
+              Les fichiers resteront dans kDrive mais ne seront plus accessibles depuis cette interface.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRevokeConnection}
+              disabled={isRevoking}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isRevoking ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Révocation...
+                </>
+              ) : (
+                "Révoquer"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={isPdfOpen} onOpenChange={(open) => {
+        setIsPdfOpen(open);
+        if (!open && pdfUrl) {
+          window.URL.revokeObjectURL(pdfUrl);
+          setPdfUrl(null);
+        }
+      }}>
+        <DialogContent className="max-w-4xl h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>{pdfFileName}</DialogTitle>
+            <DialogDescription>
+              Visualisation du fichier PDF
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden">
+            {pdfUrl && (
+              <iframe
+                src={pdfUrl}
+                className="w-full h-full rounded-md border"
+                title={pdfFileName}
+              />
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (pdfUrl) {
+                  const a = document.createElement("a");
+                  a.href = pdfUrl;
+                  a.download = pdfFileName;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  toast.success("Téléchargement démarré");
+                }
+              }}
+            >
+              Télécharger
+            </Button>
+            <Button onClick={() => setIsPdfOpen(false)}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
