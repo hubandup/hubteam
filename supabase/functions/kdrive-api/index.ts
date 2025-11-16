@@ -643,19 +643,24 @@ serve(async (req) => {
         const chunkForm = new FormData();
         chunkForm.append('chunk_number', String(chunkNumber));
         chunkForm.append('chunk_size', String(chunkSize));
-        chunkForm.append('file', new Blob([bytes], { type: 'application/octet-stream' }), fileName || 'file');
+        // Use field name 'chunk' for the binary as many APIs expect this exact name
+        chunkForm.append('chunk', new Blob([bytes], { type: 'application/octet-stream' }), fileName || 'file');
         
+        // Produce a safe log of form-data fields
         console.info('Chunk upload debug:', {
           url: chunkUrl,
           method: 'POST',
+          contentType: 'multipart/form-data (auto-boundary)',
           uploadBaseUrl,
           hasUploadUrl: !!(lastError as any)?._upload_url,
-          chunkNumber,
-          chunkSize,
-          bodyFields: ['chunk_number','chunk_size','file']
+          fields: {
+            chunk_number: String(chunkNumber),
+            chunk_size: String(chunkSize),
+            chunk: { byteLength: bytes.length, fileName: fileName || 'file' }
+          }
         });
         
-        const chunkResp = await fetch(
+        let chunkResp = await fetch(
           chunkUrl,
           {
             method: 'POST',
@@ -667,24 +672,62 @@ serve(async (req) => {
           }
         );
         
+        // Fallback: try octet-stream + query params if validation complains about missing fields
+        let chunkData: any = null;
         if (!chunkResp.ok) {
           const errorText = await chunkResp.text();
           let errorData: any = {};
           try { errorData = JSON.parse(errorText); } catch (_) { errorData = { raw: errorText }; }
-          console.error('Chunk upload failed:', chunkResp.status, errorData);
-          return new Response(
-            JSON.stringify({ error: 'Failed to upload file chunk', details: errorData }),
-            { 
-              status: chunkResp.status,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          console.error('Chunk upload failed (multipart):', chunkResp.status, errorData);
+          const needsFallback = chunkResp.status === 422 && JSON.stringify(errorData).includes('chunk')
+          
+          if (needsFallback) {
+            const fallbackUrl = `${chunkUrl}?chunk_number=${chunkNumber}&chunk_size=${chunkSize}`;
+            console.info('Retrying chunk upload with octet-stream + query params:', {
+              url: fallbackUrl,
+              method: 'POST',
+              contentType: 'application/octet-stream',
+              query: { chunk_number: chunkNumber, chunk_size: chunkSize },
+              bodyByteLength: bytes.length
+            });
+            const fbResp = await fetch(fallbackUrl, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${KDRIVE_TOKEN}`,
+                'Content-Type': 'application/octet-stream',
+                'Accept': 'application/json',
+              },
+              body: bytes,
+            });
+            if (!fbResp.ok) {
+              const fbText = await fbResp.text();
+              let fbErr: any = {};
+              try { fbErr = JSON.parse(fbText); } catch (_) { fbErr = { raw: fbText }; }
+              console.error('Chunk upload failed (fallback):', fbResp.status, fbErr);
+              return new Response(
+                JSON.stringify({ error: 'Failed to upload file chunk', details: fbErr }),
+                { status: fbResp.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              );
             }
-          );
+            const fbText = await fbResp.text();
+            try { chunkData = JSON.parse(fbText); } catch (_) { chunkData = { raw: fbText }; }
+            console.info('Chunk upload response (fallback):', chunkData);
+          } else {
+            return new Response(
+              JSON.stringify({ error: 'Failed to upload file chunk', details: errorData }),
+              { 
+                status: chunkResp.status,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              }
+            );
+          }
         }
         
-        const chunkText = await chunkResp.text();
-        let chunkData: any = {};
-        try { chunkData = JSON.parse(chunkText); } catch (_) { chunkData = { raw: chunkText }; }
-        console.info('Chunk upload response:', chunkData);
+        if (!chunkData) {
+          const chunkText = await chunkResp.text();
+          try { chunkData = JSON.parse(chunkText); } catch (_) { chunkData = { raw: chunkText }; }
+          console.info('Chunk upload response:', chunkData);
+        }
         
         if (chunkData.result !== 'success') {
           return new Response(
