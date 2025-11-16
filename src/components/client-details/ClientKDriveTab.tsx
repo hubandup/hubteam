@@ -11,6 +11,8 @@ import {
   Home,
   ChevronRight,
   Trash2,
+  MoreVertical,
+  Edit,
 } from "lucide-react";
 import { Unlink, Eye } from "lucide-react";
 import { toast } from "sonner";
@@ -37,6 +39,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { RenameFileDialog } from "./RenameFileDialog";
+import { FilePreviewPane } from "./FilePreviewPane";
 
 interface ClientKDriveTabProps {
   clientId: string;
@@ -81,6 +91,8 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isDeletingMultiple, setIsDeletingMultiple] = useState(false);
   const [showDeleteMultipleConfirm, setShowDeleteMultipleConfirm] = useState(false);
+  const [renameItem, setRenameItem] = useState<{ id: number; name: string; type: "dir" | "file" } | null>(null);
+  const [previewFile, setPreviewFile] = useState<KDriveFile | null>(null);
 
   useEffect(() => {
     loadClientFolder();
@@ -511,6 +523,61 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     await loadFiles(client.kdrive_drive_id, breadcrumb.id.toString(), false, 0);
   };
 
+  const handleRename = async (newName: string) => {
+    if (!renameItem || !client || !currentFolder) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke("kdrive-api", {
+        body: {
+          action: "rename",
+          driveId: client.kdrive_drive_id,
+          fileId: renameItem.id,
+          newName,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success(`${renameItem.type === "dir" ? "Dossier" : "Fichier"} renommé avec succès`);
+      setRenameItem(null);
+      await loadFiles(client.kdrive_drive_id, currentFolder.id.toString());
+    } catch (error) {
+      console.error("Error renaming:", error);
+      toast.error("Erreur lors du renommage");
+      throw error;
+    }
+  };
+
+  const handleGetFileUrl = async (fileId: number): Promise<{ url: string; mimeType?: string }> => {
+    if (!client) throw new Error("Client not loaded");
+
+    const { data, error } = await supabase.functions.invoke("kdrive-api", {
+      body: {
+        action: "get-file-url",
+        driveId: client.kdrive_drive_id,
+        fileId,
+      },
+    });
+
+    if (error) throw error;
+    if (!data?.url) throw new Error("No URL returned");
+
+    return { url: data.url, mimeType: data.mimeType };
+  };
+
+  const handleFileClick = (file: KDriveFile) => {
+    if (file.type === "file") {
+      setPreviewFile(file);
+    } else {
+      handleFolderClick(
+        file.id,
+        file.name,
+        (file as any).path || `${currentFolder?.path || ""}/${file.name}`,
+        currentFolder?.id || null,
+      );
+    }
+  };
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -703,50 +770,34 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
                   ) : (
                     <FileIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                   )}
-                  <div className="flex-1 min-w-0">
-                    {file.type === "dir" ? (
-                      <button
-                        onClick={() =>
-                          handleFolderClick(
-                            file.id,
-                            file.name,
-                            (file as any).path || `${currentFolder?.path || ""}/${file.name}`,
-                            currentFolder?.id || null,
-                          )
-                        }
-                        className="font-medium hover:text-primary transition-colors text-left truncate block w-full"
-                      >
-                        {file.name}
-                      </button>
-                    ) : (
-                      <p className="font-medium truncate">{file.name}</p>
-                    )}
+                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleFileClick(file)}>
+                    <p className="font-medium truncate hover:text-primary transition-colors">{file.name}</p>
                     <p className="text-sm text-muted-foreground">
                       {file.type === "dir" ? "Dossier" : formatFileSize(file.size)}
                     </p>
                   </div>
-                  {file.type === "file" && (
-                    <div className="flex items-center gap-2">
-                      {file.name.toLowerCase().endsWith('.pdf') && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewPdf(file.id, file.name)}
-                          title="Voir le PDF"
-                        >
-                          <Eye className="h-4 w-4" />
+                  <div className="flex items-center gap-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreVertical className="h-4 w-4" />
                         </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDownload(file.id, file.name)}
-                        title="Télécharger"
-                      >
-                        Télécharger
-                      </Button>
-                    </div>
-                  )}
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setRenameItem({ id: file.id, name: file.name, type: file.type })}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Renommer
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => setDeleteItem({ id: file.id, name: file.name, type: file.type })}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Supprimer
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
               </div>
             ))}
@@ -938,6 +989,19 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <RenameFileDialog
+        open={!!renameItem}
+        onOpenChange={(open) => !open && setRenameItem(null)}
+        currentName={renameItem?.name || ""}
+        onRename={handleRename}
+      />
+
+      <FilePreviewPane
+        file={previewFile}
+        onClose={() => setPreviewFile(null)}
+        onGetFileUrl={handleGetFileUrl}
+      />
     </div>
   );
 }
