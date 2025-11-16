@@ -54,19 +54,23 @@ export function FilePreviewPane({ file, onClose, onGetFileUrl }: FilePreviewPane
     try {
       const result = await onGetFileUrl(file.id);
       const proxyUrl = result.url;
-      
-      // Fetch via proxy and create a blob URL for reliable display
-      const response = await fetch(proxyUrl);
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch file: ${response.statusText}`);
+      const extIsPdf = /\.pdf$/i.test(file.name);
+      if (extIsPdf) {
+        // Use the proxy URL directly for PDFs to let the browser stream with correct headers
+        setFileUrl(proxyUrl);
+        setMimeType('application/pdf');
+      } else {
+        // Fetch via proxy and create a blob URL for reliable display (images, others)
+        const response = await fetch(proxyUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch file: ${response.statusText}`);
+        }
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        setFileUrl(blobUrl);
+        setMimeType(blob.type || result.mimeType || null);
       }
-
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      
-      setFileUrl(blobUrl);
-      setMimeType(blob.type || result.mimeType || null);
     } catch (err) {
       console.error('Failed to load file URL:', err);
       setError('Impossible de charger le fichier');
@@ -168,13 +172,25 @@ export function FilePreviewPane({ file, onClose, onGetFileUrl }: FilePreviewPane
               variant="outline"
               className="w-full"
               onClick={() => {
-                // fileUrl is already a blob URL, just download it
-                const a = document.createElement('a');
-                a.href = fileUrl;
-                a.download = file.name;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+                const isBlob = fileUrl.startsWith('blob:');
+                if (isBlob) {
+                  // Blob URL: preserve original filename via download attribute
+                  const a = document.createElement('a');
+                  a.href = fileUrl;
+                  a.download = file.name;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                } else {
+                  // Proxy URL: force attachment with filename via ?dl=1
+                  const sep = fileUrl.includes('?') ? '&' : '?';
+                  const dlUrl = `${fileUrl}${sep}dl=1`;
+                  const a = document.createElement('a');
+                  a.href = dlUrl;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                }
               }}
             >
               <Download className="h-4 w-4 mr-2" />

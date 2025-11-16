@@ -43,13 +43,32 @@ serve(async (req) => {
           'Authorization': `Bearer ${KDRIVE_TOKEN}`,
         };
 
+        // Try to get original filename for Content-Disposition
+        let originalName: string | null = null;
+        try {
+          const metaUrl = `${KDRIVE_API_BASE}/2/drive/${driveId}/files/${fileId}`;
+          const metaRes = await fetch(metaUrl, { headers: kdriveHeaders });
+          if (metaRes.ok) {
+            const metaJson = await metaRes.json();
+            originalName = metaJson?.data?.name || metaJson?.data?.filename || null;
+          } else {
+            console.warn('Could not fetch file metadata for filename. Status:', metaRes.status);
+          }
+        } catch (e) {
+          console.warn('Filename lookup failed:', e);
+        }
+
+        // Forward Range header if present (better PDF experience)
+        const range = req.headers.get('range') || undefined;
+        console.log('Request Range header:', range);
+
         console.log('Fetching from kDrive:', downloadUrl);
         const response = await fetch(downloadUrl, {
           method: 'GET',
-          headers: kdriveHeaders,
+          headers: { ...kdriveHeaders, ...(range ? { Range: range } : {}) },
         });
 
-        if (!response.ok) {
+        if (!response.ok && response.status !== 206) { // 206 is Partial Content
           console.error('kDrive download failed:', response.status, response.statusText);
           return new Response(JSON.stringify({ error: 'Failed to download file from kDrive' }), {
             status: response.status,
@@ -59,21 +78,42 @@ serve(async (req) => {
 
         // Stream the file back to the client with the same content-type
         const contentType = response.headers.get('content-type') || 'application/octet-stream';
-        console.log('✓ Streaming file back, content-type:', contentType);
+        const contentLength = response.headers.get('content-length') || undefined;
+        const contentRange = response.headers.get('content-range') || undefined;
+        const acceptRanges = response.headers.get('accept-ranges') || 'bytes';
+        console.log('✓ Streaming file back, content-type:', contentType, 'status:', response.status);
         
         // Determine if this is a PDF for proper headers
-        const isPdf = contentType.includes('pdf');
+        const isPdf = contentType.includes('pdf') || (originalName?.toLowerCase().endsWith('.pdf') ?? false);
         
+        // Sanitize filename for header
+        const safeFilename = (originalName || `file${isPdf ? '.pdf' : ''}`).replace(/\r|\n|"/g, '').trim();
+        
+        // Allow forcing download via query (?dl=1 or ?download=true)
+        const dlParam = url.searchParams.get('dl') || url.searchParams.get('download');
+        const forceDownload = dlParam === '1' || dlParam === 'true';
+        
+        const contentDisposition = !forceDownload && isPdf
+          ? `inline; filename="${safeFilename}"; filename*=UTF-8''${encodeURIComponent(safeFilename)}`
+          : `attachment; filename="${safeFilename}"; filename*=UTF-8''${encodeURIComponent(safeFilename)}`;
+        
+        const headers: Record<string, string> = {
+          ...corsHeaders,
+          'Content-Type': isPdf ? 'application/pdf' : contentType,
+          'Content-Disposition': contentDisposition,
+          'Cache-Control': 'public, max-age=3600',
+          'X-Content-Type-Options': 'nosniff',
+          'Content-Security-Policy': "frame-ancestors *",
+          'Accept-Ranges': acceptRanges,
+          'Access-Control-Expose-Headers': 'Content-Disposition, Content-Type, Content-Length, Accept-Ranges, Content-Range',
+        };
+
+        if (contentLength) headers['Content-Length'] = contentLength;
+        if (contentRange) headers['Content-Range'] = contentRange;
+
         return new Response(response.body, {
-          headers: {
-            ...corsHeaders,
-            'Content-Type': contentType,
-            'Content-Disposition': isPdf ? 'inline' : 'attachment',
-            'Cache-Control': 'public, max-age=3600',
-            'X-Content-Type-Options': 'nosniff',
-            'X-Frame-Options': 'ALLOWALL',
-            'Content-Security-Policy': 'frame-ancestors *',
-          },
+          status: response.status,
+          headers,
         });
       }
     }
