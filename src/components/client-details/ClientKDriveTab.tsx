@@ -111,16 +111,25 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
         ]);
         await loadFiles(clientData.kdrive_drive_id, clientData.kdrive_folder_id);
       } else if (clientData.kdrive_folder_id && !clientData.kdrive_drive_id) {
-        // Folder is selected but drive is missing: set path for UI and prompt connection
+        // Folder is selected but drive is missing: backend will use default drive
         setCurrentFolder({
           id: parseInt(clientData.kdrive_folder_id),
           path: clientData.kdrive_folder_path || "/",
           parentId: null,
         });
-        toast.info(
-          "Le dossier kDrive est sélectionné mais aucun drive n'est attribué. Un administrateur doit le connecter pour afficher le contenu.",
-        );
-        // Still attempt to list files by letting the backend infer the drive
+        
+        // Fetch root folder name from kDrive API (backend will infer drive)
+        await fetchRootFolderName(undefined, clientData.kdrive_folder_id);
+        
+        setBreadcrumbs([
+          {
+            id: parseInt(clientData.kdrive_folder_id),
+            name: rootFolderName || clientData.company,
+            path: clientData.kdrive_folder_path || "/",
+          },
+        ]);
+        
+        // Let the backend infer the drive (uses KDRIVE_PRODUCT_ID)
         await loadFiles(undefined, clientData.kdrive_folder_id);
       }
     } catch (error) {
