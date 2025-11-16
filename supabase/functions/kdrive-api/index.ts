@@ -17,6 +17,60 @@ serve(async (req) => {
   }
 
   try {
+    // Handle GET requests for file download proxy
+    if (req.method === 'GET') {
+      const url = new URL(req.url);
+      const action = url.searchParams.get('action');
+      
+      if (action === 'download') {
+        const driveId = url.searchParams.get('driveId');
+        const fileId = url.searchParams.get('fileId');
+        
+        if (!driveId || !fileId) {
+          return new Response(JSON.stringify({ error: 'Missing driveId or fileId' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        console.log('=== PROXY DOWNLOAD REQUEST ===');
+        console.log('Drive ID:', driveId);
+        console.log('File ID:', fileId);
+
+        // Fetch file from kDrive and stream it back
+        const downloadUrl = `${KDRIVE_API_BASE}/2/drive/${driveId}/files/${fileId}/download`;
+        const kdriveHeaders = {
+          'Authorization': `Bearer ${KDRIVE_TOKEN}`,
+        };
+
+        console.log('Fetching from kDrive:', downloadUrl);
+        const response = await fetch(downloadUrl, {
+          method: 'GET',
+          headers: kdriveHeaders,
+        });
+
+        if (!response.ok) {
+          console.error('kDrive download failed:', response.status, response.statusText);
+          return new Response(JSON.stringify({ error: 'Failed to download file from kDrive' }), {
+            status: response.status,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        // Stream the file back to the client with the same content-type
+        const contentType = response.headers.get('content-type') || 'application/octet-stream';
+        console.log('✓ Streaming file back, content-type:', contentType);
+        
+        return new Response(response.body, {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': contentType,
+            'Cache-Control': 'public, max-age=3600',
+          },
+        });
+      }
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -1189,118 +1243,20 @@ serve(async (req) => {
         console.log('Drive ID:', driveId);
         console.log('File ID:', fileId);
 
-        const fileUrlAttempts = [
-          { path: `/3/drive/${driveId}/files/${fileId}/download` },
-          { path: `/3/drive/${driveId}/file/${fileId}/download` },
-          { path: `/2/drive/${driveId}/files/${fileId}/download` },
-        ];
+        // Construct the proxy URL for the file download
+        // The GET endpoint handler above will proxy the download from kDrive
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+        const proxyUrl = `${supabaseUrl}/functions/v1/kdrive-api?action=download&driveId=${driveId}&fileId=${fileId}`;
+        
+        console.log('✅ Returning proxy URL:', proxyUrl);
 
-        const allAttemptResults: any[] = [];
-
-        for (const attempt of fileUrlAttempts) {
-          try {
-            const fileUrl = `${KDRIVE_API_BASE}${attempt.path}`;
-            
-            console.log('========================================');
-            console.log('=== FILE URL ATTEMPT ===');
-            console.log('URL:', fileUrl);
-            console.log('Method: GET');
-            console.log('Headers:', {
-              'Authorization': 'Bearer ***',
-              'Content-Type': kdriveHeaders['Content-Type'],
-            });
-
-            const fileResp = await fetch(fileUrl, {
-              method: 'GET',
-              headers: kdriveHeaders,
-            });
-
-            console.log('--- KDRIVE RESPONSE ---');
-            console.log('Status:', fileResp.status, fileResp.statusText);
-            console.log('Response Headers:', {
-              'content-type': fileResp.headers.get('content-type'),
-              'location': fileResp.headers.get('location'),
-              'content-length': fileResp.headers.get('content-length'),
-            });
-
-            // Try to read as text first to see what we got
-            const rawBody = await fileResp.text();
-            console.log('Raw Response Body (first 500 chars):', rawBody.substring(0, 500));
-            
-            // Try to parse as JSON
-            let fileData = null;
-            try {
-              fileData = JSON.parse(rawBody);
-              console.log('Parsed JSON:', JSON.stringify(fileData, null, 2));
-            } catch (e) {
-              console.log('Response is not JSON');
-            }
-
-            // Store this attempt result
-            allAttemptResults.push({
-              url: fileUrl,
-              method: 'GET',
-              status: fileResp.status,
-              statusText: fileResp.statusText,
-              headers: {
-                'content-type': fileResp.headers.get('content-type'),
-                'location': fileResp.headers.get('location'),
-              },
-              bodyPreview: rawBody.substring(0, 200),
-              parsedData: fileData,
-            });
-
-            // Check if we got a download URL in the response
-            if (fileResp.ok && fileData?.data?.url) {
-              console.log('✓ SUCCESS: Got download URL from kDrive');
-              return new Response(JSON.stringify({ 
-                result: 'success', 
-                url: fileData.data.url,
-                mimeType: fileData.data.mime_type || null
-              }), {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-              });
-            }
-
-            // If the response is a redirect, follow it
-            if (fileResp.status === 302 || fileResp.status === 301) {
-              const redirectUrl = fileResp.headers.get('location');
-              if (redirectUrl) {
-                console.log('✓ SUCCESS: Got redirect URL');
-                return new Response(JSON.stringify({ result: 'success', url: redirectUrl }), {
-                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                });
-              }
-            }
-
-            console.log('❌ This attempt did not return a usable URL');
-            
-          } catch (err) {
-            console.error('❌ File URL attempt exception:', err);
-            allAttemptResults.push({
-              url: `${KDRIVE_API_BASE}${attempt.path}`,
-              method: 'GET',
-              error: String(err),
-            });
-          }
-        }
-
-        console.log('========================================');
-        console.log('❌ ALL ATTEMPTS FAILED');
-        console.log('Total attempts:', allAttemptResults.length);
-
-        return new Response(JSON.stringify({ 
-          error: 'Failed to get file URL', 
-          details: {
-            message: 'All kDrive API attempts failed',
-            attempts: allAttemptResults,
-            driveId,
-            fileId,
-          }
-        }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return new Response(
+          JSON.stringify({ 
+            result: 'success',
+            data: { url: proxyUrl }
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
 
       default:
         return new Response(
