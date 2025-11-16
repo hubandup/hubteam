@@ -18,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 
 // Fixed kDrive configuration for agencies
 const KDRIVE_DRIVE_ID = 969307; // Hub & Up (product id)
-const AGENCIES_FOLDER_ID = "50122"; // Hub & Up > Agences folder (adjust this ID)
+const AGENCIES_FOLDER_ID = "50123"; // Hub & Up > Agences folder ID
 
 interface KDriveFile {
   id: string;
