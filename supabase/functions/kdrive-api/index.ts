@@ -31,7 +31,7 @@ serve(async (req) => {
       });
     }
 
-    const { action, driveId, folderId, folderPath, fileName, fileContent, parentId, rootFolderId, debugNoFilter, fileId, limit, offset, folderName } = await req.json();
+    const { action, driveId, folderId, folderPath, fileName, fileContent, fileSize, parentId, rootFolderId, debugNoFilter, fileId, limit, offset, folderName } = await req.json();
 
     console.log('KDrive API request:', { action, driveId, folderId, folderPath, fileName });
 
@@ -360,29 +360,27 @@ serve(async (req) => {
         console.info(`Creating upload session for file: ${fileName} in folder: ${uploadFolderId}`);
         
         const uploadPayload = {
-          directory_id: String(uploadFolderId),
+          directory_id: Number(uploadFolderId),
           file_name: fileName || 'file',
           conflict: 'rename',
-          total_size: bytes.length
-        } as Record<string, string | number>;
+          total_size: typeof fileSize === 'number' ? fileSize : bytes.length,
+        };
         
-        console.info('Upload session payload:', uploadPayload);
-        
-        // Some kDrive endpoints expect x-www-form-urlencoded instead of JSON
-        const formBody = new URLSearchParams(Object.entries(uploadPayload).reduce((acc, [k, v]) => {
-          acc[k] = String(v);
-          return acc;
-        }, {} as Record<string, string>));
+        const sessionUrl = `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload`;
+        console.info('Create upload session request:', {
+          url: sessionUrl,
+          payload: uploadPayload,
+        });
         
         const sessionResp = await fetch(
-          `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload`,
+          sessionUrl,
           {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${KDRIVE_TOKEN}`,
-              'Content-Type': 'application/x-www-form-urlencoded',
+              'Content-Type': 'application/json',
             },
-            body: formBody.toString()
+            body: JSON.stringify(uploadPayload)
           }
         );
         
