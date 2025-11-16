@@ -18,18 +18,47 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    console.log("=== Send Invitation Email Request Started ===");
+    
     const brevoApiKey = Deno.env.get("BREVO_API_KEY");
     if (!brevoApiKey) {
+      console.error("❌ BREVO_API_KEY is not configured");
       throw new Error("BREVO_API_KEY is not configured");
     }
+    console.log("✓ Brevo API key found");
 
     const { email, invitationUrl, role }: InvitationEmailRequest = await req.json();
 
-    console.log("Sending invitation email to:", email, "with role:", role);
+    console.log("📧 Email parameters:", {
+      recipient: email,
+      role: role,
+      invitationUrl: invitationUrl,
+      urlLength: invitationUrl?.length || 0
+    });
 
     // Brevo template ID - configure this in your Brevo dashboard
     // Create a template with variables: {{role}}, {{invitationUrl}}
     const BREVO_TEMPLATE_ID = 47; // Brevo template ID for invitation emails
+    console.log(`📋 Using Brevo template ID: ${BREVO_TEMPLATE_ID}`);
+
+    const emailPayload = {
+      sender: {
+        name: "Hub & Up",
+        email: "orga@hubandup.com",
+      },
+      to: [
+        {
+          email: email,
+        },
+      ],
+      templateId: BREVO_TEMPLATE_ID,
+      params: {
+        role: role,
+        invitationUrl: invitationUrl,
+      },
+    };
+
+    console.log("📤 Sending request to Brevo API with payload:", JSON.stringify(emailPayload, null, 2));
 
     // Send email via Brevo API using template
     const brevoResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -38,39 +67,39 @@ const handler = async (req: Request): Promise<Response> => {
         "api-key": brevoApiKey,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        sender: {
-          name: "Hub & Up",
-          email: "orga@hubandup.com",
-        },
-        to: [
-          {
-            email: email,
-          },
-        ],
-        templateId: BREVO_TEMPLATE_ID,
-        params: {
-          role: role,
-          invitationUrl: invitationUrl,
-        },
-      }),
+      body: JSON.stringify(emailPayload),
     });
+
+    console.log("📥 Brevo API response status:", brevoResponse.status, brevoResponse.statusText);
 
     if (!brevoResponse.ok) {
       const errorText = await brevoResponse.text();
-      console.error("Brevo API error:", errorText);
+      console.error("❌ Brevo API error response:", {
+        status: brevoResponse.status,
+        statusText: brevoResponse.statusText,
+        body: errorText
+      });
       throw new Error(`Failed to send email: ${errorText}`);
     }
 
     const result = await brevoResponse.json();
-    console.log("Email sent successfully:", result);
+    console.log("✓ Email sent successfully:", {
+      messageId: result.messageId,
+      fullResponse: JSON.stringify(result, null, 2)
+    });
+
+    console.log("=== Send Invitation Email Request Completed ===");
 
     return new Response(JSON.stringify({ success: true, messageId: result.messageId }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
-    console.error("Error sending invitation email:", error);
+    console.error("❌ Error in send-invitation-email function:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { "Content-Type": "application/json", ...corsHeaders },
