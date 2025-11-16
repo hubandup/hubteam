@@ -524,12 +524,6 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
 
               <div className="flex flex-wrap gap-2 justify-center pt-2">
                 <Button variant="outline" size="sm" asChild>
-                  <a href={`tel:${teamMember.email}`}>
-                    <PhoneCall className="h-4 w-4 mr-2" />
-                    Appeler
-                  </a>
-                </Button>
-                <Button variant="outline" size="sm" asChild>
                   <a href={`mailto:${teamMember.email}`}>
                     <MessageSquare className="h-4 w-4 mr-2" />
                     Écrire
