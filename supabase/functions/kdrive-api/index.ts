@@ -392,12 +392,13 @@ serve(async (req) => {
         let uploadTokenStr: string | null = null;
         let lastError: any = null;
         
+        const headersForBatch = {
+          'Authorization': `Bearer ${KDRIVE_TOKEN}`,
+          'Content-Type': 'application/json; charset=utf-8',
+          'Accept': 'application/json',
+        };
+        
         try {
-          const headersForBatch = {
-            'Authorization': `Bearer ${KDRIVE_TOKEN}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          };
           const bodyString = JSON.stringify(batchPayload);
           console.info('Batch request debug:', {
             url: sessionBatchUrl,
@@ -433,6 +434,33 @@ serve(async (req) => {
         } catch (e) {
           lastError = e;
           console.error('Upload session (batch) threw:', e);
+        }
+        // Attempt single-file session start if batch didn't yield a token
+        if (!uploadTokenStr) {
+          const singleSessionUrl = `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload/session/start`;
+          const singlePayload = { ...uploadPayloadFlat };
+          const singleBody = JSON.stringify(singlePayload);
+          console.info('Single session request debug:', {
+            url: singleSessionUrl,
+            bodyString: singleBody,
+          });
+          try {
+            const singleResp = await fetch(singleSessionUrl, {
+              method: 'POST',
+              headers: headersForBatch,
+              body: singleBody,
+            });
+            const singleText = await singleResp.text();
+            let singleData: any = {};
+            try { singleData = JSON.parse(singleText); } catch (_) { /* keep raw */ }
+            console.info('Single session response:', { status: singleResp.status, body: singleData || singleText });
+            if (singleResp.ok) {
+              uploadTokenStr = singleData?.data?.upload_token || singleData?.upload_token || null;
+              lastError = singleData;
+            }
+          } catch (e) {
+            console.error('Single session request threw:', e);
+          }
         }
         
         // Legacy fallback: old endpoint with flat body (kept for compatibility while we align the client)
