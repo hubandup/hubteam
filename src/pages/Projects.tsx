@@ -17,12 +17,16 @@ import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useUserRole } from '@/hooks/useUserRole';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Projects() {
   const navigate = useNavigate();
   const { canRead } = usePermissions();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
+  const { isClient } = useUserRole();
+  const { user } = useAuth();
   const [projects, setProjects] = useState<any[]>([]);
   const [archivedProjects, setArchivedProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,26 +38,76 @@ export default function Projects() {
   useEffect(() => {
     fetchProjects();
     fetchArchivedProjects();
-  }, []);
+  }, [isClient, user]);
 
   const fetchProjects = async () => {
     try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select(`
-          *,
-          project_clients (
-            clients (
-              company,
-              logo_url
-            )
-          )
-        `)
-        .eq('archived', false)
-        .order('created_at', { ascending: false });
+      if (isClient && user) {
+        // For clients, only show their own projects
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', user.id)
+          .single();
 
-      if (error) throw error;
-      setProjects(data || []);
+        if (!profileData) {
+          setProjects([]);
+          setLoading(false);
+          return;
+        }
+
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('email', profileData.email)
+          .single();
+
+        if (!clientData) {
+          setProjects([]);
+          setLoading(false);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('project_clients')
+          .select(`
+            projects!inner (
+              *,
+              project_clients (
+                clients (
+                  company,
+                  logo_url
+                )
+              )
+            )
+          `)
+          .eq('client_id', clientData.id)
+          .eq('projects.archived', false)
+          .order('projects(created_at)', { ascending: false });
+
+        if (error) throw error;
+        
+        const projectsData = data?.map(pc => pc.projects).filter(Boolean) || [];
+        setProjects(projectsData);
+      } else {
+        // For admin/team, show all projects
+        const { data, error } = await supabase
+          .from('projects')
+          .select(`
+            *,
+            project_clients (
+              clients (
+                company,
+                logo_url
+              )
+            )
+          `)
+          .eq('archived', false)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setProjects(data || []);
+      }
     } catch (error) {
       console.error('Error fetching projects:', error);
       toast.error('Erreur lors du chargement des projets');
@@ -64,22 +118,70 @@ export default function Projects() {
 
   const fetchArchivedProjects = async () => {
     try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select(`
-          *,
-          project_clients (
-            clients (
-              company,
-              logo_url
-            )
-          )
-        `)
-        .eq('archived', true)
-        .order('updated_at', { ascending: false });
+      if (isClient && user) {
+        // For clients, only show their own archived projects
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', user.id)
+          .single();
 
-      if (error) throw error;
-      setArchivedProjects(data || []);
+        if (!profileData) {
+          setArchivedProjects([]);
+          return;
+        }
+
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('email', profileData.email)
+          .single();
+
+        if (!clientData) {
+          setArchivedProjects([]);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('project_clients')
+          .select(`
+            projects!inner (
+              *,
+              project_clients (
+                clients (
+                  company,
+                  logo_url
+                )
+              )
+            )
+          `)
+          .eq('client_id', clientData.id)
+          .eq('projects.archived', true)
+          .order('projects(updated_at)', { ascending: false });
+
+        if (error) throw error;
+        
+        const projectsData = data?.map(pc => pc.projects).filter(Boolean) || [];
+        setArchivedProjects(projectsData);
+      } else {
+        // For admin/team, show all archived projects
+        const { data, error } = await supabase
+          .from('projects')
+          .select(`
+            *,
+            project_clients (
+              clients (
+                company,
+                logo_url
+              )
+            )
+          `)
+          .eq('archived', true)
+          .order('updated_at', { ascending: false });
+
+        if (error) throw error;
+        setArchivedProjects(data || []);
+      }
     } catch (error) {
       console.error('Error fetching archived projects:', error);
     }
