@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface Task {
   id: string;
@@ -33,6 +34,7 @@ interface ProjectTasksTabProps {
 
 export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
   const isMobile = useIsMobile();
+  const { isClient } = useUserRole();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -91,6 +93,7 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
   };
 
   const handleTaskClick = (task: Task) => {
+    if (isClient) return;
     setSelectedTask(task);
     setShowEditDialog(true);
   };
@@ -154,7 +157,7 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
               {tasks.map((task) => (
                 <div
                   key={task.id}
-                  className="p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                  className={`p-4 border rounded-lg transition-colors ${!isClient ? 'hover:bg-accent/50 cursor-pointer' : ''}`}
                   onClick={() => handleTaskClick(task)}
                 >
                   <div className="flex flex-col gap-4">
@@ -194,7 +197,7 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
                       </div>
                     </div>
 
-                    {isMobile && (
+                    {!isClient && isMobile && (
                       <div className="flex items-center gap-2 justify-end border-t pt-3">
                         {task.status !== 'done' ? (
                           <ProtectedAction module="tasks" action="update">
@@ -224,7 +227,7 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
                       </div>
                     )}
 
-                    {!isMobile && (
+                    {!isClient && !isMobile && (
                       <div className="flex items-center gap-2">
                         {task.status !== 'done' ? (
                           <ProtectedAction module="tasks" action="update">
