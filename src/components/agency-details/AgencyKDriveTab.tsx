@@ -66,14 +66,14 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
       setLoading(true);
       const { data, error } = await supabase.functions.invoke('kdrive-api', {
         body: {
-          action: 'list',
+          action: 'list-files',
           driveId: drive,
-          parentId: folderId
+          folderId: folderId
         }
       });
 
       if (error) throw error;
-      setFiles(data?.files || []);
+      setFiles(data?.data || []);
     } catch (error) {
       console.error('Error loading files:', error);
       toast.error('Erreur lors du chargement des fichiers');
@@ -88,16 +88,15 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
 
     try {
       setUploading(true);
-      const formData = new FormData();
-      formData.append('file', file);
-
+      
       const { data, error } = await supabase.functions.invoke('kdrive-api', {
         body: {
-          action: 'upload',
+          action: 'upload-file',
           driveId: driveId,
           parentId: currentFolder,
           fileName: file.name,
-          file: await file.arrayBuffer()
+          fileContent: await file.arrayBuffer(),
+          fileSize: file.size
         }
       });
 
@@ -119,7 +118,7 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
     try {
       const { data, error } = await supabase.functions.invoke('kdrive-api', {
         body: {
-          action: 'download',
+          action: 'download-file',
           driveId: driveId,
           fileId: fileId
         }
@@ -157,10 +156,10 @@ export function AgencyKDriveTab({ agencyId, agencyName }: AgencyKDriveTabProps) 
     try {
       const { data, error } = await supabase.functions.invoke('kdrive-api', {
         body: {
-          action: 'createFolder',
+          action: 'create-folder',
           driveId: driveId,
           parentId: currentFolder,
-          folderName: newFolderName
+          fileName: newFolderName
         }
       });
 

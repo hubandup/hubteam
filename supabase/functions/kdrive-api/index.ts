@@ -134,7 +134,15 @@ serve(async (req) => {
 
     const { action, driveId, folderId, folderPath, fileName, fileContent, fileSize, parentId, rootFolderId, debugNoFilter, fileId, limit, offset, folderName, fileIds, newName } = await req.json();
 
-    console.log('KDrive API request:', { action, driveId, folderId, folderPath, fileName, fileId, newName });
+    console.log('=== KDrive API Full Request ===');
+    console.log('Action:', action);
+    console.log('Drive ID:', driveId);
+    console.log('Folder ID:', folderId);
+    console.log('Parent ID:', parentId);
+    console.log('Root Folder ID:', rootFolderId);
+    console.log('File Name:', fileName);
+    console.log('Folder Name:', folderName);
+    console.log('Full body:', JSON.stringify({ action, driveId, folderId, folderPath, fileName, fileId, newName, parentId, rootFolderId }));
 
     const kdriveHeaders = {
       'Authorization': `Bearer ${KDRIVE_TOKEN}`,
