@@ -372,49 +372,84 @@ serve(async (req) => {
           payload: uploadPayload,
         });
         
-        const sessionResp = await fetch(
-          sessionUrl,
-          {
+        let uploadTokenStr: string | null = null;
+        let lastError: any = null;
+        
+        // Attempt 1: JSON
+        try {
+          const sessionResp = await fetch(sessionUrl, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${KDRIVE_TOKEN}`,
               'Content-Type': 'application/json',
             },
             body: JSON.stringify(uploadPayload)
+          });
+
+          if (sessionResp.ok) {
+            const sessionDataJson = await sessionResp.json();
+            console.info('Session response (json):', sessionDataJson);
+            uploadTokenStr = sessionDataJson?.data?.upload_token || null;
+            lastError = sessionDataJson;
+          } else {
+            lastError = await sessionResp.json().catch(() => ({}));
+            console.error('Upload session (json) failed:', sessionResp.status, lastError);
           }
-        );
+        } catch (e) {
+          lastError = e;
+          console.error('Upload session (json) threw:', e);
+        }
         
-        if (!sessionResp.ok) {
-          const errorData = await sessionResp.json().catch(() => ({}));
-          console.error('Upload session creation failed:', sessionResp.status, errorData);
+        // Attempt 2: x-www-form-urlencoded fallback if no token
+        if (!uploadTokenStr) {
+          const formParams = new URLSearchParams({
+            directory_id: String(uploadPayload.directory_id),
+            file_name: uploadPayload.file_name,
+            conflict: String(uploadPayload.conflict),
+            total_size: String(uploadPayload.total_size),
+          });
+
+          console.info('Retrying create upload session with x-www-form-urlencoded:', {
+            url: sessionUrl,
+            form: Object.fromEntries(formParams.entries()),
+          });
+
+          const sessionRespForm = await fetch(sessionUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${KDRIVE_TOKEN}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formParams.toString(),
+          });
+
+          if (sessionRespForm.ok) {
+            const sessionDataForm = await sessionRespForm.json();
+            console.info('Session response (form):', sessionDataForm);
+            uploadTokenStr = sessionDataForm?.data?.upload_token || null;
+            lastError = sessionDataForm;
+          } else {
+            const errForm = await sessionRespForm.json().catch(() => ({}));
+            lastError = errForm;
+            console.error('Upload session (form) failed:', sessionRespForm.status, errForm);
+          }
+        }
+
+        if (!uploadTokenStr) {
           return new Response(
-            JSON.stringify({ error: 'Failed to create upload session', details: errorData }),
+            JSON.stringify({ error: 'Failed to create upload session', details: lastError ?? 'no_token' }),
             { 
-              status: sessionResp.status,
+              status: 422,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
             }
           );
         }
-        
-        const sessionData = await sessionResp.json();
-        console.info('Session response:', sessionData);
-        
-        if (sessionData.result !== 'success' || !sessionData.data?.upload_token) {
-          return new Response(
-            JSON.stringify({ error: 'No upload token returned', details: sessionData }),
-            { 
-              status: 500,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-            }
-          );
-        }
-        
-        const uploadToken = sessionData.data.upload_token;
-        console.info(`Upload token received: ${uploadToken.substring(0, 10)}...`);
+
+        console.info(`Upload token received: ${uploadTokenStr.substring(0, 10)}...`);
         
         // Step 2: Upload file chunk using the upload token
         const chunkResp = await fetch(
-          `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload/${uploadToken}/chunk`,
+          `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload/${uploadTokenStr}/chunk`,
           {
             method: 'POST',
             headers: {
@@ -453,7 +488,7 @@ serve(async (req) => {
         
         // Step 3: Finalize the upload
         const finalizeResp = await fetch(
-          `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload/${uploadToken}/finish`,
+          `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload/${uploadTokenStr}/finish`,
           {
             method: 'POST',
             headers: kdriveHeaders,
