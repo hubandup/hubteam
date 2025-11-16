@@ -659,7 +659,9 @@ serve(async (req) => {
         );
         
         if (!chunkResp.ok) {
-          const errorData = await chunkResp.json().catch(() => ({}));
+          const errorText = await chunkResp.text();
+          let errorData: any = {};
+          try { errorData = JSON.parse(errorText); } catch (_) { errorData = { raw: errorText }; }
           console.error('Chunk upload failed:', chunkResp.status, errorData);
           return new Response(
             JSON.stringify({ error: 'Failed to upload file chunk', details: errorData }),
@@ -670,7 +672,9 @@ serve(async (req) => {
           );
         }
         
-        const chunkData = await chunkResp.json();
+        const chunkText = await chunkResp.text();
+        let chunkData: any = {};
+        try { chunkData = JSON.parse(chunkText); } catch (_) { chunkData = { raw: chunkText }; }
         console.info('Chunk upload response:', chunkData);
         
         if (chunkData.result !== 'success') {
