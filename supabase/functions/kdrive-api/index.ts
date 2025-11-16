@@ -634,15 +634,25 @@ serve(async (req) => {
         
         // Step 2: Upload file chunk using the upload_url from kDrive or fallback to API base
         const uploadBaseUrl = (lastError as any)?._upload_url || `${KDRIVE_API_BASE}`;
-        // Add chunk_number and chunk_size as query parameters
-        const chunkUrl = `${uploadBaseUrl}/3/drive/${uploadDriveId}/upload/session/${uploadTokenStr}/chunk?chunk_number=1&chunk_size=${bytes.length}`;
+        // Build chunk URL (no extra query params; send metadata in body)
+        const chunkUrl = `${uploadBaseUrl}/3/drive/${uploadDriveId}/upload/session/${uploadTokenStr}/chunk`;
+        const chunkNumber = 1;
+        const chunkSize = bytes.length;
+        
+        // Use multipart/form-data: kDrive expects chunk_number and chunk_size in the body
+        const chunkForm = new FormData();
+        chunkForm.append('chunk_number', String(chunkNumber));
+        chunkForm.append('chunk_size', String(chunkSize));
+        chunkForm.append('file', new Blob([bytes], { type: 'application/octet-stream' }), fileName || 'file');
+        
         console.info('Chunk upload debug:', {
           url: chunkUrl,
           method: 'POST',
           uploadBaseUrl,
           hasUploadUrl: !!(lastError as any)?._upload_url,
-          chunkNumber: 1,
-          chunkSize: bytes.length
+          chunkNumber,
+          chunkSize,
+          bodyFields: ['chunk_number','chunk_size','file']
         });
         
         const chunkResp = await fetch(
@@ -651,10 +661,9 @@ serve(async (req) => {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${KDRIVE_TOKEN}`,
-              'Content-Type': 'application/octet-stream',
-              'Content-Length': String(bytes.length)
+              'Accept': 'application/json',
             },
-            body: bytes
+            body: chunkForm
           }
         );
         
