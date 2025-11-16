@@ -107,6 +107,9 @@ export type Database = {
           contact_phone: string | null
           created_at: string
           id: string
+          kdrive_drive_id: number | null
+          kdrive_folder_id: string | null
+          kdrive_folder_path: string | null
           logo_url: string | null
           name: string
           revenue: number | null
@@ -118,6 +121,9 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string
           id?: string
+          kdrive_drive_id?: number | null
+          kdrive_folder_id?: string | null
+          kdrive_folder_path?: string | null
           logo_url?: string | null
           name: string
           revenue?: number | null
@@ -129,6 +135,9 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string
           id?: string
+          kdrive_drive_id?: number | null
+          kdrive_folder_id?: string | null
+          kdrive_folder_path?: string | null
           logo_url?: string | null
           name?: string
           revenue?: number | null

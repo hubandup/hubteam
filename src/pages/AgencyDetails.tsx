@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, Info, FolderKanban } from 'lucide-react';
+import { ArrowLeft, Loader2, Info, FolderKanban, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ResponsiveTabs, type TabItem } from '@/components/ui/responsive-tabs';
 import { AgencyInfoTab } from '@/components/agency-details/AgencyInfoTab';
 import { AgencyProjectsTab } from '@/components/agency-details/AgencyProjectsTab';
+import { AgencyKDriveTab } from '@/components/agency-details/AgencyKDriveTab';
 
 export default function AgencyDetails() {
   const { id } = useParams<{ id: string }>();
@@ -82,6 +83,12 @@ export default function AgencyDetails() {
       icon: <FolderKanban className="h-4 w-4" />,
       badge: projectsCount,
       content: <AgencyProjectsTab agencyId={agency.id} />
+    },
+    {
+      value: 'kdrive',
+      label: 'KDrive',
+      icon: <FileText className="h-4 w-4" />,
+      content: <AgencyKDriveTab agencyId={agency.id} />
     }
   ];
 

@@ -1,0 +1,343 @@
+import { supabase } from "@/integrations/supabase/client";
+import { Folder, Plus, Loader2, Search } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+
+// Fixed kDrive configuration for agencies
+const KDRIVE_DRIVE_ID = 969307; // Hub & Up (product id)
+const AGENCIES_FOLDER_ID = "50122"; // Hub & Up > Agences folder (adjust this ID)
+
+interface KDriveFile {
+  id: string;
+  name: string;
+  type: string;
+  path?: string;
+}
+
+interface AgencyKDriveFolderSelectorProps {
+  agencyId: string;
+  agencyName: string;
+  currentDriveId?: number | null;
+  currentFolderId?: string | null;
+  currentFolderPath?: string | null;
+  onFolderConnected: () => void;
+}
+
+export function AgencyKDriveFolderSelector({
+  agencyId,
+  agencyName,
+  currentDriveId,
+  currentFolderId,
+  currentFolderPath,
+  onFolderConnected,
+}: AgencyKDriveFolderSelectorProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [folders, setFolders] = useState<KDriveFile[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [newFolderName, setNewFolderName] = useState("");
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [currentFolderId_state, setCurrentFolderId] = useState(AGENCIES_FOLDER_ID);
+  const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string; name: string }>>([
+    { id: AGENCIES_FOLDER_ID, name: "Agences" }
+  ]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadFolders();
+      setSearchQuery("");
+    }
+  }, [isOpen, currentFolderId_state]);
+
+  const filteredFolders = useMemo(() => {
+    if (!searchQuery.trim()) return folders;
+    
+    const query = searchQuery.toLowerCase();
+    return folders
+      .filter(folder => folder.name.toLowerCase().includes(query))
+      .sort((a, b) => {
+        const aIndex = a.name.toLowerCase().indexOf(query);
+        const bIndex = b.name.toLowerCase().indexOf(query);
+        if (aIndex !== bIndex) return aIndex - bIndex;
+        return a.name.localeCompare(b.name);
+      });
+  }, [folders, searchQuery]);
+
+  const loadFolders = async () => {
+    setIsLoading(true);
+    try {
+      const response = await supabase.functions.invoke("kdrive-api", {
+        body: {
+          action: "list-files",
+          folderId: currentFolderId_state,
+          rootFolderId: AGENCIES_FOLDER_ID,
+        },
+      });
+
+      if (response.error) {
+        console.error("Erreur lors du chargement des dossiers:", response.error);
+        toast.error("Impossible de charger les dossiers kDrive");
+        return;
+      }
+
+      const files = response.data?.data || [];
+      const folderList = files.filter((file: KDriveFile) => file.type === "dir");
+      setFolders(folderList);
+    } catch (error: any) {
+      console.error("Erreur:", error);
+      toast.error(error.message || "Erreur lors du chargement");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const createFolder = async () => {
+    if (!newFolderName.trim()) {
+      toast.error("Veuillez saisir un nom de dossier");
+      return;
+    }
+
+    setIsCreatingFolder(true);
+    try {
+      const response = await supabase.functions.invoke("kdrive-api", {
+        body: {
+          action: "create-folder",
+          fileName: newFolderName,
+          parentId: currentFolderId_state,
+          rootFolderId: AGENCIES_FOLDER_ID,
+        },
+      });
+
+      if (response.error) {
+        console.error("Erreur création dossier:", response.error);
+        toast.error("Impossible de créer le dossier");
+        return;
+      }
+
+      const newFolder = response.data?.data;
+      toast.success(`Dossier "${newFolderName}" créé`);
+      setNewFolderName("");
+      
+      if (newFolder?.id) {
+        navigateToFolder(newFolder);
+      } else {
+        loadFolders();
+      }
+    } catch (error: any) {
+      console.error("Erreur:", error);
+      toast.error(error.message || "Erreur lors de la création");
+    } finally {
+      setIsCreatingFolder(false);
+    }
+  };
+
+  const navigateToFolder = (folder: KDriveFile) => {
+    setCurrentFolderId(folder.id);
+    setBreadcrumbs(prev => [...prev, { id: folder.id, name: folder.name }]);
+  };
+
+  const navigateToBreadcrumb = (index: number) => {
+    const targetBreadcrumb = breadcrumbs[index];
+    setCurrentFolderId(targetBreadcrumb.id);
+    setBreadcrumbs(prev => prev.slice(0, index + 1));
+  };
+
+  const connectFolder = async (folderId: string, folderName: string) => {
+    try {
+      const fullPath = breadcrumbs.map(b => b.name).join(" > ") + " > " + folderName;
+      
+      const { error } = await supabase
+        .from('agencies')
+        .update({
+          kdrive_drive_id: KDRIVE_DRIVE_ID,
+          kdrive_folder_id: folderId,
+          kdrive_folder_path: fullPath
+        })
+        .eq('id', agencyId);
+
+      if (error) throw error;
+
+      toast.success("Dossier kDrive connecté avec succès");
+      setIsOpen(false);
+      onFolderConnected();
+    } catch (error: any) {
+      console.error("Erreur lors de la connexion du dossier:", error);
+      toast.error("Erreur lors de la connexion du dossier");
+    }
+  };
+
+  const disconnectFolder = async () => {
+    try {
+      const { error } = await supabase
+        .from('agencies')
+        .update({
+          kdrive_drive_id: null,
+          kdrive_folder_id: null,
+          kdrive_folder_path: null
+        })
+        .eq('id', agencyId);
+
+      if (error) throw error;
+
+      toast.success("Dossier kDrive déconnecté");
+      onFolderConnected();
+    } catch (error: any) {
+      console.error("Erreur lors de la déconnexion:", error);
+      toast.error("Erreur lors de la déconnexion");
+    }
+  };
+
+  return (
+    <>
+      <div className="space-y-3">
+        {currentFolderId && currentFolderPath ? (
+          <div className="p-4 border rounded-lg bg-muted/50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Folder className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-medium">Dossier connecté</p>
+                  <p className="text-sm text-muted-foreground">{currentFolderPath}</p>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={disconnectFolder}
+              >
+                Déconnecter
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center p-6 border-2 border-dashed rounded-lg">
+            <Folder className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground mb-3">
+              Aucun dossier kDrive connecté
+            </p>
+            <Button onClick={() => setIsOpen(true)}>
+              <Folder className="h-4 w-4 mr-2" />
+              Connecter un dossier
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Sélectionner un dossier kDrive</DialogTitle>
+            <DialogDescription>
+              Parcourez et sélectionnez le dossier de l'agence dans Hub & Up {'>'} Agences
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Breadcrumbs */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
+              {breadcrumbs.map((crumb, index) => (
+                <div key={crumb.id} className="flex items-center gap-2">
+                  {index > 0 && <span>/</span>}
+                  <button
+                    onClick={() => navigateToBreadcrumb(index)}
+                    className="hover:text-foreground transition-colors"
+                  >
+                    {crumb.name}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <Separator />
+
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher un dossier..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* Create new folder */}
+            <div className="flex gap-2">
+              <Input
+                placeholder="Créer un nouveau dossier..."
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && createFolder()}
+              />
+              <Button 
+                onClick={createFolder} 
+                disabled={!newFolderName.trim() || isCreatingFolder}
+                size="sm"
+              >
+                {isCreatingFolder ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+
+            <Separator />
+
+            {/* Folders list */}
+            <ScrollArea className="h-[300px]">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : filteredFolders.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Folder className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>Aucun dossier trouvé</p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {filteredFolders.map((folder) => (
+                    <div
+                      key={folder.id}
+                      className="flex items-center justify-between p-3 hover:bg-muted rounded-lg group"
+                    >
+                      <button
+                        onClick={() => navigateToFolder(folder)}
+                        className="flex items-center gap-3 flex-1 text-left"
+                      >
+                        <Folder className="h-5 w-5 text-primary" />
+                        <span className="font-medium">{folder.name}</span>
+                      </button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => connectFolder(folder.id, folder.name)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        Sélectionner
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
