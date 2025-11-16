@@ -105,7 +105,7 @@ function SortableFaqItem({ item, isAdmin, onEdit, onDelete }: SortableFaqItemPro
         </CollapsibleTrigger>
         <CollapsibleContent className="px-4 pb-4 pt-3 border-t bg-card">
           <div
-            className="prose prose-sm max-w-none mb-4 dark:prose-invert"
+            className="prose max-w-none mb-4 dark:prose-invert [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mb-4 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mb-3 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:mb-2 [&_a]:text-primary [&_a]:underline [&_a]:cursor-pointer"
             dangerouslySetInnerHTML={{ __html: item.content }}
           />
           {item.pdf_url && (
