@@ -929,7 +929,7 @@ serve(async (req) => {
           file_ids: fileIds.map((id: string | number) => Number(id))
         };
 
-        const deleteUrl = `${KDRIVE_API_BASE}/3/drive/${batchDeleteDriveId}/file/trash`;
+        const deleteUrl = `${KDRIVE_API_BASE}/3/drive/${batchDeleteDriveId}/files/trash`;
         
         console.log('═══════════════════════════════════════════════════════════');
         console.log('[DELETE-FILES] URL exacte:', deleteUrl);
