@@ -356,12 +356,14 @@ serve(async (req) => {
         // Step 1: Create upload session and get upload token
         console.info(`Creating upload session for file: ${fileName} in folder: ${uploadFolderId}`);
         
-        // Create form data for the upload session
-        const formData = new FormData();
-        formData.append('directory_id', String(uploadFolderId));
-        formData.append('file_name', fileName || 'file');
-        formData.append('conflict', 'rename');
-        formData.append('total_size', String(bytes.length));
+        const uploadPayload = {
+          directory_id: uploadFolderId, // Send as string, API will convert
+          file_name: fileName || 'file',
+          conflict: 'rename',
+          total_size: bytes.length
+        };
+        
+        console.info('Upload session payload:', uploadPayload);
         
         const sessionResp = await fetch(
           `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload`,
@@ -369,9 +371,9 @@ serve(async (req) => {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${KDRIVE_TOKEN}`,
-              // Don't set Content-Type, let the browser set it with boundary for FormData
+              'Content-Type': 'application/json',
             },
-            body: formData
+            body: JSON.stringify(uploadPayload)
           }
         );
         
