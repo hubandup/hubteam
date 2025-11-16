@@ -468,9 +468,11 @@ export function AgencyKDriveTab({
               <Button variant="ghost" size="icon" disabled={uploading || !currentFolder} onClick={() => fileInputRef.current?.click()} title="Téléverser des fichiers">
                 {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => setIsRevokeOpen(true)} title="Révoquer la connexion kDrive" className="text-destructive hover:text-destructive">
-                <Unlink className="h-5 w-5" />
-              </Button>
+              {isAdmin && (
+                <Button variant="ghost" size="icon" onClick={() => setIsRevokeOpen(true)} title="Révoquer la connexion kDrive" className="text-destructive hover:text-destructive">
+                  <Unlink className="h-5 w-5" />
+                </Button>
+              )}
               <input ref={fileInputRef} type="file" className="hidden" onChange={e => e.target.files && handleFileUpload(e.target.files)} />
             </div>
 
