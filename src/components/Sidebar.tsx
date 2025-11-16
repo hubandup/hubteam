@@ -95,7 +95,8 @@ export function Sidebar() {
             <SidebarMenu>
               {mainItems
                 .filter(item => item.title !== 'Tableau de bord' || role === 'admin')
-                .map((item) => 
+                .filter(item => item.title !== 'CRM' || role !== 'client')
+                .map((item) =>
                   canRead(item.module) ? (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton asChild>
