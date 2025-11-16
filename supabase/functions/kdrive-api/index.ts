@@ -624,9 +624,13 @@ serve(async (req) => {
 
         console.info(`Upload token received: ${uploadTokenStr.substring(0, 10)}...`);
         
-        // Step 2: Upload file chunk using the upload token
+        // Step 2: Upload file chunk using the correct endpoint
+        // kDrive uses /upload/session/{token}/chunk, not /upload/{token}/chunk
+        const chunkUrl = `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload/session/${uploadTokenStr}/chunk`;
+        console.info('Chunk upload URL:', chunkUrl, 'Method: POST');
+        
         const chunkResp = await fetch(
-          `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload/${uploadTokenStr}/chunk`,
+          chunkUrl,
           {
             method: 'POST',
             headers: {
@@ -664,8 +668,11 @@ serve(async (req) => {
         }
         
         // Step 3: Finalize the upload
+        const finalizeUrl = `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload/session/${uploadTokenStr}/finish`;
+        console.info('Finalize upload URL:', finalizeUrl);
+        
         const finalizeResp = await fetch(
-          `${KDRIVE_API_BASE}/3/drive/${uploadDriveId}/upload/${uploadTokenStr}/finish`,
+          finalizeUrl,
           {
             method: 'POST',
             headers: kdriveHeaders,
