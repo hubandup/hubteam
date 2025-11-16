@@ -10,6 +10,7 @@ import {
   FolderPlus,
   Home,
   ChevronRight,
+  Trash2,
 } from "lucide-react";
 import { Unlink, Eye } from "lucide-react";
 import { toast } from "sonner";
@@ -35,6 +36,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface ClientKDriveTabProps {
   clientId: string;
@@ -76,10 +78,18 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
   const [isRevokeOpen, setIsRevokeOpen] = useState(false);
   const [isRevoking, setIsRevoking] = useState(false);
   const [rootFolderName, setRootFolderName] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [isDeletingMultiple, setIsDeletingMultiple] = useState(false);
+  const [showDeleteMultipleConfirm, setShowDeleteMultipleConfirm] = useState(false);
 
   useEffect(() => {
     loadClientFolder();
   }, [clientId]);
+
+  useEffect(() => {
+    // Reset selection when changing folders
+    setSelectedIds([]);
+  }, [currentFolder?.id]);
 
   const loadClientFolder = async () => {
     try {
@@ -447,6 +457,47 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     }
   };
 
+  const handleDeleteMultiple = async () => {
+    if (selectedIds.length === 0 || !client || !currentFolder) return;
+
+    setIsDeletingMultiple(true);
+    try {
+      const { error } = await supabase.functions.invoke("kdrive-api", {
+        body: {
+          action: "delete-files",
+          driveId: client.kdrive_drive_id,
+          fileIds: selectedIds,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success(`${selectedIds.length} élément(s) supprimé(s) avec succès`);
+      setSelectedIds([]);
+      setShowDeleteMultipleConfirm(false);
+      await loadFiles(client.kdrive_drive_id, currentFolder.id.toString());
+    } catch (error) {
+      console.error("Error deleting multiple:", error);
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setIsDeletingMultiple(false);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === files.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(files.map(f => f.id));
+    }
+  };
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
   const handleBreadcrumbClick = async (breadcrumb: { id: number; name: string; path: string }) => {
     if (!client) return;
     setCurrentFolder({ id: breadcrumb.id, path: breadcrumb.path, parentId: null });
@@ -603,6 +654,35 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
 
       <div className="space-y-2">
 
+        {files.length > 0 && (
+          <div className="flex items-center justify-between p-3 bg-muted/30 border rounded-lg mb-2">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                checked={selectedIds.length === files.length && files.length > 0}
+                onCheckedChange={toggleSelectAll}
+              />
+              <span className="text-sm font-medium">
+                {selectedIds.length > 0 ? `${selectedIds.length} sélectionné(s)` : "Tout sélectionner"}
+              </span>
+            </div>
+            {selectedIds.length > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowDeleteMultipleConfirm(true)}
+                disabled={isDeletingMultiple}
+              >
+                {isDeletingMultiple ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Trash2 className="h-4 w-4 mr-2" />
+                )}
+                Supprimer {selectedIds.length} élément(s)
+              </Button>
+            )}
+          </div>
+        )}
+
         {files.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">Aucun fichier ou dossier</p>
         ) : (
@@ -613,6 +693,11 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
             }).map((file) => (
               <div key={file.id} className="flex items-center justify-between p-3 hover:bg-muted/30 transition-colors">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Checkbox
+                    checked={selectedIds.includes(file.id)}
+                    onCheckedChange={() => toggleSelect(file.id)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
                   {file.type === "dir" ? (
                     <FolderIcon className="h-5 w-5 text-primary flex-shrink-0" />
                   ) : (
@@ -739,6 +824,35 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Suppression...
+                </>
+              ) : (
+                "Supprimer"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showDeleteMultipleConfirm} onOpenChange={setShowDeleteMultipleConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression multiple</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer <strong>{selectedIds.length} élément(s)</strong> ?
+              Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteMultiple}
+              disabled={isDeletingMultiple}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeletingMultiple ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Suppression...

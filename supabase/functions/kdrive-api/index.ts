@@ -31,7 +31,7 @@ serve(async (req) => {
       });
     }
 
-    const { action, driveId, folderId, folderPath, fileName, fileContent, fileSize, parentId, rootFolderId, debugNoFilter, fileId, limit, offset, folderName } = await req.json();
+    const { action, driveId, folderId, folderPath, fileName, fileContent, fileSize, parentId, rootFolderId, debugNoFilter, fileId, limit, offset, folderName, fileIds } = await req.json();
 
     console.log('KDrive API request:', { action, driveId, folderId, folderPath, fileName });
 
@@ -891,6 +891,87 @@ serve(async (req) => {
         }
         break;
 
+      case 'delete-files':
+        // Delete multiple files or folders at once
+        if (!fileIds || !Array.isArray(fileIds) || fileIds.length === 0) {
+          return new Response(
+            JSON.stringify({ error: 'fileIds array is required' }),
+            { 
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+
+        // Get the actual drive ID from product if not provided
+        let batchDeleteDriveId = driveId;
+        if (!batchDeleteDriveId) {
+          const productsResp = await fetch(`${KDRIVE_API_BASE}/1/product`, { headers: kdriveHeaders });
+          if (productsResp.ok) {
+            const productsData = await productsResp.json();
+            const driveProduct = productsData?.data?.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
+            batchDeleteDriveId = driveProduct?.id;
+          }
+        }
+        
+        if (!batchDeleteDriveId) {
+          return new Response(
+            JSON.stringify({ error: 'Drive ID not found' }),
+            { 
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+
+        // Build payload for batch delete
+        const batchDeletePayload = {
+          files: fileIds.map((id: string | number) => ({ id: Number(id) }))
+        };
+
+        console.info('Deleting multiple files:', {
+          url: `${KDRIVE_API_BASE}/3/drive/${batchDeleteDriveId}/files/delete`,
+          payload: batchDeletePayload,
+          count: fileIds.length
+        });
+
+        const batchDeleteResp = await fetch(
+          `${KDRIVE_API_BASE}/3/drive/${batchDeleteDriveId}/files/delete`,
+          {
+            method: 'POST',
+            headers: kdriveHeaders,
+            body: JSON.stringify(batchDeletePayload)
+          }
+        );
+
+        if (!batchDeleteResp.ok) {
+          const batchErrText = await batchDeleteResp.text();
+          let batchErrorData: any = {};
+          try { batchErrorData = JSON.parse(batchErrText); } catch (_) { batchErrorData = { raw: batchErrText }; }
+          console.error('Bulk delete failed:', batchDeleteResp.status, batchErrorData);
+          return new Response(
+            JSON.stringify({ error: 'Failed to delete files', details: batchErrorData }),
+            { 
+              status: batchDeleteResp.status,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+
+        const batchDeleteText = await batchDeleteResp.text();
+        let batchDeleteData: any = {};
+        try { batchDeleteData = JSON.parse(batchDeleteText); } catch (_) { batchDeleteData = { raw: batchDeleteText }; }
+        console.info('Bulk delete response:', batchDeleteData);
+
+        return new Response(
+          JSON.stringify({ 
+            result: 'success', 
+            deletedIds: fileIds,
+            details: batchDeleteData 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+
       case 'get-file-details':
         response = await fetch(
           `${KDRIVE_API_BASE}/2/drive/${driveId}/files/${fileId}`,
@@ -914,6 +995,8 @@ serve(async (req) => {
           JSON.stringify({ file: fileDetailsData.data }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+
+      case 'delete-file':
 
       case 'delete-file':
       case 'delete-folder':
