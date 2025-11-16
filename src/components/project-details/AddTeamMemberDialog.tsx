@@ -80,18 +80,30 @@ export function AddTeamMemberDialog({
         data = contacts || [];
       } else if (memberType === 'client') {
         if (projectClientId) {
-          const { data: clientContacts } = await supabase
+          const { data: clientContacts, error } = await supabase
             .from('client_contacts')
             .select('id, first_name, last_name, email, title')
             .eq('client_id', projectClientId)
             .order('first_name');
-          data = clientContacts || [];
+          
+          if (error) {
+            console.error('Error fetching client contacts:', error);
+            toast.error('Erreur lors du chargement des contacts clients');
+          } else {
+            data = clientContacts || [];
+            if (data.length === 0) {
+              toast.info('Aucun contact trouvé pour ce client');
+            }
+          }
+        } else {
+          toast.error('Ce projet n\'a pas de client associé');
         }
       }
 
       setMembers(data);
     } catch (error) {
       console.error('Error fetching members:', error);
+      toast.error('Erreur lors du chargement des membres');
     }
   };
 
@@ -204,14 +216,28 @@ export function AddTeamMemberDialog({
             <Label>Membre</Label>
             <Select value={memberId} onValueChange={setMemberId}>
               <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un membre" />
+                <SelectValue placeholder={
+                  memberType === 'client' && !projectClientId
+                    ? "Aucun client associé au projet"
+                    : members.length === 0
+                    ? "Aucun membre disponible"
+                    : "Sélectionner un membre"
+                } />
               </SelectTrigger>
               <SelectContent>
-                {members.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {getMemberLabel(member)}
-                  </SelectItem>
-                ))}
+                {members.length === 0 ? (
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                    {memberType === 'client' && !projectClientId
+                      ? "Ce projet n'a pas de client associé"
+                      : "Aucun membre disponible"}
+                  </div>
+                ) : (
+                  members.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {getMemberLabel(member)}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
