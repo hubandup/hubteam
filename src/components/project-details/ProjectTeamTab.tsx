@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, User, Building2, Users } from 'lucide-react';
+import { Plus, Trash2, User, Building2, Users, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { AddTeamMemberDialog } from './AddTeamMemberDialog';
 import { ProtectedAction } from '@/components/ProtectedAction';
@@ -24,6 +25,7 @@ interface ProjectTeamTabProps {
 export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [agencies, setAgencies] = useState<any[]>([]);
+  const [clientInfo, setClientInfo] = useState<{ id: string; company: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
 
@@ -33,6 +35,20 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
 
   const fetchTeamData = async () => {
     try {
+      // Fetch client info
+      const { data: projectClients, error: clientError } = await supabase
+        .from('project_clients')
+        .select('clients(id, company)')
+        .eq('project_id', projectId)
+        .single();
+
+      if (!clientError && projectClients?.clients) {
+        setClientInfo({
+          id: projectClients.clients.id,
+          company: projectClients.clients.company
+        });
+      }
+
       // Fetch team members
       const { data: members, error: membersError } = await supabase
         .from('project_team_members' as any)
@@ -202,6 +218,23 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
 
   return (
     <div className="space-y-6">
+      {clientInfo && (
+        <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border">
+          <div className="flex items-center gap-2">
+            <User className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium">
+              {clientInfo.company}
+            </span>
+          </div>
+          <Link to={`/client/${clientInfo.id}`}>
+            <Button variant="outline" size="sm">
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Voir la fiche client
+            </Button>
+          </Link>
+        </div>
+      )}
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Agences partenaires</CardTitle>
