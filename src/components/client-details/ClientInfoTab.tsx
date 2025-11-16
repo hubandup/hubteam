@@ -160,18 +160,6 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
         setNextTask(tasksData[0]);
       }
 
-      // Calculate project progress
-      const { data: allTasks } = await supabase
-        .from('tasks')
-        .select('id, status')
-        .eq('project_id', project.id);
-
-      if (allTasks && allTasks.length > 0) {
-        const completedTasks = allTasks.filter(t => t.status === 'completed').length;
-        const progress = Math.round((completedTasks / allTasks.length) * 100);
-        setProjectProgress(progress);
-      }
-
       // Fetch team member (first profile type member)
       const { data: teamData } = await supabase
         .from('project_team_members')
@@ -199,6 +187,22 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
             role: roleData?.role || 'team'
           });
         }
+      }
+    }
+
+    // Calculate cumulative progress across ALL projects
+    if (projectsData && projectsData.length > 0) {
+      const projectIds = projectsData.map(pc => pc.project_id);
+      
+      const { data: allTasks } = await supabase
+        .from('tasks')
+        .select('id, status, project_id')
+        .in('project_id', projectIds);
+
+      if (allTasks && allTasks.length > 0) {
+        const completedTasks = allTasks.filter(t => t.status === 'completed').length;
+        const progress = Math.round((completedTasks / allTasks.length) * 100);
+        setProjectProgress(progress);
       }
     }
   };
