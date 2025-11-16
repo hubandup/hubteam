@@ -36,6 +36,7 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const isTyping = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const savedRangeRef = useRef<Range | null>(null);
   
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
@@ -72,32 +73,50 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
 
   const handleLinkInsert = () => {
     const selection = window.getSelection();
-    if (selection && selection.toString()) {
-      setLinkText(selection.toString());
+    if (selection) {
+      if (selection.rangeCount > 0) {
+        savedRangeRef.current = selection.getRangeAt(0);
+      }
+      if (selection.toString()) {
+        setLinkText(selection.toString());
+      }
     }
     setLinkDialogOpen(true);
   };
 
   const insertLink = () => {
     if (!linkUrl) return;
+
+    const safeUrl = /^(https?:)?\/\//i.test(linkUrl) ? linkUrl : `https://${linkUrl}`;
+
+    // Restore selection and focus editor
+    editorRef.current?.focus();
+    const selection = window.getSelection();
+    if (savedRangeRef.current && selection) {
+      selection.removeAllRanges();
+      selection.addRange(savedRangeRef.current);
+    }
     
     if (linkText) {
-      const link = `<a href="${linkUrl}" target="_blank" rel="noopener noreferrer" style="color: hsl(var(--primary)); text-decoration: underline; cursor: pointer;">${linkText}</a>`;
+      const link = `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: hsl(var(--primary)); text-decoration: underline; cursor: pointer;">${linkText}</a>`;
       document.execCommand('insertHTML', false, link);
     } else {
-      execCommand('createLink', linkUrl);
+      execCommand('createLink', safeUrl);
       // Apply styles to the created link
-      const selection = window.getSelection();
-      if (selection && selection.anchorNode) {
-        const link = selection.anchorNode.parentElement;
-        if (link && link.tagName === 'A') {
-          link.setAttribute('target', '_blank');
-          link.setAttribute('rel', 'noopener noreferrer');
-          link.setAttribute('style', 'color: hsl(var(--primary)); text-decoration: underline; cursor: pointer;');
+      const sel = window.getSelection();
+      if (sel && sel.anchorNode) {
+        let el = sel.anchorNode as HTMLElement | null;
+        if (el && el.nodeType === Node.TEXT_NODE) el = el.parentElement;
+        const linkEl = el?.closest('a') as HTMLAnchorElement | null;
+        if (linkEl) {
+          linkEl.setAttribute('target', '_blank');
+          linkEl.setAttribute('rel', 'noopener noreferrer');
+          linkEl.setAttribute('style', 'color: hsl(var(--primary)); text-decoration: underline; cursor: pointer;');
         }
       }
     }
-    
+
+    savedRangeRef.current = null;
     setLinkUrl('');
     setLinkText('');
     setLinkDialogOpen(false);
