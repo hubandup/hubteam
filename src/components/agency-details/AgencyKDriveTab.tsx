@@ -147,17 +147,26 @@ export function AgencyKDriveTab({
       setUploading(true);
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const {
-          data,
-          error
-        } = await supabase.functions.invoke('kdrive-api', {
+        // Convertir le fichier en base64 (Data URL)
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result?.toString() || '';
+            const payload = result.includes(',') ? result.split(',')[1] : result;
+            resolve(payload);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        const { error } = await supabase.functions.invoke('kdrive-api', {
           body: {
             action: 'upload-file',
             driveId: driveId,
-            parentId: currentFolder.id.toString(),
+            folderId: currentFolder.id.toString(),
             fileName: file.name,
-            fileContent: await file.arrayBuffer(),
-            fileSize: file.size
+            fileContent: base64,
+            fileSize: file.size,
           }
         });
         if (error) throw error;
@@ -166,7 +175,7 @@ export function AgencyKDriveTab({
       await loadFiles(driveId, currentFolder.id.toString());
     } catch (error) {
       console.error('Error uploading file:', error);
-      toast.error('Erreur lors de l\'upload du fichier');
+      toast.error('Erreur lors du téléversement du fichier');
     } finally {
       setUploading(false);
       if (fileInputRef.current) {

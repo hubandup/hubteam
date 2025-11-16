@@ -454,11 +454,32 @@ serve(async (req) => {
         
         const uploadFolderId = folderId || 1;
         
-        // Decode base64 content
-        const base64Data = (typeof fileContent === 'string' && fileContent.includes(','))
-          ? fileContent.split(',').pop()!
-          : fileContent;
-        const binaryString = atob(base64Data);
+        // Decode base64 content safely (only for real uploads)
+        if (typeof fileContent !== 'string') {
+          console.error('Invalid fileContent type for upload:', { type: typeof fileContent });
+          return new Response(
+            JSON.stringify({ error: 'fileContent must be a base64 string for upload-file action' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const base64Data = fileContent.includes(',') ? fileContent.split(',').pop()! : fileContent;
+        console.log('Upload base64 meta:', {
+          provided: !!fileContent,
+          length: fileContent.length,
+          sample: fileContent.substring(0, Math.min(50, fileContent.length)),
+        });
+
+        let binaryString: string;
+        try {
+          binaryString = atob(base64Data);
+        } catch (e) {
+          console.error('Base64 decode failed:', e);
+          return new Response(
+            JSON.stringify({ error: 'Failed to decode base64', details: { length: base64Data?.length ?? 0, sample: String(base64Data).substring(0, 50) } }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
           bytes[i] = binaryString.charCodeAt(i);
