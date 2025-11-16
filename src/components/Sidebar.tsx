@@ -19,16 +19,49 @@ import { Button } from './ui/button';
 import { NotificationBell } from './notifications/NotificationBell';
 import { ThemeToggle } from './ThemeToggle';
 import logo from '@/assets/logo-hubandup.svg';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export function Sidebar() {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const { role } = useUserRole();
   const { canRead } = usePermissions();
+  const [clientId, setClientId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchClientId = async () => {
+      if (role === 'client' && user) {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('id', user.id)
+            .single();
+
+          if (profile?.email) {
+            const { data: client } = await supabase
+              .from('clients')
+              .select('id')
+              .eq('email', profile.email)
+              .single();
+
+            if (client) {
+              setClientId(client.id);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching client ID:', error);
+        }
+      }
+    };
+
+    fetchClientId();
+  }, [role, user]);
 
   const mainItems = [
     { title: 'Accueil', url: '/', icon: Home, module: 'dashboard' as const },
     { title: 'Tableau de bord', url: '/dashboard', icon: LayoutDashboard, module: 'dashboard' as const },
-    { title: 'CRM', url: '/crm', icon: Users, module: 'crm' as const, matchParent: true },
+    { title: 'CRM', url: role === 'client' && clientId ? `/client/${clientId}` : '/crm', icon: Users, module: 'crm' as const, matchParent: true },
     { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const, matchParent: true },
     { title: 'Projets', url: '/projects', icon: FolderKanban, module: 'projects' as const, matchParent: true },
     { title: 'Messages', url: '/messages', icon: MessageSquare, module: 'messages' as const },
