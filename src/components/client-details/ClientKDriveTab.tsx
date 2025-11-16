@@ -561,9 +561,9 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     });
 
     if (error) throw error;
-    if (!data?.url) throw new Error("No URL returned");
+    if (!data?.data?.url) throw new Error("No URL returned");
 
-    return { url: data.url, mimeType: data.mimeType };
+    return { url: data.data.url, mimeType: data.data.mimeType };
   };
 
   const handleFileClick = (file: KDriveFile) => {
