@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Plus, Edit, Trash2, FileText, Calendar, Users, MessageSquare, Paperclip, Info } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, FileText, Calendar, Users, MessageSquare, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -23,7 +23,6 @@ import { fr } from 'date-fns/locale';
 import { ProjectTeamTab } from '@/components/project-details/ProjectTeamTab';
 import { ProjectTasksTab } from '@/components/project-details/ProjectTasksTab';
 import { ProjectCommentsTab } from '@/components/project-details/ProjectCommentsTab';
-import { ProjectAttachmentsTab } from '@/components/project-details/ProjectAttachmentsTab';
 import { ProjectKDriveTab } from '@/components/project-details/ProjectKDriveTab';
 import { SelectClientDialog } from '@/components/project-details/SelectClientDialog';
 import { EditProjectInfoDialog } from '@/components/project-details/EditProjectInfoDialog';
@@ -46,7 +45,6 @@ export default function ProjectDetails() {
   const [deleting, setDeleting] = useState(false);
   const [pendingTasksCount, setPendingTasksCount] = useState(0);
   const [unreadCommentsCount, setUnreadCommentsCount] = useState(0);
-  const [attachmentsCount, setAttachmentsCount] = useState(0);
 
   useEffect(() => {
     if (id) {
@@ -68,15 +66,6 @@ export default function ProjectDetails() {
       if (tasksError) throw tasksError;
       const pending = tasks?.filter(t => t.status !== 'done').length || 0;
       setPendingTasksCount(pending);
-
-      // Count attachments
-      const { count: attachments, error: attachmentsError } = await supabase
-        .from('project_attachments')
-        .select('*', { count: 'exact', head: true })
-        .eq('project_id', id);
-
-      if (attachmentsError) throw attachmentsError;
-      setAttachmentsCount(attachments || 0);
 
       // For comments, we'll show total count as "unread" indicator
       const { count: comments, error: commentsError } = await supabase
@@ -391,13 +380,6 @@ export default function ProjectDetails() {
             label: 'Équipe',
             icon: <Users className="h-4 w-4" />,
             content: <ProjectTeamTab projectId={id!} />
-          },
-          {
-            value: 'attachments',
-            label: 'Pièces jointes',
-            icon: <Paperclip className="h-4 w-4" />,
-            badge: attachmentsCount,
-            content: <ProjectAttachmentsTab projectId={id!} />
           },
           {
             value: 'kdrive',
