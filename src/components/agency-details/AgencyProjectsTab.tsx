@@ -78,7 +78,8 @@ export function AgencyProjectsTab({ agencyId }: AgencyProjectsTabProps) {
     const labels: Record<string, string> = {
       active: 'En cours',
       completed: 'Terminé',
-      planning: 'À programmer',
+      planning: 'À faire',
+      reco_in_progress: 'Reco en cours',
       lost: 'Perdu',
     };
     return <Badge variant={variants[status] || 'outline'}>{labels[status] || status}</Badge>;

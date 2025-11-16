@@ -124,7 +124,8 @@ export function EditProjectInfoDialog({
                 <SelectValue placeholder="Sélectionner un statut" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="planning">À programmer</SelectItem>
+                <SelectItem value="planning">À faire</SelectItem>
+                <SelectItem value="reco_in_progress">Reco en cours</SelectItem>
                 <SelectItem value="active">En cours</SelectItem>
                 <SelectItem value="urgent">Urgent</SelectItem>
                 <SelectItem value="completed">Terminé</SelectItem>

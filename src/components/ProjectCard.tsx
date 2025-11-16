@@ -25,7 +25,8 @@ interface ProjectCardProps {
 }
 
 const statusConfig = {
-  planning: { label: 'À programmer', color: 'bg-[hsl(var(--status-planning))] text-[hsl(var(--status-planning-foreground))]' },
+  planning: { label: 'À faire', color: 'bg-[hsl(var(--status-planning))] text-[hsl(var(--status-planning-foreground))]' },
+  reco_in_progress: { label: 'Reco en cours', color: 'bg-[hsl(var(--status-reco-in-progress))] text-[hsl(var(--status-reco-in-progress-foreground))]' },
   active: { label: 'En cours', color: 'bg-[hsl(var(--status-active))] text-[hsl(var(--status-active-foreground))]' },
   completed: { label: 'Terminé', color: 'bg-[hsl(var(--status-completed))] text-[hsl(var(--status-completed-foreground))]' },
   lost: { label: 'Perdu', color: 'bg-[hsl(var(--status-lost))] text-[hsl(var(--status-lost-foreground))]' },

@@ -50,6 +50,8 @@
     /* Project status colors */
     --status-planning: 260 75% 55%;
     --status-planning-foreground: 0 0% 100%;
+    --status-reco-in-progress: 280 65% 60%;
+    --status-reco-in-progress-foreground: 0 0% 100%;
     --status-active: 173 80% 35%;
     --status-active-foreground: 0 0% 100%;
     --status-completed: 210 40% 96.1%;
@@ -109,6 +111,8 @@
     /* Project status colors */
     --status-planning: 280 60% 65%;
     --status-planning-foreground: 0 0% 100%;
+    --status-reco-in-progress: 260 55% 70%;
+    --status-reco-in-progress-foreground: 0 0% 100%;
     --status-active: 85 70% 55%;
     --status-active-foreground: 0 0% 10%;
     --status-completed: 0 0% 18%;

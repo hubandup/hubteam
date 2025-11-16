@@ -259,7 +259,10 @@ export default function Projects() {
             Tous ({projects.length})
           </TabsTrigger>
           <TabsTrigger value="planning">
-            À programmer ({projects.filter(p => p.status === 'planning').length})
+            À faire ({projects.filter(p => p.status === 'planning').length})
+          </TabsTrigger>
+          <TabsTrigger value="reco_in_progress">
+            Reco en cours ({projects.filter(p => p.status === 'reco_in_progress').length})
           </TabsTrigger>
           <TabsTrigger value="active">
             En cours ({projects.filter(p => p.status === 'active').length})
@@ -365,7 +368,8 @@ export default function Projects() {
                 {activeTab === 'all' 
                   ? 'Aucun projet pour le moment' 
                   : `Aucun projet ${
-                      activeTab === 'planning' ? 'à programmer' : 
+                      activeTab === 'planning' ? 'à faire' : 
+                      activeTab === 'reco_in_progress' ? 'en reco' :
                       activeTab === 'active' ? 'en cours' : 
                       activeTab === 'lost' ? 'perdu' :
                       'terminé'
