@@ -91,14 +91,19 @@ export default function ClientDetails() {
         .from('clients')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      setClient(data);
+
+      if (!data) {
+        // Pas de ligne visible (RLS ou inexistant)
+        setClient(null);
+      } else {
+        setClient(data);
+      }
     } catch (error) {
       console.error('Error fetching client:', error);
-      toast.error('Erreur lors du chargement du client');
-      navigate('/');
+      toast.error("Impossible d'afficher cette fiche client.");
     } finally {
       setLoading(false);
     }
@@ -113,7 +118,20 @@ export default function ClientDetails() {
   }
 
   if (!client) {
-    return null;
+    return (
+      <div className="flex items-center justify-center h-screen px-4">
+        <div className="max-w-md w-full text-center space-y-4">
+          <div className="text-2xl font-semibold">Fiche client introuvable</div>
+          <p className="text-muted-foreground">
+            Vous n’avez pas accès à cette fiche client ou elle n’existe pas.
+          </p>
+          <div className="flex items-center justify-center gap-2">
+            <Button variant="outline" onClick={() => navigate(-1)}>Retour</Button>
+            <Button onClick={() => navigate('/')}>Aller à l’accueil</Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const tabs: TabItem[] = [
