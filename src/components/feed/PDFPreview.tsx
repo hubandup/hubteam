@@ -9,7 +9,7 @@ interface PDFPreviewProps {
 }
 
 export function PDFPreview({ url, fileName }: PDFPreviewProps) {
-  const [showPreview, setShowPreview] = useState(false);
+  const [showPreview, setShowPreview] = useState(true);
   
   const displayName = fileName || 'Document PDF';
 
@@ -107,12 +107,22 @@ export function PDFPreview({ url, fileName }: PDFPreviewProps) {
           </div>
           
           <div className="relative w-full" style={{ height: '600px' }}>
-            <embed
-              src={url}
+            <object
+              data={url}
               type="application/pdf"
               className="w-full h-full border-0"
-              title={displayName}
-            />
+              aria-label={displayName}
+            >
+              <iframe
+                src={`${url}#toolbar=0&navpanes=0&scrollbar=1`}
+                className="w-full h-full border-0"
+                title={displayName}
+              />
+              <div className="p-4 text-sm text-muted-foreground">
+                Impossible d'afficher le PDF dans votre navigateur. 
+                <a href={url} target="_blank" rel="noopener noreferrer" className="underline">Ouvrir dans un nouvel onglet</a>.
+              </div>
+            </object>
           </div>
         </div>
       )}
