@@ -2,12 +2,10 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { PenSquare, Image, Link as LinkIcon, X, FileText } from 'lucide-react';
+import { Image, X, FileText } from 'lucide-react';
 
 // Helper function to create thumbnail
 const createThumbnail = async (file: File, maxWidth = 800): Promise<File> => {
@@ -35,25 +33,25 @@ const createThumbnail = async (file: File, maxWidth = 800): Promise<File> => {
     img.src = URL.createObjectURL(file);
   });
 };
+
 interface CreatePostDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
+
 export function CreatePostDialog({
   open: controlledOpen,
   onOpenChange
 }: CreatePostDialogProps = {}) {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = onOpenChange || setInternalOpen;
   const [content, setContent] = useState('');
-  const [embedUrl, setEmbedUrl] = useState('');
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setMediaFiles(Array.from(e.target.files));
@@ -74,6 +72,7 @@ export function CreatePostDialog({
   const removeFile = (index: number) => {
     setMediaFiles(files => files.filter((_, i) => i !== index));
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) {
@@ -105,64 +104,57 @@ export function CreatePostDialog({
               // If thumbnail creation fails, upload original
             }
           }
-          const {
-            error: uploadError,
-            data
-          } = await supabase.storage.from('post-media').upload(fileName, fileToUpload);
+          const { error: uploadError } = await supabase.storage.from('post-media').upload(fileName, fileToUpload);
           if (uploadError) throw uploadError;
-          const {
-            data: {
-              publicUrl
-            }
-          } = supabase.storage.from('post-media').getPublicUrl(fileName);
+          const { data: { publicUrl } } = supabase.storage.from('post-media').getPublicUrl(fileName);
           mediaUrls.push(publicUrl);
         }
       }
 
-      // Extract URL from content (excluding YouTube/Vimeo for link preview)
+      // Extract URLs from content and detect video/link
       let linkMetadata = null;
-      if (!embedUrl.trim()) {
-        const urlRegex = /(https?:\/\/[^\s]+)/gi;
-        const matches = content.match(urlRegex);
-        if (matches) {
-          const nonVideoUrl = matches.find(url => {
-            const lower = url.toLowerCase();
-            return !lower.includes('youtube.com') && 
-                   !lower.includes('youtu.be') && 
-                   !lower.includes('vimeo.com');
-          });
+      let embedUrl = '';
+      const urlRegex = /(https?:\/\/[^\s]+)/gi;
+      const matches = content.match(urlRegex);
+      
+      if (matches && matches.length > 0) {
+        const firstUrl = matches[0];
+        const lower = firstUrl.toLowerCase();
+        
+        // Check if it's a video URL (YouTube/Vimeo)
+        if (lower.includes('youtube.com') || lower.includes('youtu.be') || lower.includes('vimeo.com')) {
+          embedUrl = firstUrl;
+        } else {
+          // It's a regular link, fetch preview
+          console.log('[CreatePost] Fetching link preview for:', firstUrl);
+          try {
+            const { data: previewData, error: previewError } = await supabase.functions.invoke('url-preview', {
+              method: 'POST',
+              body: { url: firstUrl },
+            });
 
-          if (nonVideoUrl) {
-            console.log('[CreatePost] Fetching link preview for:', nonVideoUrl);
-            try {
-              const { data: previewData, error: previewError } = await supabase.functions.invoke('url-preview', {
-                method: 'POST',
-                body: { url: nonVideoUrl },
-              });
+            console.log('[CreatePost] Preview response:', previewData);
 
-              console.log('[CreatePost] Preview response:', previewData);
-
-              if (!previewError && previewData) {
-                if (previewData.success) {
-                  linkMetadata = {
-                    embed_url: previewData.url,
-                    link_title: previewData.title,
-                    link_description: previewData.description,
-                    link_image: previewData.image,
-                    link_site_name: previewData.siteName || previewData.domain,
-                  };
-                } else {
-                  // Fallback for failed preview
-                  linkMetadata = {
-                    embed_url: nonVideoUrl,
-                    link_site_name: previewData.domain || new URL(nonVideoUrl).hostname,
-                  };
-                }
+            if (!previewError && previewData) {
+              if (previewData.success) {
+                linkMetadata = {
+                  embed_url: previewData.url,
+                  link_title: previewData.title,
+                  link_description: previewData.description,
+                  link_image: previewData.image,
+                  link_site_name: previewData.siteName || previewData.domain,
+                };
+              } else {
+                // Fallback for failed preview
+                linkMetadata = {
+                  embed_url: firstUrl,
+                  link_site_name: previewData.domain || new URL(firstUrl).hostname,
+                };
               }
-            } catch (err) {
-              console.error('[CreatePost] Error fetching link preview:', err);
-              // Continue without preview on error
             }
+          } catch (err) {
+            console.error('[CreatePost] Error fetching link preview:', err);
+            // Continue without preview on error
           }
         }
       }
@@ -188,23 +180,21 @@ export function CreatePostDialog({
         }
       }
 
-      const {
-        error
-      } = await supabase.from('user_posts').insert({
+      const { error } = await supabase.from('user_posts').insert({
         user_id: user.id,
         content: content.trim(),
         media_urls: mediaUrls.length > 0 ? mediaUrls : null,
-        embed_url: embedUrl.trim() || linkMetadata?.embed_url || null,
+        embed_url: embedUrl || linkMetadata?.embed_url || null,
         link_title: linkMetadata?.link_title || null,
         link_description: linkMetadata?.link_description || null,
         link_image: linkMetadata?.link_image || null,
         link_site_name: linkMetadata?.link_site_name || null,
         pdf_url: pdfUrl,
       });
+      
       if (error) throw error;
       toast.success('Post publié avec succès');
       setContent('');
-      setEmbedUrl('');
       setMediaFiles([]);
       setPdfFile(null);
       setOpen(false);
@@ -215,53 +205,86 @@ export function CreatePostDialog({
       setLoading(false);
     }
   };
-  return <Dialog open={open} onOpenChange={setOpen}>
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        
+        {/* Trigger is in CreatePostInput */}
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Créer un post</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Textarea placeholder="Partagez vos idées, actualités ou réflexions..." value={content} onChange={e => setContent(e.target.value)} rows={6} className="resize-none" />
-          
           <div className="space-y-2">
-            <Label htmlFor="media" className="flex items-center gap-2">
-              <Image className="h-4 w-4" />
-              Photos ou vidéos
-            </Label>
-            <Input id="media" type="file" accept="image/*,video/*" multiple onChange={handleFileChange} disabled={loading} />
-            {mediaFiles.length > 0 && <div className="flex flex-wrap gap-2 mt-2">
-                {mediaFiles.map((file, index) => <div key={index} className="relative bg-muted rounded px-3 py-1 text-sm flex items-center gap-2">
+            <Textarea 
+              placeholder="Partagez vos idées, actualités ou réflexions..." 
+              value={content} 
+              onChange={e => setContent(e.target.value)} 
+              rows={6} 
+              className="resize-none" 
+            />
+            
+            <div className="flex items-center gap-2 pt-2 border-t">
+              <input 
+                id="media" 
+                type="file" 
+                accept="image/*,video/*" 
+                multiple 
+                onChange={handleFileChange} 
+                disabled={loading}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => document.getElementById('media')?.click()}
+                disabled={loading}
+                className="gap-2"
+              >
+                <Image className="h-4 w-4" />
+                Photos/Vidéos
+              </Button>
+              
+              <input 
+                id="pdf" 
+                type="file" 
+                accept=".pdf,application/pdf" 
+                onChange={handlePdfChange} 
+                disabled={loading}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => document.getElementById('pdf')?.click()}
+                disabled={loading}
+                className="gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                PDF
+              </Button>
+            </div>
+
+            {mediaFiles.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {mediaFiles.map((file, index) => (
+                  <div key={index} className="relative bg-muted rounded px-3 py-1 text-sm flex items-center gap-2">
                     {file.name}
-                    <button type="button" onClick={() => removeFile(index)} className="text-destructive hover:text-destructive/80">
+                    <button 
+                      type="button" 
+                      onClick={() => removeFile(index)} 
+                      className="text-destructive hover:text-destructive/80"
+                    >
                       <X className="h-3 w-3" />
                     </button>
-                  </div>)}
-              </div>}
-          </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
-          <div className="space-y-2">
-            <Label htmlFor="embed" className="flex items-center gap-2">
-              <LinkIcon className="h-4 w-4" />
-              Lien embed (YouTube, Vimeo, etc.)
-            </Label>
-            <Input id="embed" type="url" placeholder="https://www.youtube.com/watch?v=..." value={embedUrl} onChange={e => setEmbedUrl(e.target.value)} disabled={loading} />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="pdf" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Document PDF
-            </Label>
-            <Input 
-              id="pdf" 
-              type="file" 
-              accept=".pdf,application/pdf" 
-              onChange={handlePdfChange} 
-              disabled={loading} 
-            />
             {pdfFile && (
               <div className="flex items-center gap-2 mt-2 bg-muted rounded px-3 py-2 text-sm">
                 <FileText className="h-4 w-4 text-red-600" />
@@ -287,5 +310,6 @@ export function CreatePostDialog({
           </div>
         </form>
       </DialogContent>
-    </Dialog>;
+    </Dialog>
+  );
 }
