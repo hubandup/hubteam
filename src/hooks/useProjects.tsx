@@ -14,6 +14,11 @@ interface Project {
   archived: boolean;
   created_at: string;
   updated_at: string;
+  date_brief: string | null;
+  date_prise_en_main: string | null;
+  date_concertation_agences: string | null;
+  date_montage_reco: string | null;
+  date_restitution: string | null;
   project_clients?: Array<{
     clients: {
       company: string;

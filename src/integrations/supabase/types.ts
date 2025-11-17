@@ -939,6 +939,38 @@ export type Database = {
           },
         ]
       }
+      project_step_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          notification_sent_at: string
+          project_id: string
+          step_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notification_sent_at?: string
+          project_id: string
+          step_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notification_sent_at?: string
+          project_id?: string
+          step_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_step_notifications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_team_members: {
         Row: {
           created_at: string
@@ -976,6 +1008,11 @@ export type Database = {
           archived: boolean
           created_at: string
           created_by: string | null
+          date_brief: string | null
+          date_concertation_agences: string | null
+          date_montage_reco: string | null
+          date_prise_en_main: string | null
+          date_restitution: string | null
           description: string | null
           end_date: string | null
           id: string
@@ -991,6 +1028,11 @@ export type Database = {
           archived?: boolean
           created_at?: string
           created_by?: string | null
+          date_brief?: string | null
+          date_concertation_agences?: string | null
+          date_montage_reco?: string | null
+          date_prise_en_main?: string | null
+          date_restitution?: string | null
           description?: string | null
           end_date?: string | null
           id?: string
@@ -1006,6 +1048,11 @@ export type Database = {
           archived?: boolean
           created_at?: string
           created_by?: string | null
+          date_brief?: string | null
+          date_concertation_agences?: string | null
+          date_montage_reco?: string | null
+          date_prise_en_main?: string | null
+          date_restitution?: string | null
           description?: string | null
           end_date?: string | null
           id?: string

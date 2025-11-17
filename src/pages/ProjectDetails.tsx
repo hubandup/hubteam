@@ -36,6 +36,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ArrowLeft } from 'lucide-react';
+import { RecoTimeline } from '@/components/project-details/RecoTimeline';
 
 export default function ProjectDetails() {
   const { id } = useParams<{ id: string }>();
@@ -286,30 +287,45 @@ export default function ProjectDetails() {
         </div>
       </div>
 
-      {/* Progress Bar */}
-      <Card className="border-0 bg-gradient-to-r from-primary/5 to-primary/10">
-        <CardContent className="pt-6">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-base font-semibold text-foreground">Progression du projet</span>
-              <div className="flex items-center gap-2">
-                <span className="text-3xl font-bold text-primary">
-                  {projectProgress.percentage}%
+      {/* Progress Display - Conditional based on project status */}
+      {project.status === 'Reco en Cours' ? (
+        <RecoTimeline
+          projectId={project.id}
+          dates={{
+            date_brief: project.date_brief,
+            date_prise_en_main: project.date_prise_en_main,
+            date_concertation_agences: project.date_concertation_agences,
+            date_montage_reco: project.date_montage_reco,
+            date_restitution: project.date_restitution,
+          }}
+          canEdit={isAdmin}
+          onDatesUpdate={fetchProjectDetails}
+        />
+      ) : (
+        <Card className="border-0 bg-gradient-to-r from-primary/5 to-primary/10">
+          <CardContent className="pt-6">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-base font-semibold text-foreground">Progression du projet</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl font-bold text-primary">
+                    {projectProgress.percentage}%
+                  </span>
+                </div>
+              </div>
+              <Progress value={projectProgress.percentage} className="h-4" />
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>
+                  {projectProgress.completed} tâche{projectProgress.completed !== 1 ? 's' : ''} terminée{projectProgress.completed !== 1 ? 's' : ''}
+                </span>
+                <span>
+                  {projectProgress.total} tâche{projectProgress.total !== 1 ? 's' : ''} au total
                 </span>
               </div>
             </div>
-            <Progress value={projectProgress.percentage} className="h-4" />
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>
-                {projectProgress.completed} tâche{projectProgress.completed !== 1 ? 's' : ''} terminée{projectProgress.completed !== 1 ? 's' : ''}
-              </span>
-              <span>
-                {projectProgress.total} tâche{projectProgress.total !== 1 ? 's' : ''} au total
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Tabs */}
       <ResponsiveTabs
