@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { LinkPreview } from './LinkPreview';
+import { PDFPreview } from './PDFPreview';
 import { PostComments } from './PostComments';
 import { PostReactions } from './PostReactions';
 
@@ -24,6 +25,7 @@ interface UserPost {
   link_description?: string | null;
   link_image?: string | null;
   link_site_name?: string | null;
+  pdf_url?: string | null;
   profiles?: {
     first_name: string;
     last_name: string;
@@ -219,6 +221,14 @@ export function UserPostItem({ post }: UserPostItemProps) {
               description={hasLinkMetadata ? post.link_description : undefined}
               image={hasLinkMetadata ? post.link_image : undefined}
               siteName={hasLinkMetadata ? post.link_site_name : undefined}
+            />
+          )}
+
+          {/* PDF Preview */}
+          {post.pdf_url && (
+            <PDFPreview 
+              url={post.pdf_url}
+              fileName={`Document_${post.id.substring(0, 8)}.pdf`}
             />
           )}
 
