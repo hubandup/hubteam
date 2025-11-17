@@ -232,9 +232,9 @@ export function PostComments({ postId }: PostCommentsProps) {
     return (
       <div
         key={comment.id}
-        className={`flex gap-3 ${isReply ? 'ml-12 mt-2' : 'mt-3'}`}
+        className={`flex gap-3 ${isReply ? 'ml-12 mt-3' : 'mt-4'}`}
       >
-        <Avatar className="h-8 w-8 flex-shrink-0">
+        <Avatar className="h-10 w-10 flex-shrink-0">
           <AvatarImage src={comment.user?.avatar_url || undefined} />
           <AvatarFallback>
             {comment.user?.first_name?.[0]}
@@ -242,10 +242,10 @@ export function PostComments({ postId }: PostCommentsProps) {
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <div className="bg-muted rounded-lg p-3">
+          <div className="bg-muted/50 rounded-2xl p-3">
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">
+                <span className="text-sm font-semibold">
                   {comment.user?.first_name} {comment.user?.last_name}
                 </span>
                 <span className="text-xs text-muted-foreground">
@@ -315,12 +315,12 @@ export function PostComments({ postId }: PostCommentsProps) {
               <p className="text-sm whitespace-pre-wrap">{renderContent(comment.content)}</p>
             )}
           </div>
-          <div className="flex items-center gap-4 mt-1 ml-1">
+          <div className="flex items-center gap-4 mt-2 ml-1">
             {!isEditing && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-auto p-0 text-xs text-muted-foreground hover:text-primary"
+                className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground font-medium"
                 onClick={() => setReplyTo(comment.id)}
               >
                 <Reply className="h-3 w-3 mr-1" />
@@ -342,17 +342,17 @@ export function PostComments({ postId }: PostCommentsProps) {
   return (
     <div className="mt-3 space-y-3">
       {/* Comment input - always visible */}
-      <div className="flex gap-3">
-        <Avatar className="h-8 w-8 flex-shrink-0">
+      <div className="flex gap-3 items-start">
+        <Avatar className="h-10 w-10 flex-shrink-0">
           <AvatarImage src={currentUserProfile?.avatar_url || undefined} />
           <AvatarFallback>
             {currentUserProfile?.first_name?.[0]}
             {currentUserProfile?.last_name?.[0]}
           </AvatarFallback>
         </Avatar>
-        <div className="flex-1 space-y-2">
+        <div className="flex-1">
           {replyTo && (
-            <div className="text-xs text-muted-foreground flex items-center gap-2">
+            <div className="text-xs text-muted-foreground flex items-center gap-2 mb-2">
               <Reply className="h-3 w-3" />
               Réponse en cours...
               <Button
@@ -365,20 +365,20 @@ export function PostComments({ postId }: PostCommentsProps) {
               </Button>
             </div>
           )}
-          <RichMentionInput
-            value={newComment}
-            onChange={setNewComment}
-            placeholder="Écrivez un commentaire..."
-            className="min-h-[60px]"
-          />
-          <div className="flex justify-end">
+          <div className="relative">
+            <RichMentionInput
+              value={newComment}
+              onChange={setNewComment}
+              placeholder="Écrivez un commentaire..."
+              className="min-h-[60px] pr-12"
+            />
             <Button
-              size="sm"
+              size="icon"
               onClick={handleSubmit}
               disabled={!newComment.trim() || loading}
+              className="absolute right-2 bottom-2 h-8 w-8"
             >
-              <Send className="h-4 w-4 mr-2" />
-              Publier
+              <Send className="h-4 w-4" />
             </Button>
           </div>
         </div>
