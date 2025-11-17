@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface LinkPreviewProps {
   url: string;
@@ -22,16 +23,30 @@ export function LinkPreview({ url }: LinkPreviewProps) {
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const MAX_RETRIES = 2;
 
   useEffect(() => {
-    const fetchPreview = async () => {
+    const fetchPreview = async (attemptNumber: number = 0) => {
       try {
-        console.log('[LinkPreview] Fetching preview for:', url);
+        setLoading(true);
+        setError(false);
+        
+        if (attemptNumber > 0) {
+          setIsRetrying(true);
+          console.log(`[LinkPreview] Retry attempt ${attemptNumber}/${MAX_RETRIES} for:`, url);
+          // Wait before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attemptNumber - 1), 3000)));
+        } else {
+          console.log('[LinkPreview] Fetching preview for:', url);
+        }
+
         const { data, error } = await supabase.functions.invoke('url-preview', {
           body: { url },
         });
 
-        console.log('[LinkPreview] Response:', { data, error });
+        console.log('[LinkPreview] Response:', { data, error, attempt: attemptNumber });
 
         if (error) {
           console.error('[LinkPreview] Edge function error:', error);
@@ -53,13 +68,22 @@ export function LinkPreview({ url }: LinkPreviewProps) {
           if (data.success === false) {
             setError(true);
           }
+          setIsRetrying(false);
         } else {
           console.log('[LinkPreview] No data received');
-          setError(true);
+          throw new Error('No data received');
         }
       } catch (err) {
         console.error('[LinkPreview] Error fetching link preview:', err);
-        setError(true);
+        
+        // Retry if we haven't exceeded max attempts
+        if (attemptNumber < MAX_RETRIES) {
+          setRetryCount(attemptNumber + 1);
+          fetchPreview(attemptNumber + 1);
+        } else {
+          setError(true);
+          setIsRetrying(false);
+        }
       } finally {
         setLoading(false);
       }
@@ -68,11 +92,23 @@ export function LinkPreview({ url }: LinkPreviewProps) {
     fetchPreview();
   }, [url]);
 
-  if (loading) {
+  // Enhanced skeleton loader
+  if (loading || isRetrying) {
     return (
-      <Card className="mt-3 p-4 animate-pulse">
-        <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-        <div className="h-3 bg-muted rounded w-full"></div>
+      <Card className="mt-3 overflow-hidden animate-fade-in">
+        <div className="w-full h-48 bg-muted animate-pulse" />
+        <div className="p-4 space-y-3">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+          <Skeleton className="h-3 w-32" />
+          {isRetrying && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
+              <RefreshCw className="h-3 w-3 animate-spin" />
+              <span>Nouvelle tentative... ({retryCount}/{MAX_RETRIES})</span>
+            </div>
+          )}
+        </div>
       </Card>
     );
   }
