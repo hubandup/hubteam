@@ -132,7 +132,7 @@ export function PostStats({ postId, onCommentClick }: PostStatsProps) {
   };
 
   return (
-    <div className="flex items-center gap-4 mt-3 py-2 border-y">
+    <div className="flex items-center gap-4 mt-3 py-2 border-t">
       <Button
         variant="ghost"
         size="sm"
