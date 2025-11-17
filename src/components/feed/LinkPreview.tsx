@@ -42,7 +42,9 @@ export function LinkPreview({ url }: LinkPreviewProps) {
           console.log('[LinkPreview] Fetching preview for:', url);
         }
 
+        // Use POST method explicitly for better compatibility
         const { data, error } = await supabase.functions.invoke('url-preview', {
+          method: 'POST',
           body: { url },
         });
 
