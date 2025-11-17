@@ -46,6 +46,11 @@ name = "send-pending-badge-notifications"
 schedule = "*/15 * * * *"  # Every 15 minutes
 function = "send-pending-badge-notifications"
 
+[[edge_runtime.cron.jobs]]
+name = "check-reco-project-deadlines"
+schedule = "0 * * * *"  # Every hour
+function = "check-reco-project-deadlines"
+
 [functions.sync-facturation-pro-clients]
 verify_jwt = false
 
@@ -60,4 +65,7 @@ verify_jwt = false
 
 # Make kdrive-api public so it can proxy binary files for <img>/<iframe> without auth headers
 [functions.kdrive-api]
+verify_jwt = false
+
+[functions.check-reco-project-deadlines]
 verify_jwt = false
