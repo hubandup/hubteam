@@ -138,6 +138,11 @@ export function PostComments({ postId }: PostCommentsProps) {
 
       setNewComment('');
       setReplyTo(null);
+      
+      // Refresh comments and show them
+      await fetchComments();
+      setShowComments(true);
+      
       toast.success('Commentaire publié');
     } catch (error) {
       console.error('Error posting comment:', error);
@@ -160,6 +165,10 @@ export function PostComments({ postId }: PostCommentsProps) {
 
       setEditingId(null);
       setEditContent('');
+      
+      // Refresh comments
+      await fetchComments();
+      
       toast.success('Commentaire modifié');
     } catch (error) {
       console.error('Error editing comment:', error);
@@ -177,6 +186,9 @@ export function PostComments({ postId }: PostCommentsProps) {
         .eq('id', commentId);
 
       if (error) throw error;
+
+      // Refresh comments
+      await fetchComments();
 
       toast.success('Commentaire supprimé');
     } catch (error) {
