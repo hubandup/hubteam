@@ -6,6 +6,15 @@ export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined);
 
   React.useEffect(() => {
+    // Check if running as native app via Capacitor
+    const isNative = typeof (window as any).Capacitor !== 'undefined';
+    
+    if (isNative) {
+      setIsMobile(true);
+      return;
+    }
+
+    // Otherwise check screen size
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
     const onChange = () => {
       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
@@ -16,4 +25,8 @@ export function useIsMobile() {
   }, []);
 
   return !!isMobile;
+}
+
+export function useIsNative() {
+  return typeof (window as any).Capacitor !== 'undefined';
 }

@@ -1,0 +1,15 @@
+# Capacitor
+ios/
+android/
+dist/
+
+# Node modules
+node_modules/
+
+# Build outputs
+*.log
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
