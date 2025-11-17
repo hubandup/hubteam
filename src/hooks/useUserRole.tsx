@@ -17,16 +17,29 @@ export function useUserRole() {
     }
 
     const fetchRole = async () => {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      try {
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-      if (!error && data) {
-        setRole(data.role as UserRole);
+        if (error) {
+          console.error('[useUserRole] Error fetching role:', error);
+          setRole(null);
+        } else if (data?.role) {
+          console.log('[useUserRole] Role fetched successfully:', data.role);
+          setRole(data.role as UserRole);
+        } else {
+          console.warn('[useUserRole] No role found for user:', user.id);
+          setRole(null);
+        }
+      } catch (err) {
+        console.error('[useUserRole] Unexpected error:', err);
+        setRole(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchRole();
