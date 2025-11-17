@@ -288,7 +288,7 @@ export default function ProjectDetails() {
       </div>
 
       {/* Progress Display - Conditional based on project status */}
-      {project.status === 'Reco en Cours' ? (
+      {project.status === 'reco_in_progress' ? (
         <RecoTimeline
           projectId={project.id}
           dates={{
