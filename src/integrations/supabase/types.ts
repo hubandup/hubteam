@@ -1499,6 +1499,7 @@ export type Database = {
           link_site_name: string | null
           link_title: string | null
           media_urls: string[] | null
+          pdf_url: string | null
           updated_at: string
           user_id: string
         }
@@ -1512,6 +1513,7 @@ export type Database = {
           link_site_name?: string | null
           link_title?: string | null
           media_urls?: string[] | null
+          pdf_url?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1525,6 +1527,7 @@ export type Database = {
           link_site_name?: string | null
           link_title?: string | null
           media_urls?: string[] | null
+          pdf_url?: string | null
           updated_at?: string
           user_id?: string
         }

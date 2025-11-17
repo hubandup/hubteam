@@ -37,6 +37,7 @@ interface UserPost {
   link_description?: string | null;
   link_image?: string | null;
   link_site_name?: string | null;
+  pdf_url?: string | null;
   profiles?: {
     first_name: string;
     last_name: string;

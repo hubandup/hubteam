@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { PenSquare, Image, Link as LinkIcon, X } from 'lucide-react';
+import { PenSquare, Image, Link as LinkIcon, X, FileText } from 'lucide-react';
 
 // Helper function to create thumbnail
 const createThumbnail = async (file: File, maxWidth = 800): Promise<File> => {
@@ -52,12 +52,25 @@ export function CreatePostDialog({
   const [content, setContent] = useState('');
   const [embedUrl, setEmbedUrl] = useState('');
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setMediaFiles(Array.from(e.target.files));
     }
   };
+  
+  const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.type === 'application/pdf') {
+        setPdfFile(file);
+      } else {
+        toast.error('Veuillez sélectionner un fichier PDF');
+      }
+    }
+  };
+  
   const removeFile = (index: number) => {
     setMediaFiles(files => files.filter((_, i) => i !== index));
   };
@@ -154,6 +167,27 @@ export function CreatePostDialog({
         }
       }
 
+      // Upload PDF if present
+      let pdfUrl = null;
+      if (pdfFile) {
+        const fileExt = pdfFile.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('feed-pdfs')
+          .upload(fileName, pdfFile);
+          
+        if (uploadError) {
+          console.error('Error uploading PDF:', uploadError);
+          toast.error('Erreur lors de l\'upload du PDF');
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('feed-pdfs')
+            .getPublicUrl(fileName);
+          pdfUrl = publicUrl;
+        }
+      }
+
       const {
         error
       } = await supabase.from('user_posts').insert({
@@ -165,12 +199,14 @@ export function CreatePostDialog({
         link_description: linkMetadata?.link_description || null,
         link_image: linkMetadata?.link_image || null,
         link_site_name: linkMetadata?.link_site_name || null,
+        pdf_url: pdfUrl,
       });
       if (error) throw error;
       toast.success('Post publié avec succès');
       setContent('');
       setEmbedUrl('');
       setMediaFiles([]);
+      setPdfFile(null);
       setOpen(false);
     } catch (error) {
       console.error('Error creating post:', error);
@@ -212,6 +248,33 @@ export function CreatePostDialog({
               Lien embed (YouTube, Vimeo, etc.)
             </Label>
             <Input id="embed" type="url" placeholder="https://www.youtube.com/watch?v=..." value={embedUrl} onChange={e => setEmbedUrl(e.target.value)} disabled={loading} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="pdf" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Document PDF
+            </Label>
+            <Input 
+              id="pdf" 
+              type="file" 
+              accept=".pdf,application/pdf" 
+              onChange={handlePdfChange} 
+              disabled={loading} 
+            />
+            {pdfFile && (
+              <div className="flex items-center gap-2 mt-2 bg-muted rounded px-3 py-2 text-sm">
+                <FileText className="h-4 w-4 text-red-600" />
+                <span className="flex-1">{pdfFile.name}</span>
+                <button 
+                  type="button" 
+                  onClick={() => setPdfFile(null)}
+                  className="text-destructive hover:text-destructive/80"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-2">
