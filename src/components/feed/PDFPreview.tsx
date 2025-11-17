@@ -107,8 +107,9 @@ export function PDFPreview({ url, fileName }: PDFPreviewProps) {
           </div>
           
           <div className="relative w-full" style={{ height: '600px' }}>
-            <iframe
-              src={`${url}#toolbar=0&navpanes=0&scrollbar=1`}
+            <embed
+              src={url}
+              type="application/pdf"
               className="w-full h-full border-0"
               title={displayName}
             />
