@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Loader2, Calendar, User, Check, RotateCcw } from 'lucide-react';
 import { AddTaskDialog } from './AddTaskDialog';
 import { EditTaskDialog } from './EditTaskDialog';
@@ -40,10 +41,11 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [sortBy, setSortBy] = useState<'start_date' | 'end_date'>('end_date');
 
   useEffect(() => {
     fetchTasks();
-  }, [projectId]);
+  }, [projectId, sortBy]);
 
   const fetchTasks = async () => {
     try {
@@ -51,7 +53,7 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
         .from('tasks')
         .select('*')
         .eq('project_id', projectId)
-        .order('created_at', { ascending: false });
+        .order(sortBy, { ascending: true, nullsFirst: false });
 
       if (error) throw error;
 
@@ -138,14 +140,25 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Tâches du projet</CardTitle>
-          {!isMobile && (
-            <ProtectedAction module="tasks" action="create">
-              <Button onClick={() => setShowAddDialog(true)} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Ajouter une tâche
-              </Button>
-            </ProtectedAction>
-          )}
+          <div className="flex items-center gap-2">
+            <Select value={sortBy} onValueChange={(value: 'start_date' | 'end_date') => setSortBy(value)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Trier par..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="start_date">Date de début</SelectItem>
+                <SelectItem value="end_date">Date de fin</SelectItem>
+              </SelectContent>
+            </Select>
+            {!isMobile && (
+              <ProtectedAction module="tasks" action="create">
+                <Button onClick={() => setShowAddDialog(true)} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Ajouter une tâche
+                </Button>
+              </ProtectedAction>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
