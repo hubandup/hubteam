@@ -4,7 +4,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { RichMentionInput } from '@/components/common/RichMentionInput';
-import { Card } from '@/components/ui/card';
 import { MessageCircle, Send, Trash2, Edit2, Reply, MoreVertical } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { formatDistanceToNow } from 'date-fns';
@@ -340,7 +339,7 @@ export function PostComments({ postId }: PostCommentsProps) {
   const commentCount = comments.length;
 
   return (
-    <div className="mt-3 space-y-3">
+    <div className="space-y-3">
       {/* Comment input - always visible */}
       <div className="flex gap-3 items-start">
         <Avatar className="h-10 w-10 flex-shrink-0">
@@ -397,13 +396,13 @@ export function PostComments({ postId }: PostCommentsProps) {
         </Button>
       )}
 
-      {/* Comments list */}
+      {/* Comments list - no Card wrapper */}
       {showComments && commentCount > 0 && (
-        <Card className="p-4">
+        <div className="space-y-1">
           {comments
             .filter((c) => !c.parent_id)
             .map((comment) => renderComment(comment))}
-        </Card>
+        </div>
       )}
     </div>
   );

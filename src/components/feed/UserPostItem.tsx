@@ -13,6 +13,7 @@ import { LinkPreview } from './LinkPreview';
 import { PDFPreview } from './PDFPreview';
 import { PostComments } from './PostComments';
 import { PostReactions } from './PostReactions';
+import { PostStats } from './PostStats';
 
 interface UserPost {
   id: string;
@@ -264,6 +265,9 @@ export function UserPostItem({ post }: UserPostItemProps) {
               })}
             </div>
           )}
+
+          {/* Stats bar */}
+          <PostStats postId={post.id} />
 
           {/* Reactions section */}
           <PostReactions postId={post.id} />
