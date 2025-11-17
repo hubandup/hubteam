@@ -36,6 +36,15 @@ export function PostComments({ postId }: PostCommentsProps) {
   const [editContent, setEditContent] = useState('');
   const [showComments, setShowComments] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [currentUserProfile, setCurrentUserProfile] = useState<{
+    first_name: string;
+    last_name: string;
+    avatar_url: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    fetchCurrentUserProfile();
+  }, [user]);
 
   useEffect(() => {
     if (showComments) {
@@ -66,6 +75,23 @@ export function PostComments({ postId }: PostCommentsProps) {
       supabase.removeChannel(channel);
     };
   }, [postId, showComments]);
+
+  const fetchCurrentUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, avatar_url')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      setCurrentUserProfile(data);
+    } catch (error) {
+      console.error('Error fetching current user profile:', error);
+    }
+  };
 
   const fetchComments = async () => {
     try {
@@ -301,10 +327,10 @@ export function PostComments({ postId }: PostCommentsProps) {
       {/* Comment input - always visible */}
       <div className="flex gap-3">
         <Avatar className="h-8 w-8 flex-shrink-0">
-          <AvatarImage src={user?.user_metadata?.avatar_url} />
+          <AvatarImage src={currentUserProfile?.avatar_url || undefined} />
           <AvatarFallback>
-            {user?.user_metadata?.first_name?.[0]}
-            {user?.user_metadata?.last_name?.[0]}
+            {currentUserProfile?.first_name?.[0]}
+            {currentUserProfile?.last_name?.[0]}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 space-y-2">
