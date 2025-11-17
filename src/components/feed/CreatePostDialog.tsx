@@ -2,16 +2,30 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { PenSquare } from 'lucide-react';
+import { PenSquare, Image, Link as LinkIcon, X } from 'lucide-react';
 
 export function CreatePostDialog() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [content, setContent] = useState('');
+  const [embedUrl, setEmbedUrl] = useState('');
+  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setMediaFiles(Array.from(e.target.files));
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setMediaFiles(files => files.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,17 +43,43 @@ export function CreatePostDialog() {
     setLoading(true);
 
     try {
+      let mediaUrls: string[] = [];
+
+      // Upload media files if any
+      if (mediaFiles.length > 0) {
+        for (const file of mediaFiles) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${user.id}/${Math.random()}.${fileExt}`;
+          
+          const { error: uploadError, data } = await supabase.storage
+            .from('post-media')
+            .upload(fileName, file);
+
+          if (uploadError) throw uploadError;
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('post-media')
+            .getPublicUrl(fileName);
+
+          mediaUrls.push(publicUrl);
+        }
+      }
+
       const { error } = await supabase
         .from('user_posts')
         .insert({
           user_id: user.id,
           content: content.trim(),
+          media_urls: mediaUrls.length > 0 ? mediaUrls : null,
+          embed_url: embedUrl.trim() || null,
         });
 
       if (error) throw error;
 
       toast.success('Post publié avec succès');
       setContent('');
+      setEmbedUrl('');
+      setMediaFiles([]);
       setOpen(false);
     } catch (error) {
       console.error('Error creating post:', error);
@@ -57,7 +97,7 @@ export function CreatePostDialog() {
           Créer un post
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Créer un post</DialogTitle>
         </DialogHeader>
@@ -69,6 +109,53 @@ export function CreatePostDialog() {
             rows={6}
             className="resize-none"
           />
+          
+          <div className="space-y-2">
+            <Label htmlFor="media" className="flex items-center gap-2">
+              <Image className="h-4 w-4" />
+              Photos ou vidéos
+            </Label>
+            <Input
+              id="media"
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              onChange={handleFileChange}
+              disabled={loading}
+            />
+            {mediaFiles.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {mediaFiles.map((file, index) => (
+                  <div key={index} className="relative bg-muted rounded px-3 py-1 text-sm flex items-center gap-2">
+                    {file.name}
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index)}
+                      className="text-destructive hover:text-destructive/80"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="embed" className="flex items-center gap-2">
+              <LinkIcon className="h-4 w-4" />
+              Lien embed (YouTube, Vimeo, etc.)
+            </Label>
+            <Input
+              id="embed"
+              type="url"
+              placeholder="https://www.youtube.com/watch?v=..."
+              value={embedUrl}
+              onChange={(e) => setEmbedUrl(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+
           <div className="flex justify-end gap-2">
             <Button
               type="button"
