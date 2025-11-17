@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { RichMentionInput } from '@/components/common/RichMentionInput';
 import { Card } from '@/components/ui/card';
 import { MessageCircle, Send, Trash2, Edit2, Reply } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -162,6 +162,34 @@ export function PostComments({ postId }: PostCommentsProps) {
     const isOwner = user?.id === comment.user_id;
     const isEditing = editingId === comment.id;
 
+    // Function to render content with mentions highlighted
+    const renderContent = (content: string) => {
+      const mentionRegex = /@\[([^\]]+)\]\(([a-f0-9-]+)\)/g;
+      const parts = [];
+      let lastIndex = 0;
+      let match;
+
+      while ((match = mentionRegex.exec(content)) !== null) {
+        // Add text before mention
+        if (match.index > lastIndex) {
+          parts.push(content.substring(lastIndex, match.index));
+        }
+        // Add mention with styling
+        parts.push(
+          <span key={match.index} className="text-primary font-medium">
+            @{match[1]}
+          </span>
+        );
+        lastIndex = match.index + match[0].length;
+      }
+      // Add remaining text
+      if (lastIndex < content.length) {
+        parts.push(content.substring(lastIndex));
+      }
+
+      return parts.length > 0 ? parts : content;
+    };
+
     return (
       <div
         key={comment.id}
@@ -189,9 +217,10 @@ export function PostComments({ postId }: PostCommentsProps) {
             </div>
             {isEditing ? (
               <div className="space-y-2">
-                <Textarea
+                <RichMentionInput
                   value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
+                  onChange={setEditContent}
+                  placeholder="Modifier votre commentaire..."
                   className="min-h-[60px]"
                 />
                 <div className="flex gap-2">
@@ -215,7 +244,7 @@ export function PostComments({ postId }: PostCommentsProps) {
                 </div>
               </div>
             ) : (
-              <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+              <p className="text-sm whitespace-pre-wrap">{renderContent(comment.content)}</p>
             )}
           </div>
           <div className="flex items-center gap-4 mt-1 ml-1">
@@ -305,17 +334,11 @@ export function PostComments({ postId }: PostCommentsProps) {
                   </Button>
                 </div>
               )}
-              <Textarea
-                placeholder="Écrivez un commentaire..."
+              <RichMentionInput
                 value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                className="min-h-[60px] resize-none"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmit();
-                  }
-                }}
+                onChange={setNewComment}
+                placeholder="Écrivez un commentaire..."
+                className="min-h-[60px]"
               />
               <div className="flex justify-end">
                 <Button
