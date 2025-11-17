@@ -9,6 +9,35 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { PenSquare, Image, Link as LinkIcon, X } from 'lucide-react';
 
+// Helper function to create thumbnail
+const createThumbnail = async (file: File, maxWidth = 800): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    img.onload = () => {
+      const ratio = Math.min(maxWidth / img.width, 1);
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+
+      ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const thumbFile = new File([blob], file.name, { type: file.type });
+          resolve(thumbFile);
+        } else {
+          reject(new Error('Failed to create thumbnail'));
+        }
+      }, file.type, 0.85);
+    };
+
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+};
+
 export function CreatePostDialog() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -51,9 +80,22 @@ export function CreatePostDialog() {
           const fileExt = file.name.split('.').pop();
           const fileName = `${user.id}/${Math.random()}.${fileExt}`;
           
+          // Check if it's an image to create thumbnail
+          const isImage = file.type.startsWith('image/');
+          let fileToUpload = file;
+          
+          if (isImage) {
+            try {
+              fileToUpload = await createThumbnail(file);
+            } catch (error) {
+              console.error('Error creating thumbnail:', error);
+              // If thumbnail creation fails, upload original
+            }
+          }
+          
           const { error: uploadError, data } = await supabase.storage
             .from('post-media')
-            .upload(fileName, file);
+            .upload(fileName, fileToUpload);
 
           if (uploadError) throw uploadError;
 
