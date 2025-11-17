@@ -83,7 +83,7 @@ export function PostStats({ postId, onCommentClick }: PostStatsProps) {
           .eq('post_id', postId)
           .eq('user_id', user.id)
           .eq('reaction_type', 'like')
-          .single();
+          .maybeSingle();
 
         setHasUserLiked(!!userReaction);
       }

@@ -14,7 +14,7 @@ import { PDFPreview } from './PDFPreview';
 import { PostComments } from './PostComments';
 import { PostReactions } from './PostReactions';
 import { PostStats } from './PostStats';
-import { useState } from 'react';
+import { useState, memo } from 'react';
 interface UserPost {
   id: string;
   content: string;
@@ -36,7 +36,7 @@ interface UserPost {
 interface UserPostItemProps {
   post: UserPost;
 }
-export function UserPostItem({
+export const UserPostItem = memo(function UserPostItem({
   post
 }: UserPostItemProps) {
   const {
@@ -219,4 +219,4 @@ export function UserPostItem({
         </div>
       </div>
     </Card>;
-}
+});
