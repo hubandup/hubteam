@@ -20,6 +20,10 @@ interface UserPost {
   user_id: string;
   media_urls?: string[] | null;
   embed_url?: string | null;
+  link_title?: string | null;
+  link_description?: string | null;
+  link_image?: string | null;
+  link_site_name?: string | null;
   profiles?: {
     first_name: string;
     last_name: string;
@@ -36,7 +40,7 @@ export function UserPostItem({ post }: UserPostItemProps) {
   const { user } = useAuth();
   const isOwner = user?.id === post.user_id;
 
-  // Extract URL from content (excluding YouTube/Vimeo)
+  // Extract URL from content (excluding YouTube/Vimeo) - only if no embed_url in DB
   const extractUrl = (text: string): string | null => {
     const urlRegex = /(https?:\/\/[^\s]+)/gi;
     const matches = text.match(urlRegex);
@@ -53,8 +57,17 @@ export function UserPostItem({ post }: UserPostItemProps) {
     return nonVideoUrl || null;
   };
 
-  // Only show link preview if there's no video embed
-  const linkUrl = !post.embed_url ? extractUrl(post.content) : null;
+  // Determine if we should show link preview
+  // Show if: embed_url exists BUT it's not a YouTube/Vimeo (i.e., it's a link preview URL)
+  // OR if we can extract a URL from content and there's no video embed
+  const isVideoEmbed = post.embed_url && (
+    post.embed_url.includes('youtube.com') ||
+    post.embed_url.includes('youtu.be') ||
+    post.embed_url.includes('vimeo.com')
+  );
+  
+  const linkUrl = isVideoEmbed ? null : (post.embed_url || extractUrl(post.content));
+  const hasLinkMetadata = !!(post.link_title || post.link_description || post.link_image || post.link_site_name);
 
   const handleDelete = async () => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce post ?')) {
@@ -198,8 +211,16 @@ export function UserPostItem({ post }: UserPostItemProps) {
             </div>
           )}
 
-          {/* Link Preview - Uses backend metadata fetch (no iframes) */}
-          {linkUrl && <LinkPreview url={linkUrl} />}
+          {/* Link Preview - Uses pre-fetched metadata from DB (no real-time fetch, no iframes) */}
+          {linkUrl && (
+            <LinkPreview 
+              url={linkUrl}
+              title={hasLinkMetadata ? post.link_title : undefined}
+              description={hasLinkMetadata ? post.link_description : undefined}
+              image={hasLinkMetadata ? post.link_image : undefined}
+              siteName={hasLinkMetadata ? post.link_site_name : undefined}
+            />
+          )}
 
           {/* Images/Vidéos */}
           {post.media_urls && post.media_urls.length > 0 && (

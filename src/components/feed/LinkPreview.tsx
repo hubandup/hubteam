@@ -6,6 +6,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface LinkPreviewProps {
   url: string;
+  // Pre-fetched metadata from database
+  title?: string | null;
+  description?: string | null;
+  image?: string | null;
+  siteName?: string | null;
 }
 
 interface PreviewData {
@@ -19,7 +24,7 @@ interface PreviewData {
   reason?: string;
 }
 
-export function LinkPreview({ url }: LinkPreviewProps) {
+export function LinkPreview({ url, title: propTitle, description: propDescription, image: propImage, siteName: propSiteName }: LinkPreviewProps) {
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -28,6 +33,22 @@ export function LinkPreview({ url }: LinkPreviewProps) {
   const MAX_RETRIES = 2;
 
   useEffect(() => {
+    // If we have pre-fetched metadata from DB, use it directly
+    if (propTitle || propDescription || propImage || propSiteName) {
+      console.log('[LinkPreview] Using pre-fetched metadata from DB');
+      setPreview({
+        success: true,
+        url,
+        title: propTitle || undefined,
+        description: propDescription || undefined,
+        image: propImage || undefined,
+        siteName: propSiteName || undefined,
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Otherwise, fetch from edge function (fallback for old posts)
     const fetchPreview = async (attemptNumber: number = 0) => {
       try {
         setLoading(true);
@@ -92,7 +113,7 @@ export function LinkPreview({ url }: LinkPreviewProps) {
     };
 
     fetchPreview();
-  }, [url]);
+  }, [url, propTitle, propDescription, propImage, propSiteName]);
 
   // Enhanced skeleton loader
   if (loading || isRetrying) {
