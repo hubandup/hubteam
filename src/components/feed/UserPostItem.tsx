@@ -105,32 +105,67 @@ export function UserPostItem({ post }: UserPostItemProps) {
               <AspectRatio ratio={16 / 9}>
                 <iframe
                   src={(() => {
-                    const url = post.embed_url as string;
+                    const raw = post.embed_url as string;
+                    const toYouTubeEmbed = (id: string, start?: number) =>
+                      `https://www.youtube-nocookie.com/embed/${id}${start && start > 0 ? `?start=${start}` : ''}`;
+                    const parseStart = (u: URL): number => {
+                      const t = u.searchParams.get('t') || u.searchParams.get('start');
+                      if (!t) return 0;
+                      if (/^\d+$/.test(t)) return parseInt(t, 10);
+                      const m = t.match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/);
+                      if (!m) return 0;
+                      const h = parseInt(m[1] || '0', 10);
+                      const min = parseInt(m[2] || '0', 10);
+                      const s = parseInt(m[3] || '0', 10);
+                      return h * 3600 + min * 60 + s;
+                    };
+
                     try {
-                      const u = new URL(url);
+                      const u = new URL(raw);
                       const hostname = u.hostname.replace('www.', '');
-                      
+                      const path = u.pathname;
+
+                      // Normalize protocol
+                      u.protocol = 'https:';
+
                       // YouTube patterns
-                      if (hostname === 'youtube.com' || hostname === 'm.youtube.com') {
-                        const v = u.searchParams.get('v');
-                        if (v) return `https://www.youtube.com/embed/${v}`;
+                      if (hostname.endsWith('youtube.com') || hostname === 'm.youtube.com' || hostname === 'music.youtube.com') {
+                        const start = parseStart(u);
+                        if (path.startsWith('/watch')) {
+                          const v = u.searchParams.get('v');
+                          if (v) return toYouTubeEmbed(v, start);
+                        }
+                        if (path.startsWith('/shorts/')) {
+                          const id = path.split('/')[2]?.split('?')[0];
+                          if (id) return toYouTubeEmbed(id, start);
+                        }
+                        if (path.startsWith('/live/')) {
+                          const id = path.split('/')[2]?.split('?')[0];
+                          if (id) return toYouTubeEmbed(id, start);
+                        }
+                        if (path.startsWith('/embed/')) {
+                          const id = path.split('/')[2]?.split('?')[0];
+                          if (id) return toYouTubeEmbed(id, start);
+                        }
                       }
                       if (hostname === 'youtu.be') {
-                        const id = u.pathname.slice(1).split('?')[0];
-                        if (id) return `https://www.youtube.com/embed/${id}`;
+                        const id = path.slice(1).split('?')[0];
+                        const start = parseStart(new URL(raw));
+                        if (id) return toYouTubeEmbed(id, start);
                       }
-                      
+
                       // Vimeo
                       if (hostname === 'vimeo.com') {
-                        const match = u.pathname.match(/\/(\d+)/);
+                        const match = path.match(/\/(\d+)/);
                         if (match) return `https://player.vimeo.com/video/${match[1]}`;
                       }
                     } catch (e) {
                       console.error('Error parsing embed URL:', e);
                     }
-                    return url;
+                    return raw;
                   })()}
                   title="Contenu embarqué"
+                  loading="lazy"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   referrerPolicy="strict-origin-when-cross-origin"
                   allowFullScreen
