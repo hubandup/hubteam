@@ -54,6 +54,12 @@ export function UserPostItem({ post }: UserPostItemProps) {
   };
 
   const linkUrl = !post.embed_url && extractUrl(post.content);
+  
+  // Debug: Log URL extraction
+  console.log('[UserPostItem] Post ID:', post.id);
+  console.log('[UserPostItem] Post content:', post.content);
+  console.log('[UserPostItem] Post embed_url:', post.embed_url);
+  console.log('[UserPostItem] Extracted linkUrl:', linkUrl);
 
   const handleDelete = async () => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce post ?')) {
@@ -198,7 +204,12 @@ export function UserPostItem({ post }: UserPostItemProps) {
           )}
 
           {/* Link Preview */}
-          {linkUrl && <LinkPreview url={linkUrl} />}
+          {linkUrl && (
+            <>
+              {console.log('[UserPostItem] Rendering LinkPreview for URL:', linkUrl)}
+              <LinkPreview url={linkUrl} />
+            </>
+          )}
 
           {/* Images/Vidéos */}
           {post.media_urls && post.media_urls.length > 0 && (
