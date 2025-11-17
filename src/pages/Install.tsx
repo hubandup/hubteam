@@ -51,9 +51,9 @@ export default function Install() {
                 <Bell className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold mb-1">Notifications push</h3>
+                <h3 className="font-semibold mb-1">Notifications push avec badge</h3>
                 <p className="text-sm text-muted-foreground">
-                  Recevez des alertes en temps réel pour ne rien manquer
+                  Recevez des alertes en temps réel avec le nombre de notifications non lues affiché directement sur l'icône de l'app
                 </p>
               </div>
             </div>
