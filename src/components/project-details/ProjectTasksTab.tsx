@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Loader2, Calendar, User, Check, RotateCcw } from 'lucide-react';
+import { Plus, Loader2, Calendar, User, Check, RotateCcw, ArrowUpDown } from 'lucide-react';
 import { AddTaskDialog } from './AddTaskDialog';
 import { EditTaskDialog } from './EditTaskDialog';
 import { format } from 'date-fns';
@@ -42,10 +42,11 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [sortBy, setSortBy] = useState<'start_date' | 'end_date'>('end_date');
+  const [sortAscending, setSortAscending] = useState(true);
 
   useEffect(() => {
     fetchTasks();
-  }, [projectId, sortBy]);
+  }, [projectId, sortBy, sortAscending]);
 
   const fetchTasks = async () => {
     try {
@@ -53,7 +54,7 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
         .from('tasks')
         .select('*')
         .eq('project_id', projectId)
-        .order(sortBy, { ascending: true, nullsFirst: false });
+        .order(sortBy, { ascending: sortAscending, nullsFirst: false });
 
       if (error) throw error;
 
@@ -150,6 +151,14 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
                 <SelectItem value="end_date">Date de fin</SelectItem>
               </SelectContent>
             </Select>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setSortAscending(!sortAscending)}
+              title={sortAscending ? 'Tri croissant' : 'Tri décroissant'}
+            >
+              <ArrowUpDown className={`h-4 w-4 ${sortAscending ? '' : 'rotate-180'}`} />
+            </Button>
             {!isMobile && (
               <ProtectedAction module="tasks" action="create">
                 <Button onClick={() => setShowAddDialog(true)} size="sm">
