@@ -34,7 +34,7 @@ export function PostComments({ postId }: PostCommentsProps) {
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
-  const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(true);
   const [loading, setLoading] = useState(false);
   const [currentUserProfile, setCurrentUserProfile] = useState<{
     first_name: string;
