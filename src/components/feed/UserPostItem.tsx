@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { LinkPreview } from './LinkPreview';
 import { PostComments } from './PostComments';
+import { PostReactions } from './PostReactions';
 
 interface UserPost {
   id: string;
@@ -231,6 +232,9 @@ export function UserPostItem({ post }: UserPostItemProps) {
               })}
             </div>
           )}
+
+          {/* Reactions section */}
+          <PostReactions postId={post.id} />
 
           {/* Comments section */}
           <PostComments postId={post.id} />
