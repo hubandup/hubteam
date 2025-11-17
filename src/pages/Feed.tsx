@@ -8,7 +8,7 @@ import { OnlineUsersIndicator } from '@/components/feed/OnlineUsersIndicator';
 import { CreatePostDialog } from '@/components/feed/CreatePostDialog';
 import { UserPostItem } from '@/components/feed/UserPostItem';
 import { useAuth } from '@/hooks/useAuth';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 interface ActivityLog {
   id: string;
@@ -31,6 +31,8 @@ interface UserPost {
   content: string;
   created_at: string;
   user_id: string;
+  media_urls?: string[] | null;
+  embed_url?: string | null;
   profiles?: {
     first_name: string;
     last_name: string;
@@ -189,44 +191,27 @@ export default function Feed() {
         <CreatePostDialog />
       </div>
 
-      <Tabs defaultValue="posts" className="w-full">
-        <TabsList className="w-full">
-          <TabsTrigger value="posts" className="flex-1">Posts</TabsTrigger>
-          <TabsTrigger value="activity" className="flex-1">Activité système</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="posts">
-          <ScrollArea className="h-[calc(100vh-20rem)] md:h-[calc(100vh-16rem)]">
-            <div className="space-y-4">
-              {posts.length === 0 ? (
-                <Card className="p-8 text-center">
-                  <p className="text-muted-foreground">Aucun post pour le moment. Soyez le premier à partager !</p>
-                </Card>
-              ) : (
-                posts.map((post) => (
-                  <UserPostItem key={post.id} post={post} />
-                ))
-              )}
-            </div>
-          </ScrollArea>
-        </TabsContent>
-
-        <TabsContent value="activity">
-          <ScrollArea className="h-[calc(100vh-20rem)] md:h-[calc(100vh-16rem)]">
-            <div className="space-y-4">
-              {activities.length === 0 ? (
-                <Card className="p-8 text-center">
-                  <p className="text-muted-foreground">Aucune activité récente</p>
-                </Card>
-              ) : (
-                activities.map((activity) => (
-                  <ActivityFeedItem key={activity.id} activity={activity} />
-                ))
-              )}
-            </div>
-          </ScrollArea>
-        </TabsContent>
-      </Tabs>
+      <ScrollArea className="h-[calc(100vh-20rem)] md:h-[calc(100vh-16rem)]">
+        <div className="space-y-4">
+          {posts.length === 0 && activities.length === 0 ? (
+            <Card className="p-8 text-center">
+              <p className="text-muted-foreground">Aucune activité pour le moment. Soyez le premier à partager !</p>
+            </Card>
+          ) : (
+            <>
+              {[...posts.map(p => ({ ...p, type: 'post' as const })), ...activities.map(a => ({ ...a, type: 'activity' as const }))]
+                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                .map((item) => (
+                  item.type === 'post' ? (
+                    <UserPostItem key={`post-${item.id}`} post={item} />
+                  ) : (
+                    <ActivityFeedItem key={`activity-${item.id}`} activity={item} />
+                  )
+                ))}
+            </>
+          )}
+        </div>
+      </ScrollArea>
     </div>
   );
 }
