@@ -5,7 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { RichMentionInput } from '@/components/common/RichMentionInput';
 import { Card } from '@/components/ui/card';
-import { MessageCircle, Send, Trash2, Edit2, Reply } from 'lucide-react';
+import { MessageCircle, Send, Trash2, Edit2, Reply, MoreVertical } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -231,15 +232,44 @@ export function PostComments({ postId }: PostCommentsProps) {
         <div className="flex-1 min-w-0">
           <div className="bg-muted rounded-lg p-3">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-medium">
-                {comment.user?.first_name} {comment.user?.last_name}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {formatDistanceToNow(new Date(comment.created_at), {
-                  addSuffix: true,
-                  locale: fr,
-                })}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">
+                  {comment.user?.first_name} {comment.user?.last_name}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {formatDistanceToNow(new Date(comment.created_at), {
+                    addSuffix: true,
+                    locale: fr,
+                  })}
+                </span>
+              </div>
+              {isOwner && !isEditing && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setEditingId(comment.id);
+                        setEditContent(comment.content);
+                      }}
+                    >
+                      <Edit2 className="h-4 w-4 mr-2" />
+                      Modifier
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleDelete(comment.id)}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Supprimer
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
             {isEditing ? (
               <div className="space-y-2">
@@ -284,31 +314,6 @@ export function PostComments({ postId }: PostCommentsProps) {
                 <Reply className="h-3 w-3 mr-1" />
                 Répondre
               </Button>
-            )}
-            {isOwner && !isEditing && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-auto p-0 text-xs text-muted-foreground hover:text-primary"
-                  onClick={() => {
-                    setEditingId(comment.id);
-                    setEditContent(comment.content);
-                  }}
-                >
-                  <Edit2 className="h-3 w-3 mr-1" />
-                  Modifier
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-auto p-0 text-xs text-muted-foreground hover:text-destructive"
-                  onClick={() => handleDelete(comment.id)}
-                >
-                  <Trash2 className="h-3 w-3 mr-1" />
-                  Supprimer
-                </Button>
-              </>
             )}
           </div>
           {/* Render replies */}
