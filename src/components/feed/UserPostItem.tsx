@@ -138,7 +138,7 @@ export function UserPostItem({ post }: UserPostItemProps) {
 
           {/* Images/Vidéos */}
           {post.media_urls && post.media_urls.length > 0 && (
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="mt-3 space-y-3">
               {post.media_urls.map((url, idx) => {
                 const isVideo = /\.(mp4|webm|ogg)$/i.test(url);
                 return (
@@ -157,7 +157,7 @@ export function UserPostItem({ post }: UserPostItemProps) {
                         src={url}
                         loading="lazy"
                         alt={`Média de ${post.profiles?.first_name ?? ''} ${post.profiles?.last_name ?? ''}`.trim() || 'Média du post'}
-                        className="w-full h-auto object-cover"
+                        className="w-full h-auto object-contain max-h-[600px]"
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).style.display = 'none';
                         }}
