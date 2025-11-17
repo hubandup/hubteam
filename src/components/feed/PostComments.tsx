@@ -297,63 +297,66 @@ export function PostComments({ postId }: PostCommentsProps) {
   const commentCount = comments.length;
 
   return (
-    <div className="mt-3">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setShowComments(!showComments)}
-        className="text-muted-foreground hover:text-foreground"
-      >
-        <MessageCircle className="h-4 w-4 mr-2" />
-        {commentCount > 0 ? `${commentCount} commentaire${commentCount > 1 ? 's' : ''}` : 'Commenter'}
-      </Button>
-
-      {showComments && (
-        <Card className="mt-3 p-4">
-          {/* Comment input */}
-          <div className="flex gap-3">
-            <Avatar className="h-8 w-8 flex-shrink-0">
-              <AvatarImage src={user?.user_metadata?.avatar_url} />
-              <AvatarFallback>
-                {user?.user_metadata?.first_name?.[0]}
-                {user?.user_metadata?.last_name?.[0]}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 space-y-2">
-              {replyTo && (
-                <div className="text-xs text-muted-foreground flex items-center gap-2">
-                  <Reply className="h-3 w-3" />
-                  Réponse en cours...
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-auto p-0 text-xs hover:text-primary"
-                    onClick={() => setReplyTo(null)}
-                  >
-                    Annuler
-                  </Button>
-                </div>
-              )}
-              <RichMentionInput
-                value={newComment}
-                onChange={setNewComment}
-                placeholder="Écrivez un commentaire..."
-                className="min-h-[60px]"
-              />
-              <div className="flex justify-end">
-                <Button
-                  size="sm"
-                  onClick={handleSubmit}
-                  disabled={!newComment.trim() || loading}
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Publier
-                </Button>
-              </div>
+    <div className="mt-3 space-y-3">
+      {/* Comment input - always visible */}
+      <div className="flex gap-3">
+        <Avatar className="h-8 w-8 flex-shrink-0">
+          <AvatarImage src={user?.user_metadata?.avatar_url} />
+          <AvatarFallback>
+            {user?.user_metadata?.first_name?.[0]}
+            {user?.user_metadata?.last_name?.[0]}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 space-y-2">
+          {replyTo && (
+            <div className="text-xs text-muted-foreground flex items-center gap-2">
+              <Reply className="h-3 w-3" />
+              Réponse en cours...
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-auto p-0 text-xs hover:text-primary"
+                onClick={() => setReplyTo(null)}
+              >
+                Annuler
+              </Button>
             </div>
+          )}
+          <RichMentionInput
+            value={newComment}
+            onChange={setNewComment}
+            placeholder="Écrivez un commentaire..."
+            className="min-h-[60px]"
+          />
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              onClick={handleSubmit}
+              disabled={!newComment.trim() || loading}
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Publier
+            </Button>
           </div>
+        </div>
+      </div>
 
-          {/* Comments list */}
+      {/* Toggle comments list button */}
+      {commentCount > 0 && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowComments(!showComments)}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <MessageCircle className="h-4 w-4 mr-2" />
+          {showComments ? 'Masquer' : 'Afficher'} {commentCount} commentaire{commentCount > 1 ? 's' : ''}
+        </Button>
+      )}
+
+      {/* Comments list */}
+      {showComments && commentCount > 0 && (
+        <Card className="p-4">
           {comments
             .filter((c) => !c.parent_id)
             .map((comment) => renderComment(comment))}
