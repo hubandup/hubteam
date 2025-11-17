@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { LinkPreview } from './LinkPreview';
 
 interface UserPost {
   id: string;
@@ -32,6 +33,25 @@ interface UserPostItemProps {
 export function UserPostItem({ post }: UserPostItemProps) {
   const { user } = useAuth();
   const isOwner = user?.id === post.user_id;
+
+  // Extract URL from content (excluding YouTube/Vimeo)
+  const extractUrl = (text: string): string | null => {
+    const urlRegex = /(https?:\/\/[^\s]+)/gi;
+    const matches = text.match(urlRegex);
+    if (!matches) return null;
+    
+    // Filter out YouTube and Vimeo URLs
+    const nonVideoUrl = matches.find(url => {
+      const lower = url.toLowerCase();
+      return !lower.includes('youtube.com') && 
+             !lower.includes('youtu.be') && 
+             !lower.includes('vimeo.com');
+    });
+    
+    return nonVideoUrl || null;
+  };
+
+  const linkUrl = !post.embed_url && extractUrl(post.content);
 
   const handleDelete = async () => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce post ?')) {
@@ -174,6 +194,9 @@ export function UserPostItem({ post }: UserPostItemProps) {
               </AspectRatio>
             </div>
           )}
+
+          {/* Link Preview */}
+          {linkUrl && <LinkPreview url={linkUrl} />}
 
           {/* Images/Vidéos */}
           {post.media_urls && post.media_urls.length > 0 && (
