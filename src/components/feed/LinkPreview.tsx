@@ -8,11 +8,14 @@ interface LinkPreviewProps {
 }
 
 interface PreviewData {
-  title: string;
-  description: string;
-  image: string;
-  siteName: string;
+  success: boolean;
   url: string;
+  title?: string;
+  description?: string;
+  image?: string;
+  siteName?: string;
+  domain?: string;
+  reason?: string;
 }
 
 export function LinkPreview({ url }: LinkPreviewProps) {
@@ -23,19 +26,39 @@ export function LinkPreview({ url }: LinkPreviewProps) {
   useEffect(() => {
     const fetchPreview = async () => {
       try {
+        console.log('[LinkPreview] Fetching preview for:', url);
         const { data, error } = await supabase.functions.invoke('fetch-link-preview', {
           body: { url },
         });
 
-        if (error) throw error;
+        console.log('[LinkPreview] Response:', { data, error });
+
+        if (error) {
+          console.error('[LinkPreview] Edge function error:', error);
+          throw error;
+        }
         
-        if (data && (data.title || data.image)) {
+        if (data) {
+          console.log('[LinkPreview] Preview data received:', {
+            success: data.success,
+            hasTitle: !!data.title,
+            hasImage: !!data.image,
+            reason: data.reason
+          });
+          
+          // Store the response regardless of success
           setPreview(data);
+          
+          // Set error state only if success is explicitly false
+          if (data.success === false) {
+            setError(true);
+          }
         } else {
+          console.log('[LinkPreview] No data received');
           setError(true);
         }
       } catch (err) {
-        console.error('Error fetching link preview:', err);
+        console.error('[LinkPreview] Error fetching link preview:', err);
         setError(true);
       } finally {
         setLoading(false);
@@ -54,10 +77,12 @@ export function LinkPreview({ url }: LinkPreviewProps) {
     );
   }
 
-  if (error || !preview) {
-    // Fallback for blocked domains (LinkedIn, etc.)
-    const domain = new URL(url).hostname.replace('www.', '');
+  // Handle fallback for failed previews or blocked domains
+  if (error || !preview || preview.success === false) {
+    const domain = preview?.domain || new URL(url).hostname.replace('www.', '');
     const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+    
+    console.log('[LinkPreview] Rendering fallback for domain:', domain, 'reason:', preview?.reason);
     
     return (
       <a
@@ -96,6 +121,9 @@ export function LinkPreview({ url }: LinkPreviewProps) {
     );
   }
 
+  // Render rich preview for successful fetches
+  console.log('[LinkPreview] Rendering rich preview');
+  
   return (
     <a
       href={url}
@@ -108,7 +136,7 @@ export function LinkPreview({ url }: LinkPreviewProps) {
           <div className="w-full h-48 overflow-hidden bg-muted">
             <img
               src={preview.image}
-              alt={preview.title}
+              alt={preview.title || 'Preview'}
               className="w-full h-full object-cover"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
@@ -118,21 +146,23 @@ export function LinkPreview({ url }: LinkPreviewProps) {
         )}
         <div className="p-4">
           {preview.siteName && (
-            <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-              <ExternalLink className="h-3 w-3" />
+            <p className="text-xs text-muted-foreground mb-1">
               {preview.siteName}
             </p>
           )}
           {preview.title && (
-            <h3 className="font-semibold text-sm line-clamp-2 mb-1">
+            <h3 className="font-semibold text-sm mb-2 line-clamp-2">
               {preview.title}
             </h3>
           )}
           {preview.description && (
-            <p className="text-xs text-muted-foreground line-clamp-2">
+            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
               {preview.description}
             </p>
           )}
+          <p className="text-xs text-primary hover:underline flex items-center gap-1">
+            {new URL(url).hostname.replace('www.', '')} <ExternalLink className="h-3 w-3" />
+          </p>
         </div>
       </Card>
     </a>
