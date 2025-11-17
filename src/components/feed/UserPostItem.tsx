@@ -14,6 +14,7 @@ import { PDFPreview } from './PDFPreview';
 import { PostComments } from './PostComments';
 import { PostReactions } from './PostReactions';
 import { PostStats } from './PostStats';
+import { useState } from 'react';
 interface UserPost {
   id: string;
   content: string;
@@ -42,6 +43,7 @@ export function UserPostItem({
     user
   } = useAuth();
   const isOwner = user?.id === post.user_id;
+  const [showComments, setShowComments] = useState(false);
 
   // Extract URL from content (excluding YouTube/Vimeo) - only if no embed_url in DB
   const extractUrl = (text: string): string | null => {
@@ -207,13 +209,13 @@ export function UserPostItem({
             </div>}
 
           {/* Stats bar with like and comment counts */}
-          <PostStats postId={post.id} />
+          <PostStats postId={post.id} onCommentClick={() => setShowComments(!showComments)} />
 
           {/* Additional reactions section */}
           
 
           {/* Comments section */}
-          <PostComments postId={post.id} />
+          {showComments && <PostComments postId={post.id} />}
         </div>
       </div>
     </Card>;
