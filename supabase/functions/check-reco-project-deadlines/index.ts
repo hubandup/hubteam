@@ -39,11 +39,11 @@ Deno.serve(async (req) => {
 
     console.log('Checking for upcoming recommendation project deadlines...');
 
-    // Get all projects with status "Reco en Cours"
+    // Get all projects with status "reco_in_progress"
     const { data: projects, error: projectsError } = await supabaseClient
       .from('projects')
       .select('id, name, date_brief, date_prise_en_main, date_concertation_agences, date_montage_reco, date_restitution')
-      .eq('status', 'Reco en Cours');
+      .eq('status', 'reco_in_progress');
 
     if (projectsError) throw projectsError;
 
