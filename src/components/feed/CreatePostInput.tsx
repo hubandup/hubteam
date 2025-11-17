@@ -1,19 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CreatePostDialog } from './CreatePostDialog';
 import { useAuth } from '@/hooks/useAuth';
-import { Video, Image, Calendar } from 'lucide-react';
+import { Video, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 
 export function CreatePostInput() {
   const { user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [profile, setProfile] = useState<{ first_name: string; last_name: string; avatar_url: string | null } | null>(null);
   
-  // Get user profile data from auth context
-  const userMetadata = user?.user_metadata;
-  const firstName = userMetadata?.first_name || 'Utilisateur';
-  const avatarUrl = userMetadata?.avatar_url;
+  useEffect(() => {
+    if (user?.id) {
+      fetchProfile();
+    }
+  }, [user?.id]);
+
+  const fetchProfile = async () => {
+    if (!user?.id) return;
+    
+    const { data } = await supabase
+      .from('profiles')
+      .select('first_name, last_name, avatar_url')
+      .eq('id', user.id)
+      .single();
+    
+    if (data) {
+      setProfile(data);
+    }
+  };
+  
+  const firstName = profile?.first_name || 'Utilisateur';
+  const avatarUrl = profile?.avatar_url;
 
   return (
     <>
@@ -56,18 +76,6 @@ export function CreatePostInput() {
               }}
             >
               <Image className="h-5 w-5" />
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-orange-500 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
-              onClick={(e) => {
-                e.stopPropagation();
-                setDialogOpen(true);
-              }}
-            >
-              <Calendar className="h-5 w-5" />
             </Button>
           </div>
         </div>
