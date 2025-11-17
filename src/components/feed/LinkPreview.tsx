@@ -56,14 +56,33 @@ export function LinkPreview({ url }: LinkPreviewProps) {
 
   if (error || !preview) {
     // Fallback for blocked domains (LinkedIn, etc.)
+    const domain = new URL(url).hostname.replace('www.', '');
+    
     return (
       <a
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="block mt-3 text-sm text-primary hover:underline"
+        className="block mt-3 no-underline"
       >
-        🔗 {url}
+        <Card className="overflow-hidden hover:bg-accent/50 transition-colors">
+          <div className="p-4 flex items-center gap-3">
+            <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
+              <ExternalLink className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground mb-1">
+                Prévisualisation indisponible
+              </p>
+              <p className="text-xs text-muted-foreground mb-1">
+                {domain} bloque l'accès aux informations d'aperçu
+              </p>
+              <p className="text-xs text-primary hover:underline flex items-center gap-1">
+                Afficher le lien <ExternalLink className="h-3 w-3" />
+              </p>
+            </div>
+          </div>
+        </Card>
       </a>
     );
   }
