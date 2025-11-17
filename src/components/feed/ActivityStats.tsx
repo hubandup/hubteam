@@ -57,7 +57,7 @@ export function ActivityStats({ activityId }: ActivityStatsProps) {
           .eq('activity_id', activityId)
           .eq('user_id', user.id)
           .eq('reaction_type', 'like')
-          .single();
+          .maybeSingle();
 
         setHasUserLiked(!!userReaction);
       }

@@ -1,13 +1,17 @@
 import { Home, Users, FolderKanban, MessageSquare, Activity, HelpCircle } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { cn } from '@/lib/utils';
+import { useMemo } from 'react';
 
 export function MobileBottomNav() {
-  // Check if running as PWA
-  const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
-                (window.navigator as any).standalone === true;
+  // Check if running as PWA (memoized to avoid recalculation)
+  const isPWA = useMemo(() => 
+    window.matchMedia('(display-mode: standalone)').matches || 
+    (window.navigator as any).standalone === true,
+    []
+  );
 
-  const navItems = [
+  const navItems = useMemo(() => [
     {
       to: '/',
       icon: Home,
@@ -38,7 +42,7 @@ export function MobileBottomNav() {
       icon: HelpCircle,
       label: 'FAQ',
     },
-  ];
+  ], [isPWA]);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t md:hidden">
