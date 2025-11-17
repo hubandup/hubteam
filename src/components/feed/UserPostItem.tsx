@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { LinkPreview } from './LinkPreview';
+import { PostComments } from './PostComments';
 
 interface UserPost {
   id: string;
@@ -230,6 +231,9 @@ export function UserPostItem({ post }: UserPostItemProps) {
               })}
             </div>
           )}
+
+          {/* Comments section */}
+          <PostComments postId={post.id} />
         </div>
       </div>
     </Card>
