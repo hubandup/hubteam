@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,8 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { useActivities } from '@/hooks/useActivities';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ActivityLogEntry {
   id: string;
@@ -79,70 +81,9 @@ const entityLabels = {
 
 export default function Activity() {
   const { canRead, canUpdate } = usePermissions();
-  const [activities, setActivities] = useState<ActivityLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: activities = [], isLoading: loading } = useActivities();
   const [restoring, setRestoring] = useState(false);
-
-  useEffect(() => {
-    fetchActivities();
-
-    const channel = supabase
-      .channel('activity-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'activity_log',
-        },
-        () => {
-          fetchActivities();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const fetchActivities = async () => {
-    try {
-      const { data: activitiesData, error: activitiesError } = await supabase
-        .from('activity_log')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (activitiesError) throw activitiesError;
-
-      const userIds = [...new Set(activitiesData.map(a => a.user_id))];
-
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, avatar_url')
-        .in('id', userIds);
-
-      if (profilesError) throw profilesError;
-
-      const profilesMap = new Map(profilesData.map(p => [p.id, p]));
-
-      const enrichedActivities = activitiesData.map(activity => ({
-        ...activity,
-        profiles: profilesMap.get(activity.user_id) || {
-          first_name: 'Unknown',
-          last_name: 'User',
-          avatar_url: null,
-        },
-      }));
-
-      setActivities(enrichedActivities);
-    } catch (error) {
-      console.error('Error fetching activities:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleRestore = async (activity: ActivityLogEntry) => {
     if (!activity.old_values || activity.action_type === 'created') {
@@ -160,7 +101,7 @@ export default function Activity() {
       if (error) throw error;
 
       toast.success('Version restaurée avec succès');
-      fetchActivities();
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
     } catch (error) {
       console.error('Error restoring version:', error);
       toast.error('Erreur lors de la restauration');
