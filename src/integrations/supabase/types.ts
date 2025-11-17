@@ -1494,6 +1494,10 @@ export type Database = {
           created_at: string
           embed_url: string | null
           id: string
+          link_description: string | null
+          link_image: string | null
+          link_site_name: string | null
+          link_title: string | null
           media_urls: string[] | null
           updated_at: string
           user_id: string
@@ -1503,6 +1507,10 @@ export type Database = {
           created_at?: string
           embed_url?: string | null
           id?: string
+          link_description?: string | null
+          link_image?: string | null
+          link_site_name?: string | null
+          link_title?: string | null
           media_urls?: string[] | null
           updated_at?: string
           user_id: string
@@ -1512,6 +1520,10 @@ export type Database = {
           created_at?: string
           embed_url?: string | null
           id?: string
+          link_description?: string | null
+          link_image?: string | null
+          link_site_name?: string | null
+          link_title?: string | null
           media_urls?: string[] | null
           updated_at?: string
           user_id?: string

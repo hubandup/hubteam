@@ -33,6 +33,10 @@ interface UserPost {
   user_id: string;
   media_urls?: string[] | null;
   embed_url?: string | null;
+  link_title?: string | null;
+  link_description?: string | null;
+  link_image?: string | null;
+  link_site_name?: string | null;
   profiles?: {
     first_name: string;
     last_name: string;

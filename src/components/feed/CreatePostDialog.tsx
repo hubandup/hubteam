@@ -105,13 +105,66 @@ export function CreatePostDialog({
           mediaUrls.push(publicUrl);
         }
       }
+
+      // Extract URL from content (excluding YouTube/Vimeo for link preview)
+      let linkMetadata = null;
+      if (!embedUrl.trim()) {
+        const urlRegex = /(https?:\/\/[^\s]+)/gi;
+        const matches = content.match(urlRegex);
+        if (matches) {
+          const nonVideoUrl = matches.find(url => {
+            const lower = url.toLowerCase();
+            return !lower.includes('youtube.com') && 
+                   !lower.includes('youtu.be') && 
+                   !lower.includes('vimeo.com');
+          });
+
+          if (nonVideoUrl) {
+            console.log('[CreatePost] Fetching link preview for:', nonVideoUrl);
+            try {
+              const { data: previewData, error: previewError } = await supabase.functions.invoke('url-preview', {
+                method: 'POST',
+                body: { url: nonVideoUrl },
+              });
+
+              console.log('[CreatePost] Preview response:', previewData);
+
+              if (!previewError && previewData) {
+                if (previewData.success) {
+                  linkMetadata = {
+                    embed_url: previewData.url,
+                    link_title: previewData.title,
+                    link_description: previewData.description,
+                    link_image: previewData.image,
+                    link_site_name: previewData.siteName || previewData.domain,
+                  };
+                } else {
+                  // Fallback for failed preview
+                  linkMetadata = {
+                    embed_url: nonVideoUrl,
+                    link_site_name: previewData.domain || new URL(nonVideoUrl).hostname,
+                  };
+                }
+              }
+            } catch (err) {
+              console.error('[CreatePost] Error fetching link preview:', err);
+              // Continue without preview on error
+            }
+          }
+        }
+      }
+
       const {
         error
       } = await supabase.from('user_posts').insert({
         user_id: user.id,
         content: content.trim(),
         media_urls: mediaUrls.length > 0 ? mediaUrls : null,
-        embed_url: embedUrl.trim() || null
+        embed_url: embedUrl.trim() || linkMetadata?.embed_url || null,
+        link_title: linkMetadata?.link_title || null,
+        link_description: linkMetadata?.link_description || null,
+        link_image: linkMetadata?.link_image || null,
+        link_site_name: linkMetadata?.link_site_name || null,
       });
       if (error) throw error;
       toast.success('Post publié avec succès');
