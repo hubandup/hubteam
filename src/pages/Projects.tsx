@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ProjectCard } from '@/components/ProjectCard';
@@ -19,6 +19,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
+import { useProjects, useArchivedProjects } from '@/hooks/useProjects';
 
 export default function Projects() {
   const navigate = useNavigate();
@@ -27,165 +28,13 @@ export default function Projects() {
   const queryClient = useQueryClient();
   const { isClient } = useUserRole();
   const { user } = useAuth();
-  const [projects, setProjects] = useState<any[]>([]);
-  const [archivedProjects, setArchivedProjects] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: projects = [], isLoading: projectsLoading } = useProjects();
+  const { data: archivedProjects = [], isLoading: archivedLoading } = useArchivedProjects();
+  const loading = projectsLoading || archivedLoading;
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'kanban' | 'list'>('grid');
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchProjects();
-    fetchArchivedProjects();
-  }, [isClient, user]);
-
-  const fetchProjects = async () => {
-    try {
-      if (isClient && user) {
-        // For clients, only show their own projects
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('id', user.id)
-          .single();
-
-        if (!profileData) {
-          setProjects([]);
-          setLoading(false);
-          return;
-        }
-
-        const { data: clientData } = await supabase
-          .from('clients')
-          .select('id')
-          .eq('email', profileData.email)
-          .single();
-
-        if (!clientData) {
-          setProjects([]);
-          setLoading(false);
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from('project_clients')
-          .select(`
-            projects!inner (
-              *,
-              project_clients (
-                clients (
-                  company,
-                  logo_url
-                )
-              )
-            )
-          `)
-          .eq('client_id', clientData.id)
-          .eq('projects.archived', false)
-          .order('projects(created_at)', { ascending: false });
-
-        if (error) throw error;
-        
-        const projectsData = data?.map(pc => pc.projects).filter(Boolean) || [];
-        setProjects(projectsData);
-      } else {
-        // For admin/team, show all projects
-        const { data, error } = await supabase
-          .from('projects')
-          .select(`
-            *,
-            project_clients (
-              clients (
-                company,
-                logo_url
-              )
-            )
-          `)
-          .eq('archived', false)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setProjects(data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-      toast.error('Erreur lors du chargement des projets');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchArchivedProjects = async () => {
-    try {
-      if (isClient && user) {
-        // For clients, only show their own archived projects
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('id', user.id)
-          .single();
-
-        if (!profileData) {
-          setArchivedProjects([]);
-          return;
-        }
-
-        const { data: clientData } = await supabase
-          .from('clients')
-          .select('id')
-          .eq('email', profileData.email)
-          .single();
-
-        if (!clientData) {
-          setArchivedProjects([]);
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from('project_clients')
-          .select(`
-            projects!inner (
-              *,
-              project_clients (
-                clients (
-                  company,
-                  logo_url
-                )
-              )
-            )
-          `)
-          .eq('client_id', clientData.id)
-          .eq('projects.archived', true)
-          .order('projects(updated_at)', { ascending: false });
-
-        if (error) throw error;
-        
-        const projectsData = data?.map(pc => pc.projects).filter(Boolean) || [];
-        setArchivedProjects(projectsData);
-      } else {
-        // For admin/team, show all archived projects
-        const { data, error } = await supabase
-          .from('projects')
-          .select(`
-            *,
-            project_clients (
-              clients (
-                company,
-                logo_url
-              )
-            )
-          `)
-          .eq('archived', true)
-          .order('updated_at', { ascending: false });
-
-        if (error) throw error;
-        setArchivedProjects(data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching archived projects:', error);
-    }
-  };
 
   const unarchiveMutation = useMutation({
     mutationFn: async (projectId: string) => {
@@ -200,8 +49,6 @@ export default function Projects() {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
       toast.success('Projet désarchivé avec succès');
-      fetchProjects();
-      fetchArchivedProjects();
     },
     onError: (error) => {
       console.error('Error unarchiving project:', error);
@@ -223,7 +70,6 @@ export default function Projects() {
       queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
       toast.success('Projet supprimé définitivement');
       setProjectToDelete(null);
-      fetchArchivedProjects();
     },
     onError: (error) => {
       console.error('Error deleting project:', error);
@@ -241,12 +87,8 @@ export default function Projects() {
 
       if (error) throw error;
 
-      // Update local state
-      setProjects(prev =>
-        prev.map(p =>
-          p.id === projectId ? { ...p, status: newStatus } : p
-        )
-      );
+      // Invalidate cache to refresh data
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
 
       toast.success('Statut du projet mis à jour');
     } catch (error) {
@@ -303,7 +145,7 @@ export default function Projects() {
         {isMobile && !isClient && (
           <div className="mt-4">
             <ProtectedAction module="projects" action="create">
-              <AddProjectDialog onProjectAdded={fetchProjects} />
+              <AddProjectDialog onProjectAdded={() => queryClient.invalidateQueries({ queryKey: ['projects'] })} />
             </ProtectedAction>
           </div>
         )}
@@ -311,7 +153,7 @@ export default function Projects() {
       {!isMobile && !isClient && (
         <div className="flex justify-end">
           <ProtectedAction module="projects" action="create">
-            <AddProjectDialog onProjectAdded={fetchProjects} />
+              <AddProjectDialog onProjectAdded={() => queryClient.invalidateQueries({ queryKey: ['projects'] })} />
           </ProtectedAction>
         </div>
       )}

@@ -1,6 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,54 +10,16 @@ import { fr } from 'date-fns/locale';
 import { EditTaskDialog } from '@/components/project-details/EditTaskDialog';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useTasks } from '@/hooks/useTasks';
 
 export default function Tasks() {
   const navigate = useNavigate();
   const { canRead } = usePermissions();
   const { isClient } = useUserRole();
-  const [tasks, setTasks] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: tasks = [], isLoading: loading } = useTasks();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
-
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  const fetchTasks = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select(`
-          *,
-          projects (
-            id,
-            name,
-            project_clients (
-              clients (
-                company,
-                first_name,
-                last_name
-              )
-            )
-          ),
-          profiles (
-            first_name,
-            last_name
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setTasks(data || []);
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-      toast.error('Erreur lors du chargement des tâches');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredTasks = useMemo(() => {
     if (!searchQuery.trim()) return tasks;
@@ -204,7 +165,7 @@ export default function Tasks() {
           open={showEditDialog}
           onOpenChange={setShowEditDialog}
           task={selectedTask}
-          onSuccess={fetchTasks}
+          onSuccess={() => {}}
         />
       )}
     </div>
