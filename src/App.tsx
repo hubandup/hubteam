@@ -31,15 +31,16 @@ import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
 
-// Component to redirect PWA users to Feed
+// Component to redirect PWA/Native users to Feed
 const PWARedirect = ({ children }: { children: React.ReactNode }) => {
   const [isPWA, setIsPWA] = useState(false);
 
   useEffect(() => {
-    // Check if app is running as PWA
+    // Check if app is running as PWA or native app
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     const isInWebAppiOS = (window.navigator as any).standalone === true;
-    setIsPWA(isStandalone || isInWebAppiOS);
+    const isNative = typeof (window as any).Capacitor !== 'undefined';
+    setIsPWA(isStandalone || isInWebAppiOS || isNative);
   }, []);
 
   if (isPWA) {

@@ -1,48 +1,47 @@
-import { Home, Users, FolderKanban, MessageSquare, Activity, HelpCircle } from 'lucide-react';
+import { Home, Users, Building2, Briefcase, MessageCircle } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
+import { useIsNative } from '@/hooks/use-mobile';
 
 export function MobileBottomNav() {
-  // Check if running as PWA (memoized to avoid recalculation)
-  const isPWA = useMemo(() => 
+  const isNative = useIsNative();
+
+  // Check if running as PWA or native app
+  const isMobileApp = useMemo(() => 
+    isNative ||
     window.matchMedia('(display-mode: standalone)').matches || 
     (window.navigator as any).standalone === true,
-    []
+    [isNative]
   );
 
   const navItems = useMemo(() => [
     {
-      to: '/',
-      icon: Home,
-      label: 'Accueil',
-    },
-    ...(isPWA ? [{
       to: '/feed',
-      icon: Activity,
+      icon: Home,
       label: 'Feed',
-    }] : []),
+    },
     {
       to: '/crm',
       icon: Users,
       label: 'CRM',
     },
     {
+      to: '/agencies',
+      icon: Building2,
+      label: 'Agences',
+    },
+    {
       to: '/projects',
-      icon: FolderKanban,
+      icon: Briefcase,
       label: 'Projets',
     },
     {
       to: '/messages',
-      icon: MessageSquare,
+      icon: MessageCircle,
       label: 'Messages',
     },
-    {
-      to: '/faq',
-      icon: HelpCircle,
-      label: 'FAQ',
-    },
-  ], [isPWA]);
+  ], []);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t md:hidden">
