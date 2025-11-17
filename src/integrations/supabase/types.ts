@@ -1382,6 +1382,35 @@ export type Database = {
           },
         ]
       }
+      user_post_comment_mentions: {
+        Row: {
+          comment_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_post_comment_mentions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "user_post_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_post_comments: {
         Row: {
           content: string
