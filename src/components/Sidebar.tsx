@@ -67,11 +67,11 @@ export function Sidebar() {
   const mainItems = [
     { title: 'Accueil', url: '/', icon: Home, module: 'dashboard' as const },
     ...(role === 'client' && clientId ? [{ title: 'Ma fiche client', url: `/client/${clientId}`, icon: Users, module: 'crm' as const, matchParent: true, isClientItem: true }] : []),
+    { title: 'Feed', url: '/feed', icon: Rss, module: 'dashboard' as const },
     { title: 'Tableau de bord', url: '/dashboard', icon: LayoutDashboard, module: 'dashboard' as const },
     { title: 'CRM', url: '/crm', icon: Users, module: 'crm' as const, matchParent: true },
     { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const, matchParent: true },
     { title: 'Projets', url: '/projects', icon: FolderKanban, module: 'projects' as const, matchParent: true },
-    { title: 'Feed', url: '/feed', icon: Rss, module: 'dashboard' as const },
     { title: 'Messages', url: '/messages', icon: MessageSquare, module: 'messages' as const },
     { title: 'Activité', url: '/activity', icon: History, module: 'dashboard' as const, hideForClient: true },
     { title: 'FAQ', url: '/faq', icon: HelpCircle, module: 'faq' as const },
