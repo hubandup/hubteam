@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
+import { Button } from '@/components/ui/button';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -25,7 +26,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   // Si aucun rôle n'est trouvé après le chargement, afficher un message d'erreur
-  if (!role && !roleLoading) {
+  if (!role && !roleLoading && user) {
     console.error('[ProtectedRoute] No role found for user:', user.id);
     return (
       <div className="flex items-center justify-center h-screen">
@@ -33,6 +34,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
           <p className="text-destructive font-semibold">Erreur de rôle utilisateur</p>
           <p className="text-muted-foreground">Aucun rôle n'a été trouvé pour votre compte.</p>
           <p className="text-sm text-muted-foreground">Veuillez contacter l'administrateur.</p>
+          <Button onClick={() => window.location.reload()} className="mt-4">
+            Rafraîchir la page
+          </Button>
         </div>
       </div>
     );

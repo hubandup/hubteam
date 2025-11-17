@@ -18,20 +18,30 @@ export function useUserRole() {
 
     const fetchRole = async () => {
       try {
+        console.log('[useUserRole] Fetching role for user:', user.id);
+        
         const { data, error } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', user.id)
-          .maybeSingle();
+          .single();
+
+        console.log('[useUserRole] Query result - data:', data, 'error:', error);
 
         if (error) {
-          console.error('[useUserRole] Error fetching role:', error);
-          setRole(null);
+          // If error is "no rows returned", it's different from a real error
+          if (error.code === 'PGRST116') {
+            console.warn('[useUserRole] No role found for user:', user.id);
+            setRole(null);
+          } else {
+            console.error('[useUserRole] Error fetching role:', error);
+            setRole(null);
+          }
         } else if (data?.role) {
           console.log('[useUserRole] Role fetched successfully:', data.role);
           setRole(data.role as UserRole);
         } else {
-          console.warn('[useUserRole] No role found for user:', user.id);
+          console.warn('[useUserRole] No role data returned for user:', user.id);
           setRole(null);
         }
       } catch (err) {
