@@ -1,7 +1,13 @@
 import { Card } from '@/components/ui/card';
-import { FileText, ExternalLink, Download } from 'lucide-react';
+import { FileText, ExternalLink, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+
+// Configure PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface PDFPreviewProps {
   url: string;
@@ -10,39 +16,14 @@ interface PDFPreviewProps {
 
 export function PDFPreview({ url, fileName }: PDFPreviewProps) {
   const [showPreview, setShowPreview] = useState(true);
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  const [numPages, setNumPages] = useState<number>(0);
+  const [pageNumber, setPageNumber] = useState<number>(1);
+  
   const displayName = fileName || 'Document PDF';
 
-  // Fetch the PDF as a Blob and render via blob: URL to avoid cross-origin/frame restrictions
-  useEffect(() => {
-    let revokeUrl: string | null = null;
-    setLoading(true);
-    setError(null);
-    setBlobUrl(null);
-
-    (async () => {
-      try {
-        const resp = await fetch(url, { mode: 'cors' });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const blob = await resp.blob();
-        const objectUrl = URL.createObjectURL(blob);
-        revokeUrl = objectUrl;
-        setBlobUrl(objectUrl);
-      } catch (e) {
-        console.error('[PDFPreview] Blob fetch error:', e);
-        setError('preview_failed');
-      } finally {
-        setLoading(false);
-      }
-    })();
-
-    return () => {
-      if (revokeUrl) URL.revokeObjectURL(revokeUrl);
-    };
-  }, [url]);
+  function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
+    setNumPages(numPages);
+  }
 
   return (
     <Card className="mt-3 overflow-hidden">
@@ -104,26 +85,56 @@ export function PDFPreview({ url, fileName }: PDFPreviewProps) {
             </div>
           </div>
 
-          <div className="relative w-full" style={{ height: '600px' }}>
-            {loading && (
-              <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
-                Chargement du document…
-              </div>
-            )}
-
-            {!loading && blobUrl && (
-              <object data={blobUrl} type="application/pdf" className="w-full h-full border-0" aria-label={displayName}>
+          <div className="relative w-full bg-muted/10 flex flex-col items-center py-4">
+            <Document
+              file={url}
+              onLoadSuccess={onDocumentLoadSuccess}
+              loading={
                 <div className="p-4 text-sm text-muted-foreground">
-                  Impossible d'afficher le PDF dans votre navigateur.
-                  <a href={url} target="_blank" rel="noopener noreferrer" className="underline ml-1">Ouvrir dans un nouvel onglet</a>.
+                  Chargement du PDF...
                 </div>
-              </object>
-            )}
+              }
+              error={
+                <div className="p-4 text-sm text-muted-foreground">
+                  Erreur de chargement. 
+                  <a href={url} target="_blank" rel="noopener noreferrer" className="underline ml-1">
+                    Ouvrir dans un nouvel onglet
+                  </a>
+                </div>
+              }
+            >
+              <Page 
+                pageNumber={pageNumber} 
+                renderTextLayer={true}
+                renderAnnotationLayer={true}
+                className="shadow-lg"
+                width={Math.min(800, window.innerWidth - 40)}
+              />
+            </Document>
 
-            {!loading && !blobUrl && (
-              <div className="p-4 text-sm text-muted-foreground">
-                Impossible d'afficher l'aperçu du PDF.
-                <a href={url} target="_blank" rel="noopener noreferrer" className="underline ml-1">Ouvrir dans un nouvel onglet</a>.
+            {numPages > 1 && (
+              <div className="flex items-center gap-4 mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPageNumber(p => Math.max(1, p - 1))}
+                  disabled={pageNumber <= 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                <span className="text-sm text-muted-foreground">
+                  Page {pageNumber} sur {numPages}
+                </span>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPageNumber(p => Math.min(numPages, p + 1))}
+                  disabled={pageNumber >= numPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
               </div>
             )}
           </div>
