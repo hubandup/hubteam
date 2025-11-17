@@ -27,7 +27,7 @@ export function LinkPreview({ url }: LinkPreviewProps) {
     const fetchPreview = async () => {
       try {
         console.log('[LinkPreview] Fetching preview for:', url);
-        const { data, error } = await supabase.functions.invoke('fetch-link-preview', {
+        const { data, error } = await supabase.functions.invoke('url-preview', {
           body: { url },
         });
 
