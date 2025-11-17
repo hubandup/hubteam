@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { FileText, ExternalLink, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -18,8 +18,22 @@ export function PDFPreview({ url, fileName }: PDFPreviewProps) {
   const [showPreview, setShowPreview] = useState(true);
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const containerRef = useRef<HTMLDivElement>(null);
   
   const displayName = fileName || 'Document PDF';
+
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.offsetWidth - 32); // minus padding
+      }
+    };
+    
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, [showPreview]);
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
     setNumPages(numPages);
@@ -85,32 +99,37 @@ export function PDFPreview({ url, fileName }: PDFPreviewProps) {
             </div>
           </div>
 
-          <div className="relative w-full bg-muted/10 flex flex-col items-center py-4">
-            <Document
-              file={url}
-              onLoadSuccess={onDocumentLoadSuccess}
-              loading={
-                <div className="p-4 text-sm text-muted-foreground">
-                  Chargement du PDF...
-                </div>
-              }
-              error={
-                <div className="p-4 text-sm text-muted-foreground">
-                  Erreur de chargement. 
-                  <a href={url} target="_blank" rel="noopener noreferrer" className="underline ml-1">
-                    Ouvrir dans un nouvel onglet
-                  </a>
-                </div>
-              }
-            >
-              <Page 
-                pageNumber={pageNumber} 
-                renderTextLayer={true}
-                renderAnnotationLayer={true}
-                className="shadow-lg"
-                width={Math.min(800, window.innerWidth - 40)}
-              />
-            </Document>
+          <div ref={containerRef} className="relative w-full bg-muted/10 flex flex-col items-center py-4">
+            <div className="w-full px-4">
+              <Document
+                file={url}
+                onLoadSuccess={onDocumentLoadSuccess}
+                loading={
+                  <div className="p-4 text-sm text-muted-foreground">
+                    Chargement du PDF...
+                  </div>
+                }
+                error={
+                  <div className="p-4 text-sm text-muted-foreground">
+                    Erreur de chargement. 
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="underline ml-1">
+                      Ouvrir dans un nouvel onglet
+                    </a>
+                  </div>
+                }
+                className="flex justify-center"
+              >
+                {containerWidth > 0 && (
+                  <Page 
+                    pageNumber={pageNumber} 
+                    renderTextLayer={true}
+                    renderAnnotationLayer={true}
+                    className="shadow-lg"
+                    width={containerWidth}
+                  />
+                )}
+              </Document>
+            </div>
 
             {numPages > 1 && (
               <div className="flex items-center gap-4 mt-4">
