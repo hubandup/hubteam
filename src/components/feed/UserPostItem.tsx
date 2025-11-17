@@ -8,18 +8,22 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 
 interface UserPost {
   id: string;
   content: string;
   created_at: string;
   user_id: string;
+  media_urls?: string[] | null;
+  embed_url?: string | null;
   profiles?: {
     first_name: string;
     last_name: string;
     avatar_url: string | null;
   } | null;
 }
+
 
 interface UserPostItemProps {
   post: UserPost;
@@ -94,6 +98,76 @@ export function UserPostItem({ post }: UserPostItemProps) {
           <p className="mt-3 text-sm whitespace-pre-wrap break-words">
             {post.content}
           </p>
+
+          {/* Embed (YouTube/Vimeo) */}
+          {post.embed_url && (
+            <div className="mt-3 rounded-md overflow-hidden border">
+              <AspectRatio ratio={16 / 9}>
+                <iframe
+                  src={(function () {
+                    const url = post.embed_url as string;
+                    try {
+                      const u = new URL(url);
+                      // YouTube patterns
+                      if (u.hostname.includes('youtube.com')) {
+                        const v = u.searchParams.get('v');
+                        if (v) return `https://www.youtube.com/embed/${v}`;
+                      }
+                      if (u.hostname.includes('youtu.be')) {
+                        const id = u.pathname.replace('/', '');
+                        if (id) return `https://www.youtube.com/embed/${id}`;
+                      }
+                      // Vimeo
+                      if (u.hostname.includes('vimeo.com')) {
+                        const id = u.pathname.split('/').filter(Boolean)[0];
+                        if (id) return `https://player.vimeo.com/video/${id}`;
+                      }
+                    } catch {}
+                    // Fallback to given URL
+                    return url;
+                  })()}
+                  title="Contenu embarqué"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                  className="h-full w-full"
+                />
+              </AspectRatio>
+            </div>
+          )}
+
+          {/* Images/Vidéos */}
+          {post.media_urls && post.media_urls.length > 0 && (
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {post.media_urls.map((url, idx) => {
+                const isVideo = /\.(mp4|webm|ogg)$/i.test(url);
+                return (
+                  <div key={idx} className="rounded-md overflow-hidden border">
+                    {isVideo ? (
+                      <video
+                        controls
+                        preload="metadata"
+                        className="w-full h-auto"
+                      >
+                        <source src={url} />
+                        Votre navigateur ne supporte pas la vidéo.
+                      </video>
+                    ) : (
+                      <img
+                        src={url}
+                        loading="lazy"
+                        alt={`Média de ${post.profiles?.first_name ?? ''} ${post.profiles?.last_name ?? ''}`.trim() || 'Média du post'}
+                        className="w-full h-auto object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </Card>
