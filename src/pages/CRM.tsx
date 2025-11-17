@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ClientCard } from '@/components/ClientCard';
@@ -14,71 +14,20 @@ import { toast } from 'sonner';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useClients } from '@/hooks/useClients';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function CRM() {
   const navigate = useNavigate();
   const { canRead } = usePermissions();
   const isMobile = useIsMobile();
-  const [clients, setClients] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: clients = [], isLoading: loading } = useClients();
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'grid'>('list');
   const [sortBy, setSortBy] = useState<'created_at' | 'revenue_current_year' | 'alphabetical'>('alphabetical');
   const [filterActive, setFilterActive] = useState(false);
   const [filterWithProjects, setFilterWithProjects] = useState(false);
-
-  useEffect(() => {
-    fetchClients();
-  }, []);
-
-  const fetchClients = async () => {
-    try {
-      // Fetch clients with projects count
-      const { data: clientsData, error: clientsError } = await supabase
-        .from('clients')
-        .select(`
-          *,
-          project_clients(
-            project_id,
-            projects(id, status)
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (clientsError) throw clientsError;
-
-      const { data: statusesData, error: statusesError } = await supabase
-        .from('client_statuses')
-        .select('id, name, color');
-
-      if (statusesError) throw statusesError;
-
-      const statusById = (statusesData || []).reduce<Record<string, { name: string; color: string }>>((acc, s) => {
-        acc[s.id] = { name: s.name, color: s.color } as any;
-        return acc;
-      }, {});
-
-      const withAction = (clientsData || []).map((c) => {
-        const activeProjects = c.project_clients?.filter(
-          (pc: any) => pc.projects?.status === 'active'
-        ) || [];
-        
-        return {
-          ...c,
-          action_name: c.status_id ? statusById[c.status_id]?.name : undefined,
-          action_color: c.status_id ? statusById[c.status_id]?.color : undefined,
-          hasActiveProjects: activeProjects.length > 0,
-        };
-      });
-
-      setClients(withAction);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      toast.error('Erreur lors du chargement des clients');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredClients = useMemo(() => {
     let result = clients;
@@ -131,11 +80,8 @@ export default function CRM() {
 
       if (error) throw error;
 
-      setClients((prev) =>
-        prev.map((client) =>
-          client.id === clientId ? { ...client, kanban_stage: newStage } : client
-        )
-      );
+      // Invalidate cache to refresh data
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
 
       toast.success('Statut client mis à jour');
     } catch (error) {
@@ -173,7 +119,7 @@ export default function CRM() {
           {isMobile && (
             <div className="mt-4">
               <ProtectedAction module="crm" action="create">
-                <AddClientDialog onClientAdded={fetchClients} />
+                <AddClientDialog onClientAdded={() => queryClient.invalidateQueries({ queryKey: ['clients'] })} />
               </ProtectedAction>
             </div>
           )}
@@ -204,10 +150,10 @@ export default function CRM() {
               </Button>
             </div>
             <ProtectedAction module="crm" action="create">
-              <ImportClientsValidationDialog onClientsImported={fetchClients} />
+              <ImportClientsValidationDialog onClientsImported={() => queryClient.invalidateQueries({ queryKey: ['clients'] })} />
             </ProtectedAction>
             <ProtectedAction module="crm" action="create">
-              <AddClientDialog onClientAdded={fetchClients} />
+                <AddClientDialog onClientAdded={() => queryClient.invalidateQueries({ queryKey: ['clients'] })} />
             </ProtectedAction>
           </div>
         )}
