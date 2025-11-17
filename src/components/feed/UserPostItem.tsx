@@ -14,7 +14,6 @@ import { PDFPreview } from './PDFPreview';
 import { PostComments } from './PostComments';
 import { PostReactions } from './PostReactions';
 import { PostStats } from './PostStats';
-
 interface UserPost {
   id: string;
   content: string;
@@ -33,14 +32,15 @@ interface UserPost {
     avatar_url: string | null;
   } | null;
 }
-
-
 interface UserPostItemProps {
   post: UserPost;
 }
-
-export function UserPostItem({ post }: UserPostItemProps) {
-  const { user } = useAuth();
+export function UserPostItem({
+  post
+}: UserPostItemProps) {
+  const {
+    user
+  } = useAuth();
   const isOwner = user?.id === post.user_id;
 
   // Extract URL from content (excluding YouTube/Vimeo) - only if no embed_url in DB
@@ -48,52 +48,37 @@ export function UserPostItem({ post }: UserPostItemProps) {
     const urlRegex = /(https?:\/\/[^\s]+)/gi;
     const matches = text.match(urlRegex);
     if (!matches) return null;
-    
+
     // Filter out YouTube and Vimeo URLs
     const nonVideoUrl = matches.find(url => {
       const lower = url.toLowerCase();
-      return !lower.includes('youtube.com') && 
-             !lower.includes('youtu.be') && 
-             !lower.includes('vimeo.com');
+      return !lower.includes('youtube.com') && !lower.includes('youtu.be') && !lower.includes('vimeo.com');
     });
-    
     return nonVideoUrl || null;
   };
 
   // Determine if we should show link preview
   // Show if: embed_url exists BUT it's not a YouTube/Vimeo (i.e., it's a link preview URL)
   // OR if we can extract a URL from content and there's no video embed
-  const isVideoEmbed = post.embed_url && (
-    post.embed_url.includes('youtube.com') ||
-    post.embed_url.includes('youtu.be') ||
-    post.embed_url.includes('vimeo.com')
-  );
-  
-  const linkUrl = isVideoEmbed ? null : (post.embed_url || extractUrl(post.content));
+  const isVideoEmbed = post.embed_url && (post.embed_url.includes('youtube.com') || post.embed_url.includes('youtu.be') || post.embed_url.includes('vimeo.com'));
+  const linkUrl = isVideoEmbed ? null : post.embed_url || extractUrl(post.content);
   const hasLinkMetadata = !!(post.link_title || post.link_description || post.link_image || post.link_site_name);
-
   const handleDelete = async () => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce post ?')) {
       return;
     }
-
     try {
-      const { error } = await supabase
-        .from('user_posts')
-        .delete()
-        .eq('id', post.id);
-
+      const {
+        error
+      } = await supabase.from('user_posts').delete().eq('id', post.id);
       if (error) throw error;
-
       toast.success('Post supprimé');
     } catch (error) {
       console.error('Error deleting post:', error);
       toast.error('Erreur lors de la suppression');
     }
   };
-
-  return (
-    <Card className="p-4">
+  return <Card className="p-4">
       <div className="flex items-start gap-3">
         <Avatar className="h-10 w-10">
           <AvatarImage src={post.profiles?.avatar_url || undefined} />
@@ -111,14 +96,13 @@ export function UserPostItem({ post }: UserPostItemProps) {
               </p>
               <p className="text-xs text-muted-foreground">
                 {formatDistanceToNow(new Date(post.created_at), {
-                  addSuffix: true,
-                  locale: fr,
-                })}
+                addSuffix: true,
+                locale: fr
+              })}
               </p>
             </div>
 
-            {isOwner && (
-              <DropdownMenu>
+            {isOwner && <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8">
                     <MoreVertical className="h-4 w-4" />
@@ -130,8 +114,7 @@ export function UserPostItem({ post }: UserPostItemProps) {
                     Supprimer
                   </DropdownMenuItem>
                 </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+              </DropdownMenu>}
           </div>
 
           <p className="mt-3 text-sm whitespace-pre-wrap break-words">
@@ -139,143 +122,99 @@ export function UserPostItem({ post }: UserPostItemProps) {
           </p>
 
           {/* Embed (YouTube/Vimeo) - Only show iframe for actual video embeds */}
-          {isVideoEmbed && post.embed_url && (
-            <div className="mt-3 rounded-lg overflow-hidden border bg-muted">
+          {isVideoEmbed && post.embed_url && <div className="mt-3 rounded-lg overflow-hidden border bg-muted">
               <AspectRatio ratio={16 / 9}>
-                <iframe
-                  src={(() => {
-                    const raw = post.embed_url as string;
-                    const toYouTubeEmbed = (id: string, start?: number) =>
-                      `https://www.youtube-nocookie.com/embed/${id}${start && start > 0 ? `?start=${start}` : ''}`;
-                    const parseStart = (u: URL): number => {
-                      const t = u.searchParams.get('t') || u.searchParams.get('start');
-                      if (!t) return 0;
-                      if (/^\d+$/.test(t)) return parseInt(t, 10);
-                      const m = t.match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/);
-                      if (!m) return 0;
-                      const h = parseInt(m[1] || '0', 10);
-                      const min = parseInt(m[2] || '0', 10);
-                      const s = parseInt(m[3] || '0', 10);
-                      return h * 3600 + min * 60 + s;
-                    };
+                <iframe src={(() => {
+              const raw = post.embed_url as string;
+              const toYouTubeEmbed = (id: string, start?: number) => `https://www.youtube-nocookie.com/embed/${id}${start && start > 0 ? `?start=${start}` : ''}`;
+              const parseStart = (u: URL): number => {
+                const t = u.searchParams.get('t') || u.searchParams.get('start');
+                if (!t) return 0;
+                if (/^\d+$/.test(t)) return parseInt(t, 10);
+                const m = t.match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/);
+                if (!m) return 0;
+                const h = parseInt(m[1] || '0', 10);
+                const min = parseInt(m[2] || '0', 10);
+                const s = parseInt(m[3] || '0', 10);
+                return h * 3600 + min * 60 + s;
+              };
+              try {
+                const u = new URL(raw);
+                const hostname = u.hostname.replace('www.', '');
+                const path = u.pathname;
 
-                    try {
-                      const u = new URL(raw);
-                      const hostname = u.hostname.replace('www.', '');
-                      const path = u.pathname;
+                // Normalize protocol
+                u.protocol = 'https:';
 
-                      // Normalize protocol
-                      u.protocol = 'https:';
+                // YouTube patterns
+                if (hostname.endsWith('youtube.com') || hostname === 'm.youtube.com' || hostname === 'music.youtube.com') {
+                  const start = parseStart(u);
+                  if (path.startsWith('/watch')) {
+                    const v = u.searchParams.get('v');
+                    if (v) return toYouTubeEmbed(v, start);
+                  }
+                  if (path.startsWith('/shorts/')) {
+                    const id = path.split('/')[2]?.split('?')[0];
+                    if (id) return toYouTubeEmbed(id, start);
+                  }
+                  if (path.startsWith('/live/')) {
+                    const id = path.split('/')[2]?.split('?')[0];
+                    if (id) return toYouTubeEmbed(id, start);
+                  }
+                  if (path.startsWith('/embed/')) {
+                    const id = path.split('/')[2]?.split('?')[0];
+                    if (id) return toYouTubeEmbed(id, start);
+                  }
+                }
+                if (hostname === 'youtu.be') {
+                  const id = path.slice(1).split('?')[0];
+                  const start = parseStart(new URL(raw));
+                  if (id) return toYouTubeEmbed(id, start);
+                }
 
-                      // YouTube patterns
-                      if (hostname.endsWith('youtube.com') || hostname === 'm.youtube.com' || hostname === 'music.youtube.com') {
-                        const start = parseStart(u);
-                        if (path.startsWith('/watch')) {
-                          const v = u.searchParams.get('v');
-                          if (v) return toYouTubeEmbed(v, start);
-                        }
-                        if (path.startsWith('/shorts/')) {
-                          const id = path.split('/')[2]?.split('?')[0];
-                          if (id) return toYouTubeEmbed(id, start);
-                        }
-                        if (path.startsWith('/live/')) {
-                          const id = path.split('/')[2]?.split('?')[0];
-                          if (id) return toYouTubeEmbed(id, start);
-                        }
-                        if (path.startsWith('/embed/')) {
-                          const id = path.split('/')[2]?.split('?')[0];
-                          if (id) return toYouTubeEmbed(id, start);
-                        }
-                      }
-                      if (hostname === 'youtu.be') {
-                        const id = path.slice(1).split('?')[0];
-                        const start = parseStart(new URL(raw));
-                        if (id) return toYouTubeEmbed(id, start);
-                      }
-
-                      // Vimeo
-                      if (hostname === 'vimeo.com') {
-                        const match = path.match(/\/(\d+)/);
-                        if (match) return `https://player.vimeo.com/video/${match[1]}`;
-                      }
-                    } catch (e) {
-                      console.error('Error parsing embed URL:', e);
-                    }
-                    return raw;
-                  })()}
-                  title="Contenu embarqué"
-                  loading="lazy"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  allowFullScreen
-                  className="w-full h-full border-0"
-                />
+                // Vimeo
+                if (hostname === 'vimeo.com') {
+                  const match = path.match(/\/(\d+)/);
+                  if (match) return `https://player.vimeo.com/video/${match[1]}`;
+                }
+              } catch (e) {
+                console.error('Error parsing embed URL:', e);
+              }
+              return raw;
+            })()} title="Contenu embarqué" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen className="w-full h-full border-0" />
               </AspectRatio>
-            </div>
-          )}
+            </div>}
 
           {/* Link Preview - Uses pre-fetched metadata from DB (no real-time fetch, no iframes) */}
-          {linkUrl && (
-            <LinkPreview 
-              url={linkUrl}
-              title={hasLinkMetadata ? post.link_title : undefined}
-              description={hasLinkMetadata ? post.link_description : undefined}
-              image={hasLinkMetadata ? post.link_image : undefined}
-              siteName={hasLinkMetadata ? post.link_site_name : undefined}
-            />
-          )}
+          {linkUrl && <LinkPreview url={linkUrl} title={hasLinkMetadata ? post.link_title : undefined} description={hasLinkMetadata ? post.link_description : undefined} image={hasLinkMetadata ? post.link_image : undefined} siteName={hasLinkMetadata ? post.link_site_name : undefined} />}
 
           {/* PDF Preview */}
-          {post.pdf_url && (
-            <PDFPreview 
-              url={post.pdf_url}
-              fileName={`Document_${post.id.substring(0, 8)}.pdf`}
-            />
-          )}
+          {post.pdf_url && <PDFPreview url={post.pdf_url} fileName={`Document_${post.id.substring(0, 8)}.pdf`} />}
 
           {/* Images/Vidéos */}
-          {post.media_urls && post.media_urls.length > 0 && (
-            <div className="mt-3 space-y-3">
+          {post.media_urls && post.media_urls.length > 0 && <div className="mt-3 space-y-3">
               {post.media_urls.map((url, idx) => {
-                const isVideo = /\.(mp4|webm|ogg)$/i.test(url);
-                return (
-                  <div key={idx} className="rounded-md overflow-hidden border">
-                    {isVideo ? (
-                      <video
-                        controls
-                        preload="metadata"
-                        className="w-full h-auto"
-                      >
+            const isVideo = /\.(mp4|webm|ogg)$/i.test(url);
+            return <div key={idx} className="rounded-md overflow-hidden border">
+                    {isVideo ? <video controls preload="metadata" className="w-full h-auto">
                         <source src={url} />
                         Votre navigateur ne supporte pas la vidéo.
-                      </video>
-                    ) : (
-                      <img
-                        src={url}
-                        loading="lazy"
-                        alt={`Média de ${post.profiles?.first_name ?? ''} ${post.profiles?.last_name ?? ''}`.trim() || 'Média du post'}
-                        className="w-full h-auto object-contain max-h-[600px]"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                      </video> : <img src={url} loading="lazy" alt={`Média de ${post.profiles?.first_name ?? ''} ${post.profiles?.last_name ?? ''}`.trim() || 'Média du post'} className="w-full h-auto object-contain max-h-[600px]" onError={e => {
+                (e.currentTarget as HTMLImageElement).style.display = 'none';
+              }} />}
+                  </div>;
+          })}
+            </div>}
 
           {/* Stats bar with like and comment counts */}
           <PostStats postId={post.id} />
 
           {/* Additional reactions section */}
-          <PostReactions postId={post.id} />
+          
 
           {/* Comments section */}
           <PostComments postId={post.id} />
         </div>
       </div>
-    </Card>
-  );
+    </Card>;
 }
