@@ -38,9 +38,17 @@ const createThumbnail = async (file: File, maxWidth = 800): Promise<File> => {
   });
 };
 
-export function CreatePostDialog() {
+interface CreatePostDialogProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function CreatePostDialog({ open: controlledOpen, onOpenChange }: CreatePostDialogProps = {}) {
   const { user } = useAuth();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
   const [content, setContent] = useState('');
   const [embedUrl, setEmbedUrl] = useState('');
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
