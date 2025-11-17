@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2 } from 'lucide-react';
 import { ActivityFeedItem } from '@/components/feed/ActivityFeedItem';
 import { OnlineUsersIndicator } from '@/components/feed/OnlineUsersIndicator';
-import { CreatePostDialog } from '@/components/feed/CreatePostDialog';
+import { CreatePostInput } from '@/components/feed/CreatePostInput';
 import { UserPostItem } from '@/components/feed/UserPostItem';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -188,7 +188,7 @@ export default function Feed() {
       <OnlineUsersIndicator />
 
       <div className="mb-4">
-        <CreatePostDialog />
+        <CreatePostInput />
       </div>
 
       <ScrollArea className="h-[calc(100vh-20rem)] md:h-[calc(100vh-16rem)]">
