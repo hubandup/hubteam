@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { FileText, ExternalLink, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface PDFPreviewProps {
   url: string;
@@ -10,8 +10,39 @@ interface PDFPreviewProps {
 
 export function PDFPreview({ url, fileName }: PDFPreviewProps) {
   const [showPreview, setShowPreview] = useState(true);
-  
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const displayName = fileName || 'Document PDF';
+
+  // Fetch the PDF as a Blob and render via blob: URL to avoid cross-origin/frame restrictions
+  useEffect(() => {
+    let revokeUrl: string | null = null;
+    setLoading(true);
+    setError(null);
+    setBlobUrl(null);
+
+    (async () => {
+      try {
+        const resp = await fetch(url, { mode: 'cors' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const blob = await resp.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        revokeUrl = objectUrl;
+        setBlobUrl(objectUrl);
+      } catch (e) {
+        console.error('[PDFPreview] Blob fetch error:', e);
+        setError('preview_failed');
+      } finally {
+        setLoading(false);
+      }
+    })();
+
+    return () => {
+      if (revokeUrl) URL.revokeObjectURL(revokeUrl);
+    };
+  }, [url]);
 
   return (
     <Card className="mt-3 overflow-hidden">
@@ -27,7 +58,7 @@ export function PDFPreview({ url, fileName }: PDFPreviewProps) {
               <p className="text-xs text-muted-foreground">Document PDF</p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -37,19 +68,9 @@ export function PDFPreview({ url, fileName }: PDFPreviewProps) {
               <FileText className="h-4 w-4 mr-2" />
               Prévisualiser
             </Button>
-            
-            <Button
-              variant="ghost"
-              size="icon"
-              asChild
-            >
-              <a
-                href={url}
-                download
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center"
-              >
+
+            <Button variant="ghost" size="icon" asChild>
+              <a href={url} download target="_blank" rel="noopener noreferrer" className="flex items-center">
                 <Download className="h-4 w-4" />
               </a>
             </Button>
@@ -63,66 +84,48 @@ export function PDFPreview({ url, fileName }: PDFPreviewProps) {
               <FileText className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0" />
               <p className="text-sm font-medium truncate">{displayName}</p>
             </div>
-            
+
             <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowPreview(false)}
-              >
+              <Button variant="ghost" size="sm" onClick={() => setShowPreview(false)}>
                 Réduire
               </Button>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                asChild
-              >
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center"
-                >
+
+              <Button variant="ghost" size="icon" asChild>
+                <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center">
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                asChild
-              >
-                <a
-                  href={url}
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center"
-                >
+
+              <Button variant="ghost" size="icon" asChild>
+                <a href={url} download target="_blank" rel="noopener noreferrer" className="flex items-center">
                   <Download className="h-4 w-4" />
                 </a>
               </Button>
             </div>
           </div>
-          
+
           <div className="relative w-full" style={{ height: '600px' }}>
-            <object
-              data={url}
-              type="application/pdf"
-              className="w-full h-full border-0"
-              aria-label={displayName}
-            >
-              <iframe
-                src={`${url}#toolbar=0&navpanes=0&scrollbar=1`}
-                className="w-full h-full border-0"
-                title={displayName}
-              />
-              <div className="p-4 text-sm text-muted-foreground">
-                Impossible d'afficher le PDF dans votre navigateur. 
-                <a href={url} target="_blank" rel="noopener noreferrer" className="underline">Ouvrir dans un nouvel onglet</a>.
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
+                Chargement du document…
               </div>
-            </object>
+            )}
+
+            {!loading && blobUrl && (
+              <object data={blobUrl} type="application/pdf" className="w-full h-full border-0" aria-label={displayName}>
+                <div className="p-4 text-sm text-muted-foreground">
+                  Impossible d'afficher le PDF dans votre navigateur.
+                  <a href={url} target="_blank" rel="noopener noreferrer" className="underline ml-1">Ouvrir dans un nouvel onglet</a>.
+                </div>
+              </object>
+            )}
+
+            {!loading && !blobUrl && (
+              <div className="p-4 text-sm text-muted-foreground">
+                Impossible d'afficher l'aperçu du PDF.
+                <a href={url} target="_blank" rel="noopener noreferrer" className="underline ml-1">Ouvrir dans un nouvel onglet</a>.
+              </div>
+            )}
           </div>
         </div>
       )}
