@@ -24,10 +24,18 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <Navigate to="/auth" replace />;
   }
 
-  // Si aucun rôle n'est trouvé après le chargement, rediriger vers auth
+  // Si aucun rôle n'est trouvé après le chargement, afficher un message d'erreur
   if (!role && !roleLoading) {
-    console.error('No role found for user:', user.id);
-    return <Navigate to="/auth" replace />;
+    console.error('[ProtectedRoute] No role found for user:', user.id);
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center space-y-4">
+          <p className="text-destructive font-semibold">Erreur de rôle utilisateur</p>
+          <p className="text-muted-foreground">Aucun rôle n'a été trouvé pour votre compte.</p>
+          <p className="text-sm text-muted-foreground">Veuillez contacter l'administrateur.</p>
+        </div>
+      </div>
+    );
   }
 
   // Redirect clients away from /crm page
