@@ -135,8 +135,8 @@ export function UserPostItem({ post }: UserPostItemProps) {
             {post.content}
           </p>
 
-          {/* Embed (YouTube/Vimeo) */}
-          {post.embed_url && (
+          {/* Embed (YouTube/Vimeo) - Only show iframe for actual video embeds */}
+          {isVideoEmbed && post.embed_url && (
             <div className="mt-3 rounded-lg overflow-hidden border bg-muted">
               <AspectRatio ratio={16 / 9}>
                 <iframe
