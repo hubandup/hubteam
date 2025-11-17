@@ -14,7 +14,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
-import { ActivityReactions } from './ActivityReactions';
+import { ActivityStats } from './ActivityStats';
 
 interface ActivityFeedItemProps {
   activity: {
@@ -326,7 +326,7 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
         </div>
       </div>
 
-      <ActivityReactions activityId={activity.id} />
+      <ActivityStats activityId={activity.id} />
     </Card>
   );
 }
