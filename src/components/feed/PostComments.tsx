@@ -151,6 +151,13 @@ export function PostComments({ postId }: PostCommentsProps) {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
   const handleEdit = async (commentId: string) => {
     if (!editContent.trim()) return;
 
@@ -364,11 +371,11 @@ export function PostComments({ postId }: PostCommentsProps) {
               </Button>
             </div>
           )}
-          <div className="relative">
+          <div className="relative" onKeyDown={handleKeyDown}>
             <RichMentionInput
               value={newComment}
               onChange={setNewComment}
-              placeholder="Écrivez un commentaire..."
+              placeholder="Écrivez un commentaire... (Entrée pour publier)"
               className="min-h-[60px] pr-12"
             />
             <Button

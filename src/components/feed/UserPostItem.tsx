@@ -266,10 +266,10 @@ export function UserPostItem({ post }: UserPostItemProps) {
             </div>
           )}
 
-          {/* Stats bar */}
+          {/* Stats bar with like and comment counts */}
           <PostStats postId={post.id} />
 
-          {/* Reactions section */}
+          {/* Additional reactions section */}
           <PostReactions postId={post.id} />
 
           {/* Comments section */}
