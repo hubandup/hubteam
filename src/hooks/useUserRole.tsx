@@ -19,30 +19,37 @@ export function useUserRole() {
     const fetchRole = async () => {
       try {
         console.log('[useUserRole] Fetching role for user:', user.id);
+        console.log('[useUserRole] Auth session:', await supabase.auth.getSession());
         
+        // Use maybeSingle() to avoid throwing on empty result
         const { data, error } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         console.log('[useUserRole] Query result - data:', data, 'error:', error);
 
         if (error) {
-          // If error is "no rows returned", it's different from a real error
-          if (error.code === 'PGRST116') {
-            console.warn('[useUserRole] No role found for user:', user.id);
-            setRole(null);
-          } else {
-            console.error('[useUserRole] Error fetching role:', error);
-            setRole(null);
-          }
+          console.error('[useUserRole] Error fetching role:', error);
+          setRole(null);
         } else if (data?.role) {
           console.log('[useUserRole] Role fetched successfully:', data.role);
           setRole(data.role as UserRole);
         } else {
-          console.warn('[useUserRole] No role data returned for user:', user.id);
-          setRole(null);
+          console.warn('[useUserRole] No role found for user:', user.id);
+          // Try direct query as fallback
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .rpc('has_role', { _user_id: user.id, _role: 'admin' });
+          
+          console.log('[useUserRole] Fallback has_role check:', { fallbackData, fallbackError });
+          
+          if (fallbackData === true) {
+            console.log('[useUserRole] Fallback found admin role');
+            setRole('admin');
+          } else {
+            setRole(null);
+          }
         }
       } catch (err) {
         console.error('[useUserRole] Unexpected error:', err);
