@@ -5,7 +5,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2 } from 'lucide-react';
 import { ActivityFeedItem } from '@/components/feed/ActivityFeedItem';
 import { OnlineUsersIndicator } from '@/components/feed/OnlineUsersIndicator';
+import { CreatePostDialog } from '@/components/feed/CreatePostDialog';
+import { UserPostItem } from '@/components/feed/UserPostItem';
 import { useAuth } from '@/hooks/useAuth';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface ActivityLog {
   id: string;
@@ -23,16 +26,30 @@ interface ActivityLog {
   } | null;
 }
 
+interface UserPost {
+  id: string;
+  content: string;
+  created_at: string;
+  user_id: string;
+  profiles?: {
+    first_name: string;
+    last_name: string;
+    avatar_url: string | null;
+  } | null;
+}
+
 export default function Feed() {
   const { user } = useAuth();
   const [activities, setActivities] = useState<ActivityLog[]>([]);
+  const [posts, setPosts] = useState<UserPost[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchActivities();
+    fetchPosts();
 
-    // Subscribe to realtime updates
-    const channel = supabase
+    // Subscribe to realtime updates for activities
+    const activityChannel = supabase
       .channel('activity-feed-changes')
       .on(
         'postgres_changes',
@@ -47,8 +64,25 @@ export default function Feed() {
       )
       .subscribe();
 
+    // Subscribe to realtime updates for posts
+    const postsChannel = supabase
+      .channel('user-posts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_posts',
+        },
+        () => {
+          fetchPosts();
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(activityChannel);
+      supabase.removeChannel(postsChannel);
     };
   }, []);
 
@@ -93,6 +127,45 @@ export default function Feed() {
     }
   };
 
+  const fetchPosts = async () => {
+    try {
+      const { data: postsData, error } = await supabase
+        .from('user_posts')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+
+      // Get unique user IDs
+      const userIds = [...new Set(postsData?.map(p => p.user_id).filter(Boolean) || [])];
+
+      // Fetch profiles for these users
+      let profilesMap: Record<string, any> = {};
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, avatar_url')
+          .in('id', userIds);
+
+        profilesMap = (profilesData || []).reduce((acc, profile) => {
+          acc[profile.id] = profile;
+          return acc;
+        }, {} as Record<string, any>);
+      }
+
+      // Merge posts with profiles
+      const postsWithProfiles = (postsData || []).map(post => ({
+        ...post,
+        profiles: post.user_id ? profilesMap[post.user_id] : null,
+      }));
+
+      setPosts(postsWithProfiles);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
@@ -106,25 +179,54 @@ export default function Feed() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Fil d'actualité</h1>
         <p className="text-muted-foreground mt-2">
-          Toutes les activités récentes sur HubTeam
+          Partagez et découvrez les actualités de l'équipe
         </p>
       </div>
 
       <OnlineUsersIndicator />
 
-      <ScrollArea className="h-[calc(100vh-16rem)] md:h-[calc(100vh-12rem)]">
-        <div className="space-y-4">
-          {activities.length === 0 ? (
-            <Card className="p-8 text-center">
-              <p className="text-muted-foreground">Aucune activité récente</p>
-            </Card>
-          ) : (
-            activities.map((activity) => (
-              <ActivityFeedItem key={activity.id} activity={activity} />
-            ))
-          )}
-        </div>
-      </ScrollArea>
+      <div className="mb-4">
+        <CreatePostDialog />
+      </div>
+
+      <Tabs defaultValue="posts" className="w-full">
+        <TabsList className="w-full">
+          <TabsTrigger value="posts" className="flex-1">Posts</TabsTrigger>
+          <TabsTrigger value="activity" className="flex-1">Activité système</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="posts">
+          <ScrollArea className="h-[calc(100vh-20rem)] md:h-[calc(100vh-16rem)]">
+            <div className="space-y-4">
+              {posts.length === 0 ? (
+                <Card className="p-8 text-center">
+                  <p className="text-muted-foreground">Aucun post pour le moment. Soyez le premier à partager !</p>
+                </Card>
+              ) : (
+                posts.map((post) => (
+                  <UserPostItem key={post.id} post={post} />
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </TabsContent>
+
+        <TabsContent value="activity">
+          <ScrollArea className="h-[calc(100vh-20rem)] md:h-[calc(100vh-16rem)]">
+            <div className="space-y-4">
+              {activities.length === 0 ? (
+                <Card className="p-8 text-center">
+                  <p className="text-muted-foreground">Aucune activité récente</p>
+                </Card>
+              ) : (
+                activities.map((activity) => (
+                  <ActivityFeedItem key={activity.id} activity={activity} />
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

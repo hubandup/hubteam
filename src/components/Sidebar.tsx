@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, MessageSquare, History, HelpCircle } from 'lucide-react';
+import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, MessageSquare, History, HelpCircle, Rss } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -71,6 +71,7 @@ export function Sidebar() {
     { title: 'CRM', url: '/crm', icon: Users, module: 'crm' as const, matchParent: true },
     { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const, matchParent: true },
     { title: 'Projets', url: '/projects', icon: FolderKanban, module: 'projects' as const, matchParent: true },
+    { title: 'Feed', url: '/feed', icon: Rss, module: 'dashboard' as const },
     { title: 'Messages', url: '/messages', icon: MessageSquare, module: 'messages' as const },
     { title: 'Activité', url: '/activity', icon: History, module: 'dashboard' as const, hideForClient: true },
     { title: 'FAQ', url: '/faq', icon: HelpCircle, module: 'faq' as const },
