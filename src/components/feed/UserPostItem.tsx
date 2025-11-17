@@ -101,36 +101,40 @@ export function UserPostItem({ post }: UserPostItemProps) {
 
           {/* Embed (YouTube/Vimeo) */}
           {post.embed_url && (
-            <div className="mt-3 rounded-md overflow-hidden border">
+            <div className="mt-3 rounded-lg overflow-hidden border bg-muted">
               <AspectRatio ratio={16 / 9}>
                 <iframe
-                  src={(function () {
+                  src={(() => {
                     const url = post.embed_url as string;
                     try {
                       const u = new URL(url);
+                      const hostname = u.hostname.replace('www.', '');
+                      
                       // YouTube patterns
-                      if (u.hostname.includes('youtube.com')) {
+                      if (hostname === 'youtube.com' || hostname === 'm.youtube.com') {
                         const v = u.searchParams.get('v');
                         if (v) return `https://www.youtube.com/embed/${v}`;
                       }
-                      if (u.hostname.includes('youtu.be')) {
-                        const id = u.pathname.replace('/', '');
+                      if (hostname === 'youtu.be') {
+                        const id = u.pathname.slice(1).split('?')[0];
                         if (id) return `https://www.youtube.com/embed/${id}`;
                       }
+                      
                       // Vimeo
-                      if (u.hostname.includes('vimeo.com')) {
-                        const id = u.pathname.split('/').filter(Boolean)[0];
-                        if (id) return `https://player.vimeo.com/video/${id}`;
+                      if (hostname === 'vimeo.com') {
+                        const match = u.pathname.match(/\/(\d+)/);
+                        if (match) return `https://player.vimeo.com/video/${match[1]}`;
                       }
-                    } catch {}
-                    // Fallback to given URL
+                    } catch (e) {
+                      console.error('Error parsing embed URL:', e);
+                    }
                     return url;
                   })()}
                   title="Contenu embarqué"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   referrerPolicy="strict-origin-when-cross-origin"
                   allowFullScreen
-                  className="h-full w-full"
+                  className="w-full h-full border-0"
                 />
               </AspectRatio>
             </div>
