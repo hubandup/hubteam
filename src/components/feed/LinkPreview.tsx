@@ -55,7 +55,17 @@ export function LinkPreview({ url }: LinkPreviewProps) {
   }
 
   if (error || !preview) {
-    return null;
+    // Fallback for blocked domains (LinkedIn, etc.)
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block mt-3 text-sm text-primary hover:underline"
+      >
+        🔗 {url}
+      </a>
+    );
   }
 
   return (
