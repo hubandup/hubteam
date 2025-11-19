@@ -21,6 +21,7 @@ interface KDriveFile {
   size?: number;
   created_at?: string;
   path: string;
+  parent_id?: number | null;
 }
 interface AgencyKDriveTabProps {
   agencyId: string;
@@ -114,26 +115,45 @@ export function AgencyKDriveTab({
   const loadFiles = async (drive: number, folderId: string) => {
     try {
       setLoading(true);
-      const {
-        data,
-        error
-      } = await supabase.functions.invoke('kdrive-api', {
-        body: {
-          action: 'list-files',
-          driveId: drive,
-          folderId: folderId
-        }
-      });
-      if (error) throw error;
-      let filesData = data?.data || [];
+      let allFiles: KDriveFile[] = [];
+      let currentOffset = 0;
+      let hasMoreFiles = true;
+      const limit = 50;
+
+      // Load all files recursively until no more files
+      while (hasMoreFiles) {
+        const {
+          data,
+          error
+        } = await supabase.functions.invoke('kdrive-api', {
+          body: {
+            action: 'list-files',
+            driveId: drive,
+            folderId: folderId,
+            limit,
+            offset: currentOffset,
+          }
+        });
+        
+        if (error) throw error;
+        
+        const arr = Array.isArray(data?.data) ? data.data : [];
+        allFiles = [...allFiles, ...arr];
+        
+        hasMoreFiles = Boolean((data as any)?.has_more);
+        currentOffset += arr.length;
+
+        // If no more files, exit loop
+        if (!hasMoreFiles || arr.length === 0) break;
+      }
 
       // Sort files
-      filesData.sort((a: KDriveFile, b: KDriveFile) => {
+      allFiles.sort((a: KDriveFile, b: KDriveFile) => {
         if (a.type === 'dir' && b.type !== 'dir') return -1;
         if (a.type !== 'dir' && b.type === 'dir') return 1;
         return sortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
       });
-      setFiles(filesData);
+      setFiles(allFiles);
     } catch (error) {
       console.error('Error loading files:', error);
       toast.error('Erreur lors du chargement des fichiers');

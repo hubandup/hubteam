@@ -59,6 +59,7 @@ interface KDriveFile {
   size?: number;
   created_at?: string;
   path: string;
+  parent_id?: number | null;
 }
 
 export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
@@ -184,32 +185,44 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
   const loadFiles = async (driveId: number | undefined, folderId: string, append = false, customOffset?: number) => {
     try {
       const effectiveDriveId = (driveId as any) ?? undefined;
+      let allFiles: KDriveFile[] = [];
+      let currentOffset = typeof customOffset === "number" ? customOffset : 0;
+      let hasMoreFiles = true;
 
-      const { data, error } = await supabase.functions.invoke("kdrive-api", {
-        body: {
-          action: "list-files",
-          driveId: effectiveDriveId,
-          folderId,
-          limit,
-          offset: typeof customOffset === "number" ? customOffset : offset,
-        },
-      });
+      // Load all files recursively until no more files
+      while (hasMoreFiles) {
+        const { data, error } = await supabase.functions.invoke("kdrive-api", {
+          body: {
+            action: "list-files",
+            driveId: effectiveDriveId,
+            folderId,
+            limit,
+            offset: currentOffset,
+          },
+        });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      // Extract array and pagination
-      const arr = Array.isArray(data?.data) ? data.data : [];
-      setHasMore(Boolean((data as any)?.has_more));
-      const newOffset = (typeof customOffset === "number" ? customOffset : offset) + arr.length;
-      setOffset(newOffset);
+        // Extract array and pagination
+        const arr = Array.isArray(data?.data) ? data.data : [];
+        allFiles = [...allFiles, ...arr];
+        
+        hasMoreFiles = Boolean((data as any)?.has_more);
+        currentOffset += arr.length;
+
+        // If no more files, exit loop
+        if (!hasMoreFiles || arr.length === 0) break;
+      }
 
       // Get parent_id from first entry if available
-      const parentId = arr?.[0]?.parent_id ?? null;
+      const parentId = allFiles?.[0]?.parent_id ?? null;
       if (currentFolder) {
         setCurrentFolder((prev) => (prev ? { ...prev, parentId } : null));
       }
 
-      setFiles((prev) => (append ? [...prev, ...arr] : arr));
+      setHasMore(false); // All files loaded
+      setOffset(currentOffset);
+      setFiles((prev) => (append ? [...prev, ...allFiles] : allFiles));
     } catch (error) {
       console.error("Error loading files:", error);
       toast.error("Erreur lors du chargement des fichiers");
