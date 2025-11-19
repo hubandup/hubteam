@@ -87,7 +87,7 @@ export function ProjectKDriveTab({ projectId }: ProjectKDriveTabProps) {
       let allFiles: KDriveFile[] = [];
       let currentOffset = 0;
       let hasMoreFiles = true;
-      const limit = 50;
+      const limit = 200;
 
       // Load all files recursively until no more files
       while (hasMoreFiles) {
