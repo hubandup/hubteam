@@ -62,18 +62,12 @@ export function KDriveFolderSelector({
   useEffect(() => {
     if (isOpen) {
       loadFolders();
-      setSearchQuery("");
     }
-  }, [isOpen, currentFolderId]);
+  }, [isOpen, currentFolderId, searchQuery]);
 
   const filteredFolders = useMemo(() => {
+    // Server-side filtering is already applied, just sort
     let result = folders;
-    
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(folder => folder.name.toLowerCase().includes(query));
-    }
     
     // Apply sorting
     return result.sort((a, b) => {
@@ -83,7 +77,7 @@ export function KDriveFolderSelector({
         return b.name.localeCompare(a.name);
       }
     });
-  }, [folders, searchQuery, sortBy]);
+  }, [folders, sortBy]);
 
   const exactMatch = useMemo(() => {
     return folders.some(folder => 
@@ -117,61 +111,27 @@ export function KDriveFolderSelector({
         return;
       }
 
-      let allFolders: KDriveFile[] = [];
-      let currentOffset = 0;
-      let hasMoreFolders = true;
-      const limit = 50;
-      const maxIterations = 30;
-      let iterationCount = 0;
-      const seenIds = new Set<string>();
+      // If search query is provided, use server-side filtering
+      const response = await supabase.functions.invoke("kdrive-api", {
+        body: {
+          action: "list-files",
+          folderId: currentFolderId,
+          rootFolderId: KDRIVE_ROOT_FOLDER_ID,
+          debugNoFilter: DEBUG_NO_FILTER,
+          searchQuery: searchQuery.trim() || undefined, // Send search query to server
+        },
+      });
 
-      // Load folders with duplicate detection
-      while (hasMoreFolders && iterationCount < maxIterations) {
-        const response = await supabase.functions.invoke("kdrive-api", {
-          body: {
-            action: "list-files",
-            folderId: currentFolderId,
-            rootFolderId: KDRIVE_ROOT_FOLDER_ID,
-            debugNoFilter: DEBUG_NO_FILTER,
-            limit,
-            offset: currentOffset,
-          },
-        });
-
-        if (response.error) {
-          console.error("Erreur lors du chargement des dossiers:", response.error);
-          toast.error("Impossible de charger les dossiers kDrive");
-          return;
-        }
-
-        const files = response.data?.data || [];
-        const folderList = files.filter((file: KDriveFile) => file.type === "dir");
-        
-        // Check for duplicates - if we see the same folders, stop
-        const newFolders = folderList.filter((folder: KDriveFile) => {
-          if (seenIds.has(folder.id)) {
-            return false;
-          }
-          seenIds.add(folder.id);
-          return true;
-        });
-
-        // If no new folders found, we're done
-        if (newFolders.length === 0) {
-          break;
-        }
-
-        allFolders = [...allFolders, ...newFolders];
-
-        hasMoreFolders = Boolean(response.data?.has_more);
-        currentOffset += files.length;
-        iterationCount++;
-
-        // If no more folders, exit loop
-        if (!hasMoreFolders || files.length === 0) break;
+      if (response.error) {
+        console.error("Erreur lors du chargement des dossiers:", response.error);
+        toast.error("Impossible de charger les dossiers kDrive");
+        return;
       }
 
-      setFolders(allFolders);
+      const files = response.data?.data || [];
+      const folderList = files.filter((file: KDriveFile) => file.type === "dir");
+      
+      setFolders(folderList);
     } catch (error: any) {
       console.error("Erreur:", error);
       toast.error(error.message || "Erreur lors du chargement");
