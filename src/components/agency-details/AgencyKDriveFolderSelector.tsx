@@ -86,26 +86,53 @@ export function AgencyKDriveFolderSelector({
   const loadFolders = async () => {
     setIsLoading(true);
     try {
-      // If search query is provided, use server-side filtering
-      const response = await supabase.functions.invoke("kdrive-api", {
-        body: {
-          action: "list-files",
-          folderId: currentFolderId_state,
-          rootFolderId: AGENCIES_FOLDER_ID,
-          searchQuery: searchQuery.trim() || undefined, // Send search query to server
-        },
-      });
+      // Load all folders with pagination and duplicate detection
+      let allFolders: KDriveFile[] = [];
+      let offset = 0;
+      let hasMore = true;
+      const seenIds = new Set<string>();
+      const maxIterations = 100; // Safety limit
+      let iterationCount = 0;
 
-      if (response.error) {
-        console.error("Erreur lors du chargement des dossiers:", response.error);
-        toast.error("Impossible de charger les dossiers kDrive");
-        return;
+      while (hasMore && iterationCount < maxIterations) {
+        iterationCount++;
+        
+        const response = await supabase.functions.invoke("kdrive-api", {
+          body: {
+            action: "list-files",
+            folderId: currentFolderId_state,
+            rootFolderId: AGENCIES_FOLDER_ID,
+            searchQuery: searchQuery.trim() || undefined,
+            offset,
+            limit: 50,
+          },
+        });
+
+        if (response.error) {
+          console.error("Erreur lors du chargement des dossiers:", response.error);
+          toast.error("Impossible de charger les dossiers kDrive");
+          return;
+        }
+
+        const files = response.data?.data || [];
+        const folders = files.filter((file: KDriveFile) => file.type === "dir");
+        
+        // Check for new unique folders
+        let newFoldersCount = 0;
+        folders.forEach((folder: KDriveFile) => {
+          if (!seenIds.has(folder.id)) {
+            seenIds.add(folder.id);
+            allFolders.push(folder);
+            newFoldersCount++;
+          }
+        });
+
+        // Stop if no new folders or API says no more
+        hasMore = response.data?.has_more === true && newFoldersCount > 0;
+        offset += 50;
       }
 
-      const files = response.data?.data || [];
-      const folderList = files.filter((file: KDriveFile) => file.type === "dir");
-      
-      setFolders(folderList);
+      setFolders(allFolders);
     } catch (error: any) {
       console.error("Erreur:", error);
       toast.error(error.message || "Erreur lors du chargement");
