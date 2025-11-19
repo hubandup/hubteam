@@ -61,7 +61,7 @@ function DraggableClientCard({ client, onClick }: { client: any; onClick: () => 
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-3">
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-2 md:mb-3">
       <div className="relative" onClick={handleClick}>
         <ClientCard client={client} onClick={() => {}} />
       </div>
@@ -90,17 +90,17 @@ function DroppableColumn({
   return (
     <div 
       ref={setNodeRef}
-      className={`flex flex-col min-w-[320px] max-w-[320px] rounded-lg ${stage.color} p-4 transition-all ${
+      className={`kanban-column flex flex-col min-w-[280px] md:min-w-[320px] w-[280px] md:w-[320px] flex-shrink-0 rounded-lg ${stage.color} p-3 md:p-4 transition-all snap-start ${
         isOver ? 'ring-2 ring-primary ring-offset-2' : ''
       }`}
     >
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold text-sm text-foreground">{stage.label}</h3>
         <Badge variant="secondary" className="text-xs">
           {clients.length}
         </Badge>
       </div>
-      <div className="flex-1 overflow-y-auto min-h-[400px]">
+      <div className="flex-1 overflow-y-auto min-h-[350px] md:min-h-[400px]">
         <SortableContext items={clientIds} strategy={verticalListSortingStrategy}>
           {clients.map((client) => (
             <DraggableClientCard
@@ -205,17 +205,15 @@ export function ClientKanbanView({ clients, onClientClick, onStageChange }: Clie
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="w-full overflow-x-auto">
-        <div className="flex gap-4 pb-4 w-max">
-          {stageColumns.map((stage) => (
-            <DroppableColumn
-              key={stage.id}
-              stage={stage}
-              clients={clientsByStage[stage.id] || []}
-              onClientClick={onClientClick}
-            />
-          ))}
-        </div>
+      <div className="kanban-container flex gap-3 md:gap-4 overflow-x-auto pb-4 -mx-3 px-3 md:mx-0 md:px-0 snap-x snap-mandatory">
+        {stageColumns.map((stage) => (
+          <DroppableColumn
+            key={stage.id}
+            stage={stage}
+            clients={clientsByStage[stage.id] || []}
+            onClientClick={onClientClick}
+          />
+        ))}
       </div>
       <DragOverlay>
         {activeClient ? (
