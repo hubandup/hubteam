@@ -7,8 +7,10 @@
     /* Fonts */
     --font-heading: 'Instrument Sans';
     --font-heading-weight: 700;
+    --font-heading-size: 2.5rem;
     --font-body: 'Roboto';
     --font-body-weight: 400;
+    --font-body-size: 1rem;
     
     /* Professional Blue Theme */
     --background: 0 0% 100%;

@@ -505,12 +505,14 @@ export type Database = {
       design_settings: {
         Row: {
           body_font: string
+          body_font_size: string | null
           body_font_weight: string | null
           created_at: string
           dark_background: string
           dark_primary: string
           dark_secondary: string
           heading_font: string
+          heading_font_size: string | null
           heading_font_weight: string | null
           id: string
           light_background: string
@@ -520,12 +522,14 @@ export type Database = {
         }
         Insert: {
           body_font?: string
+          body_font_size?: string | null
           body_font_weight?: string | null
           created_at?: string
           dark_background?: string
           dark_primary?: string
           dark_secondary?: string
           heading_font?: string
+          heading_font_size?: string | null
           heading_font_weight?: string | null
           id?: string
           light_background?: string
@@ -535,12 +539,14 @@ export type Database = {
         }
         Update: {
           body_font?: string
+          body_font_size?: string | null
           body_font_weight?: string | null
           created_at?: string
           dark_background?: string
           dark_primary?: string
           dark_secondary?: string
           heading_font?: string
+          heading_font_size?: string | null
           heading_font_weight?: string | null
           id?: string
           light_background?: string

@@ -47,6 +47,21 @@ const FONT_WEIGHTS = [
   { value: '800', label: 'Extra-Bold (800)' },
 ];
 
+const HEADING_SIZES = [
+  { value: '1.5rem', label: 'Petit (1.5rem)' },
+  { value: '2rem', label: 'Moyen (2rem)' },
+  { value: '2.5rem', label: 'Grand (2.5rem)' },
+  { value: '3rem', label: 'Très grand (3rem)' },
+  { value: '3.5rem', label: 'Extra-large (3.5rem)' },
+];
+
+const BODY_SIZES = [
+  { value: '0.875rem', label: 'Petit (14px)' },
+  { value: '1rem', label: 'Normal (16px)' },
+  { value: '1.125rem', label: 'Moyen (18px)' },
+  { value: '1.25rem', label: 'Grand (20px)' },
+];
+
 // Predefined color palettes
 const COLOR_PALETTES = {
   professional: {
@@ -146,8 +161,10 @@ interface DesignSettings {
   id?: string;
   heading_font: string;
   heading_font_weight?: string;
+  heading_font_size?: string;
   body_font: string;
   body_font_weight?: string;
+  body_font_size?: string;
   light_primary: string;
   light_secondary: string;
   light_background: string;
@@ -164,8 +181,10 @@ export function DesignTab() {
   const [settings, setSettings] = useState<DesignSettings>({
     heading_font: 'Instrument Sans',
     heading_font_weight: '700',
+    heading_font_size: '2.5rem',
     body_font: 'Roboto',
     body_font_weight: '400',
+    body_font_size: '1rem',
     light_primary: '210 100% 30%',
     light_secondary: '210 60% 50%',
     light_background: '0 0% 100%',
@@ -245,8 +264,10 @@ export function DesignTab() {
     // Apply fonts
     root.style.setProperty('--font-heading', data.heading_font);
     root.style.setProperty('--font-heading-weight', data.heading_font_weight || '700');
+    root.style.setProperty('--font-heading-size', data.heading_font_size || '2.5rem');
     root.style.setProperty('--font-body', data.body_font);
     root.style.setProperty('--font-body-weight', data.body_font_weight || '400');
+    root.style.setProperty('--font-body-size', data.body_font_size || '1rem');
     
     // Apply light mode colors
     root.style.setProperty('--primary', data.light_primary);
@@ -427,7 +448,7 @@ export function DesignTab() {
           <div className="space-y-4">
             <div>
               <h4 className="font-semibold mb-3">Police des titres</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="heading-font">Police</Label>
                   <Select 
@@ -459,7 +480,7 @@ export function DesignTab() {
                     onValueChange={(value) => setSettings({ ...settings, heading_font_weight: value })}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Sélectionnez une épaisseur" />
+                      <SelectValue placeholder="Épaisseur" />
                     </SelectTrigger>
                     <SelectContent className="bg-popover z-50">
                       {FONT_WEIGHTS.map((weight) => (
@@ -474,12 +495,34 @@ export function DesignTab() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="heading-font-size">Taille</Label>
+                  <Select 
+                    value={settings.heading_font_size || '2.5rem'} 
+                    onValueChange={(value) => setSettings({ ...settings, heading_font_size: value })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Taille" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover z-50">
+                      {HEADING_SIZES.map((size) => (
+                        <SelectItem 
+                          key={size.value} 
+                          value={size.value}
+                          className="cursor-pointer"
+                        >
+                          {size.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
             <div>
               <h4 className="font-semibold mb-3">Police du texte</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="body-font">Police</Label>
                   <Select 
@@ -511,7 +554,7 @@ export function DesignTab() {
                     onValueChange={(value) => setSettings({ ...settings, body_font_weight: value })}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Sélectionnez une épaisseur" />
+                      <SelectValue placeholder="Épaisseur" />
                     </SelectTrigger>
                     <SelectContent className="bg-popover z-50">
                       {FONT_WEIGHTS.map((weight) => (
@@ -521,6 +564,28 @@ export function DesignTab() {
                           className="cursor-pointer"
                         >
                           {weight.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="body-font-size">Taille</Label>
+                  <Select 
+                    value={settings.body_font_size || '1rem'} 
+                    onValueChange={(value) => setSettings({ ...settings, body_font_size: value })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Taille" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover z-50">
+                      {BODY_SIZES.map((size) => (
+                        <SelectItem 
+                          key={size.value} 
+                          value={size.value}
+                          className="cursor-pointer"
+                        >
+                          {size.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -541,20 +606,32 @@ export function DesignTab() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-3 p-6 bg-muted/30 rounded-lg border border-border">
-            <div style={{ fontFamily: settings.heading_font, fontWeight: settings.heading_font_weight || '700' }}>
-              <h1 className="text-4xl mb-2">Titre niveau 1</h1>
-              <h2 className="text-3xl mb-2">Titre niveau 2</h2>
-              <h3 className="text-2xl mb-2">Titre niveau 3</h3>
-              <h4 className="text-xl">Titre niveau 4</h4>
+            <div style={{ 
+              fontFamily: settings.heading_font, 
+              fontWeight: settings.heading_font_weight || '700',
+              fontSize: settings.heading_font_size || '2.5rem'
+            }}>
+              <h1 className="mb-2">Titre niveau 1</h1>
+              <h2 className="mb-2" style={{ fontSize: `calc(${settings.heading_font_size || '2.5rem'} * 0.8)` }}>Titre niveau 2</h2>
+              <h3 className="mb-2" style={{ fontSize: `calc(${settings.heading_font_size || '2.5rem'} * 0.65)` }}>Titre niveau 3</h3>
+              <h4 style={{ fontSize: `calc(${settings.heading_font_size || '2.5rem'} * 0.5)` }}>Titre niveau 4</h4>
             </div>
           </div>
           <div className="space-y-2 p-6 bg-muted/30 rounded-lg border border-border">
-            <p className="text-base" style={{ fontFamily: settings.body_font, fontWeight: settings.body_font_weight || '400' }}>
+            <p style={{ 
+              fontFamily: settings.body_font, 
+              fontWeight: settings.body_font_weight || '400',
+              fontSize: settings.body_font_size || '1rem'
+            }}>
               Ceci est un exemple de texte de paragraphe avec la police du corps. 
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
               Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
             </p>
-            <p className="text-sm text-muted-foreground" style={{ fontFamily: settings.body_font, fontWeight: settings.body_font_weight || '400' }}>
+            <p className="text-muted-foreground" style={{ 
+              fontFamily: settings.body_font, 
+              fontWeight: settings.body_font_weight || '400',
+              fontSize: `calc(${settings.body_font_size || '1rem'} * 0.875)`
+            }}>
               Texte de taille réduite pour les descriptions et les détails secondaires.
             </p>
           </div>
