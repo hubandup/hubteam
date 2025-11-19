@@ -119,8 +119,12 @@ export function KDriveFolderSelector({
       const maxIterations = 100; // Safety limit
       let iterationCount = 0;
 
+      console.log("[KDrive] Starting folder load - currentFolderId:", currentFolderId, "searchQuery:", searchQuery);
+
       while (hasMore && iterationCount < maxIterations) {
         iterationCount++;
+        
+        console.log(`[KDrive] Iteration ${iterationCount} - offset: ${offset}, seenIds: ${seenIds.size}`);
         
         const response = await supabase.functions.invoke("kdrive-api", {
           body: {
@@ -143,6 +147,8 @@ export function KDriveFolderSelector({
         const files = response.data?.data || [];
         const folders = files.filter((file: KDriveFile) => file.type === "dir");
         
+        console.log(`[KDrive] Received ${folders.length} folders, has_more: ${response.data?.has_more}`);
+        
         // Check for new unique folders
         let newFoldersCount = 0;
         folders.forEach((folder: KDriveFile) => {
@@ -153,11 +159,14 @@ export function KDriveFolderSelector({
           }
         });
 
+        console.log(`[KDrive] Added ${newFoldersCount} new unique folders (total: ${allFolders.length})`);
+
         // Stop if no new folders or API says no more
         hasMore = response.data?.has_more === true && newFoldersCount > 0;
         offset += 50;
       }
 
+      console.log(`[KDrive] Finished loading - total folders: ${allFolders.length}`);
       setFolders(allFolders);
     } catch (error: any) {
       console.error("Erreur:", error);
