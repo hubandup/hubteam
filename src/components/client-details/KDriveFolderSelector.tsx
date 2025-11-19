@@ -126,7 +126,7 @@ export function KDriveFolderSelector({
             debugNoFilter: DEBUG_NO_FILTER,
             searchQuery: searchQuery.trim() || undefined,
             offset,
-            limit: 50,
+            limit: 200,
           },
         });
 
