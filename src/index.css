@@ -6,7 +6,9 @@
   :root {
     /* Fonts */
     --font-heading: 'Instrument Sans';
+    --font-heading-weight: 700;
     --font-body: 'Roboto';
+    --font-body-weight: 400;
     
     /* Professional Blue Theme */
     --background: 0 0% 100%;
