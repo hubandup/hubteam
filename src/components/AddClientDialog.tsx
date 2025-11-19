@@ -290,7 +290,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="follow_up_date">Date de rappel</Label>
+            <Label htmlFor="follow_up_date">Prochaine échéance</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button

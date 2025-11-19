@@ -112,8 +112,8 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
               : 'text-gray-500 dark:text-gray-400'
           }`}>
             <BellRing className="h-3 w-3" />
-            <span className="font-medium">Date de rappel:</span>
-            <Badge 
+            <span className="font-medium">Prochaine échéance:</span>
+            <Badge
               variant="outline" 
               className={`text-xs ${
                 isPast(new Date(client.follow_up_date))
