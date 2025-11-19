@@ -132,7 +132,7 @@ serve(async (req) => {
       });
     }
 
-    const { action, driveId, folderId, folderPath, fileName, fileContent, fileSize, parentId, rootFolderId, debugNoFilter, fileId, limit, offset, folderName, fileIds, newName } = await req.json();
+    const { action, driveId, folderId, folderPath, fileName, fileContent, fileSize, parentId, rootFolderId, debugNoFilter, fileId, limit, offset, folderName, fileIds, newName, searchQuery } = await req.json();
 
     console.log('=== KDrive API Full Request ===');
     console.log('Action:', action);
@@ -1359,17 +1359,30 @@ serve(async (req) => {
     if (action === 'list-files' && !debugNoFilter && listTargetFolderId !== undefined && data && Array.isArray(data.data)) {
       const targetIdNum = Number(listTargetFolderId);
       const targetIdStr = String(listTargetFolderId);
-      console.log('Filtering with:', { targetIdNum, targetIdStr, totalItems: data.data.length });
+      console.log('Filtering with:', { targetIdNum, targetIdStr, totalItems: data.data.length, searchQuery });
       
-      const filtered = data.data.filter((item: any) => {
+      let filtered = data.data.filter((item: any) => {
         const itemParentNum = Number(item.parent_id);
         const itemParentStr = String(item.parent_id);
         const matches = itemParentNum === targetIdNum || itemParentStr === targetIdStr;
         if (!matches) {
-          console.log('Filtered out:', { name: item.name, parent_id: item.parent_id, expected: targetIdStr });
+          console.log('Filtered out by parent:', { name: item.name, parent_id: item.parent_id, expected: targetIdStr });
         }
         return matches;
       });
+      
+      // Apply search filter if searchQuery is provided
+      if (searchQuery && typeof searchQuery === 'string' && searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim();
+        filtered = filtered.filter((item: any) => {
+          const nameMatch = item.name && item.name.toLowerCase().includes(query);
+          if (!nameMatch) {
+            console.log('Filtered out by search:', { name: item.name, query });
+          }
+          return nameMatch;
+        });
+        console.log('After search filtering:', { filteredLength: filtered.length, searchQuery: query });
+      }
       
       console.log('After filtering:', { filteredLength: filtered.length });
       data = { ...data, data: filtered };
