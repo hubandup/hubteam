@@ -91,8 +91,8 @@ Deno.serve(async (req) => {
           notifications.push({
             user_id: user.user_id,
             type: 'deadline_overdue',
-            title: 'Date de rappel dépassée',
-            message: `Le rappel pour ${client.company} (${client.first_name} ${client.last_name}) est en retard`,
+            title: 'Prochaine échéance dépassée',
+            message: `L'échéance pour ${client.company} (${client.first_name} ${client.last_name}) est dépassée`,
             link: `/client/${client.id}`,
           });
         }
@@ -125,8 +125,8 @@ Deno.serve(async (req) => {
           notifications.push({
             user_id: user.user_id,
             type: 'deadline_approaching',
-            title: 'Date de rappel approchante',
-            message: `Le rappel pour ${client.company} (${client.first_name} ${client.last_name}) est prévu dans moins de 24h`,
+            title: 'Prochaine échéance approchante',
+            message: `L'échéance pour ${client.company} (${client.first_name} ${client.last_name}) est prévue dans moins de 24h`,
             link: `/client/${client.id}`,
           });
         }
