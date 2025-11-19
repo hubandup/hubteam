@@ -167,7 +167,7 @@ export default function Projects() {
               placeholder="Rechercher un projet..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-9 bg-white dark:bg-background"
             />
           </div>
           {!isMobile && (
