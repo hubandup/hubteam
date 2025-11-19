@@ -42,7 +42,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
   const isOverdue = project.end_date && new Date(project.end_date) < new Date() && project.status !== 'completed';
 
   return (
-    <div className="border rounded-lg bg-card/50 cursor-pointer hover:shadow-lg transition-shadow p-3 md:p-6" onClick={onClick}>
+    <div className="border rounded-lg bg-card/50 cursor-pointer hover:shadow-lg transition-shadow p-2 md:p-6" onClick={onClick}>
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-2 md:gap-3">
           <div className="flex items-start gap-2 md:gap-3 flex-1 min-w-0">

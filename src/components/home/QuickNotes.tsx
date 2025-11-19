@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -265,31 +264,27 @@ export function QuickNotes() {
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <StickyNote className="h-5 w-5" />
-            Notes rapides
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </CardContent>
-      </Card>
+      <div className="border rounded-lg bg-card/50 p-3 md:p-4">
+        <div className="flex items-center gap-2 mb-3 md:mb-4">
+          <StickyNote className="h-4 w-4 md:h-5 md:w-5" />
+          <h2 className="text-base md:text-lg font-semibold">Notes rapides</h2>
+        </div>
+        <div className="flex items-center justify-center py-8 md:py-12">
+          <Loader2 className="h-6 w-6 md:h-8 md:w-8 animate-spin text-primary" />
+        </div>
+      </div>
     );
   }
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <StickyNote className="h-5 w-5" />
-            Notes rapides
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
+      <div className="border rounded-lg bg-card/50 p-3 md:p-4">
+        <div className="flex items-center gap-2 mb-3 md:mb-4">
+          <StickyNote className="h-4 w-4 md:h-5 md:w-5" />
+          <h2 className="text-base md:text-lg font-semibold">Notes rapides</h2>
+        </div>
+        <div className="space-y-3 md:space-y-4">
+          <div className="space-y-2 md:space-y-3">
             <NoteEditor
               value={noteContent}
               onChange={setNoteContent}
@@ -298,16 +293,16 @@ export function QuickNotes() {
             <Button 
               onClick={handleAddNote} 
               disabled={!noteContent.trim()}
-              className="w-full"
+              className="w-full text-sm md:text-base"
             >
               Ajouter la note
             </Button>
           </div>
 
           {notes.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Aucune note</p>
+            <p className="text-xs md:text-sm text-muted-foreground text-center py-6 md:py-8">Aucune note</p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1.5 md:space-y-2">
             {notes.map((note) => (
               <div
                 key={note.id}
@@ -348,8 +343,8 @@ export function QuickNotes() {
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
         <DialogContent>
