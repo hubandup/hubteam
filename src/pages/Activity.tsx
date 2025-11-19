@@ -168,17 +168,17 @@ export default function Activity() {
                     >
                       <div className="flex gap-4 flex-1">
                         <Avatar className="h-10 w-10">
-                        <AvatarImage src={activity.profiles.avatar_url || undefined} />
+                        <AvatarImage src={activity.profiles?.avatar_url || undefined} />
                         <AvatarFallback>
-                          {activity.profiles.first_name[0]}
-                          {activity.profiles.last_name[0]}
+                          {activity.profiles?.first_name?.[0] || 'U'}
+                          {activity.profiles?.last_name?.[0] || ''}
                         </AvatarFallback>
                       </Avatar>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium">
-                            {activity.profiles.first_name} {activity.profiles.last_name}
+                            {activity.profiles?.first_name || 'Utilisateur'} {activity.profiles?.last_name || 'système'}
                           </span>
                           <Badge variant="outline" className="flex items-center gap-1">
                             <ActionIcon className="h-3 w-3" />
