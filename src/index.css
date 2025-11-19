@@ -239,15 +239,18 @@
     
   /* Navigation and menu items */
   nav a, nav button {
-    @apply text-sm;
     font-weight: 500;
   }
   
-  /* Sidebar components must use body font and size */
-  [data-sidebar] * {
-    font-family: var(--font-body), sans-serif;
-    font-size: var(--font-body-size);
-    font-weight: var(--font-body-weight);
+  /* Sidebar components must use body font and size - force with important */
+  [data-sidebar] *,
+  [data-sidebar] a,
+  [data-sidebar] button,
+  [data-sidebar] span,
+  [data-sidebar] div {
+    font-family: var(--font-body), sans-serif !important;
+    font-size: var(--font-body-size) !important;
+    font-weight: var(--font-body-weight) !important;
   }
     
     /* Mobile spacing optimizations */
