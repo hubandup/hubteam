@@ -121,9 +121,11 @@ export function KDriveFolderSelector({
       let currentOffset = 0;
       let hasMoreFolders = true;
       const limit = 50;
+      const maxIterations = 30; // Limit to 30 iterations (1500 files max)
+      let iterationCount = 0;
 
-      // Load all folders recursively until no more folders
-      while (hasMoreFolders) {
+      // Load folders with safety limit
+      while (hasMoreFolders && iterationCount < maxIterations) {
         const response = await supabase.functions.invoke("kdrive-api", {
           body: {
             action: "list-files",
@@ -147,9 +149,14 @@ export function KDriveFolderSelector({
 
         hasMoreFolders = Boolean(response.data?.has_more);
         currentOffset += files.length;
+        iterationCount++;
 
         // If no more folders, exit loop
         if (!hasMoreFolders || files.length === 0) break;
+      }
+
+      if (iterationCount >= maxIterations && hasMoreFolders) {
+        toast.info(`${allFolders.length} dossiers chargés. Utilisez la recherche pour trouver un dossier spécifique.`);
       }
 
       setFolders(allFolders);
