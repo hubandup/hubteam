@@ -148,10 +148,42 @@
   
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading font-bold;
+    font-weight: var(--font-heading-weight);
+  }
+  
+  h1 {
+    font-size: var(--font-heading-size);
+  }
+  
+  h2 {
+    font-size: calc(var(--font-heading-size) * 0.75);
+  }
+  
+  h3 {
+    font-size: calc(var(--font-heading-size) * 0.6);
+  }
+  
+  h4 {
+    font-size: calc(var(--font-heading-size) * 0.5);
+  }
+  
+  h5 {
+    font-size: calc(var(--font-heading-size) * 0.4);
+  }
+  
+  h6 {
+    font-size: calc(var(--font-heading-size) * 0.35);
+  }
+  
+  body {
+    font-size: var(--font-body-size);
+    font-weight: var(--font-body-weight);
   }
   
   p {
     @apply font-body font-light;
+    font-size: var(--font-body-size);
+    font-weight: var(--font-body-weight);
   }
   
   /* Mobile typography improvements */
