@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { History, Loader2, Edit, Plus, Trash2, Eye, RotateCcw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { usePermissions } from '@/hooks/usePermissions';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
@@ -31,6 +31,9 @@ interface ActivityLogEntry {
 }
 
 const actionIcons = {
+  INSERT: Plus,
+  UPDATE: Edit,
+  DELETE: Trash2,
   created: Plus,
   updated: Edit,
   deleted: Trash2,
@@ -41,6 +44,9 @@ const actionIcons = {
 };
 
 const actionLabels = {
+  INSERT: 'Création',
+  UPDATE: 'Modification',
+  DELETE: 'Suppression',
   created: 'Création',
   updated: 'Modification',
   deleted: 'Suppression',
@@ -71,6 +77,16 @@ const fieldLabels: Record<string, string> = {
 const ignoredFields = ['id', 'created_at', 'updated_at', 'user_id', 'created_by', 'avatar_url', 'logo_url'];
 
 const entityLabels = {
+  clients: 'Client',
+  projects: 'Projet',
+  tasks: 'Tâche',
+  agencies: 'Agence',
+  task_comments: 'Commentaire',
+  users: 'Utilisateur',
+  user_posts: 'Publication',
+  invoices: 'Facture',
+  quotes: 'Devis',
+  meeting_notes: 'Compte rendu',
   client: 'Client',
   project: 'Projet',
   task: 'Tâche',
@@ -80,13 +96,13 @@ const entityLabels = {
 };
 
 export default function Activity() {
-  const { canRead, canUpdate } = usePermissions();
+  const { role } = useUserRole();
   const queryClient = useQueryClient();
   const { data: activities = [], isLoading: loading } = useActivities();
   const [restoring, setRestoring] = useState(false);
 
   const handleRestore = async (activity: ActivityLogEntry) => {
-    if (!activity.old_values || activity.action_type === 'created') {
+    if (!activity.old_values || activity.action_type === 'INSERT') {
       toast.error('Impossible de restaurer cette version');
       return;
     }
@@ -94,7 +110,7 @@ export default function Activity() {
     setRestoring(true);
     try {
       const { error } = await supabase
-        .from(activity.entity_type + 's' as any)
+        .from(activity.entity_type as any)
         .update(activity.old_values)
         .eq('id', activity.entity_id);
 
@@ -110,13 +126,13 @@ export default function Activity() {
     }
   };
 
-  if (!canRead('dashboard')) {
+  if (role !== 'admin') {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <p className="text-lg font-semibold text-foreground">Accès refusé</p>
           <p className="text-muted-foreground">
-            Vous n'avez pas les permissions pour accéder à la timeline
+            Seuls les administrateurs peuvent accéder à la timeline d'activité
           </p>
         </div>
       </div>
@@ -194,7 +210,7 @@ export default function Activity() {
                           })}
                         </p>
 
-                        {activity.old_values && activity.new_values && (
+                        {activity.action_type === 'UPDATE' && activity.old_values && activity.new_values && (
                           <div className="text-xs space-y-1 bg-muted/30 p-2 rounded">
                             <div className="font-medium mb-1">Modifications :</div>
                             {Object.keys(activity.new_values)
@@ -230,7 +246,7 @@ export default function Activity() {
                           </div>
                         )}
                         
-                        {activity.action_type === 'created' && activity.new_values && (
+                        {activity.action_type === 'INSERT' && activity.new_values && (
                           <div className="text-xs space-y-1 bg-muted/30 p-2 rounded">
                             <div className="font-medium mb-1">Détails :</div>
                             {Object.keys(activity.new_values)
@@ -251,8 +267,7 @@ export default function Activity() {
                       </div>
                     </div>
 
-                      {canUpdate(activity.entity_type as any) && 
-                       activity.action_type === 'updated' && 
+                      {activity.action_type === 'UPDATE' && 
                        activity.old_values && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
