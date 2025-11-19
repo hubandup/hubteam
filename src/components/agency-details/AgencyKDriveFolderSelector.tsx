@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Folder, Plus, Loader2, Search } from "lucide-react";
+import { Folder, Plus, Loader2, Search, ArrowUpDown } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,13 @@ import {
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Fixed kDrive configuration for agencies
 const KDRIVE_DRIVE_ID = 969307; // Hub & Up (product id)
@@ -54,6 +61,7 @@ export function AgencyKDriveFolderSelector({
   const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string; name: string }>>([
     { id: AGENCIES_FOLDER_ID, name: "Agences" }
   ]);
+  const [sortBy, setSortBy] = useState<"name-asc" | "name-desc">("name-asc");
 
   useEffect(() => {
     if (isOpen) {
@@ -63,39 +71,62 @@ export function AgencyKDriveFolderSelector({
   }, [isOpen, currentFolderId_state]);
 
   const filteredFolders = useMemo(() => {
-    if (!searchQuery.trim()) return folders;
+    let result = folders;
     
-    const query = searchQuery.toLowerCase();
-    return folders
-      .filter(folder => folder.name.toLowerCase().includes(query))
-      .sort((a, b) => {
-        const aIndex = a.name.toLowerCase().indexOf(query);
-        const bIndex = b.name.toLowerCase().indexOf(query);
-        if (aIndex !== bIndex) return aIndex - bIndex;
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(folder => folder.name.toLowerCase().includes(query));
+    }
+    
+    // Apply sorting
+    return result.sort((a, b) => {
+      if (sortBy === "name-asc") {
         return a.name.localeCompare(b.name);
-      });
-  }, [folders, searchQuery]);
+      } else {
+        return b.name.localeCompare(a.name);
+      }
+    });
+  }, [folders, searchQuery, sortBy]);
 
   const loadFolders = async () => {
     setIsLoading(true);
     try {
-      const response = await supabase.functions.invoke("kdrive-api", {
-        body: {
-          action: "list-files",
-          folderId: currentFolderId_state,
-          rootFolderId: AGENCIES_FOLDER_ID,
-        },
-      });
+      let allFolders: KDriveFile[] = [];
+      let currentOffset = 0;
+      let hasMoreFolders = true;
+      const limit = 50;
 
-      if (response.error) {
-        console.error("Erreur lors du chargement des dossiers:", response.error);
-        toast.error("Impossible de charger les dossiers kDrive");
-        return;
+      // Load all folders recursively until no more folders
+      while (hasMoreFolders) {
+        const response = await supabase.functions.invoke("kdrive-api", {
+          body: {
+            action: "list-files",
+            folderId: currentFolderId_state,
+            rootFolderId: AGENCIES_FOLDER_ID,
+            limit,
+            offset: currentOffset,
+          },
+        });
+
+        if (response.error) {
+          console.error("Erreur lors du chargement des dossiers:", response.error);
+          toast.error("Impossible de charger les dossiers kDrive");
+          return;
+        }
+
+        const files = response.data?.data || [];
+        const folderList = files.filter((file: KDriveFile) => file.type === "dir");
+        allFolders = [...allFolders, ...folderList];
+
+        hasMoreFolders = Boolean(response.data?.has_more);
+        currentOffset += files.length;
+
+        // If no more folders, exit loop
+        if (!hasMoreFolders || files.length === 0) break;
       }
 
-      const files = response.data?.data || [];
-      const folderList = files.filter((file: KDriveFile) => file.type === "dir");
-      setFolders(folderList);
+      setFolders(allFolders);
     } catch (error: any) {
       console.error("Erreur:", error);
       toast.error(error.message || "Erreur lors du chargement");
@@ -263,15 +294,27 @@ export function AgencyKDriveFolderSelector({
 
             <Separator />
 
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher un dossier..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
+            {/* Search and Sort */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher un dossier..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <SelectTrigger className="w-[180px]">
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name-asc">Nom A → Z</SelectItem>
+                  <SelectItem value="name-desc">Nom Z → A</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Create new folder */}
