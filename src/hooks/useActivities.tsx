@@ -23,6 +23,7 @@ async function fetchActivities() {
     .from('activity_log')
     .select('*')
     .eq('action_type', 'INSERT')
+    .neq('entity_type', 'tasks')
     .order('created_at', { ascending: false })
     .limit(100);
 
