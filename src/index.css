@@ -243,9 +243,11 @@
     font-weight: 500;
   }
   
-  /* Sidebar components must use body font */
+  /* Sidebar components must use body font and size */
   [data-sidebar] * {
     font-family: var(--font-body), sans-serif;
+    font-size: var(--font-body-size);
+    font-weight: var(--font-body-weight);
   }
     
     /* Mobile spacing optimizations */
