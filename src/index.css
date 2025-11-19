@@ -302,6 +302,30 @@
     input, textarea, select {
       @apply min-h-[44px] px-3 py-2;
     }
+    
+    /* Kanban mobile optimization */
+    .kanban-container {
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+    
+    .kanban-container::-webkit-scrollbar {
+      height: 6px;
+    }
+    
+    .kanban-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .kanban-container::-webkit-scrollbar-thumb {
+      background: hsl(var(--muted-foreground) / 0.3);
+      border-radius: 3px;
+    }
+    
+    .kanban-column {
+      scroll-snap-align: start;
+    }
   }
   
   /* Button hover effects */
