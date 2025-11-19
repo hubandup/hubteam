@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Download, Smartphone, Zap, Wifi, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import logoUrl from '@/assets/logo-hubandup.svg';
 
 export default function Install() {
   const { isInstallable, promptInstall } = usePWAInstall();
@@ -11,13 +12,15 @@ export default function Install() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <Card className="max-w-2xl w-full">
-        <CardHeader>
-          <CardTitle className="text-3xl flex items-center gap-3">
-            <Smartphone className="h-8 w-8 text-primary" />
-            Installer HubTeam
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <img src={logoUrl} alt="Hub & Up" className="h-16" />
+          </div>
+          <CardTitle className="text-3xl">
+            Installer Hub & Up
           </CardTitle>
           <CardDescription>
-            Installez l'application sur votre appareil pour une meilleure expérience
+            Installez l'application sur votre appareil pour une expérience optimale
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -51,9 +54,9 @@ export default function Install() {
                 <Bell className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold mb-1">Notifications push avec badge</h3>
+                <h3 className="font-semibold mb-1">Notifications instantanées</h3>
                 <p className="text-sm text-muted-foreground">
-                  Recevez des alertes en temps réel avec le nombre de notifications non lues affiché directement sur l'icône de l'app
+                  Recevez des alertes en temps réel avec badge de notifications non lues
                 </p>
               </div>
             </div>
