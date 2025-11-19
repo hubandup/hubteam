@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Search, LayoutGrid, List, Kanban, Archive, ArchiveRestore, Edit, Trash2 } from 'lucide-react';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -197,34 +198,46 @@ export default function Projects() {
         </div>
       )}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="all">
-            Tous ({projects.length})
-          </TabsTrigger>
-          <TabsTrigger value="planning">
-            À faire ({projects.filter(p => p.status === 'planning').length})
-          </TabsTrigger>
-          <TabsTrigger value="reco_in_progress">
-            Reco en cours ({projects.filter(p => p.status === 'reco_in_progress').length})
-          </TabsTrigger>
-          <TabsTrigger value="active">
-            En cours ({projects.filter(p => p.status === 'active').length})
-          </TabsTrigger>
-          <TabsTrigger value="completed">
-            Terminés ({projects.filter(p => p.status === 'completed').length})
-          </TabsTrigger>
-          <TabsTrigger value="lost">
-            Perdu ({projects.filter(p => p.status === 'lost').length})
-          </TabsTrigger>
-          <TabsTrigger value="archived">
-            <Archive className="h-4 w-4 mr-1" />
-            Archivés ({archivedProjects.length})
-          </TabsTrigger>
-        </TabsList>
+{isMobile ? (
+        <Select value={activeTab} onValueChange={setActiveTab}>
+          <SelectTrigger className="w-full mb-4 bg-background h-11">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-background z-50">
+            <SelectItem value="all">Tous ({projects.length})</SelectItem>
+            <SelectItem value="planning">À faire ({projects.filter(p => p.status === 'planning').length})</SelectItem>
+            <SelectItem value="reco_in_progress">Reco en cours ({projects.filter(p => p.status === 'reco_in_progress').length})</SelectItem>
+            <SelectItem value="active">En cours ({projects.filter(p => p.status === 'active').length})</SelectItem>
+            <SelectItem value="completed">Terminés ({projects.filter(p => p.status === 'completed').length})</SelectItem>
+            <SelectItem value="lost">Perdu ({projects.filter(p => p.status === 'lost').length})</SelectItem>
+            <SelectItem value="archived">
+              <div className="flex items-center gap-2">
+                <Archive className="h-4 w-4" />
+                Archivés ({archivedProjects.length})
+              </div>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      ) : (
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="all">Tous ({projects.length})</TabsTrigger>
+            <TabsTrigger value="planning">À faire ({projects.filter(p => p.status === 'planning').length})</TabsTrigger>
+            <TabsTrigger value="reco_in_progress">Reco en cours ({projects.filter(p => p.status === 'reco_in_progress').length})</TabsTrigger>
+            <TabsTrigger value="active">En cours ({projects.filter(p => p.status === 'active').length})</TabsTrigger>
+            <TabsTrigger value="completed">Terminés ({projects.filter(p => p.status === 'completed').length})</TabsTrigger>
+            <TabsTrigger value="lost">Perdu ({projects.filter(p => p.status === 'lost').length})</TabsTrigger>
+            <TabsTrigger value="archived">
+              <Archive className="h-4 w-4 mr-1" />
+              Archivés ({archivedProjects.length})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      )}
 
-        <TabsContent value="archived" className="mt-6">
-          {archivedProjects.length === 0 ? (
+      <div className="mt-6">
+        {activeTab === 'archived' ? (
+          archivedProjects.length === 0 ? (
             <div className="text-center py-12">
               <Archive className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">Aucun projet archivé</p>
@@ -302,11 +315,9 @@ export default function Projects() {
                 </Card>
               ))}
             </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value={activeTab !== 'archived' ? activeTab : 'all'} className="mt-6">
-          {filteredProjects.length === 0 ? (
+          )
+        ) : (
+          filteredProjects.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">
                 {activeTab === 'all' 
@@ -345,9 +356,9 @@ export default function Projects() {
               projects={filteredProjects}
               onProjectClick={(id) => navigate(`/project/${id}`)}
             />
-          )}
-        </TabsContent>
-      </Tabs>
+          )
+        )}
+      </div>
 
       <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
         <AlertDialogContent>
