@@ -316,13 +316,13 @@ export function TodoList() {
             <p className="text-sm text-muted-foreground text-center py-8">Aucune tâche à faire</p>
           ) : (
             <div className="space-y-2">
-              {todos.map((todo) => (
-                <div
-                  key={todo.id}
-                  className="flex items-start gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors group"
-                  onMouseEnter={() => setHoveredTodoId(todo.id)}
-                  onMouseLeave={() => setHoveredTodoId(null)}
-                >
+            {todos.map((todo) => (
+              <div
+                key={todo.id}
+                className="flex items-start gap-2 md:gap-3 p-2 md:p-3 rounded-lg border hover:bg-accent/50 transition-colors group"
+                onMouseEnter={() => setHoveredTodoId(todo.id)}
+                onMouseLeave={() => setHoveredTodoId(null)}
+              >
                   <Checkbox
                     checked={todo.completed}
                     onCheckedChange={() => handleToggleTodo(todo.id, todo.completed)}
