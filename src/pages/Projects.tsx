@@ -8,7 +8,7 @@ import { AddProjectDialog } from '@/components/AddProjectDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ResponsiveTabs, TabItem } from '@/components/ui/responsive-tabs';
 import { Loader2, Search, LayoutGrid, List, Kanban, Archive, ArchiveRestore, Edit, Trash2 } from 'lucide-react';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -31,7 +31,6 @@ export default function Projects() {
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: archivedProjects = [], isLoading: archivedLoading } = useArchivedProjects();
   const loading = projectsLoading || archivedLoading;
-  const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'kanban' | 'list'>('grid');
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
@@ -166,7 +165,7 @@ export default function Projects() {
               placeholder="Rechercher un projet..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-9 bg-white dark:bg-background"
             />
           </div>
           {!isMobile && (
