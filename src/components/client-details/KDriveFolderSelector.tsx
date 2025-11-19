@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Folder, Plus, Loader2, HardDrive, Search, ArrowUpDown } from "lucide-react";
+import { Folder, Loader2, HardDrive, Search, ArrowUpDown } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,8 +50,6 @@ export function KDriveFolderSelector({
   const [isLoading, setIsLoading] = useState(false);
   const [folders, setFolders] = useState<KDriveFile[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [newFolderName, setNewFolderName] = useState("");
-  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [currentFolderId, setCurrentFolderId] = useState(KDRIVE_ROOT_FOLDER_ID);
   const [currentPath, setCurrentPath] = useState("Common documents");
   const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string; name: string }>>([
@@ -78,12 +76,6 @@ export function KDriveFolderSelector({
       }
     });
   }, [folders, sortBy]);
-
-  const exactMatch = useMemo(() => {
-    return folders.some(folder => 
-      folder.name.toLowerCase() === searchQuery.trim().toLowerCase()
-    );
-  }, [folders, searchQuery]);
 
   const loadFolders = async () => {
     setIsLoading(true);
@@ -176,106 +168,6 @@ export function KDriveFolderSelector({
     }
   };
 
-  const createFolder = async (folderName?: string) => {
-    const nameToCreate = folderName || newFolderName;
-    if (!nameToCreate.trim()) {
-      toast.error("Veuillez saisir un nom ou chemin de dossier");
-      return;
-    }
-
-    const segments = nameToCreate.split("/").map(s => s.trim()).filter(Boolean);
-    if (segments.length > 1) {
-      await createFolderPath(segments);
-      return;
-    }
-
-    setIsCreatingFolder(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("Session expirée");
-        return;
-      }
-
-      const response = await supabase.functions.invoke("kdrive-api", {
-        body: {
-          action: "create-folder",
-          fileName: newFolderName,
-          parentId: currentFolderId,
-          rootFolderId: KDRIVE_ROOT_FOLDER_ID,
-        },
-      });
-
-      if (response.error) {
-        console.error("Erreur création dossier:", response.error);
-        toast.error("Impossible de créer le dossier");
-        return;
-      }
-
-      const newFolder = response.data?.data;
-      toast.success(`Dossier "${newFolderName}" créé`);
-      setNewFolderName("");
-      
-      // Navigate to the newly created folder
-      if (newFolder?.id) {
-        navigateToFolder(newFolder);
-      } else {
-        loadFolders();
-      }
-    } catch (error: any) {
-      console.error("Erreur:", error);
-      toast.error(error.message || "Erreur lors de la création");
-    } finally {
-      setIsCreatingFolder(false);
-    }
-  };
-
-  // Create nested folders from segments relative to currentFolderId
-  const createFolderPath = async (segments: string[]) => {
-    setIsCreatingFolder(true);
-    try {
-      let parentId: string | number = currentFolderId;
-      let pathParts = [...breadcrumbs.map(b => b.name)];
-
-      for (const seg of segments) {
-        // Try to find existing folder in current parent via search
-        const search = await supabase.functions.invoke("kdrive-api", {
-          body: { action: "search-folder", folderPath: seg }
-        });
-        let existing = (search.data?.data || []).find((f: any) => f.type === "dir" && String(f.parent_id) === String(parentId) && f.name === seg);
-
-        if (!existing) {
-          const created = await supabase.functions.invoke("kdrive-api", {
-            body: { action: "create-folder", fileName: seg, parentId, rootFolderId: KDRIVE_ROOT_FOLDER_ID }
-          });
-          if (created.error) throw created.error;
-          existing = created.data?.data;
-        }
-
-        if (!existing?.id) throw new Error("Création/repérage du dossier échoué");
-
-        // Advance
-        parentId = existing.id;
-        pathParts.push(seg);
-      }
-
-      setNewFolderName("");
-      setCurrentFolderId(String(parentId));
-      setBreadcrumbs(prev => {
-        const root = prev[0];
-        const tail = segments.map((s, i) => ({ id: i === segments.length - 1 ? String(parentId) : `${root.id}-${i}`, name: s }));
-        return [root, ...tail];
-      });
-      setCurrentPath(pathParts.join("/"));
-      await loadFolders();
-      toast.success("Chemin créé avec succès");
-    } catch (e: any) {
-      console.error(e);
-      toast.error(e.message || "Échec de la création du chemin");
-    } finally {
-      setIsCreatingFolder(false);
-    }
-  };
 
   const navigateToFolder = (folder: KDriveFile) => {
     if (folder.id === currentFolderId) return;
@@ -374,28 +266,6 @@ export function KDriveFolderSelector({
               </Select>
             </div>
 
-            {/* Create new folder */}
-            <div className="flex gap-2">
-              <Input
-                placeholder="Créer un dossier (ex: CLIENTS/NouveauClient)"
-                value={newFolderName}
-                onChange={(e) => setNewFolderName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && createFolder()}
-              />
-              <Button
-                onClick={() => createFolder()}
-                disabled={isCreatingFolder || !newFolderName.trim()}
-                size="sm"
-              >
-                {isCreatingFolder ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-
-            <Separator />
 
             {/* Folder list */}
             <ScrollArea className="h-[400px] rounded-md border p-4">
@@ -412,21 +282,6 @@ export function KDriveFolderSelector({
                   <p className="text-muted-foreground">
                     Aucun dossier ne correspond à "{searchQuery}"
                   </p>
-                  {!exactMatch && (
-                    <Button
-                      onClick={() => createFolder(searchQuery)}
-                      disabled={isCreatingFolder}
-                      variant="outline"
-                      className="gap-2"
-                    >
-                      {isCreatingFolder ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Plus className="h-4 w-4" />
-                      )}
-                      Créer le dossier "{searchQuery}"
-                    </Button>
-                  )}
                 </div>
               ) : (
                 <div className="space-y-2">
