@@ -30,8 +30,10 @@ export function useDesignSettings() {
     // Apply fonts
     root.style.setProperty('--font-heading', data.heading_font);
     root.style.setProperty('--font-heading-weight', data.heading_font_weight || '700');
+    root.style.setProperty('--font-heading-size', data.heading_font_size || '2.5rem');
     root.style.setProperty('--font-body', data.body_font);
     root.style.setProperty('--font-body-weight', data.body_font_weight || '400');
+    root.style.setProperty('--font-body-size', data.body_font_size || '1rem');
     
     // Apply light mode colors
     root.style.setProperty('--primary', data.light_primary);
