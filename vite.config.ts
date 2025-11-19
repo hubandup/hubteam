@@ -17,8 +17,8 @@ export default defineConfig(({ mode }) => ({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icon-192.png', 'icon-512.png'],
       manifest: {
-        name: 'HubTeam - Gestion de projets',
-        short_name: 'HubTeam',
+        name: 'Hub & Up - Gestion de projets',
+        short_name: 'Hub & Up',
         description: 'Plateforme complète de gestion de projets, CRM et collaboration d\'équipe',
         theme_color: '#0EA5E9',
         background_color: '#ffffff',
