@@ -324,12 +324,7 @@ export default function Projects() {
                 Commencez par créer un nouveau projet
               </p>
             </div>
-          ) : isMobile ? (
-            <ProjectListView 
-              projects={filteredProjects}
-              onProjectClick={(id) => navigate(`/project/${id}`)}
-            />
-          ) : viewMode === 'grid' ? (
+          ) : isMobile || viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredProjects.map((project) => (
                 <ProjectCard
