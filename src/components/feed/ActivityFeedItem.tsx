@@ -308,6 +308,17 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
               </p>
             )}
 
+            {/* Display entity image if available */}
+            {activity.new_values?.logo_url && (
+              <div className="mt-2 mb-2">
+                <img 
+                  src={activity.new_values.logo_url} 
+                  alt="Entity image"
+                  className="rounded-lg max-h-48 object-cover"
+                />
+              </div>
+            )}
+
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <EntityIcon className="h-3.5 w-3.5" />
               <Clock className="h-3.5 w-3.5" />
