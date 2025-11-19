@@ -5,7 +5,7 @@ import { OnlineUsersIndicator } from '@/components/feed/OnlineUsersIndicator';
 import { CreatePostInput } from '@/components/feed/CreatePostInput';
 import { UserPostItem } from '@/components/feed/UserPostItem';
 import { useAuth } from '@/hooks/useAuth';
-import { useActivities } from '@/hooks/useActivities';
+import { useFeedActivities } from '@/hooks/useFeedActivities';
 import { usePosts } from '@/hooks/usePosts';
 
 
@@ -46,7 +46,7 @@ interface UserPost {
 
 export default function Feed() {
   const { user } = useAuth();
-  const { data: activities = [], isLoading: activitiesLoading } = useActivities();
+  const { data: activities = [], isLoading: activitiesLoading } = useFeedActivities();
   const { data: posts = [], isLoading: postsLoading } = usePosts();
   
   const loading = activitiesLoading || postsLoading;
