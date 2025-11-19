@@ -26,6 +26,7 @@ import {
 // Fixed kDrive configuration for agencies
 const KDRIVE_DRIVE_ID = 969307; // Hub & Up (product id)
 const AGENCIES_FOLDER_ID = "50123"; // Hub & Up > Agences folder ID
+const DEBUG_NO_FILTER = false; // Set to true to disable server-side filtering
 
 interface KDriveFile {
   id: string;
@@ -94,14 +95,19 @@ export function AgencyKDriveFolderSelector({
       const maxIterations = 100; // Safety limit
       let iterationCount = 0;
 
+      console.log("[KDrive Agency] Starting folder load - currentFolderId:", currentFolderId_state, "searchQuery:", searchQuery);
+
       while (hasMore && iterationCount < maxIterations) {
         iterationCount++;
+        
+        console.log(`[KDrive Agency] Iteration ${iterationCount} - offset: ${offset}, seenIds: ${seenIds.size}`);
         
         const response = await supabase.functions.invoke("kdrive-api", {
           body: {
             action: "list-files",
             folderId: currentFolderId_state,
             rootFolderId: AGENCIES_FOLDER_ID,
+            debugNoFilter: DEBUG_NO_FILTER,
             searchQuery: searchQuery.trim() || undefined,
             offset,
             limit: 50,
@@ -117,6 +123,8 @@ export function AgencyKDriveFolderSelector({
         const files = response.data?.data || [];
         const folders = files.filter((file: KDriveFile) => file.type === "dir");
         
+        console.log(`[KDrive Agency] Received ${folders.length} folders, has_more: ${response.data?.has_more}`);
+        
         // Check for new unique folders
         let newFoldersCount = 0;
         folders.forEach((folder: KDriveFile) => {
@@ -127,11 +135,14 @@ export function AgencyKDriveFolderSelector({
           }
         });
 
+        console.log(`[KDrive Agency] Added ${newFoldersCount} new unique folders (total: ${allFolders.length})`);
+
         // Stop if no new folders or API says no more
         hasMore = response.data?.has_more === true && newFoldersCount > 0;
         offset += 50;
       }
 
+      console.log(`[KDrive Agency] Finished loading - total folders: ${allFolders.length}`);
       setFolders(allFolders);
     } catch (error: any) {
       console.error("Erreur:", error);
