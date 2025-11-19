@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 export function MobileBottomNav() {
   const isNative = useIsNative();
   const { user } = useAuth();
-  const { unreadCount } = useNotifications();
+  const { notifications } = useNotifications();
   const { data: activities } = useActivities();
   const { data: posts } = usePosts();
   const { data: tasks } = useTasks();
@@ -37,19 +37,24 @@ export function MobileBottomNav() {
     return newActivities + newPosts;
   }, [activities, posts, lastVisits.feed]);
 
-  // Count clients with deadlines today or overdue
+  // Count clients with deadlines today or overdue (updated/created since last visit)
   const crmCount = useMemo(() => {
     if (!clients) return 0;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const lastVisit = lastVisits.crm;
     
     return clients.filter(c => {
       if (!c.follow_up_date) return false;
       const deadline = new Date(c.follow_up_date);
       deadline.setHours(0, 0, 0, 0);
-      return deadline <= today;
+      if (deadline > today) return false; // Only today or overdue
+      
+      // Count only if client was updated/created after last visit
+      const updatedAt = new Date(c.updated_at).getTime();
+      return updatedAt > lastVisit;
     }).length;
-  }, [clients]);
+  }, [clients, lastVisits.crm]);
 
   // Count my incomplete tasks in Projects since last visit
   const projectsCount = useMemo(() => {
@@ -60,6 +65,18 @@ export function MobileBottomNav() {
       new Date(t.created_at).getTime() > lastVisits.projects
     ).length;
   }, [tasks, user, lastVisits.projects]);
+
+  // Count unread message notifications since last visit
+  const messagesCount = useMemo(() => {
+    if (!notifications) return 0;
+    const lastVisit = lastVisits.messages;
+    
+    return notifications.filter(n => 
+      !n.read && 
+      n.type === 'message' && 
+      new Date(n.created_at).getTime() > lastVisit
+    ).length;
+  }, [notifications, lastVisits.messages]);
 
   // Check if running as PWA or native app
   const isMobileApp = useMemo(() => 
@@ -104,7 +121,7 @@ export function MobileBottomNav() {
           const Icon = item.icon;
           
           let badgeCount = 0;
-          if (item.to === '/messages') badgeCount = unreadCount;
+          if (item.to === '/messages') badgeCount = messagesCount;
           if (item.to === '/feed') badgeCount = feedCount;
           if (item.to === '/crm') badgeCount = crmCount;
           if (item.to === '/projects') badgeCount = projectsCount;
