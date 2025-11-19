@@ -1,4 +1,3 @@
-import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2 } from 'lucide-react';
 import { ActivityFeedItem } from '@/components/feed/ActivityFeedItem';
@@ -61,25 +60,25 @@ export default function Feed() {
   }
 
   return (
-    <div className="w-full md:container md:mx-auto p-3 md:p-4 pb-20 md:pb-8 md:max-w-2xl">
-      <div className="mb-4 md:mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold">Fil d'actualité</h1>
-        <p className="text-muted-foreground mt-1 md:mt-2 text-sm md:text-base">
+    <div className="w-full md:container md:mx-auto p-2 md:p-4 pb-20 md:pb-8 md:max-w-2xl">
+      <div className="mb-3 md:mb-6">
+        <h1 className="text-xl md:text-3xl font-bold">Fil d'actualité</h1>
+        <p className="text-muted-foreground mt-0.5 md:mt-2 text-xs md:text-base">
           Partagez et découvrez les actualités de l'équipe
         </p>
       </div>
 
       <OnlineUsersIndicator />
 
-      <div className="mb-3 md:mb-4">
+      <div className="mb-2 md:mb-4">
         <CreatePostInput />
       </div>
 
-      <ScrollArea className="h-[calc(100vh-20rem)] md:h-[calc(100vh-16rem)]">
-        <div className="space-y-3 md:space-y-4">
+      <ScrollArea className="h-[calc(100vh-18rem)] md:h-[calc(100vh-16rem)]">
+        <div className="space-y-2 md:space-y-4">
           {posts.length === 0 && activities.length === 0 ? (
-            <div className="p-6 md:p-8 text-center border rounded-lg bg-card/50">
-              <p className="text-muted-foreground text-sm md:text-base">Aucune activité pour le moment. Soyez le premier à partager !</p>
+            <div className="p-4 md:p-8 text-center border rounded-lg bg-card/50">
+              <p className="text-muted-foreground text-xs md:text-base">Aucune activité pour le moment. Soyez le premier à partager !</p>
             </div>
           ) : (
             <>

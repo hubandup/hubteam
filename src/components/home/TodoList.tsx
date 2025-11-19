@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -278,30 +277,26 @@ export function TodoList() {
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ListTodo className="h-5 w-5" />
-            Ma to-do list
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </CardContent>
-      </Card>
+      <div className="border rounded-lg bg-card/50 p-3 md:p-4">
+        <div className="flex items-center gap-2 mb-3 md:mb-4">
+          <ListTodo className="h-4 w-4 md:h-5 md:w-5" />
+          <h2 className="text-base md:text-lg font-semibold">Ma to-do list</h2>
+        </div>
+        <div className="flex items-center justify-center py-8 md:py-12">
+          <Loader2 className="h-6 w-6 md:h-8 md:w-8 animate-spin text-primary" />
+        </div>
+      </div>
     );
   }
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ListTodo className="h-5 w-5" />
-            Ma to-do list
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <div className="border rounded-lg bg-card/50 p-3 md:p-4">
+        <div className="flex items-center gap-2 mb-3 md:mb-4">
+          <ListTodo className="h-4 w-4 md:h-5 md:w-5" />
+          <h2 className="text-base md:text-lg font-semibold">Ma to-do list</h2>
+        </div>
+        <div className="space-y-2 md:space-y-3">
           <div>
             <Input
               placeholder="Ajouter une tâche... (Appuyez sur Entrée)"
@@ -383,8 +378,8 @@ export function TodoList() {
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <Dialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
         <DialogContent>

@@ -286,7 +286,7 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
   return (
     <div 
       className={cn(
-        "border rounded-lg bg-card/50 p-3 md:p-4 transition-colors",
+        "border rounded-lg bg-card/50 p-2 md:p-4 transition-colors",
         clickable && "cursor-pointer hover:bg-accent/50"
       )}
       onClick={handleClick}

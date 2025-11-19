@@ -80,7 +80,7 @@ export const UserPostItem = memo(function UserPostItem({
       toast.error('Erreur lors de la suppression');
     }
   };
-  return <div className="border rounded-lg bg-card/50 p-3 md:p-4">
+  return <div className="border rounded-lg bg-card/50 p-2 md:p-4">
       <div className="flex items-start gap-2 md:gap-3">
         <Avatar className="h-8 w-8 md:h-10 md:w-10">
           <AvatarImage src={post.profiles?.avatar_url || undefined} />
