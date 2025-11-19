@@ -96,10 +96,11 @@ export function AgencyKDriveFolderSelector({
       let currentOffset = 0;
       let hasMoreFolders = true;
       const limit = 50;
-      const maxIterations = 30; // Limit to 30 iterations (1500 files max)
+      const maxIterations = 30;
       let iterationCount = 0;
+      const seenIds = new Set<string>();
 
-      // Load folders with safety limit
+      // Load folders with duplicate detection
       while (hasMoreFolders && iterationCount < maxIterations) {
         const response = await supabase.functions.invoke("kdrive-api", {
           body: {
@@ -119,7 +120,22 @@ export function AgencyKDriveFolderSelector({
 
         const files = response.data?.data || [];
         const folderList = files.filter((file: KDriveFile) => file.type === "dir");
-        allFolders = [...allFolders, ...folderList];
+        
+        // Check for duplicates - if we see the same folders, stop
+        const newFolders = folderList.filter((folder: KDriveFile) => {
+          if (seenIds.has(folder.id)) {
+            return false;
+          }
+          seenIds.add(folder.id);
+          return true;
+        });
+
+        // If no new folders found, we're done
+        if (newFolders.length === 0) {
+          break;
+        }
+
+        allFolders = [...allFolders, ...newFolders];
 
         hasMoreFolders = Boolean(response.data?.has_more);
         currentOffset += files.length;
@@ -127,10 +143,6 @@ export function AgencyKDriveFolderSelector({
 
         // If no more folders, exit loop
         if (!hasMoreFolders || files.length === 0) break;
-      }
-
-      if (iterationCount >= maxIterations && hasMoreFolders) {
-        toast.info(`${allFolders.length} dossiers chargés. Utilisez la recherche pour trouver un dossier spécifique.`);
       }
 
       setFolders(allFolders);
