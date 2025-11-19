@@ -243,14 +243,17 @@
   }
   
   /* Sidebar components must use body font and size - force with important */
+  [data-sidebar],
   [data-sidebar] *,
   [data-sidebar] a,
   [data-sidebar] button,
   [data-sidebar] span,
-  [data-sidebar] div {
+  [data-sidebar] div,
+  [data-sidebar] [class*="text-"] {
     font-family: var(--font-body), sans-serif !important;
     font-size: var(--font-body-size) !important;
     font-weight: var(--font-body-weight) !important;
+    line-height: 1.5 !important;
   }
     
     /* Mobile spacing optimizations */
