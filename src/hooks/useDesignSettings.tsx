@@ -29,7 +29,9 @@ export function useDesignSettings() {
     
     // Apply fonts
     root.style.setProperty('--font-heading', data.heading_font);
+    root.style.setProperty('--font-heading-weight', data.heading_font_weight || '700');
     root.style.setProperty('--font-body', data.body_font);
+    root.style.setProperty('--font-body-weight', data.body_font_weight || '400');
     
     // Apply light mode colors
     root.style.setProperty('--primary', data.light_primary);
@@ -66,7 +68,7 @@ export function useDesignSettings() {
     const link = document.createElement('link');
     link.id = 'google-fonts-link';
     link.rel = 'stylesheet';
-    link.href = `https://fonts.googleapis.com/css2?family=${fontQuery}:wght@300;400;600;700&display=swap`;
+    link.href = `https://fonts.googleapis.com/css2?family=${fontQuery}:wght@300;400;500;600;700;800&display=swap`;
     document.head.appendChild(link);
   };
 }
