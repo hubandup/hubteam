@@ -597,43 +597,122 @@ export function DesignTab() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Prévisualisation des polices</CardTitle>
-          <CardDescription>
-            Aperçu en direct des polices sélectionnées
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-3 p-6 bg-muted/30 rounded-lg border border-border">
-            <div style={{ 
-              fontFamily: settings.heading_font, 
-              fontWeight: settings.heading_font_weight || '700',
-              fontSize: settings.heading_font_size || '2.5rem'
-            }}>
-              <h1 className="mb-2">Titre niveau 1</h1>
-              <h2 className="mb-2" style={{ fontSize: `calc(${settings.heading_font_size || '2.5rem'} * 0.8)` }}>Titre niveau 2</h2>
-              <h3 className="mb-2" style={{ fontSize: `calc(${settings.heading_font_size || '2.5rem'} * 0.65)` }}>Titre niveau 3</h3>
-              <h4 style={{ fontSize: `calc(${settings.heading_font_size || '2.5rem'} * 0.5)` }}>Titre niveau 4</h4>
+      <Card className="border-2 border-primary/20">
+        <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                </span>
+                Prévisualisation en temps réel
+              </CardTitle>
+              <CardDescription>
+                Les changements s'appliquent immédiatement dans cet aperçu
+              </CardDescription>
             </div>
           </div>
-          <div className="space-y-2 p-6 bg-muted/30 rounded-lg border border-border">
-            <p style={{ 
+        </CardHeader>
+        <CardContent className="space-y-6 pt-6">
+          {/* Titres */}
+          <div className="space-y-4 p-6 bg-gradient-to-br from-muted/50 to-muted/30 rounded-lg border border-border">
+            <div className="mb-4 pb-2 border-b border-border">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Polices des titres • {settings.heading_font} • {settings.heading_font_weight} • {settings.heading_font_size}
+              </span>
+            </div>
+            <div style={{ 
+              fontFamily: settings.heading_font, 
+              fontWeight: settings.heading_font_weight || '700'
+            }}>
+              <h1 className="mb-3" style={{ fontSize: settings.heading_font_size || '2.5rem' }}>
+                Titre principal (H1)
+              </h1>
+              <h2 className="mb-3" style={{ fontSize: `calc(${settings.heading_font_size || '2.5rem'} * 0.75)` }}>
+                Sous-titre important (H2)
+              </h2>
+              <h3 className="mb-3" style={{ fontSize: `calc(${settings.heading_font_size || '2.5rem'} * 0.6)` }}>
+                Section de contenu (H3)
+              </h3>
+              <h4 className="mb-2" style={{ fontSize: `calc(${settings.heading_font_size || '2.5rem'} * 0.5)` }}>
+                Sous-section (H4)
+              </h4>
+              <h5 className="mb-2" style={{ fontSize: `calc(${settings.heading_font_size || '2.5rem'} * 0.4)` }}>
+                Détail de section (H5)
+              </h5>
+              <h6 style={{ fontSize: `calc(${settings.heading_font_size || '2.5rem'} * 0.35)` }}>
+                Titre minimal (H6)
+              </h6>
+            </div>
+          </div>
+
+          {/* Corps de texte */}
+          <div className="space-y-4 p-6 bg-gradient-to-br from-muted/30 to-muted/50 rounded-lg border border-border">
+            <div className="mb-4 pb-2 border-b border-border">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Police du texte • {settings.body_font} • {settings.body_font_weight} • {settings.body_font_size}
+              </span>
+            </div>
+            <div style={{ 
               fontFamily: settings.body_font, 
+              fontWeight: settings.body_font_weight || '400'
+            }}>
+              <p className="mb-4" style={{ fontSize: settings.body_font_size || '1rem' }}>
+                <strong style={{ fontWeight: '600' }}>Paragraphe normal :</strong> Ceci est un exemple de texte de paragraphe avec la police du corps. 
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
+              </p>
+              <p className="mb-3 text-muted-foreground" style={{ 
+                fontSize: `calc(${settings.body_font_size || '1rem'} * 0.875)`
+              }}>
+                <em>Texte secondaire :</em> Texte de taille réduite pour les descriptions, les légendes et les détails secondaires.
+                Parfait pour les informations complémentaires.
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm" style={{ fontSize: `calc(${settings.body_font_size || '1rem'} * 0.875)` }}>
+                  Badge exemple
+                </span>
+                <span className="inline-flex items-center px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-sm" style={{ fontSize: `calc(${settings.body_font_size || '1rem'} * 0.875)` }}>
+                  Étiquette
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Exemple combiné */}
+          <div className="p-6 bg-card rounded-lg border border-border shadow-sm">
+            <h3 className="mb-3" style={{ 
+              fontFamily: settings.heading_font,
+              fontWeight: settings.heading_font_weight || '700',
+              fontSize: `calc(${settings.heading_font_size || '2.5rem'} * 0.6)`
+            }}>
+              Exemple de carte d'interface
+            </h3>
+            <p className="mb-4" style={{ 
+              fontFamily: settings.body_font,
               fontWeight: settings.body_font_weight || '400',
               fontSize: settings.body_font_size || '1rem'
             }}>
-              Ceci est un exemple de texte de paragraphe avec la police du corps. 
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-              Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+              Voici comment vos typographies s'afficheront dans les cartes et contenus de votre application.
+              La combinaison des polices choisies crée l'identité visuelle de votre interface.
             </p>
-            <p className="text-muted-foreground" style={{ 
-              fontFamily: settings.body_font, 
-              fontWeight: settings.body_font_weight || '400',
-              fontSize: `calc(${settings.body_font_size || '1rem'} * 0.875)`
-            }}>
-              Texte de taille réduite pour les descriptions et les détails secondaires.
-            </p>
+            <div className="flex gap-2">
+              <button className="px-4 py-2 bg-primary text-primary-foreground rounded-md" style={{ 
+                fontFamily: settings.body_font,
+                fontWeight: '500',
+                fontSize: settings.body_font_size || '1rem'
+              }}>
+                Bouton d'action
+              </button>
+              <button className="px-4 py-2 border border-input rounded-md" style={{ 
+                fontFamily: settings.body_font,
+                fontWeight: '400',
+                fontSize: settings.body_font_size || '1rem'
+              }}>
+                Annuler
+              </button>
+            </div>
           </div>
         </CardContent>
       </Card>
