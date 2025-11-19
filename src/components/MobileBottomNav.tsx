@@ -7,7 +7,9 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useActivities } from '@/hooks/useActivities';
 import { usePosts } from '@/hooks/usePosts';
 import { useTasks } from '@/hooks/useTasks';
+import { useClients } from '@/hooks/useClients';
 import { useAuth } from '@/hooks/useAuth';
+import { useTabVisits } from '@/hooks/useTabVisits';
 import { Badge } from '@/components/ui/badge';
 
 export function MobileBottomNav() {
@@ -17,30 +19,47 @@ export function MobileBottomNav() {
   const { data: activities } = useActivities();
   const { data: posts } = usePosts();
   const { data: tasks } = useTasks();
+  const { data: clients } = useClients();
+  const lastVisits = useTabVisits();
 
-  // Count new activities/posts in Feed (last 24 hours)
+  // Count new activities/posts in Feed since last visit
   const feedCount = useMemo(() => {
-    const yesterday = new Date();
-    yesterday.setHours(yesterday.getHours() - 24);
+    const lastVisit = lastVisits.feed;
     
-    const recentActivities = activities?.filter(
-      a => new Date(a.created_at) > yesterday
+    const newActivities = activities?.filter(
+      a => new Date(a.created_at).getTime() > lastVisit
     ).length || 0;
     
-    const recentPosts = posts?.filter(
-      p => new Date(p.created_at) > yesterday
+    const newPosts = posts?.filter(
+      p => new Date(p.created_at).getTime() > lastVisit
     ).length || 0;
     
-    return recentActivities + recentPosts;
-  }, [activities, posts]);
+    return newActivities + newPosts;
+  }, [activities, posts, lastVisits.feed]);
 
-  // Count my incomplete tasks in Projects
+  // Count clients with deadlines today or overdue
+  const crmCount = useMemo(() => {
+    if (!clients) return 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return clients.filter(c => {
+      if (!c.follow_up_date) return false;
+      const deadline = new Date(c.follow_up_date);
+      deadline.setHours(0, 0, 0, 0);
+      return deadline <= today;
+    }).length;
+  }, [clients]);
+
+  // Count my incomplete tasks in Projects since last visit
   const projectsCount = useMemo(() => {
     if (!user || !tasks) return 0;
     return tasks.filter(
-      t => t.assigned_to === user.id && t.status !== 'Terminée'
+      t => t.assigned_to === user.id && 
+      t.status !== 'Terminée' && 
+      new Date(t.created_at).getTime() > lastVisits.projects
     ).length;
-  }, [tasks, user]);
+  }, [tasks, user, lastVisits.projects]);
 
   // Check if running as PWA or native app
   const isMobileApp = useMemo(() => 
@@ -87,6 +106,7 @@ export function MobileBottomNav() {
           let badgeCount = 0;
           if (item.to === '/messages') badgeCount = unreadCount;
           if (item.to === '/feed') badgeCount = feedCount;
+          if (item.to === '/crm') badgeCount = crmCount;
           if (item.to === '/projects') badgeCount = projectsCount;
           
           const showBadge = badgeCount > 0;
