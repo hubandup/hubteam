@@ -42,31 +42,31 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
   const isOverdue = project.end_date && new Date(project.end_date) < new Date() && project.status !== 'completed';
 
   return (
-    <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={onClick}>
-      <CardHeader>
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3 flex-1 min-w-0">
-            <Avatar className="h-12 w-12 flex-shrink-0">
+    <div className="border rounded-lg bg-card/50 cursor-pointer hover:shadow-lg transition-shadow p-3 md:p-6" onClick={onClick}>
+      <div className="space-y-3">
+        <div className="flex items-start justify-between gap-2 md:gap-3">
+          <div className="flex items-start gap-2 md:gap-3 flex-1 min-w-0">
+            <Avatar className="h-10 w-10 md:h-12 md:w-12 flex-shrink-0">
               <AvatarImage src={clientLogo} alt={clientName} />
               <AvatarFallback>
                 <Building2 className="h-6 w-6" />
               </AvatarFallback>
             </Avatar>
-            <div className="min-w-0 flex-1 space-y-1">
-              <CardTitle className="text-lg truncate">
+            <div className="min-w-0 flex-1 space-y-0.5 md:space-y-1">
+              <h3 className="text-base md:text-lg font-semibold truncate">
                 {project.name}
-              </CardTitle>
-              <CardDescription className="text-xs font-medium">
+              </h3>
+              <p className="text-xs md:text-sm font-medium text-muted-foreground">
                 {clientName}
-              </CardDescription>
+              </p>
               {project.description && (
-                <p className="text-sm text-muted-foreground line-clamp-2">
+                <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">
                   {project.description}
                 </p>
               )}
               {(project.start_date || project.end_date) && (
-                <div className={`flex items-center gap-2 text-sm ${isOverdue ? 'text-destructive font-medium' : project.status === 'completed' ? 'text-foreground' : 'text-muted-foreground'}`}>
-                  <Calendar className="h-4 w-4" />
+                <div className={`flex items-center gap-1.5 md:gap-2 text-xs md:text-sm ${isOverdue ? 'text-destructive font-medium' : project.status === 'completed' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  <Calendar className="h-3 w-3 md:h-4 md:w-4" />
                   <span>
                     {project.start_date && format(new Date(project.start_date), 'dd MMM yyyy', { locale: fr })}
                     {project.start_date && project.end_date && ' - '}
@@ -76,11 +76,11 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
               )}
             </div>
           </div>
-          <Badge className={`flex-shrink-0 border-0 ${statusInfo.color}`}>
+          <Badge className={`flex-shrink-0 border-0 text-xs md:text-sm ${statusInfo.color}`}>
             {statusInfo.label}
           </Badge>
         </div>
-      </CardHeader>
-    </Card>
+      </div>
+    </div>
   );
 }

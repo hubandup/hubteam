@@ -308,14 +308,14 @@ export function QuickNotes() {
             <p className="text-sm text-muted-foreground text-center py-8">Aucune note</p>
           ) : (
             <div className="space-y-2">
-              {notes.map((note) => (
-                <div
-                  key={note.id}
-                  className="p-3 rounded-lg border hover:bg-accent/50 transition-colors group"
-                  onMouseEnter={() => setHoveredNoteId(note.id)}
-                  onMouseLeave={() => setHoveredNoteId(null)}
-                >
-                  <div className="flex items-start justify-between gap-3">
+            {notes.map((note) => (
+              <div
+                key={note.id}
+                className="p-2 md:p-3 rounded-lg border hover:bg-accent/50 transition-colors group"
+                onMouseEnter={() => setHoveredNoteId(note.id)}
+                onMouseLeave={() => setHoveredNoteId(null)}
+              >
+                <div className="flex items-start justify-between gap-2 md:gap-3">
                     <div 
                       className="flex-1 text-sm"
                       dangerouslySetInnerHTML={{ __html: note.content }}

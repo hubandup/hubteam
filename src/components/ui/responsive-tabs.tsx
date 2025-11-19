@@ -106,8 +106,8 @@ export function ResponsiveTabs({
       className={className}
     >
       {isMobile ? (
-        <Select value={currentValue} onValueChange={setCurrentValue}>
-          <SelectTrigger className="w-full mb-4 bg-background">
+        <Select value={currentValue} onValueChange={handleTabChange}>
+          <SelectTrigger className="w-full mb-3 md:mb-4 bg-background h-11 text-sm">
             <SelectValue>
               <div className="flex items-center gap-2">
                 {currentTab?.icon}

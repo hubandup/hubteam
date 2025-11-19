@@ -61,26 +61,26 @@ export default function Feed() {
   }
 
   return (
-    <div className="w-full md:container md:mx-auto p-4 pb-24 md:pb-8 md:max-w-2xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Fil d'actualité</h1>
-        <p className="text-muted-foreground mt-2">
+    <div className="w-full md:container md:mx-auto p-3 md:p-4 pb-20 md:pb-8 md:max-w-2xl">
+      <div className="mb-4 md:mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold">Fil d'actualité</h1>
+        <p className="text-muted-foreground mt-1 md:mt-2 text-sm md:text-base">
           Partagez et découvrez les actualités de l'équipe
         </p>
       </div>
 
       <OnlineUsersIndicator />
 
-      <div className="mb-4">
+      <div className="mb-3 md:mb-4">
         <CreatePostInput />
       </div>
 
       <ScrollArea className="h-[calc(100vh-20rem)] md:h-[calc(100vh-16rem)]">
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           {posts.length === 0 && activities.length === 0 ? (
-            <Card className="p-8 text-center">
-              <p className="text-muted-foreground">Aucune activité pour le moment. Soyez le premier à partager !</p>
-            </Card>
+            <div className="p-6 md:p-8 text-center border rounded-lg bg-card/50">
+              <p className="text-muted-foreground text-sm md:text-base">Aucune activité pour le moment. Soyez le premier à partager !</p>
+            </div>
           ) : (
             <>
               {[...posts.map(p => ({ ...p, type: 'post' as const })), ...activities.map(a => ({ ...a, type: 'activity' as const }))]

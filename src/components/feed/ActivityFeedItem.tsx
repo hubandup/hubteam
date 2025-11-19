@@ -15,6 +15,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { ActivityStats } from './ActivityStats';
+import { cn } from '@/lib/utils';
 
 interface ActivityFeedItemProps {
   activity: {
@@ -280,64 +281,66 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
   const userInitials = activity.profiles
     ? `${activity.profiles.first_name[0]}${activity.profiles.last_name[0]}`
     : '?';
+  const clickable = !!getEntityLink();
 
   return (
-    <Card className="p-4">
-      <div 
-        className={`${getEntityLink() ? 'cursor-pointer hover:bg-accent/50 -m-4 p-4 rounded-lg' : ''} transition-colors`}
-        onClick={handleClick}
-      >
-        <div className="flex items-start gap-3">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={activity.profiles?.avatar_url || undefined} />
-            <AvatarFallback>{userInitials}</AvatarFallback>
-          </Avatar>
+    <div 
+      className={cn(
+        "border rounded-lg bg-card/50 p-3 md:p-4 transition-colors",
+        clickable && "cursor-pointer hover:bg-accent/50"
+      )}
+      onClick={handleClick}
+    >
+      <div className="flex items-start gap-2 md:gap-3">
+        <Avatar className="h-8 w-8 md:h-10 md:w-10">
+          <AvatarImage src={activity.profiles?.avatar_url || undefined} />
+          <AvatarFallback>{userInitials}</AvatarFallback>
+        </Avatar>
 
-          <div className="flex-1 min-w-0">
-            <div className="mb-1">
-              <span className="font-medium">{userName}</span>
-            </div>
-            
-            <div className="text-muted-foreground text-sm mb-1">
-              {getActionText()}
-            </div>
-
-            {getDetailText() && (
-              <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                {getDetailText()}
-              </p>
-            )}
-
-            {/* Display entity image if available */}
-            {activity.new_values?.logo_url && (
-              <div className="mt-2 mb-2">
-                <img 
-                  src={activity.new_values.logo_url} 
-                  alt="Entity image"
-                  className="rounded-lg max-h-48 object-cover"
-                />
-              </div>
-            )}
-
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <EntityIcon className="h-3.5 w-3.5" />
-              <Clock className="h-3.5 w-3.5" />
-              <span>
-                {formatDistanceToNow(new Date(activity.created_at), {
-                  addSuffix: true,
-                  locale: fr,
-                })}
-              </span>
-            </div>
+        <div className="flex-1 min-w-0">
+          <div className="mb-1">
+            <span className="font-medium text-sm md:text-base">{userName}</span>
+          </div>
+          
+          <div className="text-muted-foreground text-xs md:text-sm mb-1">
+            {getActionText()}
           </div>
 
-          <div className="flex-shrink-0">
-            <ActionIcon className="h-5 w-5 text-muted-foreground" />
+          {getDetailText() && (
+            <p className="text-xs md:text-sm text-muted-foreground line-clamp-2 mb-2">
+              {getDetailText()}
+            </p>
+          )}
+
+          {/* Display entity image if available */}
+          {activity.new_values?.logo_url && (
+            <div className="mt-2 mb-2">
+              <img 
+                src={activity.new_values.logo_url} 
+                alt="Entity image"
+                className="rounded-lg max-h-48 object-cover"
+              />
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <EntityIcon className="h-3 w-3 md:h-3.5 md:w-3.5" />
+            <Clock className="h-3 w-3 md:h-3.5 md:w-3.5" />
+            <span>
+              {formatDistanceToNow(new Date(activity.created_at), {
+                addSuffix: true,
+                locale: fr,
+              })}
+            </span>
           </div>
+        </div>
+
+        <div className="flex-shrink-0">
+          <ActionIcon className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
         </div>
       </div>
 
       <ActivityStats activityId={activity.id} />
-    </Card>
+    </div>
   );
 }

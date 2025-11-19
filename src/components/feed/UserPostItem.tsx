@@ -80,9 +80,9 @@ export const UserPostItem = memo(function UserPostItem({
       toast.error('Erreur lors de la suppression');
     }
   };
-  return <Card className="p-4">
-      <div className="flex items-start gap-3">
-        <Avatar className="h-10 w-10">
+  return <div className="border rounded-lg bg-card/50 p-3 md:p-4">
+      <div className="flex items-start gap-2 md:gap-3">
+        <Avatar className="h-8 w-8 md:h-10 md:w-10">
           <AvatarImage src={post.profiles?.avatar_url || undefined} />
           <AvatarFallback>
             {post.profiles?.first_name?.[0]}
@@ -93,10 +93,10 @@ export const UserPostItem = memo(function UserPostItem({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <p className="font-semibold">
+              <p className="font-semibold text-sm md:text-base">
                 {post.profiles?.first_name} {post.profiles?.last_name}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs md:text-sm text-muted-foreground">
                 {formatDistanceToNow(new Date(post.created_at), {
                 addSuffix: true,
                 locale: fr
@@ -218,5 +218,5 @@ export const UserPostItem = memo(function UserPostItem({
           {showComments && <PostComments postId={post.id} />}
         </div>
       </div>
-    </Card>;
+    </div>;
 });
