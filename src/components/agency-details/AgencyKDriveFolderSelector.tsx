@@ -56,8 +56,6 @@ export function AgencyKDriveFolderSelector({
   const [isLoading, setIsLoading] = useState(false);
   const [folders, setFolders] = useState<KDriveFile[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [newFolderName, setNewFolderName] = useState("");
-  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [currentFolderId_state, setCurrentFolderId] = useState(AGENCIES_FOLDER_ID);
   const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string; name: string }>>([
     { id: AGENCIES_FOLDER_ID, name: "Agences" }
@@ -152,45 +150,6 @@ export function AgencyKDriveFolderSelector({
     }
   };
 
-  const createFolder = async () => {
-    if (!newFolderName.trim()) {
-      toast.error("Veuillez saisir un nom de dossier");
-      return;
-    }
-
-    setIsCreatingFolder(true);
-    try {
-      const response = await supabase.functions.invoke("kdrive-api", {
-        body: {
-          action: "create-folder",
-          fileName: newFolderName,
-          parentId: currentFolderId_state,
-          rootFolderId: AGENCIES_FOLDER_ID,
-        },
-      });
-
-      if (response.error) {
-        console.error("Erreur création dossier:", response.error);
-        toast.error("Impossible de créer le dossier");
-        return;
-      }
-
-      const newFolder = response.data?.data;
-      toast.success(`Dossier "${newFolderName}" créé`);
-      setNewFolderName("");
-      
-      if (newFolder?.id) {
-        navigateToFolder(newFolder);
-      } else {
-        loadFolders();
-      }
-    } catch (error: any) {
-      console.error("Erreur:", error);
-      toast.error(error.message || "Erreur lors de la création");
-    } finally {
-      setIsCreatingFolder(false);
-    }
-  };
 
   const navigateToFolder = (folder: KDriveFile) => {
     setCurrentFolderId(folder.id);
@@ -334,28 +293,6 @@ export function AgencyKDriveFolderSelector({
               </Select>
             </div>
 
-            {/* Create new folder */}
-            <div className="flex gap-2">
-              <Input
-                placeholder="Créer un nouveau dossier..."
-                value={newFolderName}
-                onChange={(e) => setNewFolderName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && createFolder()}
-              />
-              <Button 
-                onClick={createFolder} 
-                disabled={!newFolderName.trim() || isCreatingFolder}
-                size="sm"
-              >
-                {isCreatingFolder ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-
-            <Separator />
 
             {/* Folders list */}
             <ScrollArea className="h-[300px]">
