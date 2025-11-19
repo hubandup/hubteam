@@ -26,7 +26,7 @@ import {
 // Fixed kDrive configuration for agencies
 const KDRIVE_DRIVE_ID = 969307; // Hub & Up (product id)
 const AGENCIES_FOLDER_ID = "50123"; // Hub & Up > Agences folder ID
-const DEBUG_NO_FILTER = false; // Set to true to disable server-side filtering
+const DEBUG_NO_FILTER = true; // Set to true to disable server-side filtering
 
 interface KDriveFile {
   id: string;
