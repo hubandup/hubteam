@@ -33,7 +33,14 @@ export default function Auth() {
 
   useEffect(() => {
     if (user) {
-      navigate('/');
+      // Check if running as PWA or native app
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      const isInWebAppiOS = (window.navigator as any).standalone === true;
+      const isNative = typeof (window as any).Capacitor !== 'undefined';
+      const isPWA = isStandalone || isInWebAppiOS || isNative;
+      
+      // Redirect to Feed for PWA/mobile, otherwise to Home
+      navigate(isPWA ? '/feed' : '/');
     }
   }, [user, navigate]);
 
