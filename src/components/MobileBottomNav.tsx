@@ -1,4 +1,4 @@
-import { Home, Users, Building2, Briefcase, MessageCircle } from 'lucide-react';
+import { Home, StickyNote, Users, Briefcase, MessageCircle } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
@@ -22,14 +22,14 @@ export function MobileBottomNav() {
       label: 'Feed',
     },
     {
+      to: '/notes',
+      icon: StickyNote,
+      label: 'Notes',
+    },
+    {
       to: '/crm',
       icon: Users,
       label: 'CRM',
-    },
-    {
-      to: '/agencies',
-      icon: Building2,
-      label: 'Agences',
     },
     {
       to: '/projects',
