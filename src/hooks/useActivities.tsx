@@ -22,8 +22,6 @@ async function fetchActivities() {
   const { data: activityData, error } = await supabase
     .from('activity_log')
     .select('*')
-    .eq('action_type', 'INSERT')
-    .not('entity_type', 'in', '("tasks","task_comments")')
     .order('created_at', { ascending: false })
     .limit(100);
 
