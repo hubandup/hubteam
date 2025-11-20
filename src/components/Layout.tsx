@@ -14,17 +14,12 @@ export function Layout({ children }: LayoutProps) {
   const isMobile = useIsMobile();
   const { isNative } = useCapacitor();
 
-  return (
-    <SidebarProvider>
+  // Sur mobile/PWA, on ne wrap pas avec SidebarProvider pour éviter les conflits
+  if (isMobile || isNative) {
+    return (
       <div className="min-h-screen flex w-full">
-        {!isMobile && !isNative && <Sidebar />}
         <div className="flex-1 min-w-0 flex flex-col">
-          {!isNative && (
-            <header className="h-14 border-b bg-card flex items-center px-4 md:flex hidden">
-              <SidebarTrigger />
-            </header>
-          )}
-          <main className={`flex-1 min-h-0 min-w-0 overflow-hidden bg-background ${isMobile || isNative ? 'pb-20' : 'pb-0'}`}>
+          <main className="flex-1 min-h-0 min-w-0 overflow-hidden bg-background pb-20">
             {!isNative && (
               <div className="px-4 md:px-6 py-4">
                 <Breadcrumbs />
@@ -35,7 +30,29 @@ export function Layout({ children }: LayoutProps) {
             </div>
           </main>
         </div>
-        {(isMobile || isNative) && <MobileBottomNav />}
+        <MobileBottomNav />
+      </div>
+    );
+  }
+
+  // Version desktop avec Sidebar
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <Sidebar />
+        <div className="flex-1 min-w-0 flex flex-col">
+          <header className="h-14 border-b bg-card flex items-center px-4">
+            <SidebarTrigger />
+          </header>
+          <main className="flex-1 min-h-0 min-w-0 overflow-hidden bg-background">
+            <div className="px-4 md:px-6 py-4">
+              <Breadcrumbs />
+            </div>
+            <div className="px-4 md:px-6 pb-6">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
     </SidebarProvider>
   );
