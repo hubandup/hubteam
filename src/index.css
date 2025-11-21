@@ -449,6 +449,41 @@
     }
   }
   
+  /* Safe area insets for mobile devices with notch */
+  @supports (padding: env(safe-area-inset-bottom)) {
+    .safe-area-inset-bottom {
+      padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+    }
+  }
+  
+  /* Prevent text inflation on iOS */
+  @media (max-width: 768px) {
+    html {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+    
+    /* Prevent zoom on iOS when focusing inputs */
+    input, textarea, select {
+      font-size: 16px !important;
+    }
+    
+    /* Touch-friendly tap targets */
+    a, button, [role="button"], [role="link"] {
+      min-height: 44px;
+      min-width: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Smooth scrolling for all containers */
+    * {
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+    }
+  }
+  
   /* Button hover effects */
   .btn-primary:hover:not(:disabled) {
     background-color: hsl(var(--primary-hover));
