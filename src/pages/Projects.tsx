@@ -139,10 +139,10 @@ export default function Projects() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 pb-24 md:pb-8">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Projets</h1>
-        <p className="text-muted-foreground">Gérez tous vos projets</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">Projets</h1>
+        <p className="text-muted-foreground text-sm md:text-base">Gérez tous vos projets</p>
         {isMobile && !isClient && (
           <div className="mt-4">
             <ProtectedAction module="projects" action="create">
@@ -167,7 +167,7 @@ export default function Projects() {
               placeholder="Rechercher un projet..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-white dark:bg-background"
+              className="pl-9 bg-white dark:bg-background h-11 md:h-10"
             />
           </div>
           {!isMobile && (

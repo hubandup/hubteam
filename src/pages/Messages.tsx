@@ -19,7 +19,7 @@ export default function Messages() {
 
   return (
     <>
-      <div className="h-screen flex flex-col">
+      <div className="h-screen flex flex-col pb-20 md:pb-0">
         {!isMobile && (
           <div className="border-b p-4">
             <div className="flex items-center gap-3">

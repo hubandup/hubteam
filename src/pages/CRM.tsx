@@ -112,10 +112,10 @@ export default function CRM() {
   return (
     <div className="flex flex-col h-full min-h-0 overflow-hidden">
       {/* Header - Always visible */}
-      <div className="flex-shrink-0 p-6 pb-4 bg-background">
+      <div className="flex-shrink-0 p-4 md:p-6 pb-3 md:pb-4 bg-background">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">CRM</h1>
-          <p className="text-muted-foreground">Gérez vos clients et leurs projets</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">CRM</h1>
+          <p className="text-muted-foreground text-sm md:text-base">Gérez vos clients et leurs projets</p>
           {isMobile && (
             <div className="mt-4">
               <ProtectedAction module="crm" action="create">
@@ -161,7 +161,7 @@ export default function CRM() {
 
       {/* Search bar and filters - Always visible */}
       {clients.length > 0 && (
-        <div className="flex-shrink-0 px-6 pb-4 bg-background space-y-3">
+        <div className="flex-shrink-0 px-4 md:px-6 pb-3 md:pb-4 bg-background space-y-3">
           <div className="flex gap-3 items-center">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -169,7 +169,7 @@ export default function CRM() {
               placeholder="Rechercher un client..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-white dark:bg-background"
+              className="pl-9 bg-white dark:bg-background h-11 md:h-10"
             />
             </div>
             {!isMobile && (
@@ -210,17 +210,17 @@ export default function CRM() {
       {/* Content area - Scrollable container */}
       <div className="flex-1 min-w-0 overflow-hidden">
         {filteredClients.length === 0 && clients.length === 0 ? (
-          <div className="text-center py-12 px-6">
+          <div className="text-center py-12 px-4 md:px-6">
             <p className="text-muted-foreground">Aucun client pour le moment</p>
             <p className="text-sm text-muted-foreground mt-2">Commencez par ajouter un nouveau client</p>
           </div>
         ) : filteredClients.length === 0 ? (
-          <div className="text-center py-12 px-6">
+          <div className="text-center py-12 px-4 md:px-6">
             <p className="text-muted-foreground">Aucun client trouvé</p>
             <p className="text-sm text-muted-foreground mt-2">Essayez une autre recherche</p>
           </div>
         ) : isMobile ? (
-          <div className="overflow-y-auto h-full px-6 pb-6">
+          <div className="overflow-y-auto h-full px-4 pb-24">
             <div className="space-y-4">
               {filteredClients.map((client) => (
                 <ClientCard
