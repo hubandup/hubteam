@@ -20,7 +20,7 @@ export function Layout({ children }: LayoutProps) {
       <div className="min-h-screen flex w-full">
         <div className="flex-1 min-w-0 flex flex-col">
           <main className="flex-1 min-h-0 min-w-0 overflow-auto bg-background pb-20">
-            <div className="px-3 py-3">
+            <div className="px-2 py-3">
               {children}
             </div>
           </main>
