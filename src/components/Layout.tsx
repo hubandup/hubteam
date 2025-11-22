@@ -19,13 +19,8 @@ export function Layout({ children }: LayoutProps) {
     return (
       <div className="min-h-screen flex w-full">
         <div className="flex-1 min-w-0 flex flex-col">
-          <main className="flex-1 min-h-0 min-w-0 overflow-hidden bg-background pb-20">
-            {!isNative && (
-              <div className="px-4 md:px-6 py-4">
-                <Breadcrumbs />
-              </div>
-            )}
-            <div className={`${isNative ? 'px-4 py-4' : 'px-4 md:px-6 pb-6'}`}>
+          <main className="flex-1 min-h-0 min-w-0 overflow-auto bg-background pb-20">
+            <div className="px-3 py-3">
               {children}
             </div>
           </main>

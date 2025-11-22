@@ -112,12 +112,12 @@ export default function CRM() {
   return (
     <div className="flex flex-col h-full min-h-0 overflow-hidden">
       {/* Header - Always visible */}
-      <div className="flex-shrink-0 p-4 md:p-6 pb-3 md:pb-4 bg-background">
+      <div className="flex-shrink-0 pb-2 md:pb-4 bg-background">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">CRM</h1>
-          <p className="text-muted-foreground text-sm md:text-base">Gérez vos clients et leurs projets</p>
+          <h1 className="text-xl md:text-3xl font-bold text-foreground mb-0.5">CRM</h1>
+          <p className="text-muted-foreground text-xs md:text-base">Gérez vos clients et leurs projets</p>
           {isMobile && (
-            <div className="mt-4">
+            <div className="mt-3">
               <ProtectedAction module="crm" action="create">
                 <AddClientDialog onClientAdded={() => queryClient.invalidateQueries({ queryKey: ['clients'] })} />
               </ProtectedAction>
@@ -161,15 +161,15 @@ export default function CRM() {
 
       {/* Search bar and filters - Always visible */}
       {clients.length > 0 && (
-        <div className="flex-shrink-0 px-4 md:px-6 pb-3 md:pb-4 bg-background space-y-3">
-          <div className="flex gap-3 items-center">
+        <div className="flex-shrink-0 pb-2 md:pb-4 bg-background space-y-2">
+          <div className="flex gap-2 items-center">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher un client..."
+              placeholder="Rechercher..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-white dark:bg-background h-11 md:h-10"
+              className="pl-8 bg-white dark:bg-background h-10 text-sm"
             />
             </div>
             {!isMobile && (
@@ -220,8 +220,8 @@ export default function CRM() {
             <p className="text-sm text-muted-foreground mt-2">Essayez une autre recherche</p>
           </div>
         ) : isMobile ? (
-          <div className="overflow-y-auto h-full px-4 pb-24">
-            <div className="space-y-4">
+          <div className="overflow-y-auto h-full">
+            <div className="space-y-3">
               {filteredClients.map((client) => (
                 <ClientCard
                   key={client.id}

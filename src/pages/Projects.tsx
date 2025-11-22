@@ -139,12 +139,12 @@ export default function Projects() {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-6 pb-24 md:pb-8">
+    <div className="space-y-3 md:space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">Projets</h1>
-        <p className="text-muted-foreground text-sm md:text-base">Gérez tous vos projets</p>
+        <h1 className="text-xl md:text-3xl font-bold text-foreground mb-0.5">Projets</h1>
+        <p className="text-muted-foreground text-xs md:text-base">Gérez tous vos projets</p>
         {isMobile && !isClient && (
-          <div className="mt-4">
+          <div className="mt-3">
             <ProtectedAction module="projects" action="create">
               <AddProjectDialog onProjectAdded={() => queryClient.invalidateQueries({ queryKey: ['projects'] })} />
             </ProtectedAction>
@@ -160,14 +160,14 @@ export default function Projects() {
       )}
 
       {projects.length > 0 && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher un projet..."
+              placeholder="Rechercher..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-white dark:bg-background h-11 md:h-10"
+              className="pl-8 bg-white dark:bg-background h-10 text-sm"
             />
           </div>
           {!isMobile && (
@@ -200,7 +200,7 @@ export default function Projects() {
 
 {isMobile ? (
         <Select value={activeTab} onValueChange={setActiveTab}>
-          <SelectTrigger className="w-full mb-4 bg-background h-11">
+          <SelectTrigger className="w-full mb-3 bg-background h-10">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-background z-50">
@@ -336,7 +336,7 @@ export default function Projects() {
               </p>
             </div>
           ) : isMobile || viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
               {filteredProjects.map((project) => (
                 <ProjectCard
                   key={project.id}

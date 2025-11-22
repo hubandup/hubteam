@@ -115,8 +115,8 @@ export function MobileBottomNav() {
   ], []);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 border-t md:hidden backdrop-blur-xl shadow-lg">
-      <div className="flex justify-around items-center h-20 px-2 safe-area-inset-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/98 border-t md:hidden backdrop-blur-xl shadow-lg">
+      <div className="flex justify-around items-center h-16 px-1 safe-area-inset-bottom">
         {navItems.map((item) => {
           const Icon = item.icon;
           
@@ -132,21 +132,21 @@ export function MobileBottomNav() {
             <NavLink
               key={item.to}
               to={item.to}
-              className="flex flex-col items-center justify-center flex-1 h-full gap-1.5 text-muted-foreground transition-all duration-200 active:scale-95 rounded-lg min-w-[60px]"
+              className="flex flex-col items-center justify-center flex-1 h-full gap-0.5 text-muted-foreground transition-all duration-200 active:scale-95 rounded-lg min-w-[56px]"
               activeClassName="text-primary font-semibold"
             >
-              <div className="relative p-2">
-                <Icon className="h-6 w-6 transition-transform duration-200" />
+              <div className="relative p-1.5">
+                <Icon className="h-5 w-5 transition-transform duration-200" />
                 {showBadge && (
                   <Badge
                     variant="destructive"
-                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px] font-bold animate-fade-in shadow-md"
+                    className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center p-0 text-[9px] font-bold animate-fade-in shadow-md"
                   >
                     {badgeCount > 9 ? '9+' : badgeCount}
                   </Badge>
                 )}
               </div>
-              <span className="text-[11px] leading-tight">{item.label}</span>
+              <span className="text-[10px] leading-tight">{item.label}</span>
             </NavLink>
           );
         })}
