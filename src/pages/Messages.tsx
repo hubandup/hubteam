@@ -19,7 +19,7 @@ export default function Messages() {
 
   return (
     <>
-      <div className="h-screen flex flex-col pb-20 md:pb-0">
+      <div className="h-screen flex flex-col">
         {!isMobile && (
           <div className="border-b p-4">
             <div className="flex items-center gap-3">
@@ -34,7 +34,7 @@ export default function Messages() {
           </div>
         )}
 
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden pb-16 md:pb-0">
           {isMobile ? (
             selectedRoomId ? (
               <div className="flex-1 flex flex-col">
