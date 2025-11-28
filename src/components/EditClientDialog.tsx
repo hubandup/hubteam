@@ -47,6 +47,7 @@ const clientSchema = z.object({
   last_contact: z.date().optional(),
   kanban_stage: z.string(),
   main_contact_id: z.string().optional(),
+  linkedin_connected: z.boolean().optional(),
 });
 
 type ClientFormData = z.infer<typeof clientSchema>;
@@ -69,6 +70,7 @@ interface EditClientDialogProps {
     last_contact?: string;
     kanban_stage: string;
     main_contact_id?: string;
+    linkedin_connected?: boolean;
   };
   onClientUpdated: () => void;
 }
@@ -107,6 +109,7 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
       last_contact: client.last_contact ? new Date(client.last_contact) : undefined,
       kanban_stage: client.kanban_stage,
       main_contact_id: client.main_contact_id || '',
+      linkedin_connected: client.linkedin_connected ?? false,
     },
   });
 
@@ -187,6 +190,7 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
         follow_up_date: client.follow_up_date ? new Date(client.follow_up_date) : undefined,
         last_contact: client.last_contact ? new Date(client.last_contact) : undefined,
         kanban_stage: client.kanban_stage,
+        linkedin_connected: client.linkedin_connected ?? false,
       });
       setLogoPreview(client.logo_url || null);
       setLogoFile(null);
@@ -256,6 +260,7 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
           last_contact: data.last_contact ? data.last_contact.toISOString() : null,
           kanban_stage: data.kanban_stage,
           main_contact_id: data.main_contact_id || null,
+          linkedin_connected: data.linkedin_connected ?? false,
         })
         .eq('id', client.id);
 

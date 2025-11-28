@@ -12,12 +12,15 @@ interface Client {
   logo_url: string | null;
   active: boolean;
   status_id: string | null;
+  source_id: string | null;
+  activity_sector_id: string | null;
   kanban_stage: string;
   revenue: number | null;
   revenue_current_year: number | null;
   last_contact: string | null;
   follow_up_date: string | null;
   action: string | null;
+  linkedin_connected: boolean;
   created_at: string;
   updated_at: string;
   project_clients?: Array<{

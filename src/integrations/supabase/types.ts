@@ -439,6 +439,7 @@ export type Database = {
           kdrive_folder_path: string | null
           last_contact: string | null
           last_name: string
+          linkedin_connected: boolean
           logo_url: string | null
           main_contact_id: string | null
           phone: string | null
@@ -466,6 +467,7 @@ export type Database = {
           kdrive_folder_path?: string | null
           last_contact?: string | null
           last_name: string
+          linkedin_connected?: boolean
           logo_url?: string | null
           main_contact_id?: string | null
           phone?: string | null
@@ -493,6 +495,7 @@ export type Database = {
           kdrive_folder_path?: string | null
           last_contact?: string | null
           last_name?: string
+          linkedin_connected?: boolean
           logo_url?: string | null
           main_contact_id?: string | null
           phone?: string | null
