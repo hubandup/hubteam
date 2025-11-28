@@ -114,6 +114,7 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
   });
 
   const active = watch('active');
+  const linkedinConnected = watch('linkedin_connected');
   const selectedSectorId = watch('activity_sector_id');
   const selectedStatusId = watch('status_id');
   const selectedSourceId = watch('source_id');
@@ -595,6 +596,20 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
               id="active"
               checked={active}
               onCheckedChange={(checked) => setValue('active', checked)}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label htmlFor="linkedin_connected">Connexion LinkedIn</Label>
+              <p className="text-sm text-muted-foreground">
+                Êtes-vous connecté avec ce client sur LinkedIn ?
+              </p>
+            </div>
+            <Switch
+              id="linkedin_connected"
+              checked={linkedinConnected ?? false}
+              onCheckedChange={(checked) => setValue('linkedin_connected', checked)}
             />
           </div>
 
