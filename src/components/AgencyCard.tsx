@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Mail, Phone, Euro, FolderCheck } from 'lucide-react';
+import { Building2, Mail, Phone, FolderCheck } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface AgencyCardProps {
@@ -63,10 +63,6 @@ export function AgencyCard({ agency, onClick }: AgencyCardProps) {
             <span>{agency.contact_phone}</span>
           </div>
         )}
-        <div className="flex items-center gap-2 text-sm font-medium text-success">
-          <Euro className="h-4 w-4" />
-          <span>{agency.revenue.toLocaleString('fr-FR')} €</span>
-        </div>
       </CardContent>
     </Card>
   );
