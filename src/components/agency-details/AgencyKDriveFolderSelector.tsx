@@ -214,7 +214,7 @@ export function AgencyKDriveFolderSelector({
       const response = await supabase.functions.invoke("kdrive-api", {
         body: {
           action: "create-folder",
-          parentFolderId: currentFolderId_state,
+          parentId: currentFolderId_state,
           folderName: agencyName,
         },
       });
@@ -225,8 +225,13 @@ export function AgencyKDriveFolderSelector({
         return;
       }
 
-      if (!response.data?.success) {
-        toast.error(response.data?.error || "Erreur lors de la création du dossier");
+      if (response.data?.error) {
+        toast.error(response.data.error);
+        return;
+      }
+
+      if (response.data?.result !== "success") {
+        toast.error("Erreur lors de la création du dossier");
         return;
       }
 
