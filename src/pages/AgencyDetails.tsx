@@ -59,6 +59,31 @@ export default function AgencyDetails() {
     }
   };
 
+  // Écouter les changements de l'agence pour mettre à jour le contact principal
+  useEffect(() => {
+    if (!id) return;
+
+    const channel = supabase
+      .channel('agency-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'agencies',
+          filter: `id=eq.${id}`,
+        },
+        () => {
+          fetchAgencyDetails();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">

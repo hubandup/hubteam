@@ -33,6 +33,7 @@ interface AgencyInfoTabProps {
     kdrive_folder_path?: string;
     description?: string;
     tags?: string[];
+    main_contact_id?: string | null;
   };
   onUpdate: () => void;
 }
@@ -255,7 +256,7 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
         </Card>
       </div>
 
-      <AgencyContactsManager agencyId={agency.id} />
+      <AgencyContactsManager agencyId={agency.id} mainContactId={agency.main_contact_id} />
     </div>
   );
 }

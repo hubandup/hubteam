@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Trash2, Mail, UserPlus, UserCheck } from 'lucide-react';
+import { Plus, Trash2, Mail, UserPlus, UserCheck, Star } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -33,9 +33,10 @@ interface Contact {
 
 interface AgencyContactsManagerProps {
   agencyId: string;
+  mainContactId?: string | null;
 }
 
-export function AgencyContactsManager({ agencyId }: AgencyContactsManagerProps) {
+export function AgencyContactsManager({ agencyId, mainContactId }: AgencyContactsManagerProps) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -86,6 +87,39 @@ export function AgencyContactsManager({ agencyId }: AgencyContactsManagerProps) 
 
   useEffect(() => {
     fetchContacts();
+
+    // Écouter les changements pour rafraîchir quand le contact principal change
+    const channel = supabase
+      .channel('agency-contact-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'agency_contacts',
+          filter: `agency_id=eq.${agencyId}`,
+        },
+        () => {
+          fetchContacts();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'agencies',
+          filter: `id=eq.${agencyId}`,
+        },
+        () => {
+          fetchContacts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [agencyId]);
 
   const handleAddContact = async (e: React.FormEvent) => {
@@ -125,6 +159,23 @@ export function AgencyContactsManager({ agencyId }: AgencyContactsManagerProps) 
     } catch (error) {
       console.error('Error deleting contact:', error);
       toast.error('Erreur lors de la suppression du contact');
+    }
+  };
+
+  const handleSetMainContact = async (contactId: string) => {
+    try {
+      const { error } = await supabase
+        .from('agencies')
+        .update({ main_contact_id: contactId })
+        .eq('id', agencyId);
+
+      if (error) throw error;
+
+      toast.success('Contact principal défini avec succès');
+      fetchContacts();
+    } catch (error) {
+      console.error('Error setting main contact:', error);
+      toast.error('Erreur lors de la définition du contact principal');
     }
   };
 
@@ -233,21 +284,37 @@ export function AgencyContactsManager({ agencyId }: AgencyContactsManagerProps) 
                 key={contact.id}
                 className="flex items-start justify-between p-3 border rounded-lg"
               >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="font-medium">
-                      {contact.first_name} {contact.last_name}
-                    </p>
-                    {contact.is_user && (
-                      <Badge variant="secondary" className="flex items-center gap-1">
-                        <UserCheck className="h-3 w-3" />
-                        Utilisateur
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Mail className="h-4 w-4" />
-                    <span>{contact.email}</span>
+                <div className="flex items-center gap-3 flex-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSetMainContact(contact.id)}
+                    className="p-1 h-8 w-8"
+                  >
+                    <Star
+                      className={`h-5 w-5 ${
+                        mainContactId === contact.id
+                          ? 'fill-yellow-500 text-yellow-500'
+                          : 'text-muted-foreground'
+                      }`}
+                    />
+                  </Button>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="font-medium">
+                        {contact.first_name} {contact.last_name}
+                      </p>
+                      {contact.is_user && (
+                        <Badge variant="secondary" className="flex items-center gap-1">
+                          <UserCheck className="h-3 w-3" />
+                          Utilisateur
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Mail className="h-4 w-4" />
+                      <span>{contact.email}</span>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

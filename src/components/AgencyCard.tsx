@@ -2,6 +2,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Building2, Mail, Phone, FolderCheck } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 // Generate consistent color based on tag name
 const getTagColor = (tag: string): string => {
@@ -26,11 +28,43 @@ interface AgencyCardProps {
     kdrive_drive_id?: number;
     kdrive_folder_id?: string;
     tags?: string[];
+    main_contact_id?: string | null;
   };
   onClick: () => void;
 }
 
 export function AgencyCard({ agency, onClick }: AgencyCardProps) {
+  const [mainContact, setMainContact] = useState<{
+    first_name: string;
+    last_name: string;
+    email: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchMainContact = async () => {
+      if (!agency.main_contact_id) {
+        setMainContact(null);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('agency_contacts')
+          .select('first_name, last_name, email')
+          .eq('id', agency.main_contact_id)
+          .single();
+
+        if (error) throw error;
+        setMainContact(data);
+      } catch (error) {
+        console.error('Error fetching main contact:', error);
+        setMainContact(null);
+      }
+    };
+
+    fetchMainContact();
+  }, [agency.main_contact_id]);
+
   return (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={onClick}>
       <CardHeader>
@@ -79,17 +113,33 @@ export function AgencyCard({ agency, onClick }: AgencyCardProps) {
             ))}
           </div>
         )}
-        {agency.contact_email && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Mail className="h-4 w-4" />
-            <span className="truncate">{agency.contact_email}</span>
-          </div>
-        )}
-        {agency.contact_phone && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Phone className="h-4 w-4" />
-            <span>{agency.contact_phone}</span>
-          </div>
+        {mainContact ? (
+          <>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-medium">
+                {mainContact.first_name} {mainContact.last_name}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Mail className="h-4 w-4" />
+              <span className="truncate">{mainContact.email}</span>
+            </div>
+          </>
+        ) : (
+          <>
+            {agency.contact_email && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Mail className="h-4 w-4" />
+                <span className="truncate">{agency.contact_email}</span>
+              </div>
+            )}
+            {agency.contact_phone && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Phone className="h-4 w-4" />
+                <span>{agency.contact_phone}</span>
+              </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
