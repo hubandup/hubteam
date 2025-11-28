@@ -43,6 +43,7 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [partnerSince, setPartnerSince] = useState<Date>(new Date(agency.created_at));
+  const [availableTags, setAvailableTags] = useState<any[]>([]);
   const [newTag, setNewTag] = useState('');
   const [formData, setFormData] = useState({
     name: agency.name,
@@ -53,9 +54,22 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
   const formRef = useRef<HTMLFormElement>(null);
 
   // Reset form when dialog opens or when agency changes
-  const handleOpenChange = (newOpen: boolean) => {
+  const handleOpenChange = async (newOpen: boolean) => {
     setOpen(newOpen);
     if (newOpen) {
+      // Load available tags
+      try {
+        const { data, error } = await supabase
+          .from('agency_tags')
+          .select('*')
+          .order('name');
+        
+        if (error) throw error;
+        setAvailableTags(data || []);
+      } catch (error) {
+        console.error('Error loading tags:', error);
+      }
+
       // Reset all states
       setLogoFile(null);
       setLogoPreview(agency.logo_url || null);
@@ -98,6 +112,14 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
     if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
       setFormData({ ...formData, tags: [...formData.tags, newTag.trim()] });
       setNewTag('');
+    }
+  };
+
+  const togglePredefinedTag = (tagName: string) => {
+    if (formData.tags.includes(tagName)) {
+      setFormData({ ...formData, tags: formData.tags.filter(t => t !== tagName) });
+    } else {
+      setFormData({ ...formData, tags: [...formData.tags, tagName] });
     }
   };
 
@@ -264,7 +286,34 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
 
             <div className="grid gap-2">
               <Label>Tags</Label>
-              <div className="flex gap-2">
+              
+              {availableTags.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Tags prédéfinis :</p>
+                  <div className="flex flex-wrap gap-2">
+                    {availableTags.map((tag) => (
+                      <Badge
+                        key={tag.id}
+                        variant={formData.tags.includes(tag.name) ? 'default' : 'outline'}
+                        className="cursor-pointer transition-all hover:scale-105"
+                        style={formData.tags.includes(tag.name) ? {
+                          backgroundColor: tag.color,
+                          borderColor: tag.color,
+                          color: 'white',
+                        } : {
+                          borderColor: `${tag.color}80`,
+                          color: tag.color,
+                        }}
+                        onClick={() => togglePredefinedTag(tag.name)}
+                      >
+                        {tag.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
                 <Input
                   value={newTag}
                   onChange={(e) => setNewTag(e.target.value)}
@@ -274,26 +323,29 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
                       handleAddTag();
                     }
                   }}
-                  placeholder="Ajouter un tag (Ex: Influence, Site vitrine...)"
+                  placeholder="Ou ajouter un tag personnalisé..."
                 />
                 <Button type="button" onClick={handleAddTag} variant="outline">
                   Ajouter
                 </Button>
               </div>
               {formData.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {formData.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTag(tag)}
-                        className="ml-1 hover:text-destructive"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
+                <div className="space-y-1 pt-2">
+                  <p className="text-sm text-muted-foreground">Tags sélectionnés :</p>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.tags.map((tag) => (
+                      <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTag(tag)}
+                          className="ml-1 hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

@@ -45,6 +45,7 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [partnerSince, setPartnerSince] = useState<Date>(new Date());
   const [tags, setTags] = useState<string[]>([]);
+  const [availableTags, setAvailableTags] = useState<any[]>([]);
   const [newTag, setNewTag] = useState('');
 
   const {
@@ -62,6 +63,29 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
   });
 
   const active = watch('active');
+
+  // Load available tags from database
+  const loadAvailableTags = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('agency_tags')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      setAvailableTags(data || []);
+    } catch (error) {
+      console.error('Error loading tags:', error);
+    }
+  };
+
+  // Load tags when dialog opens
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (isOpen) {
+      loadAvailableTags();
+    }
+  };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -84,6 +108,14 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
       setTags([...tags, newTag.trim()]);
       setNewTag('');
+    }
+  };
+
+  const togglePredefinedTag = (tagName: string) => {
+    if (tags.includes(tagName)) {
+      setTags(tags.filter(t => t !== tagName));
+    } else {
+      setTags([...tags, tagName]);
     }
   };
 
@@ -152,7 +184,7 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button>
           <Plus className="mr-2 h-4 w-4" />
@@ -260,7 +292,34 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
 
           <div className="space-y-2">
             <Label>Tags</Label>
-            <div className="flex gap-2">
+            
+            {availableTags.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Tags prédéfinis :</p>
+                <div className="flex flex-wrap gap-2">
+                  {availableTags.map((tag) => (
+                    <Badge
+                      key={tag.id}
+                      variant={tags.includes(tag.name) ? 'default' : 'outline'}
+                      className="cursor-pointer transition-all hover:scale-105"
+                      style={tags.includes(tag.name) ? {
+                        backgroundColor: tag.color,
+                        borderColor: tag.color,
+                        color: 'white',
+                      } : {
+                        borderColor: `${tag.color}80`,
+                        color: tag.color,
+                      }}
+                      onClick={() => togglePredefinedTag(tag.name)}
+                    >
+                      {tag.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-2">
               <Input
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
@@ -270,26 +329,29 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
                     handleAddTag();
                   }
                 }}
-                placeholder="Ajouter un tag (Ex: Influence, Site vitrine...)"
+                placeholder="Ou ajouter un tag personnalisé..."
               />
               <Button type="button" onClick={handleAddTag} variant="outline">
                 Ajouter
               </Button>
             </div>
             {tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {tags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTag(tag)}
-                      className="ml-1 hover:text-destructive"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
+              <div className="space-y-1 pt-2">
+                <p className="text-sm text-muted-foreground">Tags sélectionnés :</p>
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => (
+                    <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tag)}
+                        className="ml-1 hover:text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
               </div>
             )}
           </div>
