@@ -14,18 +14,25 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Pencil, Upload, X } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Pencil, X, CalendarIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface EditAgencyDialogProps {
   agency: {
     id: string;
     name: string;
-    contact_email?: string;
-    contact_phone?: string;
-    revenue: number;
     active: boolean;
+    created_at: string;
     logo_url?: string;
+    description?: string;
+    tags?: string[];
   };
   onAgencyUpdated: () => void;
 }
@@ -35,12 +42,13 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
   const [loading, setLoading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [partnerSince, setPartnerSince] = useState<Date>(new Date(agency.created_at));
+  const [newTag, setNewTag] = useState('');
   const [formData, setFormData] = useState({
     name: agency.name,
-    contact_email: agency.contact_email || '',
-    contact_phone: agency.contact_phone || '',
-    revenue: agency.revenue,
     active: agency.active,
+    description: agency.description || '',
+    tags: agency.tags || [],
   });
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -51,12 +59,13 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
       // Reset all states
       setLogoFile(null);
       setLogoPreview(agency.logo_url || null);
+      setPartnerSince(new Date(agency.created_at));
+      setNewTag('');
       setFormData({
         name: agency.name,
-        contact_email: agency.contact_email || '',
-        contact_phone: agency.contact_phone || '',
-        revenue: agency.revenue,
         active: agency.active,
+        description: agency.description || '',
+        tags: agency.tags || [],
       });
       // Reset file input
       setTimeout(() => {
@@ -83,6 +92,17 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
     setLogoPreview(null);
     const fileInput = document.getElementById('logo-input-edit') as HTMLInputElement;
     if (fileInput) fileInput.value = '';
+  };
+
+  const handleAddTag = () => {
+    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
+      setFormData({ ...formData, tags: [...formData.tags, newTag.trim()] });
+      setNewTag('');
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setFormData({ ...formData, tags: formData.tags.filter(tag => tag !== tagToRemove) });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -117,11 +137,11 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
         .from('agencies')
         .update({
           name: formData.name,
-          contact_email: formData.contact_email || null,
-          contact_phone: formData.contact_phone || null,
-          revenue: formData.revenue,
           active: formData.active,
+          created_at: partnerSince.toISOString(),
           logo_url: logoUrl,
+          description: formData.description || null,
+          tags: formData.tags,
         })
         .eq('id', agency.id);
 
@@ -203,32 +223,81 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
                 required
               />
             </div>
+
             <div className="grid gap-2">
-              <Label htmlFor="contact_email">Email de contact</Label>
-              <Input
-                id="contact_email"
-                type="email"
-                value={formData.contact_email}
-                onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
+              <Label>Partenaire depuis</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !partnerSince && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {partnerSince ? format(partnerSince, "PPP", { locale: fr }) : "Sélectionner une date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={partnerSince}
+                    onSelect={(date) => date && setPartnerSince(date)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Description de l'agence..."
+                rows={4}
               />
             </div>
+
             <div className="grid gap-2">
-              <Label htmlFor="contact_phone">Téléphone</Label>
-              <Input
-                id="contact_phone"
-                value={formData.contact_phone}
-                onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
-              />
+              <Label>Tags</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddTag();
+                    }
+                  }}
+                  placeholder="Ajouter un tag (Ex: Influence, Site vitrine...)"
+                />
+                <Button type="button" onClick={handleAddTag} variant="outline">
+                  Ajouter
+                </Button>
+              </div>
+              {formData.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.tags.map((tag) => (
+                    <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tag)}
+                        className="ml-1 hover:text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="revenue">Chiffre d'affaires (€)</Label>
-              <Input
-                id="revenue"
-                type="number"
-                value={formData.revenue}
-                onChange={(e) => setFormData({ ...formData, revenue: parseFloat(e.target.value) || 0 })}
-              />
-            </div>
+
             <div className="flex items-center justify-between">
               <Label htmlFor="active">Agence active</Label>
               <Switch

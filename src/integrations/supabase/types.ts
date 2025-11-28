@@ -106,6 +106,7 @@ export type Database = {
           contact_email: string | null
           contact_phone: string | null
           created_at: string
+          description: string | null
           id: string
           kdrive_drive_id: number | null
           kdrive_folder_id: string | null
@@ -113,6 +114,7 @@ export type Database = {
           logo_url: string | null
           name: string
           revenue: number | null
+          tags: string[] | null
           updated_at: string
         }
         Insert: {
@@ -120,6 +122,7 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           kdrive_drive_id?: number | null
           kdrive_folder_id?: string | null
@@ -127,6 +130,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           revenue?: number | null
+          tags?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -134,6 +138,7 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           kdrive_drive_id?: number | null
           kdrive_folder_id?: string | null
@@ -141,6 +146,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           revenue?: number | null
+          tags?: string[] | null
           updated_at?: string
         }
         Relationships: []
