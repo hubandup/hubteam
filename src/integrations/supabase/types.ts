@@ -112,6 +112,7 @@ export type Database = {
           kdrive_folder_id: string | null
           kdrive_folder_path: string | null
           logo_url: string | null
+          main_contact_id: string | null
           name: string
           revenue: number | null
           tags: string[] | null
@@ -128,6 +129,7 @@ export type Database = {
           kdrive_folder_id?: string | null
           kdrive_folder_path?: string | null
           logo_url?: string | null
+          main_contact_id?: string | null
           name: string
           revenue?: number | null
           tags?: string[] | null
@@ -144,12 +146,21 @@ export type Database = {
           kdrive_folder_id?: string | null
           kdrive_folder_path?: string | null
           logo_url?: string | null
+          main_contact_id?: string | null
           name?: string
           revenue?: number | null
           tags?: string[] | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "agencies_main_contact_id_fkey"
+            columns: ["main_contact_id"]
+            isOneToOne: false
+            referencedRelation: "agency_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       agency_contacts: {
         Row: {
