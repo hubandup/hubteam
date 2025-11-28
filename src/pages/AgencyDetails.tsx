@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, Info, FolderKanban, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ResponsiveTabs, type TabItem } from '@/components/ui/responsive-tabs';
 import { AgencyInfoTab } from '@/components/agency-details/AgencyInfoTab';
 import { AgencyProjectsTab } from '@/components/agency-details/AgencyProjectsTab';
@@ -110,9 +111,11 @@ export default function AgencyDetails() {
               className="w-16 h-16 rounded-lg object-cover"
             />
           )}
-          <div>
+          <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold text-foreground">{agency.name}</h1>
-            <p className="text-muted-foreground">Agence partenaire</p>
+            <Badge variant={agency.active ? 'default' : 'secondary'}>
+              {agency.active ? 'Actif' : 'Inactif'}
+            </Badge>
           </div>
         </div>
       </div>

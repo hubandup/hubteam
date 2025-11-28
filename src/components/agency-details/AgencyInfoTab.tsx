@@ -140,44 +140,39 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
           <CardHeader>
             <CardTitle className="text-lg">Statistiques</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-start gap-3">
-              <FolderKanban className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div>
-                <p className="text-sm text-muted-foreground">Projets totaux</p>
-                <p className="text-2xl font-bold">{projectStats.total}</p>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-start gap-3">
+                <FolderKanban className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Projets totaux</p>
+                  <p className="text-2xl font-bold">{projectStats.total}</p>
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-start gap-3">
-              <FolderKanban className="h-5 w-5 text-blue-500 mt-0.5" />
-              <div>
-                <p className="text-sm text-muted-foreground">Projets en cours</p>
-                <p className="text-2xl font-bold text-blue-500">{projectStats.active}</p>
+              <div className="flex items-start gap-3">
+                <FolderKanban className="h-5 w-5 text-blue-500 mt-0.5" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Projets en cours</p>
+                  <p className="text-2xl font-bold text-blue-500">{projectStats.active}</p>
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-start gap-3">
-              <FolderKanban className="h-5 w-5 text-success mt-0.5" />
-              <div>
-                <p className="text-sm text-muted-foreground">Projets terminés</p>
-                <p className="text-2xl font-bold text-success">{projectStats.completed}</p>
+              <div className="flex items-start gap-3">
+                <FolderKanban className="h-5 w-5 text-success mt-0.5" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Projets terminés</p>
+                  <p className="text-2xl font-bold text-success">{projectStats.completed}</p>
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-start gap-3">
-              <FolderKanban className="h-5 w-5 text-destructive mt-0.5" />
-              <div>
-                <p className="text-sm text-muted-foreground">Projets perdus</p>
-                <p className="text-2xl font-bold text-destructive">{projectStats.lost}</p>
+              <div className="flex items-start gap-3">
+                <FolderKanban className="h-5 w-5 text-destructive mt-0.5" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Projets perdus</p>
+                  <p className="text-2xl font-bold text-destructive">{projectStats.lost}</p>
+                </div>
               </div>
-            </div>
-
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">Statut</p>
-              <Badge variant={agency.active ? 'default' : 'secondary'}>
-                {agency.active ? 'Actif' : 'Inactif'}
-              </Badge>
             </div>
           </CardContent>
         </Card>
