@@ -6,12 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Mail, Linkedin, ArrowDownUp } from 'lucide-react';
+import { Search, Mail, Linkedin, ArrowDownUp, BarChart3 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useQuery } from '@tanstack/react-query';
 
 export default function Prospection() {
   const navigate = useNavigate();
@@ -27,6 +30,36 @@ export default function Prospection() {
   const [emailSubject, setEmailSubject] = useState('');
   const [emailMessage, setEmailMessage] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
+
+  // Fetch email stats
+  const { data: emailStats } = useQuery({
+    queryKey: ['prospection-email-stats'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('prospection_email_logs')
+        .select('*');
+      
+      if (error) throw error;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const thisWeekStart = new Date(today);
+      thisWeekStart.setDate(today.getDate() - today.getDay());
+      
+      const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+
+      return {
+        total: data.length,
+        sent: data.filter(log => log.status === 'sent').length,
+        failed: data.filter(log => log.status === 'failed').length,
+        today: data.filter(log => new Date(log.sent_at) >= today).length,
+        thisWeek: data.filter(log => new Date(log.sent_at) >= thisWeekStart).length,
+        thisMonth: data.filter(log => new Date(log.sent_at) >= thisMonthStart).length,
+        recentEmails: data.slice(-10).reverse(),
+      };
+    },
+  });
 
   // Extract unique filters
   const sources = useMemo(() => {
@@ -166,6 +199,21 @@ export default function Prospection() {
         <h1 className="text-xl md:text-3xl font-bold text-foreground mb-0.5">Prospection</h1>
         <p className="text-muted-foreground text-xs md:text-base">Gérez vos contacts et campagnes d'emailing</p>
       </div>
+
+      <Tabs defaultValue="contacts" className="flex-1 flex flex-col min-h-0">
+        <TabsList className="flex-shrink-0 mb-4">
+          <TabsTrigger value="contacts">
+            <Mail className="h-4 w-4 mr-2" />
+            Liste des contacts
+          </TabsTrigger>
+          <TabsTrigger value="stats">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Statistiques
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="contacts" className="flex-1 flex flex-col min-h-0 mt-0">
+          <div className="flex flex-col h-full min-h-0 overflow-hidden">
 
       {/* Filters and Actions */}
       <div className="flex-shrink-0 pb-2 md:pb-4 bg-background space-y-2">
@@ -383,6 +431,96 @@ export default function Prospection() {
           </Table>
         )}
       </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="stats" className="flex-1 overflow-auto mt-0">
+          <div className="space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription>Total envoyé</CardDescription>
+                  <CardTitle className="text-3xl">{emailStats?.sent || 0}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">
+                    {emailStats?.failed || 0} échec(s)
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription>Cette semaine</CardDescription>
+                  <CardTitle className="text-3xl">{emailStats?.thisWeek || 0}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">
+                    {emailStats?.today || 0} aujourd'hui
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription>Ce mois</CardDescription>
+                  <CardTitle className="text-3xl">{emailStats?.thisMonth || 0}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">
+                    Emails envoyés
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent Emails Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Emails récents</CardTitle>
+                <CardDescription>Les 10 derniers emails envoyés</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Destinataire</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Sujet</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Statut</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {emailStats?.recentEmails?.map((log: any) => (
+                      <TableRow key={log.id}>
+                        <TableCell className="font-medium">{log.recipient_name}</TableCell>
+                        <TableCell className="text-muted-foreground">{log.recipient_email}</TableCell>
+                        <TableCell>{log.subject}</TableCell>
+                        <TableCell className="text-sm">
+                          {new Date(log.sent_at).toLocaleDateString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={log.status === 'sent' ? 'default' : 'destructive'}>
+                            {log.status === 'sent' ? 'Envoyé' : 'Échec'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
