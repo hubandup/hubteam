@@ -29,6 +29,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Plus, Loader2, CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddClientStatusDialog } from './client-details/AddClientStatusDialog';
+import { AddClientSourceDialog } from './client-details/AddClientSourceDialog';
 
 const clientSchema = z.object({
   first_name: z.string().trim().min(1, 'Le prénom est requis').max(100),
@@ -40,6 +41,7 @@ const clientSchema = z.object({
   active: z.boolean(),
   follow_up_date: z.date().optional(),
   status_id: z.string().optional(),
+  source_id: z.string().optional(),
 });
 
 type ClientFormData = z.infer<typeof clientSchema>;
@@ -56,6 +58,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [clientStatuses, setClientStatuses] = useState<any[]>([]);
+  const [clientSources, setClientSources] = useState<any[]>([]);
 
   // Use controlled state if provided, otherwise use internal state
   const isOpen = open !== undefined ? open : internalOpen;
@@ -79,6 +82,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
   const active = watch('active');
   const followUpDate = watch('follow_up_date');
   const selectedStatusId = watch('status_id');
+  const selectedSourceId = watch('source_id');
 
   useEffect(() => {
     if (isOpen) {
@@ -92,6 +96,12 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
       .select('*')
       .order('name');
     setClientStatuses(data || []);
+
+    const { data: sources } = await supabase
+      .from('client_sources')
+      .select('*')
+      .order('name');
+    setClientSources(sources || []);
   };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -149,6 +159,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
         logo_url: logoUrl,
         follow_up_date: data.follow_up_date ? data.follow_up_date.toISOString() : null,
         status_id: data.status_id || null,
+        source_id: data.source_id || null,
       }).select().single();
 
       if (error) throw error;
@@ -268,25 +279,47 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="status_id">Action</Label>
-                <AddClientStatusDialog onStatusAdded={fetchStatuses} />
+                <Label htmlFor="source_id">Source</Label>
+                <AddClientSourceDialog onSourceAdded={fetchStatuses} />
               </div>
               <Select
-                value={selectedStatusId}
-                onValueChange={(value) => setValue('status_id', value)}
+                value={selectedSourceId}
+                onValueChange={(value) => setValue('source_id', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner une action" />
+                  <SelectValue placeholder="Sélectionner une source" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clientStatuses.map((status) => (
-                    <SelectItem key={status.id} value={status.id}>
-                      {status.name}
+                  {clientSources.map((source) => (
+                    <SelectItem key={source.id} value={source.id}>
+                      {source.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="status_id">Action</Label>
+              <AddClientStatusDialog onStatusAdded={fetchStatuses} />
+            </div>
+            <Select
+              value={selectedStatusId}
+              onValueChange={(value) => setValue('status_id', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner une action" />
+              </SelectTrigger>
+              <SelectContent>
+                {clientStatuses.map((status) => (
+                  <SelectItem key={status.id} value={status.id}>
+                    {status.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

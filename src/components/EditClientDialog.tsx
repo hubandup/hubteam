@@ -29,6 +29,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Pencil, Loader2, CalendarIcon } from 'lucide-react';
 import { AddActivitySectorDialog } from './client-details/AddActivitySectorDialog';
 import { AddClientStatusDialog } from './client-details/AddClientStatusDialog';
+import { AddClientSourceDialog } from './client-details/AddClientSourceDialog';
 import { cn } from '@/lib/utils';
 
 const clientSchema = z.object({
@@ -41,6 +42,7 @@ const clientSchema = z.object({
   active: z.boolean(),
   activity_sector_id: z.string().optional(),
   status_id: z.string().optional(),
+  source_id: z.string().optional(),
   follow_up_date: z.date().optional(),
   last_contact: z.date().optional(),
   kanban_stage: z.string(),
@@ -62,6 +64,7 @@ interface EditClientDialogProps {
     logo_url?: string;
     activity_sector_id?: string;
     status_id?: string;
+    source_id?: string;
     follow_up_date?: string;
     last_contact?: string;
     kanban_stage: string;
@@ -77,6 +80,7 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
   const [logoPreview, setLogoPreview] = useState<string | null>(client.logo_url || null);
   const [activitySectors, setActivitySectors] = useState<any[]>([]);
   const [clientStatuses, setClientStatuses] = useState<any[]>([]);
+  const [clientSources, setClientSources] = useState<any[]>([]);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
 
   const {
@@ -98,6 +102,7 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
       active: client.active,
       activity_sector_id: client.activity_sector_id || '',
       status_id: client.status_id || '',
+      source_id: client.source_id || '',
       follow_up_date: client.follow_up_date ? new Date(client.follow_up_date) : undefined,
       last_contact: client.last_contact ? new Date(client.last_contact) : undefined,
       kanban_stage: client.kanban_stage,
@@ -108,6 +113,7 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
   const active = watch('active');
   const selectedSectorId = watch('activity_sector_id');
   const selectedStatusId = watch('status_id');
+  const selectedSourceId = watch('source_id');
   const followUpDate = watch('follow_up_date');
   const lastContact = watch('last_contact');
   const kanbanStage = watch('kanban_stage');
@@ -157,6 +163,12 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
       .select('*')
       .order('name');
     setClientStatuses(statuses || []);
+
+    const { data: sources } = await supabase
+      .from('client_sources')
+      .select('*')
+      .order('name');
+    setClientSources(sources || []);
   };
 
   useEffect(() => {
@@ -171,6 +183,7 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
         active: client.active,
         activity_sector_id: client.activity_sector_id || '',
         status_id: client.status_id || '',
+        source_id: client.source_id || '',
         follow_up_date: client.follow_up_date ? new Date(client.follow_up_date) : undefined,
         last_contact: client.last_contact ? new Date(client.last_contact) : undefined,
         kanban_stage: client.kanban_stage,
@@ -238,6 +251,7 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
           logo_url: logoUrl,
           activity_sector_id: data.activity_sector_id || null,
           status_id: data.status_id || null,
+          source_id: data.source_id || null,
           follow_up_date: data.follow_up_date ? data.follow_up_date.toISOString() : null,
           last_contact: data.last_contact ? data.last_contact.toISOString() : null,
           kanban_stage: data.kanban_stage,
@@ -478,25 +492,47 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="status_id">Action</Label>
-                <AddClientStatusDialog onStatusAdded={fetchSectorsAndStatuses} />
+                <Label htmlFor="source_id">Source</Label>
+                <AddClientSourceDialog onSourceAdded={fetchSectorsAndStatuses} />
               </div>
               <Select
-                value={selectedStatusId}
-                onValueChange={(value) => setValue('status_id', value)}
+                value={selectedSourceId}
+                onValueChange={(value) => setValue('source_id', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner une action" />
+                  <SelectValue placeholder="Sélectionner une source" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clientStatuses.map((status) => (
-                    <SelectItem key={status.id} value={status.id}>
-                      {status.name}
+                  {clientSources.map((source) => (
+                    <SelectItem key={source.id} value={source.id}>
+                      {source.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="status_id">Action</Label>
+              <AddClientStatusDialog onStatusAdded={fetchSectorsAndStatuses} />
+            </div>
+            <Select
+              value={selectedStatusId}
+              onValueChange={(value) => setValue('status_id', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner une action" />
+              </SelectTrigger>
+              <SelectContent>
+                {clientStatuses.map((status) => (
+                  <SelectItem key={status.id} value={status.id}>
+                    {status.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
