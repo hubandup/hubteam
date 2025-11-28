@@ -36,6 +36,7 @@ interface ClientInfoTabProps {
     logo_url?: string;
     activity_sector_id?: string;
     status_id?: string;
+    source_id?: string;
     follow_up_date?: string;
     kanban_stage: string;
     kdrive_drive_id?: number;
@@ -76,6 +77,7 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
   const { getRoleLabel } = useRoleConfig();
   const [activitySector, setActivitySector] = useState<any>(null);
   const [clientStatus, setClientStatus] = useState<any>(null);
+  const [clientSource, setClientSource] = useState<any>(null);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [nextTask, setNextTask] = useState<Task | null>(null);
   const [projectProgress, setProjectProgress] = useState<number>(0);
@@ -177,6 +179,15 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
         .eq('id', client.status_id)
         .single();
       setClientStatus(data);
+    }
+
+    if (client.source_id) {
+      const { data } = await supabase
+        .from('client_sources')
+        .select('*')
+        .eq('id', client.source_id)
+        .single();
+      setClientSource(data);
     }
   };
 
@@ -336,6 +347,18 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
                 <p className="text-sm text-muted-foreground">Action</p>
                 <Badge style={{ backgroundColor: clientStatus.color, color: 'white' }}>
                   {clientStatus.name}
+                </Badge>
+              </div>
+            </div>
+          )}
+
+          {clientSource && (
+            <div className="flex items-start gap-3">
+              <TrendingUp className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="text-sm text-muted-foreground">Source</p>
+                <Badge style={{ backgroundColor: clientSource.color, color: 'white' }}>
+                  {clientSource.name}
                 </Badge>
               </div>
             </div>

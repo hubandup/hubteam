@@ -378,6 +378,27 @@ export type Database = {
           },
         ]
       }
+      client_sources: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       client_statuses: {
         Row: {
           color: string
@@ -423,6 +444,7 @@ export type Database = {
           phone: string | null
           revenue: number | null
           revenue_current_year: number | null
+          source_id: string | null
           status_id: string | null
           updated_at: string
         }
@@ -449,6 +471,7 @@ export type Database = {
           phone?: string | null
           revenue?: number | null
           revenue_current_year?: number | null
+          source_id?: string | null
           status_id?: string | null
           updated_at?: string
         }
@@ -475,6 +498,7 @@ export type Database = {
           phone?: string | null
           revenue?: number | null
           revenue_current_year?: number | null
+          source_id?: string | null
           status_id?: string | null
           updated_at?: string
         }
@@ -491,6 +515,13 @@ export type Database = {
             columns: ["main_contact_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "client_sources"
             referencedColumns: ["id"]
           },
           {
