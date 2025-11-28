@@ -41,11 +41,19 @@ export function AgencyContactsManager({ agencyId, mainContactId }: AgencyContact
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [inviteRole, setInviteRole] = useState<string>('agency');
   const [inviting, setInviting] = useState(false);
   const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+  });
+  const [editFormData, setEditFormData] = useState({
     first_name: '',
     last_name: '',
     email: '',
@@ -162,6 +170,45 @@ export function AgencyContactsManager({ agencyId, mainContactId }: AgencyContact
     } catch (error) {
       console.error('Error deleting contact:', error);
       toast.error('Erreur lors de la suppression du contact');
+    }
+  };
+
+  const handleEditContact = (contact: Contact) => {
+    setEditingContact(contact);
+    setEditFormData({
+      first_name: contact.first_name,
+      last_name: contact.last_name,
+      email: contact.email,
+      phone: contact.phone || '',
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateContact = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingContact) return;
+    
+    try {
+      const { error } = await supabase
+        .from('agency_contacts')
+        .update({
+          first_name: editFormData.first_name,
+          last_name: editFormData.last_name,
+          email: editFormData.email,
+          phone: editFormData.phone,
+        })
+        .eq('id', editingContact.id);
+
+      if (error) throw error;
+
+      toast.success('Contact modifié avec succès');
+      setEditDialogOpen(false);
+      setEditingContact(null);
+      setEditFormData({ first_name: '', last_name: '', email: '', phone: '' });
+      fetchContacts();
+    } catch (error) {
+      console.error('Error updating contact:', error);
+      toast.error('Erreur lors de la modification du contact');
     }
   };
 
@@ -311,7 +358,10 @@ export function AgencyContactsManager({ agencyId, mainContactId }: AgencyContact
                       }`}
                     />
                   </Button>
-                  <div className="flex-1">
+                  <div 
+                    className="flex-1 cursor-pointer hover:bg-accent/50 rounded-md p-1 transition-colors"
+                    onClick={() => handleEditContact(contact)}
+                  >
                     <div className="flex items-center gap-2 mb-1">
                       <p className="font-medium">
                         {contact.first_name} {contact.last_name}
@@ -362,6 +412,72 @@ export function AgencyContactsManager({ agencyId, mainContactId }: AgencyContact
         )}
       </CardContent>
 
+      {/* Dialog d'édition */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier le contact</DialogTitle>
+            <DialogDescription>
+              Modifiez les informations du contact de l'agence
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateContact} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit_first_name">Prénom *</Label>
+              <Input
+                id="edit_first_name"
+                value={editFormData.first_name}
+                onChange={(e) => setEditFormData({ ...editFormData, first_name: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_last_name">Nom *</Label>
+              <Input
+                id="edit_last_name"
+                value={editFormData.last_name}
+                onChange={(e) => setEditFormData({ ...editFormData, last_name: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_email">Email *</Label>
+              <Input
+                id="edit_email"
+                type="email"
+                value={editFormData.email}
+                onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_phone">Téléphone</Label>
+              <Input
+                id="edit_phone"
+                type="tel"
+                value={editFormData.phone}
+                onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setEditDialogOpen(false);
+                  setEditingContact(null);
+                  setEditFormData({ first_name: '', last_name: '', email: '', phone: '' });
+                }}
+              >
+                Annuler
+              </Button>
+              <Button type="submit">Enregistrer</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog d'invitation */}
       <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
         <DialogContent>
           <DialogHeader>
