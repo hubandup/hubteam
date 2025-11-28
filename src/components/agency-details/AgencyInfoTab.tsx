@@ -11,6 +11,16 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { supabase } from '@/integrations/supabase/client';
 
+// Fonction pour générer une couleur cohérente basée sur une chaîne
+function generateColorFromString(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash % 360);
+  return `hsl(${hue}, 65%, 50%)`;
+}
+
 interface AgencyInfoTabProps {
   agency: {
     id: string;
@@ -61,15 +71,19 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
 
       if (!projects) return;
 
+      // Projets "en cours" = active, reco_in_progress, planning
+      const inProgressStatuses = ['active', 'reco_in_progress', 'planning'];
+      const activeProjectsList = projects.filter(p => inProgressStatuses.includes(p.status));
+      
       const stats = {
         total: projects.length,
-        active: projects.filter(p => p.status === 'active').length,
+        active: activeProjectsList.length,
         completed: projects.filter(p => p.status === 'completed').length,
         lost: projects.filter(p => p.status === 'lost').length,
       };
 
       setProjectStats(stats);
-      setActiveProjects(projects.filter(p => p.status === 'active'));
+      setActiveProjects(activeProjectsList);
     };
 
     const fetchTagColors = async () => {
@@ -77,13 +91,22 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
         .from('agency_tags')
         .select('name, color');
       
-      if (agencyTags) {
-        const colors: Record<string, string> = {};
+      const colors: Record<string, string> = {};
+      
+      if (agencyTags && agencyTags.length > 0) {
         agencyTags.forEach(tag => {
           colors[tag.name] = tag.color;
         });
-        setTagColors(colors);
       }
+      
+      // Générer des couleurs par défaut pour les tags sans couleur prédéfinie
+      agency.tags?.forEach(tag => {
+        if (!colors[tag]) {
+          colors[tag] = generateColorFromString(tag);
+        }
+      });
+      
+      setTagColors(colors);
     };
 
     fetchProjectStats();
