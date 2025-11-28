@@ -97,23 +97,6 @@ export function AgencyCard({ agency, onClick }: AgencyCardProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
-        {agency.tags && agency.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {agency.tags.map((tag) => (
-              <Badge
-                key={tag}
-                style={{
-                  backgroundColor: `hsl(${getTagColor(tag)} / 0.15)`,
-                  color: `hsl(${getTagColor(tag)})`,
-                  borderColor: `hsl(${getTagColor(tag)} / 0.3)`,
-                }}
-                className="border"
-              >
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        )}
         {mainContact ? (
           <>
             <div className="flex items-center gap-2 text-sm">
