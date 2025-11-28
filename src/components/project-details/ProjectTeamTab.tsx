@@ -69,12 +69,9 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
       setAgencies(projectAgencies?.map(pa => pa.agencies) || []);
 
       // Enrich team members with their details
-      console.log('Raw members from DB:', members);
       const enrichedMembers = await Promise.all(
         (members || []).map(async (member: any) => {
           let memberData: any = {};
-          
-          console.log('Processing member:', member.member_type, member.member_id);
           
           if (member.member_type === 'profile') {
             const { data } = await supabase
@@ -84,13 +81,11 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
               .single();
             memberData = data;
           } else if (member.member_type === 'agency_contact') {
-            const { data: contactData, error: contactError } = await supabase
+            const { data: contactData } = await supabase
               .from('agency_contacts')
               .select('first_name, last_name, email, agency_id')
               .eq('id', member.member_id)
               .single();
-            
-            console.log('Agency contact data:', contactData, 'Error:', contactError);
             
             if (contactData?.agency_id) {
               const { data: agencyData } = await supabase
@@ -98,8 +93,6 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
                 .select('name')
                 .eq('id', contactData.agency_id)
                 .single();
-              
-              console.log('Agency data:', agencyData);
               
               memberData = {
                 ...contactData,
@@ -135,7 +128,6 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
         })
       );
 
-      console.log('Enriched members:', enrichedMembers);
       setTeamMembers(enrichedMembers);
     } catch (error) {
       console.error('Error fetching team:', error);
