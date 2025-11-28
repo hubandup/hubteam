@@ -70,6 +70,7 @@ export function Sidebar() {
     { title: 'Feed', url: '/feed', icon: Rss, module: 'dashboard' as const },
     { title: 'Tableau de bord', url: '/dashboard', icon: LayoutDashboard, module: 'dashboard' as const },
     { title: 'CRM', url: '/crm', icon: Users, module: 'crm' as const, matchParent: true },
+    { title: 'Prospection', url: '/prospection', icon: ListTodo, module: 'crm' as const },
     { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const, matchParent: true },
     { title: 'Projets', url: '/projects', icon: FolderKanban, module: 'projects' as const, matchParent: true },
     { title: 'Messages', url: '/messages', icon: MessageSquare, module: 'messages' as const },

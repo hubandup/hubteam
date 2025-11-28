@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import Feed from "./pages/Feed";
 import Notes from "./pages/Notes";
 import CRM from "./pages/CRM";
+import Prospection from "./pages/Prospection";
 import ClientDetails from "./pages/ClientDetails";
 import Agencies from "./pages/Agencies";
 import AgencyDetails from "./pages/AgencyDetails";
@@ -71,6 +72,7 @@ const App = () => {
             <Route path="/feed" element={<ProtectedRoute><Layout><Feed /></Layout></ProtectedRoute>} />
             <Route path="/notes" element={<ProtectedRoute><Layout><Notes /></Layout></ProtectedRoute>} />
             <Route path="/crm" element={<ProtectedRoute><Layout><CRM /></Layout></ProtectedRoute>} />
+            <Route path="/prospection" element={<ProtectedRoute><Layout><Prospection /></Layout></ProtectedRoute>} />
             <Route path="/client/:id" element={<ProtectedRoute><Layout><ClientDetails /></Layout></ProtectedRoute>} />
             <Route path="/agencies" element={<ProtectedRoute><Layout><Agencies /></Layout></ProtectedRoute>} />
             <Route path="/agency/:id" element={<ProtectedRoute><Layout><AgencyDetails /></Layout></ProtectedRoute>} />
