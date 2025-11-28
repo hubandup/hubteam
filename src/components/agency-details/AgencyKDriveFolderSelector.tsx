@@ -54,6 +54,7 @@ export function AgencyKDriveFolderSelector({
 }: AgencyKDriveFolderSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [folders, setFolders] = useState<KDriveFile[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentFolderId_state, setCurrentFolderId] = useState(AGENCIES_FOLDER_ID);
@@ -207,6 +208,40 @@ export function AgencyKDriveFolderSelector({
     }
   };
 
+  const createFolder = async () => {
+    setIsCreatingFolder(true);
+    try {
+      const response = await supabase.functions.invoke("kdrive-api", {
+        body: {
+          action: "create-folder",
+          parentFolderId: currentFolderId_state,
+          folderName: agencyName,
+        },
+      });
+
+      if (response.error) {
+        console.error("Erreur lors de la création du dossier:", response.error);
+        toast.error("Impossible de créer le dossier kDrive");
+        return;
+      }
+
+      if (!response.data?.success) {
+        toast.error(response.data?.error || "Erreur lors de la création du dossier");
+        return;
+      }
+
+      toast.success("Dossier créé avec succès");
+      
+      // Recharger la liste des dossiers
+      await loadFolders();
+    } catch (error: any) {
+      console.error("Erreur:", error);
+      toast.error(error.message || "Erreur lors de la création du dossier");
+    } finally {
+      setIsCreatingFolder(false);
+    }
+  };
+
   return (
     <>
       <div className="space-y-3">
@@ -302,8 +337,25 @@ export function AgencyKDriveFolderSelector({
                 </div>
               ) : filteredFolders.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  <Folder className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>Aucun dossier trouvé</p>
+                  <Folder className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p className="mb-4">Aucun dossier trouvé</p>
+                  <Button 
+                    onClick={createFolder}
+                    disabled={isCreatingFolder}
+                    size="sm"
+                  >
+                    {isCreatingFolder ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Création en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Créer le dossier "{agencyName}"
+                      </>
+                    )}
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-1">
