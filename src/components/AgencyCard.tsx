@@ -3,6 +3,16 @@ import { Badge } from '@/components/ui/badge';
 import { Building2, Mail, Phone, FolderCheck } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
+// Generate consistent color based on tag name
+const getTagColor = (tag: string): string => {
+  let hash = 0;
+  for (let i = 0; i < tag.length; i++) {
+    hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash % 360);
+  return `${hue} 70% 50%`;
+};
+
 interface AgencyCardProps {
   agency: {
     id: string;
@@ -15,6 +25,7 @@ interface AgencyCardProps {
     logo_url?: string;
     kdrive_drive_id?: number;
     kdrive_folder_id?: string;
+    tags?: string[];
   };
   onClick: () => void;
 }
@@ -51,6 +62,23 @@ export function AgencyCard({ agency, onClick }: AgencyCardProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
+        {agency.tags && agency.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {agency.tags.map((tag) => (
+              <Badge
+                key={tag}
+                style={{
+                  backgroundColor: `hsl(${getTagColor(tag)} / 0.15)`,
+                  color: `hsl(${getTagColor(tag)})`,
+                  borderColor: `hsl(${getTagColor(tag)} / 0.3)`,
+                }}
+                className="border"
+              >
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
         {agency.contact_email && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Mail className="h-4 w-4" />

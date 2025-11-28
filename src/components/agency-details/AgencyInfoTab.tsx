@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Building2, FolderKanban, FileText } from 'lucide-react';
@@ -27,12 +28,14 @@ interface AgencyInfoTabProps {
 }
 
 export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
+  const navigate = useNavigate();
   const [projectStats, setProjectStats] = useState({
     total: 0,
     active: 0,
     completed: 0,
     lost: 0,
   });
+  const [activeProjects, setActiveProjects] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchProjectStats = async () => {
@@ -52,7 +55,7 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
 
       const { data: projects } = await supabase
         .from('projects')
-        .select('status')
+        .select('id, name, status')
         .in('id', projectIds);
 
       if (!projects) return;
@@ -65,6 +68,7 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
       };
 
       setProjectStats(stats);
+      setActiveProjects(projects.filter(p => p.status === 'active'));
     };
 
     fetchProjectStats();
@@ -177,6 +181,33 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
           </CardContent>
         </Card>
       </div>
+
+      {activeProjects.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Projets en cours</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {activeProjects.map((project) => (
+                <div
+                  key={project.id}
+                  className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-accent cursor-pointer transition-colors"
+                  onClick={() => navigate(`/project/${project.id}`)}
+                >
+                  <div className="flex items-center gap-3">
+                    <FolderKanban className="h-5 w-5 text-primary" />
+                    <span className="font-medium">{project.name}</span>
+                  </div>
+                  <Badge variant="default" className="bg-blue-500">
+                    En cours
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <AgencyContactsManager agencyId={agency.id} />
     </div>

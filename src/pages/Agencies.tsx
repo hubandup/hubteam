@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AgencyCard } from '@/components/AgencyCard';
@@ -6,12 +6,15 @@ import { AddAgencyDialog } from '@/components/AddAgencyDialog';
 import { toast } from 'sonner';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
+import { Badge } from '@/components/ui/badge';
+import { X } from 'lucide-react';
 
 export default function Agencies() {
   const navigate = useNavigate();
   const { canRead } = usePermissions();
   const [agencies, setAgencies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   useEffect(() => {
     fetchAgencies();
@@ -32,6 +35,43 @@ export default function Agencies() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Get all unique tags
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    agencies.forEach(agency => {
+      if (agency.tags) {
+        agency.tags.forEach((tag: string) => tags.add(tag));
+      }
+    });
+    return Array.from(tags).sort();
+  }, [agencies]);
+
+  // Filter agencies by selected tags
+  const filteredAgencies = useMemo(() => {
+    if (selectedTags.length === 0) return agencies;
+    return agencies.filter(agency => {
+      if (!agency.tags || agency.tags.length === 0) return false;
+      return selectedTags.some(tag => agency.tags.includes(tag));
+    });
+  }, [agencies, selectedTags]);
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
+
+  const getTagColor = (tag: string): string => {
+    let hash = 0;
+    for (let i = 0; i < tag.length; i++) {
+      hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash % 360);
+    return `${hue} 70% 50%`;
   };
 
   if (loading) {
@@ -65,14 +105,47 @@ export default function Agencies() {
         </ProtectedAction>
       </div>
 
+      {allTags.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-muted-foreground">Filtrer par tag :</p>
+          <div className="flex flex-wrap gap-2">
+            {allTags.map((tag) => (
+              <Badge
+                key={tag}
+                variant={selectedTags.includes(tag) ? 'default' : 'outline'}
+                className="cursor-pointer transition-all hover:scale-105"
+                style={selectedTags.includes(tag) ? {
+                  backgroundColor: `hsl(${getTagColor(tag)})`,
+                  borderColor: `hsl(${getTagColor(tag)})`,
+                  color: 'white',
+                } : {
+                  borderColor: `hsl(${getTagColor(tag)} / 0.5)`,
+                  color: `hsl(${getTagColor(tag)})`,
+                }}
+                onClick={() => toggleTag(tag)}
+              >
+                {tag}
+                {selectedTags.includes(tag) && (
+                  <X className="ml-1 h-3 w-3" />
+                )}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
       {agencies.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-muted-foreground">Aucune agence pour le moment</p>
           <p className="text-sm text-muted-foreground mt-2">Commencez par ajouter une nouvelle agence</p>
         </div>
+      ) : filteredAgencies.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Aucune agence ne correspond aux tags sélectionnés</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {agencies.map((agency) => (
+          {filteredAgencies.map((agency) => (
             <AgencyCard
               key={agency.id}
               agency={agency}
