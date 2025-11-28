@@ -1,6 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,6 +34,15 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const { recipients, subject, message }: ProspectionEmailRequest = await req.json();
+
+    // Get user ID from authorization header
+    const authHeader = req.headers.get("Authorization");
+    let userId = null;
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user } } = await supabaseAdmin.auth.getUser(token);
+      userId = user?.id;
+    }
 
     console.log(`Sending prospection emails to ${recipients.length} recipients`);
 
@@ -74,8 +88,28 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (!response.ok) {
         const error = await response.text();
+        console.error(`Failed to send email to ${recipient.email}:`, error);
+        
+        // Log failed email
+        await supabaseAdmin.from('prospection_email_logs').insert({
+          user_id: userId,
+          recipient_email: recipient.email,
+          recipient_name: `${recipient.firstName} ${recipient.lastName}`,
+          subject: subject,
+          status: 'failed',
+        });
+        
         throw new Error(`Brevo API error: ${error}`);
       }
+
+      // Log successful email
+      await supabaseAdmin.from('prospection_email_logs').insert({
+        user_id: userId,
+        recipient_email: recipient.email,
+        recipient_name: `${recipient.firstName} ${recipient.lastName}`,
+        subject: subject,
+        status: 'sent',
+      });
 
       return response.json();
     });
