@@ -81,12 +81,26 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
               .single();
             memberData = data;
           } else if (member.member_type === 'agency_contact') {
-            const { data } = await supabase
+            const { data: contactData } = await supabase
               .from('agency_contacts')
-              .select('first_name, last_name, email, agencies(name)')
+              .select('first_name, last_name, email, agency_id')
               .eq('id', member.member_id)
               .single();
-            memberData = data;
+            
+            if (contactData?.agency_id) {
+              const { data: agencyData } = await supabase
+                .from('agencies')
+                .select('name')
+                .eq('id', contactData.agency_id)
+                .single();
+              
+              memberData = {
+                ...contactData,
+                agencies: agencyData
+              };
+            } else {
+              memberData = contactData;
+            }
           } else if (member.member_type === 'client_contact') {
             const { data } = await supabase
               .from('client_contacts' as any)

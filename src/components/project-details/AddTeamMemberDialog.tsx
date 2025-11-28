@@ -75,7 +75,14 @@ export function AddTeamMemberDialog({
       } else if (memberType === 'agency_contact') {
         const { data: contacts } = await supabase
           .from('agency_contacts')
-          .select('id, first_name, last_name, email, agencies(name)')
+          .select(`
+            id, 
+            first_name, 
+            last_name, 
+            email, 
+            agency_id,
+            agencies(name)
+          `)
           .order('first_name');
         data = contacts || [];
       } else if (memberType === 'client') {
