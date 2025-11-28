@@ -66,6 +66,8 @@ export function AddTeamMemberDialog({
     try {
       let data: any[] = [];
       
+      console.log('Fetching members for type:', memberType);
+      
       if (memberType === 'profile') {
         const { data: profiles } = await supabase
           .from('profiles')
@@ -73,7 +75,7 @@ export function AddTeamMemberDialog({
           .order('first_name');
         data = profiles || [];
       } else if (memberType === 'agency_contact') {
-        const { data: contacts } = await supabase
+        const { data: contacts, error } = await supabase
           .from('agency_contacts')
           .select(`
             id, 
@@ -84,6 +86,8 @@ export function AddTeamMemberDialog({
             agencies(name)
           `)
           .order('first_name');
+        
+        console.log('Agency contacts fetched:', contacts, 'Error:', error);
         data = contacts || [];
       } else if (memberType === 'client') {
         if (projectClientId) {
@@ -107,6 +111,7 @@ export function AddTeamMemberDialog({
         }
       }
 
+      console.log('Members loaded:', data);
       setMembers(data);
     } catch (error) {
       console.error('Error fetching members:', error);
@@ -123,6 +128,8 @@ export function AddTeamMemberDialog({
 
     setLoading(true);
     try {
+      console.log('Adding team member:', { memberType, memberId, projectId });
+      
       // If adding an agency contact, also add the agency to project_agencies if not already added
       if (memberType === 'agency_contact') {
         const { data: contactData } = await supabase
@@ -130,6 +137,8 @@ export function AddTeamMemberDialog({
           .select('agency_id')
           .eq('id', memberId)
           .single();
+
+        console.log('Agency contact agency_id:', contactData);
 
         if (contactData?.agency_id) {
           // Check if agency is already linked to project
@@ -139,6 +148,8 @@ export function AddTeamMemberDialog({
             .eq('project_id', projectId)
             .eq('agency_id', contactData.agency_id)
             .maybeSingle();
+
+          console.log('Existing agency link:', existingLink);
 
           // If not linked, add it
           if (!existingLink) {
