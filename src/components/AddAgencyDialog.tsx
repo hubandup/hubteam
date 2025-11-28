@@ -16,15 +16,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Loader2, X } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Plus, Loader2, X, CalendarIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 const agencySchema = z.object({
   name: z.string().trim().min(1, "Le nom de l'agence est requis").max(200),
-  contact_email: z.string().trim().email('Email invalide').max(255).optional().or(z.literal('')),
-  contact_phone: z.string().trim().max(20).optional(),
-  revenue: z.number().min(0, 'Le CA doit être positif'),
   active: z.boolean(),
+  description: z.string().trim().max(1000).optional(),
 });
 
 type AgencyFormData = z.infer<typeof agencySchema>;
@@ -38,6 +43,9 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
   const [loading, setLoading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [partnerSince, setPartnerSince] = useState<Date>(new Date());
+  const [tags, setTags] = useState<string[]>([]);
+  const [newTag, setNewTag] = useState('');
 
   const {
     register,
@@ -50,7 +58,6 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
     resolver: zodResolver(agencySchema),
     defaultValues: {
       active: true,
-      revenue: 0,
     },
   });
 
@@ -73,6 +80,17 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
     setLogoPreview(null);
   };
 
+  const handleAddTag = () => {
+    if (newTag.trim() && !tags.includes(newTag.trim())) {
+      setTags([...tags, newTag.trim()]);
+      setNewTag('');
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
   const onSubmit = async (data: AgencyFormData) => {
     setLoading(true);
     try {
@@ -81,10 +99,10 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
         .from('agencies')
         .insert({
           name: data.name,
-          contact_email: data.contact_email || null,
-          contact_phone: data.contact_phone || null,
-          revenue: data.revenue,
           active: data.active,
+          created_at: partnerSince.toISOString(),
+          description: data.description || null,
+          tags: tags,
         })
         .select()
         .single();
@@ -120,6 +138,9 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
       reset();
       setLogoFile(null);
       setLogoPreview(null);
+      setTags([]);
+      setNewTag('');
+      setPartnerSince(new Date());
       setOpen(false);
       onAgencyAdded();
     } catch (error) {
@@ -197,44 +218,79 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="contact_email">Email de contact</Label>
-              <Input
-                id="contact_email"
-                type="email"
-                {...register('contact_email')}
-                placeholder="contact@agence.com"
-              />
-              {errors.contact_email && (
-                <p className="text-sm text-destructive">{errors.contact_email.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="contact_phone">Téléphone</Label>
-              <Input
-                id="contact_phone"
-                {...register('contact_phone')}
-                placeholder="+33 1 23 45 67 89"
-              />
-              {errors.contact_phone && (
-                <p className="text-sm text-destructive">{errors.contact_phone.message}</p>
-              )}
-            </div>
+          <div className="space-y-2">
+            <Label>Partenaire depuis</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !partnerSince && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {partnerSince ? format(partnerSince, "PPP", { locale: fr }) : "Sélectionner une date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={partnerSince}
+                  onSelect={(date) => date && setPartnerSince(date)}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="revenue">Chiffre d'affaires généré (€) *</Label>
-            <Input
-              id="revenue"
-              type="number"
-              step="0.01"
-              {...register('revenue', { valueAsNumber: true })}
-              placeholder="0"
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              {...register('description')}
+              placeholder="Description de l'agence..."
+              rows={4}
             />
-            {errors.revenue && (
-              <p className="text-sm text-destructive">{errors.revenue.message}</p>
+            {errors.description && (
+              <p className="text-sm text-destructive">{errors.description.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Tags</Label>
+            <div className="flex gap-2">
+              <Input
+                value={newTag}
+                onChange={(e) => setNewTag(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddTag();
+                  }
+                }}
+                placeholder="Ajouter un tag (Ex: Influence, Site vitrine...)"
+              />
+              <Button type="button" onClick={handleAddTag} variant="outline">
+                Ajouter
+              </Button>
+            </div>
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {tags.map((tag) => (
+                  <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTag(tag)}
+                      className="ml-1 hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
             )}
           </div>
 

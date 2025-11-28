@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Phone, Calendar, Building2, FolderKanban } from 'lucide-react';
+import { Calendar, Building2, FolderKanban, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { EditAgencyDialog } from '@/components/EditAgencyDialog';
@@ -14,15 +14,14 @@ interface AgencyInfoTabProps {
   agency: {
     id: string;
     name: string;
-    contact_email?: string;
-    contact_phone?: string;
-    revenue: number;
     active: boolean;
     created_at: string;
     logo_url?: string;
     kdrive_drive_id?: number;
     kdrive_folder_id?: string;
     kdrive_folder_path?: string;
+    description?: string;
+    tags?: string[];
   };
   onUpdate: () => void;
 }
@@ -102,26 +101,6 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
               </div>
             </div>
 
-            {agency.contact_email && (
-              <div className="flex items-start gap-3">
-                <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Email de contact</p>
-                  <p className="font-medium">{agency.contact_email}</p>
-                </div>
-              </div>
-            )}
-
-            {agency.contact_phone && (
-              <div className="flex items-start gap-3">
-                <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Téléphone</p>
-                  <p className="font-medium">{agency.contact_phone}</p>
-                </div>
-              </div>
-            )}
-
             <div className="flex items-start gap-3">
               <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div>
@@ -131,6 +110,29 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
                 </p>
               </div>
             </div>
+
+            {agency.description && (
+              <div className="flex items-start gap-3">
+                <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Description</p>
+                  <p className="font-medium whitespace-pre-wrap">{agency.description}</p>
+                </div>
+              </div>
+            )}
+
+            {agency.tags && agency.tags.length > 0 && (
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Tags</p>
+                <div className="flex flex-wrap gap-2">
+                  {agency.tags.map((tag) => (
+                    <Badge key={tag} variant="secondary">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
