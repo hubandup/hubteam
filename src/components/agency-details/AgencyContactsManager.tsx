@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Trash2, Mail, UserPlus, UserCheck, Star } from 'lucide-react';
+import { Plus, Trash2, Mail, UserPlus, UserCheck, Star, Phone } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -28,6 +28,7 @@ interface Contact {
   first_name: string;
   last_name: string;
   email: string;
+  phone?: string;
   is_user?: boolean;
 }
 
@@ -48,6 +49,7 @@ export function AgencyContactsManager({ agencyId, mainContactId }: AgencyContact
     first_name: '',
     last_name: '',
     email: '',
+    phone: '',
   });
 
   const fetchContacts = async () => {
@@ -131,12 +133,13 @@ export function AgencyContactsManager({ agencyId, mainContactId }: AgencyContact
         first_name: formData.first_name,
         last_name: formData.last_name,
         email: formData.email,
+        phone: formData.phone,
       });
 
       if (error) throw error;
 
       toast.success('Contact ajouté avec succès');
-      setFormData({ first_name: '', last_name: '', email: '' });
+      setFormData({ first_name: '', last_name: '', email: '', phone: '' });
       setOpen(false);
       fetchContacts();
     } catch (error) {
@@ -261,6 +264,15 @@ export function AgencyContactsManager({ agencyId, mainContactId }: AgencyContact
                     required
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Téléphone</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  />
+                </div>
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                     Annuler
@@ -315,6 +327,12 @@ export function AgencyContactsManager({ agencyId, mainContactId }: AgencyContact
                       <Mail className="h-4 w-4" />
                       <span>{contact.email}</span>
                     </div>
+                    {contact.phone && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Phone className="h-4 w-4" />
+                        <span>{contact.phone}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
