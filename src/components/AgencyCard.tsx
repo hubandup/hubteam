@@ -38,6 +38,7 @@ export function AgencyCard({ agency, onClick }: AgencyCardProps) {
     first_name: string;
     last_name: string;
     email: string;
+    phone?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -50,7 +51,7 @@ export function AgencyCard({ agency, onClick }: AgencyCardProps) {
       try {
         const { data, error } = await supabase
           .from('agency_contacts')
-          .select('first_name, last_name, email')
+          .select('first_name, last_name, email, phone')
           .eq('id', agency.main_contact_id)
           .single();
 
@@ -120,6 +121,12 @@ export function AgencyCard({ agency, onClick }: AgencyCardProps) {
                 {mainContact.first_name} {mainContact.last_name}
               </span>
             </div>
+            {mainContact.phone && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Phone className="h-4 w-4" />
+                <span>{mainContact.phone}</span>
+              </div>
+            )}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Mail className="h-4 w-4" />
               <span className="truncate">{mainContact.email}</span>
