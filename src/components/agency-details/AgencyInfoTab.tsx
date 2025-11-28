@@ -36,6 +36,7 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
     lost: 0,
   });
   const [activeProjects, setActiveProjects] = useState<any[]>([]);
+  const [tagColors, setTagColors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchProjectStats = async () => {
@@ -71,7 +72,22 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
       setActiveProjects(projects.filter(p => p.status === 'active'));
     };
 
+    const fetchTagColors = async () => {
+      const { data: agencyTags } = await supabase
+        .from('agency_tags')
+        .select('name, color');
+      
+      if (agencyTags) {
+        const colors: Record<string, string> = {};
+        agencyTags.forEach(tag => {
+          colors[tag.name] = tag.color;
+        });
+        setTagColors(colors);
+      }
+    };
+
     fetchProjectStats();
+    fetchTagColors();
   }, [agency.id]);
 
   return (
@@ -129,11 +145,22 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
               <div>
                 <p className="text-sm text-muted-foreground mb-2">Tags</p>
                 <div className="flex flex-wrap gap-2">
-                  {agency.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary">
-                      {tag}
-                    </Badge>
-                  ))}
+                  {agency.tags.map((tag) => {
+                    const color = tagColors[tag];
+                    return (
+                      <Badge 
+                        key={tag} 
+                        style={color ? { 
+                          backgroundColor: color,
+                          color: 'white',
+                          borderColor: color
+                        } : undefined}
+                        variant={color ? "default" : "secondary"}
+                      >
+                        {tag}
+                      </Badge>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -144,7 +171,7 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
           <CardHeader>
             <CardTitle className="text-lg">Statistiques</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-start gap-3">
                 <FolderKanban className="h-5 w-5 text-muted-foreground mt-0.5" />
@@ -178,36 +205,32 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
                 </div>
               </div>
             </div>
+
+            {activeProjects.length > 0 && (
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-medium mb-3">Projets en cours</h4>
+                <div className="space-y-2">
+                  {activeProjects.map((project) => (
+                    <div
+                      key={project.id}
+                      className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-accent cursor-pointer transition-colors"
+                      onClick={() => navigate(`/project/${project.id}`)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <FolderKanban className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-sm">{project.name}</span>
+                      </div>
+                      <Badge variant="default" className="bg-blue-500 text-xs">
+                        En cours
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      {activeProjects.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Projets en cours</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {activeProjects.map((project) => (
-                <div
-                  key={project.id}
-                  className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-accent cursor-pointer transition-colors"
-                  onClick={() => navigate(`/project/${project.id}`)}
-                >
-                  <div className="flex items-center gap-3">
-                    <FolderKanban className="h-5 w-5 text-primary" />
-                    <span className="font-medium">{project.name}</span>
-                  </div>
-                  <Badge variant="default" className="bg-blue-500">
-                    En cours
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <AgencyContactsManager agencyId={agency.id} />
     </div>
