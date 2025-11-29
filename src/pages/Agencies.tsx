@@ -120,7 +120,7 @@ export default function Agencies() {
                   Rechercher un tag...
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[300px] p-0" align="start">
+              <PopoverContent className="w-full max-w-2xl p-0" align="start">
                 <Command>
                   <CommandInput placeholder="Rechercher un tag..." />
                   <CommandList>
