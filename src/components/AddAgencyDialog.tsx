@@ -16,8 +16,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import { Plus, Loader2, X, CalendarIcon } from 'lucide-react';
+import { RichTextEditor } from '@/components/faq/RichTextEditor';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -29,7 +29,7 @@ import { cn } from '@/lib/utils';
 const agencySchema = z.object({
   name: z.string().trim().min(1, "Le nom de l'agence est requis").max(200),
   active: z.boolean(),
-  description: z.string().trim().max(1000).optional(),
+  description: z.string().optional(),
 });
 
 type AgencyFormData = z.infer<typeof agencySchema>;
@@ -47,6 +47,7 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
   const [tags, setTags] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<any[]>([]);
   const [newTag, setNewTag] = useState('');
+  const [description, setDescription] = useState('');
 
   const {
     register,
@@ -133,7 +134,7 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
           name: data.name,
           active: data.active,
           created_at: partnerSince.toISOString(),
-          description: data.description || null,
+          description: description || null,
           tags: tags,
         })
         .select()
@@ -173,6 +174,7 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
       setTags([]);
       setNewTag('');
       setPartnerSince(new Date());
+      setDescription('');
       setOpen(false);
       onAgencyAdded();
     } catch (error) {
@@ -279,15 +281,10 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
 
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              {...register('description')}
-              placeholder="Description de l'agence..."
-              rows={4}
+            <RichTextEditor
+              value={description}
+              onChange={setDescription}
             />
-            {errors.description && (
-              <p className="text-sm text-destructive">{errors.description.message}</p>
-            )}
           </div>
 
             <div className="space-y-2">
