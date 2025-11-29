@@ -24,15 +24,14 @@ serve(async (req) => {
 
     console.log('Syncing agency to Webflow:', { agencyId, name });
 
-    // Prepare item data for Webflow
-    const itemData = {
-      fields: {
-        name: name || '',
-        'logo': logoUrl || '',
-        'description': description || '',
-        'expertises': tags ? tags.join(', ') : '',
-        'agency-id': agencyId,
-      }
+    // Prepare item data for Webflow (v2 API uses fieldData, not fields)
+    const fieldData = {
+      'name': name || '',
+      'slug': (name || 'agency').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      'logo': logoUrl || '',
+      'description': description || '',
+      'expertises': tags ? tags.join(', ') : '',
+      'agency-id': agencyId,
     };
 
     // Check if item already exists in Webflow by searching for agency-id
@@ -71,7 +70,7 @@ serve(async (req) => {
             'accept': 'application/json',
             'content-type': 'application/json',
           },
-          body: JSON.stringify({ fieldData: itemData.fields }),
+          body: JSON.stringify({ fieldData }),
         }
       );
     } else {
@@ -86,7 +85,7 @@ serve(async (req) => {
             'accept': 'application/json',
             'content-type': 'application/json',
           },
-          body: JSON.stringify({ fieldData: itemData.fields }),
+          body: JSON.stringify({ fieldData }),
         }
       );
     }
