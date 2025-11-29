@@ -69,3 +69,6 @@ verify_jwt = false
 
 [functions.check-reco-project-deadlines]
 verify_jwt = false
+
+[functions.sync-agency-to-webflow]
+verify_jwt = false
