@@ -290,12 +290,12 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label>Tags</Label>
+            <div className="space-y-2">
+            <Label>Expertises</Label>
             
             {availableTags.length > 0 && (
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Tags prédéfinis :</p>
+                <p className="text-sm text-muted-foreground">Expertises prédéfinies :</p>
                 <div className="flex flex-wrap gap-2">
                   {availableTags.map((tag) => (
                     <Badge
@@ -329,7 +329,7 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
                     handleAddTag();
                   }
                 }}
-                placeholder="Ou ajouter un tag personnalisé..."
+                placeholder="Ou ajouter une expertise personnalisée..."
               />
               <Button type="button" onClick={handleAddTag} variant="outline">
                 Ajouter
@@ -337,7 +337,7 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
             </div>
             {tags.length > 0 && (
               <div className="space-y-1 pt-2">
-                <p className="text-sm text-muted-foreground">Tags sélectionnés :</p>
+                <p className="text-sm text-muted-foreground">Expertises sélectionnées :</p>
                 <div className="flex flex-wrap gap-2">
                   {tags.map((tag) => (
                     <Badge key={tag} variant="secondary" className="flex items-center gap-1">
