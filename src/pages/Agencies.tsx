@@ -11,6 +11,7 @@ import { X, Search } from 'lucide-react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function Agencies() {
   const navigate = useNavigate();
@@ -105,6 +106,40 @@ export default function Agencies() {
     return filtered;
   }, [agencies, selectedTags, searchQuery]);
 
+  // Get search results for popover display
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return { agencies: [], contacts: [], tags: allTags };
+    
+    const query = searchQuery.toLowerCase();
+    const matchingAgencies: any[] = [];
+    const matchingContacts: Array<{ contact: any; agencyName: string; agencyId: string }> = [];
+    const matchingTags = allTags.filter(tag => tag.toLowerCase().includes(query));
+    
+    agencies.forEach(agency => {
+      // Match agency name
+      if (agency.name?.toLowerCase().includes(query)) {
+        matchingAgencies.push(agency);
+      }
+      
+      // Match contacts
+      agency.agency_contacts?.forEach((contact: any) => {
+        if (
+          contact.first_name?.toLowerCase().includes(query) ||
+          contact.last_name?.toLowerCase().includes(query) ||
+          contact.email?.toLowerCase().includes(query)
+        ) {
+          matchingContacts.push({
+            contact,
+            agencyName: agency.name,
+            agencyId: agency.id
+          });
+        }
+      });
+    });
+    
+    return { agencies: matchingAgencies, contacts: matchingContacts, tags: matchingTags };
+  }, [searchQuery, agencies, allTags]);
+
   const toggleTag = (tag: string) => {
     setSelectedTags(prev => 
       prev.includes(tag) 
@@ -162,7 +197,7 @@ export default function Agencies() {
               Rechercher...
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-full p-0" align="start" side="bottom">
+          <PopoverContent className="w-[calc(100vw-3rem)] md:w-[600px] lg:w-[800px] p-0" align="start" side="bottom">
             <Command>
               <CommandInput 
                 placeholder="Rechercher..." 
@@ -171,9 +206,69 @@ export default function Agencies() {
               />
               <CommandList>
                 <CommandEmpty>Aucun résultat trouvé.</CommandEmpty>
-                {allTags.length > 0 && (
+                
+                {searchResults.agencies.length > 0 && (
+                  <CommandGroup heading="Agences">
+                    {searchResults.agencies.map((agency: any) => (
+                      <CommandItem
+                        key={agency.id}
+                        onSelect={() => {
+                          navigate(`/agency/${agency.id}`);
+                          setTagSearchOpen(false);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            {agency.logo_url ? (
+                              <AvatarImage src={agency.logo_url} alt={agency.name} />
+                            ) : null}
+                            <AvatarFallback>{agency.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">{agency.name}</p>
+                            <p className="text-xs text-muted-foreground">Agence</p>
+                          </div>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+                
+                {searchResults.contacts.length > 0 && (
+                  <CommandGroup heading="Contacts">
+                    {searchResults.contacts.map((item: any, index: number) => (
+                      <CommandItem
+                        key={`${item.agencyId}-${item.contact.id}-${index}`}
+                        onSelect={() => {
+                          navigate(`/agency/${item.agencyId}?tab=contacts`);
+                          setTagSearchOpen(false);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback>
+                              {item.contact.first_name.charAt(0)}{item.contact.last_name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">
+                              {item.contact.first_name} {item.contact.last_name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {item.agencyName} • {item.contact.email}
+                            </p>
+                          </div>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+                
+                {searchResults.tags.length > 0 && (
                   <CommandGroup heading="Expertises">
-                    {allTags.map((tag) => (
+                    {searchResults.tags.map((tag) => (
                       <CommandItem
                         key={tag}
                         onSelect={() => {
