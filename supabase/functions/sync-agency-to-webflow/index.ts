@@ -20,9 +20,9 @@ serve(async (req) => {
       throw new Error('WEBFLOW_API_KEY or WEBFLOW_COLLECTION_ID not configured');
     }
 
-    const { agencyId, name, description, logoUrl, tags } = await req.json();
+    const { agencyId, name, description, logoUrl, tags, active } = await req.json();
 
-    console.log('Syncing agency to Webflow:', { agencyId, name });
+    console.log('Syncing agency to Webflow:', { agencyId, name, active });
 
     // Prepare item data for Webflow (v2 API uses fieldData, not fields)
     const fieldData = {
@@ -55,6 +55,48 @@ serve(async (req) => {
     const existingItem = searchData.items?.find((item: any) => 
       item.fieldData['agency-id'] === agencyId
     );
+
+    // If agency is inactive, delete from Webflow
+    if (!active && existingItem) {
+      console.log('Agency is inactive, deleting from Webflow:', existingItem.id);
+      const deleteResponse = await fetch(
+        `https://api.webflow.com/v2/collections/${collectionId}/items/${existingItem.id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${webflowApiKey}`,
+            'accept': 'application/json',
+          },
+        }
+      );
+
+      if (!deleteResponse.ok) {
+        const error = await deleteResponse.text();
+        console.error('Webflow delete error:', error);
+        throw new Error(`Webflow delete error: ${error}`);
+      }
+
+      console.log('Successfully deleted from Webflow');
+      return new Response(
+        JSON.stringify({ success: true, action: 'deleted' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    }
+
+    // If agency is inactive and doesn't exist, nothing to do
+    if (!active && !existingItem) {
+      console.log('Agency is inactive and does not exist in Webflow, nothing to do');
+      return new Response(
+        JSON.stringify({ success: true, action: 'skipped' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    }
 
     let webflowResponse;
 
