@@ -111,48 +111,46 @@ export default function Agencies() {
 
       {allTags.length > 0 && (
         <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <p className="text-sm font-medium text-muted-foreground">Filtrer par expertise :</p>
-            <Popover open={tagSearchOpen} onOpenChange={setTagSearchOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start">
-                  <Search className="mr-2 h-4 w-4" />
-                  Rechercher une expertise...
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full max-w-2xl p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Rechercher une expertise..." />
-                  <CommandList>
-                    <CommandEmpty>Aucune expertise trouvée.</CommandEmpty>
-                    <CommandGroup>
-                      {allTags.map((tag) => (
-                        <CommandItem
-                          key={tag}
-                          onSelect={() => {
-                            toggleTag(tag);
-                            setTagSearchOpen(false);
+          <p className="text-sm font-medium text-muted-foreground">Filtrer par expertise :</p>
+          <Popover open={tagSearchOpen} onOpenChange={setTagSearchOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full justify-start">
+                <Search className="mr-2 h-4 w-4" />
+                Rechercher une expertise...
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0" align="start" side="bottom">
+              <Command>
+                <CommandInput placeholder="Rechercher une expertise..." />
+                <CommandList>
+                  <CommandEmpty>Aucune expertise trouvée.</CommandEmpty>
+                  <CommandGroup>
+                    {allTags.map((tag) => (
+                      <CommandItem
+                        key={tag}
+                        onSelect={() => {
+                          toggleTag(tag);
+                          setTagSearchOpen(false);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <Badge
+                          variant={selectedTags.includes(tag) ? 'default' : 'outline'}
+                          style={{
+                            backgroundColor: selectedTags.includes(tag) ? `hsl(${getTagColor(tag)})` : 'transparent',
+                            borderColor: `hsl(${getTagColor(tag)})`,
+                            color: selectedTags.includes(tag) ? 'white' : `hsl(${getTagColor(tag)})`,
                           }}
-                          className="cursor-pointer"
                         >
-                          <Badge
-                            variant={selectedTags.includes(tag) ? 'default' : 'outline'}
-                            style={{
-                              backgroundColor: selectedTags.includes(tag) ? `hsl(${getTagColor(tag)})` : 'transparent',
-                              borderColor: `hsl(${getTagColor(tag)})`,
-                              color: selectedTags.includes(tag) ? 'white' : `hsl(${getTagColor(tag)})`,
-                            }}
-                          >
-                            {tag}
-                          </Badge>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
+                          {tag}
+                        </Badge>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
           
           {selectedTags.length > 0 && (
             <div className="flex flex-wrap gap-2">
