@@ -10,10 +10,12 @@ import { ClientMeetingNotesTab } from '@/components/client-details/ClientMeeting
 import { ClientProjectsTab } from '@/components/client-details/ClientProjectsTab';
 import { ClientKDriveTab } from '@/components/client-details/ClientKDriveTab';
 import { ClientInvoicesTab } from '@/components/client-details/ClientInvoicesTab';
+import { useUserRole } from '@/hooks/useUserRole';
 
 export default function ClientDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { role } = useUserRole();
   const [client, setClient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [meetingNotesCount, setMeetingNotesCount] = useState(0);
@@ -134,7 +136,7 @@ export default function ClientDetails() {
     );
   }
 
-  const tabs: TabItem[] = [
+  const allTabs: TabItem[] = [
     {
       value: 'info',
       label: 'Infos',
@@ -170,6 +172,11 @@ export default function ClientDetails() {
       content: <ClientInvoicesTab clientId={client.id} />
     }
   ];
+
+  // Filter out invoices tab for agency role
+  const tabs = allTabs.filter(tab => 
+    role !== 'agency' || tab.value !== 'invoices'
+  );
 
   return (
     <div className="p-6 space-y-6">
