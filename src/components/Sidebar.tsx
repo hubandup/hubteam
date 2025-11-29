@@ -70,11 +70,11 @@ export function Sidebar() {
     { title: 'Feed', url: '/feed', icon: Rss, module: 'dashboard' as const },
     { title: 'Tableau de bord', url: '/dashboard', icon: LayoutDashboard, module: 'dashboard' as const },
     { title: 'CRM', url: '/crm', icon: Users, module: 'crm' as const, matchParent: true },
-    { title: 'Prospection', url: '/prospection', icon: ListTodo, module: 'crm' as const },
+    { title: 'Prospection', url: '/prospection', icon: ListTodo, module: 'crm' as const, hideForAgency: true },
     { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const, matchParent: true },
     { title: 'Projets', url: '/projects', icon: FolderKanban, module: 'projects' as const, matchParent: true },
     { title: 'Messages', url: '/messages', icon: MessageSquare, module: 'messages' as const },
-    { title: 'Activité', url: '/activity', icon: History, module: 'dashboard' as const, hideForClient: true },
+    { title: 'Activité', url: '/activity', icon: History, module: 'dashboard' as const, hideForClient: true, hideForAgency: true },
     { title: 'FAQ', url: '/faq', icon: HelpCircle, module: 'faq' as const },
   ];
 
@@ -99,6 +99,7 @@ export function Sidebar() {
                 .filter(item => item.title !== 'Tableau de bord' || role === 'admin')
                 .filter(item => item.title !== 'CRM' || role !== 'client')
                 .filter(item => !item.hideForClient || role !== 'client')
+                .filter(item => !item.hideForAgency || role !== 'agency')
                 .map((item) =>
                   canRead(item.module) ? (
                     <SidebarMenuItem key={item.title}>

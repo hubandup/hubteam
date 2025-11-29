@@ -33,5 +33,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <Navigate to="/" replace />;
   }
 
+  // Redirect agencies away from /prospection and /activity pages
+  if (role === 'agency' && (location.pathname === '/prospection' || location.pathname === '/activity')) {
+    return <Navigate to="/" replace />;
+  }
+
   return <>{children}</>;
 }
