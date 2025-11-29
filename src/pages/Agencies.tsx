@@ -7,7 +7,10 @@ import { toast } from 'sonner';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Badge } from '@/components/ui/badge';
-import { X } from 'lucide-react';
+import { X, Search } from 'lucide-react';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
 
 export default function Agencies() {
   const navigate = useNavigate();
@@ -15,6 +18,7 @@ export default function Agencies() {
   const [agencies, setAgencies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagSearchOpen, setTagSearchOpen] = useState(false);
 
   useEffect(() => {
     fetchAgencies();
@@ -106,31 +110,69 @@ export default function Agencies() {
       </div>
 
       {allTags.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">Filtrer par tag :</p>
-          <div className="flex flex-wrap gap-2">
-            {allTags.map((tag) => (
-              <Badge
-                key={tag}
-                variant={selectedTags.includes(tag) ? 'default' : 'outline'}
-                className="cursor-pointer transition-all hover:scale-105"
-                style={selectedTags.includes(tag) ? {
-                  backgroundColor: `hsl(${getTagColor(tag)})`,
-                  borderColor: `hsl(${getTagColor(tag)})`,
-                  color: 'white',
-                } : {
-                  borderColor: `hsl(${getTagColor(tag)} / 0.5)`,
-                  color: `hsl(${getTagColor(tag)})`,
-                }}
-                onClick={() => toggleTag(tag)}
-              >
-                {tag}
-                {selectedTags.includes(tag) && (
-                  <X className="ml-1 h-3 w-3" />
-                )}
-              </Badge>
-            ))}
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <p className="text-sm font-medium text-muted-foreground">Filtrer par tag :</p>
+            <Popover open={tagSearchOpen} onOpenChange={setTagSearchOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="justify-start">
+                  <Search className="mr-2 h-4 w-4" />
+                  Rechercher un tag...
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[300px] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Rechercher un tag..." />
+                  <CommandList>
+                    <CommandEmpty>Aucun tag trouvé.</CommandEmpty>
+                    <CommandGroup>
+                      {allTags.map((tag) => (
+                        <CommandItem
+                          key={tag}
+                          onSelect={() => {
+                            toggleTag(tag);
+                            setTagSearchOpen(false);
+                          }}
+                          className="cursor-pointer"
+                        >
+                          <Badge
+                            variant={selectedTags.includes(tag) ? 'default' : 'outline'}
+                            style={{
+                              backgroundColor: selectedTags.includes(tag) ? `hsl(${getTagColor(tag)})` : 'transparent',
+                              borderColor: `hsl(${getTagColor(tag)})`,
+                              color: selectedTags.includes(tag) ? 'white' : `hsl(${getTagColor(tag)})`,
+                            }}
+                          >
+                            {tag}
+                          </Badge>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
+          
+          {selectedTags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {selectedTags.map((tag) => (
+                <Badge
+                  key={tag}
+                  className="cursor-pointer"
+                  style={{
+                    backgroundColor: `hsl(${getTagColor(tag)})`,
+                    borderColor: `hsl(${getTagColor(tag)})`,
+                    color: 'white',
+                  }}
+                  onClick={() => toggleTag(tag)}
+                >
+                  {tag}
+                  <X className="ml-1 h-3 w-3" />
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
