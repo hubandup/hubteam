@@ -160,7 +160,10 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
                 <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground">Description</p>
-                  <p className="font-medium whitespace-pre-wrap">{agency.description}</p>
+                  <div 
+                    className="font-medium prose prose-sm dark:prose-invert max-w-none"
+                    dangerouslySetInnerHTML={{ __html: agency.description }}
+                  />
                 </div>
               </div>
             )}

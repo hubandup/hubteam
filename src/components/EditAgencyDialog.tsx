@@ -14,8 +14,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import { Pencil, X, CalendarIcon } from 'lucide-react';
+import { RichTextEditor } from '@/components/faq/RichTextEditor';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -275,12 +275,9 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
 
             <div className="grid gap-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
+              <RichTextEditor
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Description de l'agence..."
-                rows={4}
+                onChange={(value) => setFormData({ ...formData, description: value })}
               />
             </div>
 
