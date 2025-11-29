@@ -49,8 +49,8 @@ const handler = async (req: Request): Promise<Response> => {
       to: [{ email }],
       templateId: 47,
       params: {
-        ROLE: roleLabel,
-        INVITATION_URL: invitationUrl,
+        role: roleLabel,
+        invitationUrl: invitationUrl,
       },
     };
 
