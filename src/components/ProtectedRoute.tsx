@@ -13,36 +13,19 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { role, loading: roleLoading } = useUserRole();
   const location = useLocation();
 
-  if (loading || roleLoading) {
+  if (loading || roleLoading || (!role && user)) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-muted-foreground">Chargement...</div>
+        <div className="flex flex-col items-center space-y-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          <p className="text-sm text-muted-foreground">Chargement...</p>
+        </div>
       </div>
     );
   }
 
   if (!user) {
     return <Navigate to="/auth" replace />;
-  }
-
-  // Si aucun rôle n'est trouvé après le chargement, afficher un message d'erreur
-  if (!role && !roleLoading && user) {
-    console.error('[ProtectedRoute] No role found for user:', user.id);
-    
-    // Assign default admin role as fallback to prevent crash
-    console.log('[ProtectedRoute] Assigning default admin role as fallback');
-    
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center space-y-4">
-          <p className="text-destructive font-semibold">Configuration du rôle en cours...</p>
-          <p className="text-muted-foreground">Veuillez patienter pendant la configuration de votre compte.</p>
-          <Button onClick={() => window.location.reload()} className="mt-4">
-            Rafraîchir la page
-          </Button>
-        </div>
-      </div>
-    );
   }
 
   // Redirect clients away from /crm page
