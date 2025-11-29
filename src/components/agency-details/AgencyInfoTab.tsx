@@ -10,6 +10,8 @@ import { AgencyContactsManager } from './AgencyContactsManager';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 
 // Fonction pour générer une couleur cohérente basée sur une chaîne
 function generateColorFromString(str: string): string {
@@ -40,6 +42,8 @@ interface AgencyInfoTabProps {
 
 export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { role } = useUserRole();
   const [projectStats, setProjectStats] = useState({
     total: 0,
     active: 0,
@@ -48,6 +52,27 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
   });
   const [activeProjects, setActiveProjects] = useState<any[]>([]);
   const [tagColors, setTagColors] = useState<Record<string, string>>({});
+  const [isAgencyMember, setIsAgencyMember] = useState(false);
+
+  useEffect(() => {
+    const checkAgencyMembership = async () => {
+      if (!user || role !== 'agency') {
+        setIsAgencyMember(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('agency_members')
+        .select('id')
+        .eq('agency_id', agency.id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      setIsAgencyMember(!!data && !error);
+    };
+
+    checkAgencyMembership();
+  }, [user, role, agency.id]);
 
   useEffect(() => {
     const fetchProjectStats = async () => {
@@ -117,9 +142,12 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
-        <ProtectedAction module="agencies" action="update">
-          <EditAgencyDialog agency={agency} onAgencyUpdated={onUpdate} />
-        </ProtectedAction>
+        {/* Show edit button only for admin/team OR agency members of this specific agency */}
+        {(role === 'admin' || role === 'team' || (role === 'agency' && isAgencyMember)) && (
+          <ProtectedAction module="agencies" action="update">
+            <EditAgencyDialog agency={agency} onAgencyUpdated={onUpdate} />
+          </ProtectedAction>
+        )}
       </div>
       
       <div className="grid gap-6 md:grid-cols-2">
