@@ -78,7 +78,7 @@ export function Sidebar() {
     { title: 'FAQ', url: '/faq', icon: HelpCircle, module: 'faq' as const },
   ];
 
-  const showSettings = role === 'admin' || role === 'team';
+  const showSettings = role === 'admin' || role === 'team' || role === 'agency';
 
   return (
     <ShadcnSidebar>
