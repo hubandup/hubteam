@@ -35,8 +35,8 @@ const handler = async (req: Request): Promise<Response> => {
       to: [{ email }],
       templateId: 47,
       params: {
-        ROLE: "Administrateur",
-        INVITATION_URL: "https://hubandup.lovable.app/auth?mode=signup&test=true",
+        role: "Administrateur",
+        invitationUrl: "https://hubandup.lovable.app/auth?mode=signup&test=true",
       },
     };
 
