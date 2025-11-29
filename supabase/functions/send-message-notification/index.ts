@@ -49,7 +49,7 @@ const handler = async (req: Request): Promise<Response> => {
         <body>
           <div class="container">
             <div class="header">
-              <div class="logo">HubandUp</div>
+              <div class="logo">Hub Team</div>
             </div>
             
             <div class="content">
@@ -66,7 +66,7 @@ const handler = async (req: Request): Promise<Response> => {
             
             <div class="footer">
               <p>Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
-              <p>&copy; ${new Date().getFullYear()} HubandUp. Tous droits réservés.</p>
+              <p>&copy; ${new Date().getFullYear()} Hub Team. Tous droits réservés.</p>
             </div>
           </div>
         </body>
@@ -82,7 +82,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         sender: {
-          name: "HubandUp",
+          name: "Hub Team",
           email: "orga@hubandup.com",
         },
         to: [
