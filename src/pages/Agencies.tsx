@@ -115,7 +115,7 @@ export default function Agencies() {
             <p className="text-sm font-medium text-muted-foreground">Filtrer par tag :</p>
             <Popover open={tagSearchOpen} onOpenChange={setTagSearchOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="justify-start">
+                <Button variant="outline" className="w-full justify-start">
                   <Search className="mr-2 h-4 w-4" />
                   Rechercher un tag...
                 </Button>
