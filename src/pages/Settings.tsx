@@ -1,6 +1,6 @@
 import { useUserRole } from '@/hooks/useUserRole';
 import { ResponsiveTabs, type TabItem } from '@/components/ui/responsive-tabs';
-import { User, Lock, Users, Shield, Database, Bell, Palette, HelpCircle, Tag } from 'lucide-react';
+import { User, Lock, Users, Shield, Database, Bell, Palette, HelpCircle, Tag, Mail } from 'lucide-react';
 import { ProfileTab } from '@/components/settings/ProfileTab';
 import { SecurityTab } from '@/components/settings/SecurityTab';
 import { NotificationPreferencesTab } from '@/components/settings/NotificationPreferencesTab';
@@ -10,6 +10,7 @@ import { DataManagementTab } from '@/components/settings/DataManagementTab';
 import { DesignTab } from '@/components/settings/DesignTab';
 import { FaqCategoriesTab } from '@/components/settings/FaqCategoriesTab';
 import { AgencyTagsTab } from '@/components/settings/AgencyTagsTab';
+import { TestInvitationEmail } from '@/components/settings/TestInvitationEmail';
 
 export default function Settings() {
   const { isAdmin } = useUserRole();
@@ -71,6 +72,12 @@ export default function Settings() {
       label: 'Tags agences',
       icon: <Tag className="h-4 w-4" />,
       content: <AgencyTagsTab />
+    },
+    {
+      value: 'test-email',
+      label: 'Test Email',
+      icon: <Mail className="h-4 w-4" />,
+      content: <TestInvitationEmail />
     }
   ] : [];
 
