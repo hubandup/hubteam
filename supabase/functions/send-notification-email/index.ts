@@ -103,7 +103,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         sender: {
-          name: 'Hub&Up Notifications',
+          name: 'Hub Team Notifications',
           email: 'notifications@hubandup.com',
         },
         to: [

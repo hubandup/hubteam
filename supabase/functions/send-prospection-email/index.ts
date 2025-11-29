@@ -66,7 +66,7 @@ const handler = async (req: Request): Promise<Response> => {
         },
         body: JSON.stringify({
           sender: {
-            name: "Hub & Up",
+            name: "Hub Team",
             email: "noreply@hubandup.com",
           },
           to: [{
@@ -79,7 +79,7 @@ const handler = async (req: Request): Promise<Response> => {
               <div style="white-space: pre-wrap;">${personalizedMessage}</div>
               <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;" />
               <p style="color: #666; font-size: 12px;">
-                Cet email a été envoyé depuis Hub & Up
+                Cet email a été envoyé depuis Hub Team
               </p>
             </div>
           `,
