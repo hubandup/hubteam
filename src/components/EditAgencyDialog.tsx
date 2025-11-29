@@ -285,11 +285,11 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
             </div>
 
             <div className="grid gap-2">
-              <Label>Tags</Label>
+              <Label>Expertises</Label>
               
               {availableTags.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Tags prédéfinis :</p>
+                  <p className="text-sm text-muted-foreground">Expertises prédéfinies :</p>
                   <div className="flex flex-wrap gap-2">
                     {availableTags.map((tag) => (
                       <Badge
@@ -323,7 +323,7 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
                       handleAddTag();
                     }
                   }}
-                  placeholder="Ou ajouter un tag personnalisé..."
+                  placeholder="Ou ajouter une expertise personnalisée..."
                 />
                 <Button type="button" onClick={handleAddTag} variant="outline">
                   Ajouter
@@ -331,7 +331,7 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
               </div>
               {formData.tags.length > 0 && (
                 <div className="space-y-1 pt-2">
-                  <p className="text-sm text-muted-foreground">Tags sélectionnés :</p>
+                  <p className="text-sm text-muted-foreground">Expertises sélectionnées :</p>
                   <div className="flex flex-wrap gap-2">
                     {formData.tags.map((tag) => (
                       <Badge key={tag} variant="secondary" className="flex items-center gap-1">

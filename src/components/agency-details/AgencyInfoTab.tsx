@@ -167,7 +167,7 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
 
             {agency.tags && agency.tags.length > 0 && (
               <div>
-                <p className="text-sm text-muted-foreground mb-2">Tags</p>
+                <p className="text-sm text-muted-foreground mb-2">Expertises</p>
                 <div className="flex flex-wrap gap-2">
                   {agency.tags.map((tag) => {
                     const color = tagColors[tag];
