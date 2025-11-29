@@ -19,6 +19,7 @@ export default function Agencies() {
   const [loading, setLoading] = useState(true);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagSearchOpen, setTagSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchAgencies();
@@ -28,7 +29,15 @@ export default function Agencies() {
     try {
       const { data, error } = await supabase
         .from('agencies')
-        .select('*')
+        .select(`
+          *,
+          agency_contacts (
+            id,
+            first_name,
+            last_name,
+            email
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -52,14 +61,41 @@ export default function Agencies() {
     return Array.from(tags).sort();
   }, [agencies]);
 
-  // Filter agencies by selected tags
+  // Filter agencies by selected tags and search query
   const filteredAgencies = useMemo(() => {
-    if (selectedTags.length === 0) return agencies;
-    return agencies.filter(agency => {
-      if (!agency.tags || agency.tags.length === 0) return false;
-      return selectedTags.some(tag => agency.tags.includes(tag));
-    });
-  }, [agencies, selectedTags]);
+    let filtered = agencies;
+    
+    // Filter by selected tags
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter(agency => {
+        if (!agency.tags || agency.tags.length === 0) return false;
+        return selectedTags.some(tag => agency.tags.includes(tag));
+      });
+    }
+    
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(agency => {
+        // Search in agency name
+        if (agency.name?.toLowerCase().includes(query)) return true;
+        
+        // Search in tags
+        if (agency.tags?.some((tag: string) => tag.toLowerCase().includes(query))) return true;
+        
+        // Search in contacts
+        if (agency.agency_contacts?.some((contact: any) => 
+          contact.first_name?.toLowerCase().includes(query) ||
+          contact.last_name?.toLowerCase().includes(query) ||
+          contact.email?.toLowerCase().includes(query)
+        )) return true;
+        
+        return false;
+      });
+    }
+    
+    return filtered;
+  }, [agencies, selectedTags, searchQuery]);
 
   const toggleTag = (tag: string) => {
     setSelectedTags(prev => 
@@ -109,22 +145,26 @@ export default function Agencies() {
         </ProtectedAction>
       </div>
 
-      {allTags.length > 0 && (
-        <div className="space-y-3">
-          <p className="text-sm font-medium text-muted-foreground">Filtrer par expertise :</p>
-          <Popover open={tagSearchOpen} onOpenChange={setTagSearchOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-full justify-start">
-                <Search className="mr-2 h-4 w-4" />
-                Rechercher une expertise...
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-full p-0" align="start" side="bottom">
-              <Command>
-                <CommandInput placeholder="Rechercher une expertise..." />
-                <CommandList>
-                  <CommandEmpty>Aucune expertise trouvée.</CommandEmpty>
-                  <CommandGroup>
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-muted-foreground">Rechercher :</p>
+        <Popover open={tagSearchOpen} onOpenChange={setTagSearchOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-full justify-start">
+              <Search className="mr-2 h-4 w-4" />
+              Rechercher...
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-full p-0" align="start" side="bottom">
+            <Command>
+              <CommandInput 
+                placeholder="Rechercher..." 
+                value={searchQuery}
+                onValueChange={setSearchQuery}
+              />
+              <CommandList>
+                <CommandEmpty>Aucun résultat trouvé.</CommandEmpty>
+                {allTags.length > 0 && (
+                  <CommandGroup heading="Expertises">
                     {allTags.map((tag) => (
                       <CommandItem
                         key={tag}
@@ -147,32 +187,32 @@ export default function Agencies() {
                       </CommandItem>
                     ))}
                   </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
+                )}
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
           
-          {selectedTags.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {selectedTags.map((tag) => (
-                <Badge
-                  key={tag}
-                  className="cursor-pointer"
-                  style={{
-                    backgroundColor: `hsl(${getTagColor(tag)})`,
-                    borderColor: `hsl(${getTagColor(tag)})`,
-                    color: 'white',
-                  }}
-                  onClick={() => toggleTag(tag)}
-                >
-                  {tag}
-                  <X className="ml-1 h-3 w-3" />
-                </Badge>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+        {selectedTags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {selectedTags.map((tag) => (
+              <Badge
+                key={tag}
+                className="cursor-pointer"
+                style={{
+                  backgroundColor: `hsl(${getTagColor(tag)})`,
+                  borderColor: `hsl(${getTagColor(tag)})`,
+                  color: 'white',
+                }}
+                onClick={() => toggleTag(tag)}
+              >
+                {tag}
+                <X className="ml-1 h-3 w-3" />
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
 
       {agencies.length === 0 ? (
         <div className="text-center py-12">
