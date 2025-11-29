@@ -61,11 +61,23 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
         return;
       }
 
+      // Check if user email matches any contact in agency_contacts
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile?.email) {
+        setIsAgencyMember(false);
+        return;
+      }
+
       const { data, error } = await supabase
-        .from('agency_members')
+        .from('agency_contacts')
         .select('id')
         .eq('agency_id', agency.id)
-        .eq('user_id', user.id)
+        .eq('email', profile.email)
         .maybeSingle();
 
       setIsAgencyMember(!!data && !error);
