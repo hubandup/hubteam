@@ -27,21 +27,29 @@ export default function Agencies() {
 
   const fetchAgencies = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: agenciesData, error: agenciesError } = await supabase
         .from('agencies')
-        .select(`
-          *,
-          agency_contacts (
-            id,
-            first_name,
-            last_name,
-            email
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setAgencies(data || []);
+      if (agenciesError) throw agenciesError;
+
+      // Fetch contacts separately for each agency
+      const agenciesWithContacts = await Promise.all(
+        (agenciesData || []).map(async (agency) => {
+          const { data: contacts } = await supabase
+            .from('agency_contacts')
+            .select('id, first_name, last_name, email')
+            .eq('agency_id', agency.id);
+          
+          return {
+            ...agency,
+            agency_contacts: contacts || []
+          };
+        })
+      );
+
+      setAgencies(agenciesWithContacts);
     } catch (error) {
       console.error('Error fetching agencies:', error);
       toast.error('Erreur lors du chargement des agences');
