@@ -48,52 +48,9 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const userName = `${profile.first_name} ${profile.last_name}`.trim() || 'Utilisateur';
-    const appUrl = supabaseUrl.replace('.supabase.co', '');
+    const appUrl = link ? `${supabaseUrl.replace('.supabase.co', '')}${link}` : '';
 
-    // Build email content
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
-            .notification-box { background: white; padding: 20px; border-left: 4px solid #667eea; margin: 20px 0; border-radius: 4px; }
-            .button { display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-            .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>📬 Nouvelle notification</h1>
-            </div>
-            <div class="content">
-              <p>Bonjour ${userName},</p>
-              <div class="notification-box">
-                <h2 style="margin-top: 0; color: #667eea;">${title}</h2>
-                <p>${message}</p>
-              </div>
-              ${link ? `
-                <a href="${appUrl}${link}" class="button">Voir dans l'application</a>
-              ` : ''}
-              <p style="margin-top: 30px; font-size: 14px; color: #666;">
-                💡 <strong>Astuce :</strong> Activez les notifications push dans l'application pour recevoir vos notifications en temps réel !
-              </p>
-              <div class="footer">
-                <p>Vous recevez cet email car vous n'avez pas activé les notifications push.</p>
-                <p>Pour ne plus recevoir ces emails, activez les notifications push dans les paramètres de l'application.</p>
-              </div>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
-    // Send email via Brevo
+    // Send email via Brevo using template
     const brevoResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
@@ -103,8 +60,8 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         sender: {
-          name: 'Hub Team Notifications',
-          email: 'notifications@hubandup.com',
+          name: 'Hub & Up',
+          email: 'orga@hubandup.com',
         },
         to: [
           {
@@ -112,8 +69,14 @@ const handler = async (req: Request): Promise<Response> => {
             name: userName,
           },
         ],
-        subject: `🔔 ${title}`,
-        htmlContent: htmlContent,
+        templateId: 49,
+        params: {
+          userName: userName,
+          title: title,
+          message: message,
+          appUrl: appUrl,
+          hasLink: !!link,
+        },
       }),
     });
 
