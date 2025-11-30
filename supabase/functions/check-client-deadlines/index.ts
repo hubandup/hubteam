@@ -52,15 +52,30 @@ Deno.serve(async (req) => {
     console.log(`- ${approachingClients.length} approaching (within 24h)`);
 
     // Get all admin and team users to notify
-    const { data: usersToNotify, error: usersError } = await supabaseClient
+    const { data: userRoles, error: rolesError } = await supabaseClient
       .from('user_roles')
-      .select('user_id, profiles!inner(id, first_name, last_name)')
+      .select('user_id, role')
       .in('role', ['admin', 'team']);
 
-    if (usersError) {
-      console.error('Error fetching users:', usersError);
-      throw usersError;
+    if (rolesError) {
+      console.error('Error fetching user roles:', rolesError);
+      throw rolesError;
     }
+
+    // Get user details
+    const userIds = userRoles?.map(r => r.user_id) || [];
+    const { data: profiles, error: profilesError } = await supabaseClient
+      .from('profiles')
+      .select('id, first_name, last_name')
+      .in('id', userIds);
+
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+      throw profilesError;
+    }
+
+    // Create usersToNotify array with user_id
+    const usersToNotify = profiles?.map(p => ({ user_id: p.id })) || [];
 
     // Create notifications for overdue and approaching clients
     const notifications = [];
