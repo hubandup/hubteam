@@ -57,7 +57,7 @@ serve(async (req) => {
               userId: task.assigned_to,
               title: 'Deadline proche',
               body: `La tâche "${task.title}" arrive à échéance demain`,
-              url: `/projects/${task.project_id}`
+              url: `/project/${task.project_id}`
             }
           });
 
