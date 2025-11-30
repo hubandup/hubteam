@@ -29,51 +29,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Sending message notification to:", recipientEmail, "from:", senderName);
 
-    // Prepare the email content
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: 'Roboto', Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { text-align: center; padding: 20px 0; }
-            .logo { font-family: 'Instrument Sans', Arial, sans-serif; font-size: 32px; font-weight: bold; color: #014a94; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 8px; margin: 20px 0; }
-            .message-preview { background: white; padding: 15px; border-left: 4px solid #014a94; margin: 20px 0; }
-            .button { display: inline-block; padding: 12px 30px; background: #014a94; color: white !important; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-            .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <div class="logo">Hub Team</div>
-            </div>
-            
-            <div class="content">
-              <h2>Nouveau message de ${senderName}</h2>
-              <p>Bonjour ${recipientName},</p>
-              <p>Vous avez reçu un nouveau message :</p>
-              <div class="message-preview">
-                ${messagePreview}
-              </div>
-              <div style="text-align: center;">
-                <a href="${Deno.env.get('VITE_SUPABASE_URL')?.replace('supabase.co', 'lovable.app') || ''}/messages" class="button">Voir le message</a>
-              </div>
-            </div>
-            
-            <div class="footer">
-              <p>Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
-              <p>&copy; ${new Date().getFullYear()} Hub Team. Tous droits réservés.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
+    const messagesUrl = `${Deno.env.get('VITE_SUPABASE_URL')?.replace('supabase.co', 'lovable.app') || ''}/messages`;
 
-    // Send email via Brevo API
+    // Send email via Brevo API using template
     const brevoResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
@@ -82,7 +40,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         sender: {
-          name: "Hub Team",
+          name: "Hub & Up",
           email: "orga@hubandup.com",
         },
         to: [
@@ -91,8 +49,13 @@ const handler = async (req: Request): Promise<Response> => {
             name: recipientName,
           },
         ],
-        subject: `Nouveau message de ${senderName}`,
-        htmlContent: htmlContent,
+        templateId: 48,
+        params: {
+          senderName: senderName,
+          recipientName: recipientName,
+          messagePreview: messagePreview,
+          messagesUrl: messagesUrl,
+        },
       }),
     });
 
