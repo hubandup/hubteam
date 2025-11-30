@@ -48,7 +48,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const userName = `${profile.first_name} ${profile.last_name}`.trim() || 'Utilisateur';
-    const appUrl = link ? `${supabaseUrl.replace('.supabase.co', '')}${link}` : '';
+    const appUrl = link ? `https://hubandup.org${link}` : '';
 
     // Send email via Brevo using template
     const brevoResponse = await fetch('https://api.brevo.com/v3/smtp/email', {

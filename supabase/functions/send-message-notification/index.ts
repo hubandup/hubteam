@@ -29,7 +29,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Sending message notification to:", recipientEmail, "from:", senderName);
 
-    const messagesUrl = `${Deno.env.get('VITE_SUPABASE_URL')?.replace('supabase.co', 'lovable.app') || ''}/messages`;
+    const messagesUrl = 'https://hubandup.org/messages';
 
     // Send email via Brevo API using template
     const brevoResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
