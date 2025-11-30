@@ -181,9 +181,37 @@ Deno.serve(async (req) => {
           link: `/project/${newProject.id}`,
         }))
 
-        await supabaseClient
+        const { error: notifError } = await supabaseClient
           .from('notifications')
           .insert(notifications)
+
+        if (notifError) {
+          console.error('Error creating notifications:', notifError);
+        } else {
+          console.log(`Created ${notifications.length} notifications`);
+
+          // Send email notifications via Brevo
+          for (const notification of notifications) {
+            try {
+              const { error: emailError } = await supabaseClient.functions.invoke('send-notification-email', {
+                body: {
+                  userId: notification.user_id,
+                  title: notification.title,
+                  message: notification.message,
+                  link: notification.link,
+                }
+              });
+
+              if (emailError) {
+                console.error(`Error sending email to ${notification.user_id}:`, emailError);
+              } else {
+                console.log(`Email sent to ${notification.user_id}`);
+              }
+            } catch (emailErr) {
+              console.error('Failed to invoke email function:', emailErr);
+            }
+          }
+        }
       }
 
       createdProjects++
