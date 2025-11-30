@@ -29,7 +29,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Utiliser le template Brevo ID 47 avec des données de test
     const emailPayload = {
       sender: {
-        name: "Hub Team",
+        name: "Hub & Up",
         email: "orga@hubandup.com",
       },
       to: [{ email }],
