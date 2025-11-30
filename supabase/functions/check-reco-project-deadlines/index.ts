@@ -120,21 +120,25 @@ Deno.serve(async (req) => {
       }
 
       // Send email notifications via Brevo
-      try {
-        const { error: emailError } = await supabaseClient.functions.invoke('send-notification-email', {
-          body: {
-            userIds: eligibleUserIds,
-            title: 'Rappel : Étape de projet',
-            message: notificationMessage,
-            projectId: step.project_id,
-          }
-        });
+      for (const userId of eligibleUserIds) {
+        try {
+          const { error: emailError } = await supabaseClient.functions.invoke('send-notification-email', {
+            body: {
+              userId: userId,
+              title: 'Rappel : Étape de projet',
+              message: notificationMessage,
+              link: `/project/${step.project_id}`,
+            }
+          });
 
-        if (emailError) {
-          console.error('Error sending email notifications:', emailError);
+          if (emailError) {
+            console.error(`Error sending email to ${userId}:`, emailError);
+          } else {
+            console.log(`Email sent to ${userId}`);
+          }
+        } catch (emailErr) {
+          console.error('Failed to invoke email function:', emailErr);
         }
-      } catch (emailErr) {
-        console.error('Failed to invoke email function:', emailErr);
       }
 
       // Mark notification as sent
