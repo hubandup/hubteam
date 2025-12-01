@@ -6,16 +6,16 @@ const corsHeaders = {
 const FACTURATION_PRO_API_URL = 'https://www.facturation.pro';
 
 interface FacturationProQuote {
-  id: string;
-  customer_id: string;
+  id: number;
+  customer_id: number;
   customer_short_name: string;
   quote_ref: string;
   title: string;
   quote_status: number;
-  total: number;
+  total: string;
   internal_note: string;
   quote_date: string;
-  accepted_at: string | null;
+  accepted_date?: string;
 }
 
 Deno.serve(async (req) => {
@@ -50,28 +50,30 @@ Deno.serve(async (req) => {
     }
 
     const quotesData = await quotesResponse.json();
-    const allQuotes = quotesData.items || [];
+    const allQuotes = Array.isArray(quotesData) ? quotesData : quotesData.quotes || [];
+
+    console.log(`Found ${allQuotes.length} total quotes`);
 
     // Filter validated quotes (status 1) and sort by validation date
     const validatedQuotes = allQuotes
       .filter((quote: FacturationProQuote) => quote.quote_status === 1)
       .sort((a: FacturationProQuote, b: FacturationProQuote) => {
-        const dateA = a.accepted_at ? new Date(a.accepted_at).getTime() : 0;
-        const dateB = b.accepted_at ? new Date(b.accepted_at).getTime() : 0;
+        const dateA = a.accepted_date ? new Date(a.accepted_date).getTime() : 0;
+        const dateB = b.accepted_date ? new Date(b.accepted_date).getTime() : 0;
         return dateB - dateA; // Most recent first
       })
       .slice(0, 30) // Get only the last 30
       .map((quote: FacturationProQuote) => {
-        const montantHT = parseFloat(quote.total.toString()) || 0;
+        const montantHT = parseFloat(quote.total) || 0;
         const montantHA = parseFloat(quote.internal_note || '0') || 0;
         const margeEuro = montantHA - montantHT;
         const margePercent = montantHT > 0 ? (margeEuro / montantHT) * 100 : 0;
 
         return {
-          client: quote.customer_short_name,
-          quoteRef: quote.quote_ref,
-          title: quote.title,
-          validationDate: quote.accepted_at,
+          client: quote.customer_short_name || 'Client inconnu',
+          quoteRef: quote.quote_ref || '-',
+          title: quote.title || 'Sans titre',
+          validationDate: quote.accepted_date || null,
           montantHT,
           montantHA,
           margeEuro,
