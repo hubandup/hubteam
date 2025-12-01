@@ -51,6 +51,11 @@ name = "check-reco-project-deadlines"
 schedule = "0 * * * *"  # Every hour
 function = "check-reco-project-deadlines"
 
+[[edge_runtime.cron.jobs]]
+name = "send-notification-digest"
+schedule = "0 */6 * * *"  # Every 6 hours
+function = "send-notification-digest"
+
 [functions.sync-facturation-pro-clients]
 verify_jwt = false
 
@@ -71,4 +76,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.sync-agency-to-webflow]
+verify_jwt = false
+
+[functions.send-notification-digest]
 verify_jwt = false
