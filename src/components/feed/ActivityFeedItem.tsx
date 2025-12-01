@@ -289,12 +289,8 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
     ? `${activity.profiles.first_name[0]}${activity.profiles.last_name[0]}`
     : isSystemActivity ? 'H&U' : '?';
   
-  // For system activities, use client logo if available (for clients or projects), otherwise Hub & Up logo
-  const avatarUrl = isSystemActivity && 
-    ((activity.entity_type === 'clients' && activity.new_values?.logo_url) ||
-     (activity.entity_type === 'projects' && activity.new_values?.client_logo_url))
-    ? (activity.entity_type === 'clients' ? activity.new_values.logo_url : activity.new_values.client_logo_url)
-    : isSystemActivity
+  // For system activities, always use Hub & Up logo
+  const avatarUrl = isSystemActivity
     ? logoHubUp
     : activity.profiles?.avatar_url;
   
@@ -335,10 +331,10 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
           )}
 
           {/* Display entity image if available */}
-          {activity.new_values?.logo_url && (
+          {(activity.new_values?.logo_url || activity.new_values?.client_logo_url) && (
             <div className="mt-2 mb-2">
               <img 
-                src={activity.new_values.logo_url} 
+                src={activity.new_values?.client_logo_url || activity.new_values.logo_url} 
                 alt="Entity image"
                 className="rounded-lg max-h-48 object-cover"
               />
