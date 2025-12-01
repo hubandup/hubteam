@@ -191,6 +191,7 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
         follow_up_date: client.follow_up_date ? new Date(client.follow_up_date) : undefined,
         last_contact: client.last_contact ? new Date(client.last_contact) : undefined,
         kanban_stage: client.kanban_stage,
+        main_contact_id: client.main_contact_id || '',
         linkedin_connected: client.linkedin_connected ?? false,
       });
       setLogoPreview(client.logo_url || null);
