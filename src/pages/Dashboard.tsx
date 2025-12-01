@@ -2,6 +2,14 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Users, UserCheck, FolderKanban, CheckSquare, Euro, Loader2, RefreshCw } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -38,6 +46,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState<string | null>(null);
+  const [validatedQuotes, setValidatedQuotes] = useState<any[]>([]);
+  const [isLoadingQuotes, setIsLoadingQuotes] = useState(false);
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -55,6 +65,7 @@ export default function Dashboard() {
     if (!isAdmin) return;
     
     fetchDashboardData();
+    fetchValidatedQuotes();
 
     // Subscribe to realtime changes for projects, tasks, and clients
     const projectsChannel = supabase
@@ -478,6 +489,22 @@ export default function Dashboard() {
       toast.error('Erreur lors du chargement du tableau de bord');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchValidatedQuotes = async () => {
+    setIsLoadingQuotes(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-validated-quotes');
+      if (error) throw error;
+      if (data?.quotes) {
+        setValidatedQuotes(data.quotes);
+      }
+    } catch (error) {
+      console.error('Error fetching validated quotes:', error);
+      toast.error('Erreur lors du chargement des devis validés');
+    } finally {
+      setIsLoadingQuotes(false);
     }
   };
 
@@ -1063,6 +1090,74 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Validated Quotes Table */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>30 Derniers Projets Validés</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoadingQuotes ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : validatedQuotes.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">Aucun devis validé</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Client</TableHead>
+                    <TableHead>N° de devis</TableHead>
+                    <TableHead>Objet du devis</TableHead>
+                    <TableHead>Date de validation</TableHead>
+                    <TableHead className="text-right">Montant HT</TableHead>
+                    <TableHead className="text-right">Montant HA</TableHead>
+                    <TableHead className="text-right">Marge €</TableHead>
+                    <TableHead className="text-right">Marge %</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {validatedQuotes.map((quote, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{quote.client}</TableCell>
+                      <TableCell>{quote.quoteRef}</TableCell>
+                      <TableCell className="max-w-xs truncate">{quote.title}</TableCell>
+                      <TableCell>
+                        {quote.validationDate
+                          ? new Date(quote.validationDate).toLocaleDateString('fr-FR')
+                          : '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {quote.montantHT.toLocaleString('fr-FR', {
+                          style: 'currency',
+                          currency: 'EUR',
+                        })}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {quote.montantHA.toLocaleString('fr-FR', {
+                          style: 'currency',
+                          currency: 'EUR',
+                        })}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {quote.margeEuro.toLocaleString('fr-FR', {
+                          style: 'currency',
+                          currency: 'EUR',
+                        })}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {quote.margePercent.toFixed(2)}%
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
