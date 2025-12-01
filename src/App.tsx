@@ -10,6 +10,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Layout } from "./components/Layout";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
+import Finances from "./pages/Finances";
 import Feed from "./pages/Feed";
 import Notes from "./pages/Notes";
 import CRM from "./pages/CRM";
@@ -69,6 +70,7 @@ const App = () => {
             <Route path="/" element={<ProtectedRoute><Layout><PWARedirect><Home /></PWARedirect></Layout></ProtectedRoute>} />
             <Route path="/home" element={<ProtectedRoute><Layout><PWARedirect><Home /></PWARedirect></Layout></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Layout><PWARedirect><Dashboard /></PWARedirect></Layout></ProtectedRoute>} />
+            <Route path="/finances" element={<ProtectedRoute><Layout><PWARedirect><Finances /></PWARedirect></Layout></ProtectedRoute>} />
             <Route path="/feed" element={<ProtectedRoute><Layout><Feed /></Layout></ProtectedRoute>} />
             <Route path="/notes" element={<ProtectedRoute><Layout><Notes /></Layout></ProtectedRoute>} />
             <Route path="/crm" element={<ProtectedRoute><Layout><CRM /></Layout></ProtectedRoute>} />

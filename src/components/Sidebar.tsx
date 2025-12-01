@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, MessageSquare, History, HelpCircle, Rss } from 'lucide-react';
+import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, MessageSquare, History, HelpCircle, Rss, Euro } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -69,6 +69,7 @@ export function Sidebar() {
     ...(role === 'client' && clientId ? [{ title: 'Ma fiche client', url: `/client/${clientId}`, icon: Users, module: 'crm' as const, matchParent: true, isClientItem: true }] : []),
     { title: 'Feed', url: '/feed', icon: Rss, module: 'dashboard' as const },
     { title: 'Activité', url: '/dashboard', icon: LayoutDashboard, module: 'dashboard' as const },
+    { title: 'Finances', url: '/finances', icon: Euro, module: 'dashboard' as const, adminOnly: true },
     { title: 'CRM', url: '/crm', icon: Users, module: 'crm' as const, matchParent: true },
     { title: 'Prospection', url: '/prospection', icon: ListTodo, module: 'crm' as const, hideForAgency: true },
     { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const, matchParent: true },
@@ -97,6 +98,7 @@ export function Sidebar() {
             <SidebarMenu>
               {mainItems
                 .filter(item => item.title !== 'Activité' || role === 'admin')
+                .filter(item => !(item as any).adminOnly || role === 'admin')
                 .filter(item => item.title !== 'CRM' || role !== 'client')
                 .filter(item => !item.hideForClient || role !== 'client')
                 .filter(item => !item.hideForAgency || role !== 'agency')
