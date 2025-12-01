@@ -481,6 +481,22 @@ export default function Dashboard() {
     }
   };
 
+  // Color palette for charts - harmonious and theme-consistent
+  const chartColors = [
+    'hsl(210, 60%, 55%)',  // Blue
+    'hsl(160, 55%, 50%)',  // Teal
+    'hsl(280, 50%, 60%)',  // Purple
+    'hsl(30, 65%, 55%)',   // Orange
+    'hsl(340, 55%, 60%)',  // Pink
+    'hsl(180, 50%, 50%)',  // Cyan
+    'hsl(45, 60%, 55%)',   // Yellow
+    'hsl(120, 45%, 50%)',  // Green
+  ];
+
+  const getChartColor = (index: number) => {
+    return chartColors[index % chartColors.length];
+  };
+
   // Format user name to initial
   const formatUserName = (fullName: string) => {
     const parts = fullName.split(' ');
@@ -790,7 +806,7 @@ export default function Dashboard() {
                   {projectsByUser.map((entry, index) => (
                     <Cell 
                       key={`cell-${index}`} 
-                      fill={`hsl(${(index * 360) / projectsByUser.length}, 70%, 50%)`}
+                      fill={getChartColor(index)}
                     />
                   ))}
                 </Pie>
@@ -835,7 +851,7 @@ export default function Dashboard() {
                   {tasksByUser.map((entry, index) => (
                     <Cell 
                       key={`cell-${index}`} 
-                      fill={`hsl(${180 + (index * 360) / tasksByUser.length}, 70%, 50%)`}
+                      fill={getChartColor(index)}
                     />
                   ))}
                 </Pie>
@@ -881,7 +897,7 @@ export default function Dashboard() {
                   {taskCompletionByUser.map((entry, index) => (
                     <Cell 
                       key={`cell-${index}`} 
-                      fill={`hsl(${240 + (index * 360) / taskCompletionByUser.length}, 70%, 50%)`}
+                      fill={getChartColor(index)}
                     />
                   ))}
                 </Pie>
