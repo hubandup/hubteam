@@ -68,7 +68,7 @@ export function Sidebar() {
     { title: 'Accueil', url: '/', icon: Home, module: 'dashboard' as const },
     ...(role === 'client' && clientId ? [{ title: 'Ma fiche client', url: `/client/${clientId}`, icon: Users, module: 'crm' as const, matchParent: true, isClientItem: true }] : []),
     { title: 'Feed', url: '/feed', icon: Rss, module: 'dashboard' as const },
-    { title: 'Tableau de bord', url: '/dashboard', icon: LayoutDashboard, module: 'dashboard' as const },
+    { title: 'Activité', url: '/dashboard', icon: LayoutDashboard, module: 'dashboard' as const },
     { title: 'CRM', url: '/crm', icon: Users, module: 'crm' as const, matchParent: true },
     { title: 'Prospection', url: '/prospection', icon: ListTodo, module: 'crm' as const, hideForAgency: true },
     { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const, matchParent: true },
@@ -96,7 +96,7 @@ export function Sidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems
-                .filter(item => item.title !== 'Tableau de bord' || role === 'admin')
+                .filter(item => item.title !== 'Activité' || role === 'admin')
                 .filter(item => item.title !== 'CRM' || role !== 'client')
                 .filter(item => !item.hideForClient || role !== 'client')
                 .filter(item => !item.hideForAgency || role !== 'agency')
