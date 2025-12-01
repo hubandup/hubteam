@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, UserCheck, FolderKanban, CheckSquare, Euro, Loader2 } from 'lucide-react';
+import { Users, UserCheck, FolderKanban, CheckSquare, Euro, Loader2, RefreshCw } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useUserRole } from '@/hooks/useUserRole';
+import { Button } from '@/components/ui/button';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ export default function Dashboard() {
   const [tasksByUser, setTasksByUser] = useState<any[]>([]);
   const [taskCompletionByUser, setTaskCompletionByUser] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -465,6 +467,31 @@ export default function Dashboard() {
     }
   };
 
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    toast.info('Synchronisation Facturation.PRO en cours...');
+    
+    try {
+      // Sync clients
+      const { error: clientsError } = await supabase.functions.invoke('sync-facturation-pro-clients');
+      if (clientsError) throw new Error(`Erreur clients: ${clientsError.message}`);
+      
+      // Sync invoices
+      const { error: invoicesError } = await supabase.functions.invoke('sync-facturation-pro-invoices');
+      if (invoicesError) throw new Error(`Erreur factures: ${invoicesError.message}`);
+      
+      toast.success('Synchronisation Facturation.PRO terminée avec succès');
+      
+      // Refresh dashboard data
+      fetchDashboardData();
+    } catch (error) {
+      console.error('Sync error:', error);
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la synchronisation');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   if (loading || permissionsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -486,9 +513,21 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Tableau de bord</h1>
-        <p className="text-muted-foreground">Vue d'ensemble de votre activité</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Tableau de bord</h1>
+          <p className="text-muted-foreground">Vue d'ensemble de votre activité</p>
+        </div>
+        <Button
+          onClick={handleManualSync}
+          disabled={isSyncing}
+          variant="outline"
+          size="sm"
+          className="gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+          {isSyncing ? 'Synchronisation...' : 'Sync Facturation.PRO'}
+        </Button>
       </div>
 
       {/* Role & Permissions Indicator */}
