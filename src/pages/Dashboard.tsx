@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Users, UserCheck, FolderKanban, CheckSquare, Euro, Loader2, RefreshCw, TrendingUp } from 'lucide-react';
+import { Users, UserCheck, FolderKanban, CheckSquare, Loader2, RefreshCw } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -46,8 +46,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState<string | null>(null);
-  const [validatedQuotes, setValidatedQuotes] = useState<any[]>([]);
-  const [isLoadingQuotes, setIsLoadingQuotes] = useState(false);
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -58,7 +56,6 @@ export default function Dashboard() {
     
     if (isAdmin) {
       fetchDashboardData();
-      fetchValidatedQuotes();
     }
   }, [isAdmin, roleLoading, navigate]);
 
@@ -490,22 +487,6 @@ export default function Dashboard() {
     }
   };
 
-  const fetchValidatedQuotes = async () => {
-    setIsLoadingQuotes(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('fetch-validated-quotes');
-      if (error) throw error;
-      if (data?.quotes) {
-        setValidatedQuotes(data.quotes);
-      }
-    } catch (error) {
-      console.error('Error fetching validated quotes:', error);
-      toast.error('Erreur lors du chargement des devis validés');
-    } finally {
-      setIsLoadingQuotes(false);
-    }
-  };
-
   // Color palette for charts - harmonious and theme-consistent
   const chartColors = [
     'hsl(210, 60%, 55%)',  // Blue
@@ -651,7 +632,7 @@ export default function Dashboard() {
       <RolePermissionsIndicator />
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Leads</CardTitle>
@@ -693,32 +674,6 @@ export default function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.tasksInProgress}</div>
             <p className="text-xs text-muted-foreground">À réaliser</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">CA Année Fiscale</CardTitle>
-            <Euro className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalRevenue.toLocaleString('fr-FR')} €</div>
-            <p className="text-xs text-muted-foreground">Avril - Mars</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Marge moyenne</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {validatedQuotes.length > 0 
-                ? `${(validatedQuotes.reduce((sum, q) => sum + q.margePercent, 0) / validatedQuotes.length).toFixed(1)}%`
-                : '-'}
-            </div>
-            <p className="text-xs text-muted-foreground">30 derniers devis</p>
           </CardContent>
         </Card>
       </div>
@@ -1103,68 +1058,6 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Validated Quotes Table */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>30 Derniers Projets Validés</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoadingQuotes ? (
-            <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : validatedQuotes.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">Aucun devis validé</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Client</TableHead>
-                    <TableHead>N° de devis</TableHead>
-                    <TableHead>Objet du devis</TableHead>
-                    <TableHead className="text-right">Montant HT</TableHead>
-                    <TableHead className="text-right">Montant HA</TableHead>
-                    <TableHead className="text-right">Marge €</TableHead>
-                    <TableHead className="text-right">Marge %</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {validatedQuotes.map((quote, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{quote.client}</TableCell>
-                      <TableCell>{quote.quoteRef}</TableCell>
-                      <TableCell className="max-w-xs truncate">{quote.title}</TableCell>
-                      <TableCell className="text-right">
-                        {quote.montantHT.toLocaleString('fr-FR', {
-                          style: 'currency',
-                          currency: 'EUR',
-                        })}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {quote.montantHA.toLocaleString('fr-FR', {
-                          style: 'currency',
-                          currency: 'EUR',
-                        })}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {quote.margeEuro.toLocaleString('fr-FR', {
-                          style: 'currency',
-                          currency: 'EUR',
-                        })}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {quote.margePercent.toFixed(2)}%
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
             </div>
           )}
         </CardContent>
