@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
 import { startOfWeek, endOfWeek, eachDayOfInterval, format, isSameDay, isWithinInterval } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -13,7 +12,14 @@ interface Task {
   end_date: string | null;
   priority: string;
   status: string;
+  assigned_to: string | null;
+  project_id: string | null;
+  profiles?: {
+    first_name: string;
+    last_name: string;
+  };
   projects?: {
+    id: string;
     name: string;
   };
 }
@@ -41,7 +47,10 @@ export function WeeklySchedule() {
           end_date,
           priority,
           status,
+          assigned_to,
+          project_id,
           projects (
+            id,
             name
           )
         `)
@@ -49,6 +58,19 @@ export function WeeklySchedule() {
         .or(`start_date.gte.${format(weekStart, 'yyyy-MM-dd')},end_date.lte.${format(weekEnd, 'yyyy-MM-dd')}`);
 
       if (error) throw error;
+
+      // Fetch user profiles for assigned tasks
+      const assignedUserIds = [...new Set(tasks?.map(t => t.assigned_to).filter(Boolean))] as string[];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', assignedUserIds);
+
+      // Map profiles to tasks
+      const tasksWithProfiles = tasks?.map(task => ({
+        ...task,
+        profiles: profiles?.find(p => p.id === task.assigned_to)
+      }));
 
       // Organiser les tâches par jour de la semaine
       const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd })
@@ -60,7 +82,7 @@ export function WeeklySchedule() {
         const dayKey = format(day, 'yyyy-MM-dd');
         organized[dayKey] = [];
 
-        tasks?.forEach(task => {
+        tasksWithProfiles?.forEach(task => {
           if (!task.start_date && !task.end_date) return;
 
           const taskStart = task.start_date ? new Date(task.start_date) : null;
@@ -86,30 +108,14 @@ export function WeeklySchedule() {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'bg-destructive text-destructive-foreground';
-      case 'medium':
-        return 'bg-warning text-warning-foreground';
-      case 'low':
-        return 'bg-muted text-muted-foreground';
-      default:
-        return 'bg-secondary text-secondary-foreground';
-    }
-  };
-
-  const getPriorityLabel = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'Haute';
-      case 'medium':
-        return 'Moyenne';
-      case 'low':
-        return 'Basse';
-      default:
-        return priority;
-    }
+  const formatTaskInfo = (task: Task) => {
+    const userName = task.profiles 
+      ? `${task.profiles.first_name} ${task.profiles.last_name}`
+      : 'Non assigné';
+    const taskTitle = task.title;
+    const projectName = task.projects?.name || 'Aucun projet';
+    
+    return `${userName} : ${taskTitle} → ${projectName}`;
   };
 
   if (loading) {
@@ -162,17 +168,11 @@ export function WeeklySchedule() {
                     {tasks.map(task => (
                       <div
                         key={task.id}
-                        className="p-2 rounded-md bg-background border border-border space-y-1"
+                        className="p-2 rounded-md bg-background border border-border"
                       >
-                        <p className="text-xs font-medium line-clamp-2">{task.title}</p>
-                        {task.projects && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {task.projects.name}
-                          </p>
-                        )}
-                        <Badge className={`text-xs ${getPriorityColor(task.priority)}`}>
-                          {getPriorityLabel(task.priority)}
-                        </Badge>
+                        <p className="text-xs font-medium line-clamp-2">
+                          {formatTaskInfo(task)}
+                        </p>
                       </div>
                     ))}
                   </div>
