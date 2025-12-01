@@ -75,7 +75,6 @@ export function Sidebar() {
     { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const, matchParent: true },
     { title: 'Projets', url: '/projects', icon: FolderKanban, module: 'projects' as const, matchParent: true },
     { title: 'Messages', url: '/messages', icon: MessageSquare, module: 'messages' as const },
-    { title: 'Activité', url: '/activity', icon: History, module: 'dashboard' as const, hideForClient: true, hideForAgency: true },
     { title: 'FAQ', url: '/faq', icon: HelpCircle, module: 'faq' as const },
   ];
 
@@ -100,8 +99,7 @@ export function Sidebar() {
                 .filter(item => item.title !== 'Activité' || role === 'admin')
                 .filter(item => !(item as any).adminOnly || role === 'admin')
                 .filter(item => item.title !== 'CRM' || role !== 'client')
-                .filter(item => !item.hideForClient || role !== 'client')
-                .filter(item => !item.hideForAgency || role !== 'agency')
+                .filter(item => !(item as any).hideForAgency || role !== 'agency')
                 .map((item) =>
                   canRead(item.module) ? (
                     <SidebarMenuItem key={item.title}>
