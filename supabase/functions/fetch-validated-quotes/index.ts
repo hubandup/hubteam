@@ -9,6 +9,7 @@ interface FacturationProQuote {
   id: number;
   customer_id: number;
   customer_short_name: string;
+  customer_identity: string;
   quote_ref: string;
   title: string;
   quote_status: number;
@@ -80,6 +81,7 @@ Deno.serve(async (req) => {
         const margePercent = montantHT > 0 ? (margeEuro / montantHT) * 100 : 0;
 
         console.log('Quote mapping:', {
+          customer_identity: quote.customer_identity,
           customer_short_name: quote.customer_short_name,
           quote_ref: quote.quote_ref,
           title: quote.title,
@@ -89,7 +91,7 @@ Deno.serve(async (req) => {
         });
 
         return {
-          client: quote.customer_short_name || 'Client inconnu',
+          client: quote.customer_identity || quote.customer_short_name || 'Client inconnu',
           quoteRef: quote.quote_ref || '-',
           title: quote.title || 'Sans titre',
           montantHT,
