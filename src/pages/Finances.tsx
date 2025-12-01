@@ -105,6 +105,20 @@ export default function Finances() {
       }
 
       setRevenueData(revenueByMonth);
+
+      // Get last sync timestamp from clients
+      const { data: lastSyncedClient } = await supabase
+        .from('clients')
+        .select('facturation_pro_synced_at')
+        .not('facturation_pro_synced_at', 'is', null)
+        .order('facturation_pro_synced_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (lastSyncedClient?.facturation_pro_synced_at) {
+        setLastSyncTimestamp(lastSyncedClient.facturation_pro_synced_at);
+      }
+
       setLoading(false);
     } catch (error) {
       console.error('Error fetching financial data:', error);
