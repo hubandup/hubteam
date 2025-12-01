@@ -174,9 +174,9 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
       }
 
       if (activity.entity_type === 'projects') {
-        const projectName = activity.new_values?.name;
-        if (projectName) {
-          return `a créé le projet ${projectName}`;
+        const clientName = activity.new_values?.client_name;
+        if (clientName) {
+          return `a créé un projet ${clientName} :`;
         }
         return 'a créé un nouveau projet';
       }
@@ -289,9 +289,11 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
     ? `${activity.profiles.first_name[0]}${activity.profiles.last_name[0]}`
     : isSystemActivity ? 'H&U' : '?';
   
-  // For system activities on clients, use client logo if available, otherwise Hub & Up logo
-  const avatarUrl = isSystemActivity && activity.entity_type === 'clients' && activity.new_values?.logo_url
-    ? activity.new_values.logo_url
+  // For system activities, use client logo if available (for clients or projects), otherwise Hub & Up logo
+  const avatarUrl = isSystemActivity && 
+    ((activity.entity_type === 'clients' && activity.new_values?.logo_url) ||
+     (activity.entity_type === 'projects' && activity.new_values?.client_logo_url))
+    ? (activity.entity_type === 'clients' ? activity.new_values.logo_url : activity.new_values.client_logo_url)
     : isSystemActivity
     ? logoHubUp
     : activity.profiles?.avatar_url;
