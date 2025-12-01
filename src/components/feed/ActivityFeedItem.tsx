@@ -1,5 +1,6 @@
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { 
   FileText, 
   CheckSquare, 
@@ -16,6 +17,7 @@ import { fr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { ActivityStats } from './ActivityStats';
 import { cn } from '@/lib/utils';
+import logoHubUp from '@/assets/logo-hub-up.png';
 
 interface ActivityFeedItemProps {
   activity: {
@@ -287,9 +289,9 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
     ? `${activity.profiles.first_name[0]}${activity.profiles.last_name[0]}`
     : isSystemActivity ? 'H&U' : '?';
   
-  // For system activities on clients, use client logo if available
-  const avatarUrl = isSystemActivity && activity.entity_type === 'clients' && activity.new_values?.logo_url
-    ? activity.new_values.logo_url
+  // For system activities, use Hub & Up logo
+  const avatarUrl = isSystemActivity
+    ? logoHubUp
     : activity.profiles?.avatar_url;
   
   const clickable = !!getEntityLink();
@@ -309,8 +311,13 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
         </Avatar>
 
         <div className="flex-1 min-w-0">
-          <div className="mb-1">
+          <div className="mb-1 flex items-center gap-2">
             <span className="font-medium text-sm md:text-base">{userName}</span>
+            {isSystemActivity && (
+              <Badge variant="outline" className="text-xs">
+                Système
+              </Badge>
+            )}
           </div>
           
           <div className="text-muted-foreground text-xs md:text-sm mb-1">
