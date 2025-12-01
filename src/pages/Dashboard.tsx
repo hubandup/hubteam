@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Users, UserCheck, FolderKanban, CheckSquare, Euro, Loader2, RefreshCw } from 'lucide-react';
+import { Users, UserCheck, FolderKanban, CheckSquare, Euro, Loader2, RefreshCw, TrendingUp } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -651,7 +651,7 @@ export default function Dashboard() {
       <RolePermissionsIndicator />
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Leads</CardTitle>
@@ -704,6 +704,21 @@ export default function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalRevenue.toLocaleString('fr-FR')} €</div>
             <p className="text-xs text-muted-foreground">Avril - Mars</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Marge moyenne</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {validatedQuotes.length > 0 
+                ? `${(validatedQuotes.reduce((sum, q) => sum + q.margePercent, 0) / validatedQuotes.length).toFixed(1)}%`
+                : '-'}
+            </div>
+            <p className="text-xs text-muted-foreground">30 derniers devis</p>
           </CardContent>
         </Card>
       </div>
