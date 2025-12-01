@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Users, UserCheck, FolderKanban, CheckSquare, Loader2, RefreshCw } from 'lucide-react';
+import { Users, UserCheck, FolderKanban, CheckSquare, Loader2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -21,7 +21,6 @@ import { useNavigate } from 'react-router-dom';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useUserRole } from '@/hooks/useUserRole';
-import { Button } from '@/components/ui/button';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -44,8 +43,6 @@ export default function Dashboard() {
   const [tasksByUser, setTasksByUser] = useState<any[]>([]);
   const [taskCompletionByUser, setTaskCompletionByUser] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSyncTimestamp, setLastSyncTimestamp] = useState<string | null>(null);
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -466,19 +463,6 @@ export default function Dashboard() {
       setProjectsByUser(projectsByUserData);
       setTasksByUser(tasksByUserData);
       setTaskCompletionByUser(taskCompletionByUserData);
-
-      // Get last sync timestamp from clients
-      const { data: lastSyncedClient } = await supabase
-        .from('clients')
-        .select('facturation_pro_synced_at')
-        .not('facturation_pro_synced_at', 'is', null)
-        .order('facturation_pro_synced_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (lastSyncedClient?.facturation_pro_synced_at) {
-        setLastSyncTimestamp(lastSyncedClient.facturation_pro_synced_at);
-      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast.error('Erreur lors du chargement du tableau de bord');
@@ -558,31 +542,6 @@ export default function Dashboard() {
     );
   };
 
-  const handleManualSync = async () => {
-    setIsSyncing(true);
-    toast.info('Synchronisation Facturation.PRO en cours...');
-    
-    try {
-      // Sync clients
-      const { error: clientsError } = await supabase.functions.invoke('sync-facturation-pro-clients');
-      if (clientsError) throw new Error(`Erreur clients: ${clientsError.message}`);
-      
-      // Sync invoices
-      const { error: invoicesError } = await supabase.functions.invoke('sync-facturation-pro-invoices');
-      if (invoicesError) throw new Error(`Erreur factures: ${invoicesError.message}`);
-      
-      toast.success('Synchronisation Facturation.PRO terminée avec succès');
-      
-      // Refresh dashboard data
-      fetchDashboardData();
-    } catch (error) {
-      console.error('Sync error:', error);
-      toast.error(error instanceof Error ? error.message : 'Erreur lors de la synchronisation');
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
   if (loading || permissionsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -604,28 +563,9 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Activité</h1>
-          <p className="text-muted-foreground">Vue d'ensemble de votre activité</p>
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          <Button
-            onClick={handleManualSync}
-            disabled={isSyncing}
-            variant="outline"
-            size="sm"
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-            {isSyncing ? 'Synchronisation...' : 'Sync Facturation.PRO'}
-          </Button>
-          {lastSyncTimestamp && (
-            <p className="text-xs text-muted-foreground">
-              Dernière sync: {format(new Date(lastSyncTimestamp), 'dd/MM/yyyy à HH:mm', { locale: fr })}
-            </p>
-          )}
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">Activité</h1>
+        <p className="text-muted-foreground">Vue d'ensemble de votre activité</p>
       </div>
 
       {/* Role & Permissions Indicator */}
@@ -984,11 +924,6 @@ export default function Dashboard() {
                       <p className="text-sm font-medium truncate uppercase">{client.company}</p>
                       <p className="text-xs text-muted-foreground">
                         {client.first_name} {client.last_name}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-success">
-                        {(client.revenue_current_year || 0).toLocaleString('fr-FR')} €
                       </p>
                     </div>
                   </div>
