@@ -28,10 +28,12 @@ Deno.serve(async (req) => {
     const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
     // Get clients with follow-up dates that are overdue or approaching (within 24h)
+    // Only select clients that have a main_contact_id defined
     const { data: clientsToCheck, error: fetchError } = await supabaseClient
       .from('clients')
-      .select('id, company, first_name, last_name, follow_up_date')
+      .select('id, company, first_name, last_name, follow_up_date, main_contact_id')
       .not('follow_up_date', 'is', null)
+      .not('main_contact_id', 'is', null)
       .lt('follow_up_date', tomorrow.toISOString());
 
     if (fetchError) {
@@ -51,100 +53,74 @@ Deno.serve(async (req) => {
     console.log(`- ${overdueClients.length} overdue`);
     console.log(`- ${approachingClients.length} approaching (within 24h)`);
 
-    // Get all admin and team users to notify
-    const { data: userRoles, error: rolesError } = await supabaseClient
-      .from('user_roles')
-      .select('user_id, role')
-      .in('role', ['admin', 'team']);
-
-    if (rolesError) {
-      console.error('Error fetching user roles:', rolesError);
-      throw rolesError;
-    }
-
-    // Get user details
-    const userIds = userRoles?.map(r => r.user_id) || [];
-    const { data: profiles, error: profilesError } = await supabaseClient
-      .from('profiles')
-      .select('id, first_name, last_name')
-      .in('id', userIds);
-
-    if (profilesError) {
-      console.error('Error fetching profiles:', profilesError);
-      throw profilesError;
-    }
-
-    // Create usersToNotify array with user_id
-    const usersToNotify = profiles?.map(p => ({ user_id: p.id })) || [];
-
     // Create notifications for overdue and approaching clients
     const notifications = [];
     
     // Process overdue clients
     for (const client of overdueClients) {
-      for (const user of usersToNotify || []) {
-        // Check user preferences
-        const { data: prefs } = await supabaseClient
-          .from('notification_preferences')
-          .select('deadline_approaching')
-          .eq('user_id', user.user_id)
-          .single();
+      if (!client.main_contact_id) continue; // Skip if no main contact
 
-        if (prefs?.deadline_approaching === false) continue;
+      // Check user preferences
+      const { data: prefs } = await supabaseClient
+        .from('notification_preferences')
+        .select('deadline_approaching')
+        .eq('user_id', client.main_contact_id)
+        .single();
 
-        // Check if notification already exists (avoid duplicates within 12h)
-        const { data: existingNotif } = await supabaseClient
-          .from('notifications')
-          .select('id')
-          .eq('user_id', user.user_id)
-          .eq('type', 'deadline_overdue')
-          .ilike('message', `%${client.company}%`)
-          .gt('created_at', new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString())
-          .limit(1);
+      if (prefs?.deadline_approaching === false) continue;
 
-        if (!existingNotif || existingNotif.length === 0) {
-          notifications.push({
-            user_id: user.user_id,
-            type: 'deadline_overdue',
-            title: 'Prochaine échéance dépassée',
-            message: `L'échéance pour ${client.company} (${client.first_name} ${client.last_name}) est dépassée`,
-            link: `/client/${client.id}`,
-          });
-        }
+      // Check if notification already exists (avoid duplicates within 12h)
+      const { data: existingNotif } = await supabaseClient
+        .from('notifications')
+        .select('id')
+        .eq('user_id', client.main_contact_id)
+        .eq('type', 'deadline_overdue')
+        .ilike('message', `%${client.company}%`)
+        .gt('created_at', new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString())
+        .limit(1);
+
+      if (!existingNotif || existingNotif.length === 0) {
+        notifications.push({
+          user_id: client.main_contact_id,
+          type: 'deadline_overdue',
+          title: 'Prochaine échéance dépassée',
+          message: `L'échéance pour ${client.company} (${client.first_name} ${client.last_name}) est dépassée`,
+          link: `/client/${client.id}`,
+        });
       }
     }
 
     // Process approaching clients (within 24h)
     for (const client of approachingClients) {
-      for (const user of usersToNotify || []) {
-        // Check user preferences
-        const { data: prefs } = await supabaseClient
-          .from('notification_preferences')
-          .select('deadline_approaching')
-          .eq('user_id', user.user_id)
-          .single();
+      if (!client.main_contact_id) continue; // Skip if no main contact
 
-        if (prefs?.deadline_approaching === false) continue;
+      // Check user preferences
+      const { data: prefs } = await supabaseClient
+        .from('notification_preferences')
+        .select('deadline_approaching')
+        .eq('user_id', client.main_contact_id)
+        .single();
 
-        // Check if notification already exists (avoid duplicates within 12h)
-        const { data: existingNotif } = await supabaseClient
-          .from('notifications')
-          .select('id')
-          .eq('user_id', user.user_id)
-          .eq('type', 'deadline_approaching')
-          .ilike('message', `%${client.company}%`)
-          .gt('created_at', new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString())
-          .limit(1);
+      if (prefs?.deadline_approaching === false) continue;
 
-        if (!existingNotif || existingNotif.length === 0) {
-          notifications.push({
-            user_id: user.user_id,
-            type: 'deadline_approaching',
-            title: 'Prochaine échéance approchante',
-            message: `L'échéance pour ${client.company} (${client.first_name} ${client.last_name}) est prévue dans moins de 24h`,
-            link: `/client/${client.id}`,
-          });
-        }
+      // Check if notification already exists (avoid duplicates within 12h)
+      const { data: existingNotif } = await supabaseClient
+        .from('notifications')
+        .select('id')
+        .eq('user_id', client.main_contact_id)
+        .eq('type', 'deadline_approaching')
+        .ilike('message', `%${client.company}%`)
+        .gt('created_at', new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString())
+        .limit(1);
+
+      if (!existingNotif || existingNotif.length === 0) {
+        notifications.push({
+          user_id: client.main_contact_id,
+          type: 'deadline_approaching',
+          title: 'Prochaine échéance approchante',
+          message: `L'échéance pour ${client.company} (${client.first_name} ${client.last_name}) est prévue dans moins de 24h`,
+          link: `/client/${client.id}`,
+        });
       }
     }
 
@@ -158,29 +134,7 @@ Deno.serve(async (req) => {
         throw insertError;
       }
 
-      console.log(`Created ${notifications.length} notifications`);
-
-      // Send email notifications via Brevo
-      for (const notification of notifications) {
-        try {
-          const { error: emailError } = await supabaseClient.functions.invoke('send-notification-email', {
-            body: {
-              userId: notification.user_id,
-              title: notification.title,
-              message: notification.message,
-              link: notification.link,
-            }
-          });
-
-          if (emailError) {
-            console.error(`Error sending email to ${notification.user_id}:`, emailError);
-          } else {
-            console.log(`Email sent to ${notification.user_id}`);
-          }
-        } catch (emailErr) {
-          console.error('Failed to invoke email function:', emailErr);
-        }
-      }
+      console.log(`Created ${notifications.length} notifications for main contacts only`);
     }
 
     return new Response(
