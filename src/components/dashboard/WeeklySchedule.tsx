@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
@@ -25,6 +26,7 @@ interface Task {
 }
 
 export function WeeklySchedule() {
+  const navigate = useNavigate();
   const [tasksByDay, setTasksByDay] = useState<Record<string, Task[]>>({});
   const [loading, setLoading] = useState(true);
 
@@ -118,6 +120,12 @@ export function WeeklySchedule() {
     return `${userName} : ${taskTitle} → ${projectName}`;
   };
 
+  const handleTaskClick = (task: Task) => {
+    if (task.project_id) {
+      navigate(`/project/${task.project_id}`);
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -168,7 +176,8 @@ export function WeeklySchedule() {
                     {tasks.map(task => (
                       <div
                         key={task.id}
-                        className="p-2 rounded-md bg-background border border-border"
+                        onClick={() => handleTaskClick(task)}
+                        className="p-2 rounded-md bg-background border border-border cursor-pointer hover:bg-accent transition-colors"
                       >
                         <p className="text-xs font-medium line-clamp-2">
                           {formatTaskInfo(task)}
