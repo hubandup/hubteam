@@ -76,14 +76,22 @@ Deno.serve(async (req) => {
       .map((quote: FacturationProQuote) => {
         const montantHT = parseFloat(quote.total) || 0;
         const montantHA = parseFloat(quote.internal_note || '0') || 0;
-        const margeEuro = montantHA - montantHT;
+        const margeEuro = montantHT - montantHA;
         const margePercent = montantHT > 0 ? (margeEuro / montantHT) * 100 : 0;
+
+        console.log('Quote mapping:', {
+          customer_short_name: quote.customer_short_name,
+          quote_ref: quote.quote_ref,
+          title: quote.title,
+          montantHT,
+          montantHA,
+          margeEuro
+        });
 
         return {
           client: quote.customer_short_name || 'Client inconnu',
           quoteRef: quote.quote_ref || '-',
           title: quote.title || 'Sans titre',
-          validationDate: quote.accepted_date || null,
           montantHT,
           montantHA,
           margeEuro,
