@@ -85,7 +85,7 @@ serve(async (req) => {
       console.log(`Sending digest to ${profile.email} with ${notifications.length} notifications`);
 
       // Send digest email via Brevo
-      // Template ID 50 should be created in Brevo for notification digest
+      // Template ID 51 configured in Brevo for notification digest
       const brevoResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
         method: "POST",
         headers: {
@@ -101,7 +101,7 @@ serve(async (req) => {
             email: profile.email,
             name: `${profile.first_name} ${profile.last_name}`,
           }],
-          templateId: 50, // Template to be created in Brevo
+          templateId: 51,
           params: {
             userName: profile.first_name,
             notificationCount: notifications.length,
