@@ -275,12 +275,23 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
 
   const ActionIcon = getActionIcon();
   const EntityIcon = getEntityIcon();
+  
+  // Detect system activity (Facturation.PRO sync, etc.)
+  const isSystemActivity = !activity.user_id || activity.user_id === '00000000-0000-0000-0000-000000000000';
+  
   const userName = activity.profiles 
     ? `${activity.profiles.first_name} ${activity.profiles.last_name}`
-    : 'Utilisateur inconnu';
+    : isSystemActivity ? 'Hub & Up' : 'Utilisateur inconnu';
+  
   const userInitials = activity.profiles
     ? `${activity.profiles.first_name[0]}${activity.profiles.last_name[0]}`
-    : '?';
+    : isSystemActivity ? 'H&U' : '?';
+  
+  // For system activities on clients, use client logo if available
+  const avatarUrl = isSystemActivity && activity.entity_type === 'clients' && activity.new_values?.logo_url
+    ? activity.new_values.logo_url
+    : activity.profiles?.avatar_url;
+  
   const clickable = !!getEntityLink();
 
   return (
@@ -293,7 +304,7 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
     >
       <div className="flex items-start gap-2 md:gap-3">
         <Avatar className="h-8 w-8 md:h-10 md:w-10">
-          <AvatarImage src={activity.profiles?.avatar_url || undefined} />
+          <AvatarImage src={avatarUrl || undefined} />
           <AvatarFallback>{userInitials}</AvatarFallback>
         </Avatar>
 
