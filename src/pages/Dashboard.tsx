@@ -497,11 +497,15 @@ export default function Dashboard() {
     return chartColors[index % chartColors.length];
   };
 
-  // Format user name to initial
+  // Format user name to initial with proper casing
   const formatUserName = (fullName: string) => {
-    const parts = fullName.split(' ');
+    const parts = fullName.trim().split(' ');
     if (parts.length >= 2) {
-      return `${parts[0].charAt(0)}. ${parts.slice(1).join(' ')}`;
+      const firstInitial = parts[0].charAt(0).toUpperCase();
+      const lastName = parts.slice(1)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(' ');
+      return `${firstInitial}. ${lastName}`;
     }
     return fullName;
   };
