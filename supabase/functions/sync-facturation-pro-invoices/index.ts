@@ -128,27 +128,14 @@ Deno.serve(async (req) => {
       syncedInvoices++
     }
 
-    // Step 4: Calculate and update revenue for each client
-    const { data: clientsWithInvoices } = await supabaseClient
-      .from('clients')
-      .select('id')
+    // Step 4: Trigger revenue calculation for all clients
+    console.log('Invoking calculate-client-revenue function...')
+    const { error: revenueError } = await supabaseClient.functions.invoke('calculate-client-revenue')
     
-    if (clientsWithInvoices) {
-      for (const client of clientsWithInvoices) {
-        const { data: invoices } = await supabaseClient
-          .from('invoices')
-          .select('amount')
-          .eq('client_id', client.id)
-          .eq('status', 'paid')
-        
-        const revenue = invoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0
-        
-        await supabaseClient
-          .from('clients')
-          .update({ revenue })
-          .eq('id', client.id)
-      }
-      console.log(`Updated revenue for ${clientsWithInvoices.length} clients`)
+    if (revenueError) {
+      console.error('Failed to calculate client revenue:', revenueError)
+    } else {
+      console.log('Revenue calculation completed successfully')
     }
 
     console.log(`Synced ${syncedInvoices} invoices, skipped ${skippedInvoices}`)
