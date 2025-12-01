@@ -10,13 +10,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Euro, Loader2, RefreshCw, TrendingUp } from 'lucide-react';
+import { Euro, Loader2, RefreshCw, TrendingUp, FileDown } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function Finances() {
   const navigate = useNavigate();
@@ -175,6 +177,101 @@ export default function Finances() {
     }
   };
 
+  const handleExportPDF = () => {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      
+      // Title
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Rapport Financier', pageWidth / 2, 20, { align: 'center' });
+      
+      // Date
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}`, pageWidth / 2, 28, { align: 'center' });
+      
+      // CA Année Fiscale
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Chiffre d\'Affaires Année Fiscale', 14, 40);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${totalRevenue.toLocaleString('fr-FR')} €`, 14, 48);
+      
+      // Marge Moyenne
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Marge Moyenne (30 derniers projets)', 14, 60);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(validatedQuotes.length > 0 ? `${averageMargin.toFixed(1)}%` : 'N/A', 14, 68);
+      
+      // Top 5 Clients
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Top 5 Clients', 14, 80);
+      
+      const clientsData = topClients.map((client, index) => [
+        `${index + 1}`,
+        client.company,
+        `${client.first_name} ${client.last_name}`,
+        `${(client.revenue_current_year || 0).toLocaleString('fr-FR')} €`
+      ]);
+      
+      autoTable(doc, {
+        startY: 85,
+        head: [['#', 'Société', 'Contact', 'CA']],
+        body: clientsData,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 10 },
+      });
+      
+      // 30 Derniers Projets Validés
+      const finalY = (doc as any).lastAutoTable.finalY || 120;
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('30 Derniers Projets Validés', 14, finalY + 10);
+      
+      const quotesData = validatedQuotes.slice(0, 30).map((quote) => [
+        quote.client,
+        quote.quoteRef,
+        quote.title.length > 30 ? quote.title.substring(0, 30) + '...' : quote.title,
+        `${quote.montantHT.toLocaleString('fr-FR')} €`,
+        `${quote.montantHA.toLocaleString('fr-FR')} €`,
+        `${quote.margeEuro.toLocaleString('fr-FR')} €`,
+        `${quote.margePercent.toFixed(1)}%`
+      ]);
+      
+      autoTable(doc, {
+        startY: finalY + 15,
+        head: [['Client', 'Réf', 'Titre', 'HT', 'HA', 'Marge €', 'Marge %']],
+        body: quotesData,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 8 },
+        columnStyles: {
+          0: { cellWidth: 25 },
+          1: { cellWidth: 20 },
+          2: { cellWidth: 40 },
+          3: { cellWidth: 25 },
+          4: { cellWidth: 25 },
+          5: { cellWidth: 25 },
+          6: { cellWidth: 20 },
+        },
+      });
+      
+      // Save PDF
+      doc.save(`rapport-financier-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      toast.success('Rapport PDF généré avec succès');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Erreur lors de la génération du PDF');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -196,16 +293,27 @@ export default function Finances() {
           <p className="text-muted-foreground">Vue d'ensemble financière</p>
         </div>
         <div className="flex flex-col items-end gap-2">
-          <Button
-            onClick={handleManualSync}
-            disabled={isSyncing}
-            variant="outline"
-            size="sm"
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-            {isSyncing ? 'Synchronisation...' : 'Sync Facturation.PRO'}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleExportPDF}
+              variant="default"
+              size="sm"
+              className="gap-2"
+            >
+              <FileDown className="h-4 w-4" />
+              Exporter PDF
+            </Button>
+            <Button
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              {isSyncing ? 'Synchronisation...' : 'Sync Facturation.PRO'}
+            </Button>
+          </div>
           {lastSyncTimestamp && (
             <p className="text-xs text-muted-foreground">
               Dernière sync: {format(new Date(lastSyncTimestamp), 'dd/MM/yyyy à HH:mm', { locale: fr })}
