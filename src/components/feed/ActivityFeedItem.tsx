@@ -297,16 +297,6 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
     : isSystemActivity
     ? logoHubUp
     : activity.profiles?.avatar_url;
-
-  // Debug logging for system activities
-  if (isSystemActivity && activity.entity_type === 'projects') {
-    console.log('System activity for project:', {
-      entity_type: activity.entity_type,
-      client_name: activity.new_values?.client_name,
-      client_logo_url: activity.new_values?.client_logo_url,
-      avatarUrl
-    });
-  }
   
   const clickable = !!getEntityLink();
 
