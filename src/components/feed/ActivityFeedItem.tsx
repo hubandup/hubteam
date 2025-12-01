@@ -289,8 +289,10 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
     ? `${activity.profiles.first_name[0]}${activity.profiles.last_name[0]}`
     : isSystemActivity ? 'H&U' : '?';
   
-  // For system activities, use Hub & Up logo
-  const avatarUrl = isSystemActivity
+  // For system activities on clients, use client logo if available, otherwise Hub & Up logo
+  const avatarUrl = isSystemActivity && activity.entity_type === 'clients' && activity.new_values?.logo_url
+    ? activity.new_values.logo_url
+    : isSystemActivity
     ? logoHubUp
     : activity.profiles?.avatar_url;
   
