@@ -30,6 +30,12 @@ Deno.serve(async (req) => {
     const apiId = Deno.env.get('FACTURATION_PRO_API_ID');
     const firmId = Deno.env.get('FACTURATION_PRO_FIRM_ID');
 
+    console.log('API credentials check:', { 
+      hasApiKey: !!apiKey, 
+      hasApiId: !!apiId, 
+      hasFirmId: !!firmId 
+    });
+
     if (!apiKey || !apiId || !firmId) {
       throw new Error('Missing Facturation.PRO API credentials');
     }
@@ -45,8 +51,12 @@ Deno.serve(async (req) => {
       }
     );
 
+    console.log('Facturation.PRO API response status:', quotesResponse.status);
+
     if (!quotesResponse.ok) {
-      throw new Error(`Facturation.PRO API error: ${quotesResponse.statusText}`);
+      const errorText = await quotesResponse.text();
+      console.error('Facturation.PRO API error response:', errorText);
+      throw new Error(`Facturation.PRO API error: ${quotesResponse.status} ${quotesResponse.statusText}`);
     }
 
     const quotesData = await quotesResponse.json();
