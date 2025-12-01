@@ -37,6 +37,7 @@ export default function Dashboard() {
   const [taskCompletionByUser, setTaskCompletionByUser] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTimestamp, setLastSyncTimestamp] = useState<string | null>(null);
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -459,6 +460,19 @@ export default function Dashboard() {
       setProjectsByUser(projectsByUserData);
       setTasksByUser(tasksByUserData);
       setTaskCompletionByUser(taskCompletionByUserData);
+
+      // Get last sync timestamp from clients
+      const { data: lastSyncedClient } = await supabase
+        .from('clients')
+        .select('facturation_pro_synced_at')
+        .not('facturation_pro_synced_at', 'is', null)
+        .order('facturation_pro_synced_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (lastSyncedClient?.facturation_pro_synced_at) {
+        setLastSyncTimestamp(lastSyncedClient.facturation_pro_synced_at);
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast.error('Erreur lors du chargement du tableau de bord');
@@ -518,16 +532,23 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold text-foreground">Tableau de bord</h1>
           <p className="text-muted-foreground">Vue d'ensemble de votre activité</p>
         </div>
-        <Button
-          onClick={handleManualSync}
-          disabled={isSyncing}
-          variant="outline"
-          size="sm"
-          className="gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-          {isSyncing ? 'Synchronisation...' : 'Sync Facturation.PRO'}
-        </Button>
+        <div className="flex flex-col items-end gap-2">
+          <Button
+            onClick={handleManualSync}
+            disabled={isSyncing}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Synchronisation...' : 'Sync Facturation.PRO'}
+          </Button>
+          {lastSyncTimestamp && (
+            <p className="text-xs text-muted-foreground">
+              Dernière sync: {format(new Date(lastSyncTimestamp), 'dd/MM/yyyy à HH:mm', { locale: fr })}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Role & Permissions Indicator */}
