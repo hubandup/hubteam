@@ -58,14 +58,12 @@ export default function Dashboard() {
     
     if (isAdmin) {
       fetchDashboardData();
+      fetchValidatedQuotes();
     }
   }, [isAdmin, roleLoading, navigate]);
 
   useEffect(() => {
     if (!isAdmin) return;
-    
-    fetchDashboardData();
-    fetchValidatedQuotes();
 
     // Subscribe to realtime changes for projects, tasks, and clients
     const projectsChannel = supabase
@@ -84,7 +82,7 @@ export default function Dashboard() {
     return () => {
       supabase.removeChannel(projectsChannel);
     };
-  }, []);
+  }, [isAdmin]);
 
   const fetchDashboardData = async () => {
     try {
