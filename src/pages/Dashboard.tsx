@@ -1113,7 +1113,6 @@ export default function Dashboard() {
                     <TableHead>Client</TableHead>
                     <TableHead>N° de devis</TableHead>
                     <TableHead>Objet du devis</TableHead>
-                    <TableHead>Date de validation</TableHead>
                     <TableHead className="text-right">Montant HT</TableHead>
                     <TableHead className="text-right">Montant HA</TableHead>
                     <TableHead className="text-right">Marge €</TableHead>
@@ -1126,11 +1125,6 @@ export default function Dashboard() {
                       <TableCell className="font-medium">{quote.client}</TableCell>
                       <TableCell>{quote.quoteRef}</TableCell>
                       <TableCell className="max-w-xs truncate">{quote.title}</TableCell>
-                      <TableCell>
-                        {quote.validationDate
-                          ? new Date(quote.validationDate).toLocaleDateString('fr-FR')
-                          : '-'}
-                      </TableCell>
                       <TableCell className="text-right">
                         {quote.montantHT.toLocaleString('fr-FR', {
                           style: 'currency',
