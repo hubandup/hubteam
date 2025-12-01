@@ -481,6 +481,57 @@ export default function Dashboard() {
     }
   };
 
+  // Format user name to initial
+  const formatUserName = (fullName: string) => {
+    const parts = fullName.split(' ');
+    if (parts.length >= 2) {
+      return `${parts[0].charAt(0)}. ${parts.slice(1).join(' ')}`;
+    }
+    return fullName;
+  };
+
+  // Custom label renderer for pie charts with left alignment
+  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent }: any) => {
+    const RADIAN = Math.PI / 180;
+    const radius = outerRadius + 20;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="hsl(var(--foreground))" 
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central"
+        style={{ fontSize: '11px' }}
+      >
+        {`${name} ${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
+
+  // Custom label renderer for completion rate with percentage value
+  const renderCompletionLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, value }: any) => {
+    const RADIAN = Math.PI / 180;
+    const radius = outerRadius + 20;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="hsl(var(--foreground))" 
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central"
+        style={{ fontSize: '11px' }}
+      >
+        {`${name} ${value.toFixed(0)}%`}
+      </text>
+    );
+  };
+
   const handleManualSync = async () => {
     setIsSyncing(true);
     toast.info('Synchronisation Facturation.PRO en cours...');
@@ -718,21 +769,21 @@ export default function Dashboard() {
         {/* Projects by User */}
         <Card>
           <CardHeader>
-            <CardTitle>Projets par utilisateur</CardTitle>
+            <CardTitle className="text-base">Projets par utilisateur</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
                   data={projectsByUser.map((item, index) => ({
-                    name: item.name,
+                    name: formatUserName(item.name),
                     value: item.projets,
                   }))}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
+                  labelLine={true}
+                  label={renderCustomLabel}
+                  outerRadius={70}
                   fill="hsl(var(--primary))"
                   dataKey="value"
                 >
@@ -747,10 +798,14 @@ export default function Dashboard() {
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--background))',
                     border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px'
+                    borderRadius: '6px',
+                    fontSize: '12px'
                   }}
                 />
-                <Legend />
+                <Legend 
+                  wrapperStyle={{ fontSize: '11px' }}
+                  iconSize={10}
+                />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -759,21 +814,21 @@ export default function Dashboard() {
         {/* Tasks by User */}
         <Card>
           <CardHeader>
-            <CardTitle>Tâches par utilisateur</CardTitle>
+            <CardTitle className="text-base">Tâches par utilisateur</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
                   data={tasksByUser.map((item, index) => ({
-                    name: item.name,
+                    name: formatUserName(item.name),
                     value: item.taches,
                   }))}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
+                  labelLine={true}
+                  label={renderCustomLabel}
+                  outerRadius={70}
                   fill="hsl(var(--secondary))"
                   dataKey="value"
                 >
@@ -788,10 +843,14 @@ export default function Dashboard() {
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--background))',
                     border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px'
+                    borderRadius: '6px',
+                    fontSize: '12px'
                   }}
                 />
-                <Legend />
+                <Legend 
+                  wrapperStyle={{ fontSize: '11px' }}
+                  iconSize={10}
+                />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -800,21 +859,22 @@ export default function Dashboard() {
         {/* Task Completion Rate by User */}
         <Card>
           <CardHeader>
-            <CardTitle>Taux de complétion des tâches</CardTitle>
+            <CardTitle className="text-base">Taux de complétion des tâches</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
                   data={taskCompletionByUser.map((item, index) => ({
-                    name: item.name,
+                    name: formatUserName(item.name),
+                    originalName: item.name,
                     value: item.taux,
                   }))}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
-                  label={({ name, value }) => `${name}: ${value.toFixed(0)}%`}
-                  outerRadius={80}
+                  labelLine={true}
+                  label={renderCompletionLabel}
+                  outerRadius={70}
                   fill="hsl(var(--primary))"
                   dataKey="value"
                 >
@@ -829,17 +889,21 @@ export default function Dashboard() {
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--background))',
                     border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px'
+                    borderRadius: '6px',
+                    fontSize: '12px'
                   }}
                   formatter={(value: any, name: any, props: any) => {
-                    const item = taskCompletionByUser.find(d => d.name === props.payload.name);
+                    const item = taskCompletionByUser.find(d => d.name === props.payload.originalName);
                     if (item) {
                       return [`${value.toFixed(0)}% (${item.terminees}/${item.total})`, 'Taux de complétion'];
                     }
                     return [value, name];
                   }}
                 />
-                <Legend />
+                <Legend 
+                  wrapperStyle={{ fontSize: '11px' }}
+                  iconSize={10}
+                />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
