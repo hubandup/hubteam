@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useTasks } from '@/hooks/useTasks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
@@ -17,29 +18,25 @@ interface TaskDate {
 export function CalendarView() {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [taskDates, setTaskDates] = useState<Record<string, TaskDate>>({});
-  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  const { data: allTasks, isLoading } = useTasks();
 
   useEffect(() => {
-    fetchTaskDates();
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+    };
+    getUser();
   }, []);
 
-  const fetchTaskDates = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+  const taskDates = useMemo(() => {
+    if (!allTasks || !userId) return {};
+    
+    const dates: Record<string, TaskDate> = {};
 
-      const { data: tasks, error } = await supabase
-        .from('tasks')
-        .select('id, title, start_date, end_date, priority, project_id')
-        .eq('assigned_to', user.id)
-        .neq('status', 'done');
-
-      if (error) throw error;
-
-      const dates: Record<string, TaskDate> = {};
-
-      tasks?.forEach((task) => {
+    allTasks
+      .filter(task => task.assigned_to === userId && task.status !== 'done')
+      .forEach((task) => {
         if (task.end_date) {
           const dateKey = format(new Date(task.end_date), 'yyyy-MM-dd');
           if (!dates[dateKey]) {
@@ -55,13 +52,8 @@ export function CalendarView() {
         }
       });
 
-      setTaskDates(dates);
-    } catch (error) {
-      console.error('Error fetching task dates:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    return dates;
+  }, [allTasks, userId]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -84,7 +76,7 @@ export function CalendarView() {
   const selectedDateKey = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
   const selectedDateTasks = selectedDateKey ? taskDates[selectedDateKey] : null;
 
-  if (loading) {
+  if (isLoading || !userId) {
     return (
       <Card>
         <CardHeader>
@@ -127,7 +119,7 @@ export function CalendarView() {
               textDecorationColor: 'hsl(var(--primary))',
             },
           }}
-          className="rounded-md border pointer-events-auto"
+          className="rounded-md border w-full"
         />
 
         {selectedDate && (
