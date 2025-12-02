@@ -19,6 +19,9 @@ type AppModule =
   | 'agencies' 
   | 'projects' 
   | 'tasks' 
+  | 'feed'
+  | 'prospection'
+  | 'notes'
   | 'settings' 
   | 'settings_profile'
   | 'settings_security'
@@ -43,15 +46,16 @@ interface Permission {
 // Module groups with scope support
 const moduleGroups = [
   {
-    title: 'Tableau de bord',
+    title: 'Accueil',
     modules: [
-      { value: 'dashboard' as AppModule, label: 'Dashboard', hasScope: false, scopeOptions: [] as PermissionScope[] },
+      { value: 'dashboard' as AppModule, label: 'Page d\'accueil', hasScope: false, scopeOptions: [] as PermissionScope[], actionsOnly: ['read'] },
     ]
   },
   {
-    title: 'CRM',
+    title: 'CRM & Prospection',
     modules: [
-      { value: 'crm' as AppModule, label: 'CRM', hasScope: true, scopeOptions: ['all', 'limited'] as PermissionScope[] },
+      { value: 'crm' as AppModule, label: 'CRM (Clients)', hasScope: true, scopeOptions: ['all', 'limited'] as PermissionScope[] },
+      { value: 'prospection' as AppModule, label: 'Prospection', hasScope: true, scopeOptions: ['all', 'limited'] as PermissionScope[] },
     ]
   },
   {
@@ -61,41 +65,48 @@ const moduleGroups = [
     ]
   },
   {
-    title: 'Projets',
+    title: 'Projets & Tâches',
     modules: [
       { value: 'projects' as AppModule, label: 'Projets', hasScope: true, scopeOptions: ['all', 'limited'] as PermissionScope[] },
       { value: 'tasks' as AppModule, label: 'Tâches', hasScope: true, scopeOptions: ['all', 'limited'] as PermissionScope[] },
     ]
   },
   {
-    title: 'FAQ',
+    title: 'Communication',
     modules: [
-      { value: 'faq' as AppModule, label: 'FAQ', hasScope: true, scopeOptions: ['all', 'limited'] as PermissionScope[] },
+      { value: 'feed' as AppModule, label: 'Fil d\'actualité', hasScope: false, scopeOptions: [] as PermissionScope[] },
+      { value: 'messages' as AppModule, label: 'Messages directs', hasScope: false, scopeOptions: [] as PermissionScope[] },
     ]
   },
   {
-    title: 'Messagerie',
+    title: 'Notes & FAQ',
     modules: [
-      { value: 'messages' as AppModule, label: 'Messages', hasScope: false, scopeOptions: [] as PermissionScope[] },
+      { value: 'notes' as AppModule, label: 'Notes rapides', hasScope: false, scopeOptions: [] as PermissionScope[], actionsOnly: ['read', 'create', 'update', 'delete'] },
+      { value: 'faq' as AppModule, label: 'FAQ (Consultation)', hasScope: false, scopeOptions: [] as PermissionScope[], actionsOnly: ['read'] },
     ]
   },
   {
-    title: 'Activité',
+    title: 'Administration',
     modules: [
       { value: 'settings' as AppModule, label: 'Journal d\'activité', hasScope: false, scopeOptions: [] as PermissionScope[], actionsOnly: ['read'] },
     ]
   },
   {
-    title: 'Paramètres',
+    title: 'Paramètres utilisateur',
     modules: [
-      { value: 'settings_profile' as AppModule, label: 'Profil', hasScope: false, scopeOptions: [] as PermissionScope[] },
-      { value: 'settings_security' as AppModule, label: 'Sécurité', hasScope: false, scopeOptions: [] as PermissionScope[] },
-      { value: 'settings_notifications' as AppModule, label: 'Notifications', hasScope: false, scopeOptions: [] as PermissionScope[] },
-      { value: 'settings_users' as AppModule, label: 'Utilisateurs', hasScope: false, scopeOptions: [] as PermissionScope[] },
-      { value: 'settings_permissions' as AppModule, label: 'Permissions', hasScope: false, scopeOptions: [] as PermissionScope[] },
-      { value: 'settings_data' as AppModule, label: 'Données', hasScope: false, scopeOptions: [] as PermissionScope[] },
-      { value: 'settings_design' as AppModule, label: 'Design', hasScope: false, scopeOptions: [] as PermissionScope[] },
-      { value: 'settings_faq' as AppModule, label: 'FAQ Admin', hasScope: false, scopeOptions: [] as PermissionScope[] },
+      { value: 'settings_profile' as AppModule, label: 'Profil', hasScope: false, scopeOptions: [] as PermissionScope[], actionsOnly: ['read', 'update'] },
+      { value: 'settings_security' as AppModule, label: 'Sécurité', hasScope: false, scopeOptions: [] as PermissionScope[], actionsOnly: ['read', 'update'] },
+      { value: 'settings_notifications' as AppModule, label: 'Notifications', hasScope: false, scopeOptions: [] as PermissionScope[], actionsOnly: ['read', 'update'] },
+    ]
+  },
+  {
+    title: 'Paramètres administrateur',
+    modules: [
+      { value: 'settings_users' as AppModule, label: 'Gestion utilisateurs', hasScope: false, scopeOptions: [] as PermissionScope[] },
+      { value: 'settings_permissions' as AppModule, label: 'Gestion permissions', hasScope: false, scopeOptions: [] as PermissionScope[] },
+      { value: 'settings_data' as AppModule, label: 'Gestion données', hasScope: false, scopeOptions: [] as PermissionScope[] },
+      { value: 'settings_design' as AppModule, label: 'Personnalisation design', hasScope: false, scopeOptions: [] as PermissionScope[] },
+      { value: 'settings_faq' as AppModule, label: 'Gestion FAQ', hasScope: false, scopeOptions: [] as PermissionScope[] },
     ]
   },
 ];

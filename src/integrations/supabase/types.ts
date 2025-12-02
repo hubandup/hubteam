@@ -1768,6 +1768,9 @@ export type Database = {
         | "settings_data"
         | "settings_design"
         | "settings_faq"
+        | "feed"
+        | "prospection"
+        | "notes"
       app_role: "admin" | "team" | "client" | "agency"
       permission_action: "read" | "create" | "update" | "delete"
       permission_scope: "all" | "limited" | "own"
@@ -1920,6 +1923,9 @@ export const Constants = {
         "settings_data",
         "settings_design",
         "settings_faq",
+        "feed",
+        "prospection",
+        "notes",
       ],
       app_role: ["admin", "team", "client", "agency"],
       permission_action: ["read", "create", "update", "delete"],
