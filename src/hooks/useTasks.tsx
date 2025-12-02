@@ -20,9 +20,11 @@ interface Task {
     name: string;
     project_clients?: Array<{
       clients: {
+        id: string;
         company: string;
         first_name: string;
         last_name: string;
+        logo_url: string | null;
       };
     }>;
   };
@@ -42,9 +44,11 @@ async function fetchTasks() {
         name,
         project_clients (
           clients (
+            id,
             company,
             first_name,
-            last_name
+            last_name,
+            logo_url
           )
         )
       )
