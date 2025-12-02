@@ -154,15 +154,19 @@ export default function Dashboard() {
         })
         .filter((p: any) => p.totalTasks > 0);
 
-      // Fetch tasks in progress
-      const { data: tasks, error: tasksError } = await supabase
-        .from('tasks')
-        .select('id')
-        .eq('status', 'in_progress');
+      // Fetch tasks in progress (only from open projects)
+      let tasksInProgressCount = 0;
+      if (projectIds.length > 0) {
+        const { data: tasks, error: tasksError } = await supabase
+          .from('tasks')
+          .select('id')
+          .eq('status', 'in_progress')
+          .in('project_id', projectIds);
 
-      if (tasksError) throw tasksError;
+        if (tasksError) throw tasksError;
+        tasksInProgressCount = tasks?.length || 0;
+      }
 
-      // Fetch top 5 clients by revenue
       const { data: topClientsData, error: topClientsError } = await supabase
         .from('clients')
         .select('*')
@@ -259,7 +263,7 @@ export default function Dashboard() {
         leads,
         clients: activeClients,
         openProjects: projects?.length || 0,
-        tasksInProgress: tasks?.length || 0,
+        tasksInProgress: tasksInProgressCount,
         totalRevenue,
       });
 
@@ -329,7 +333,7 @@ export default function Dashboard() {
         { month: 'Sept', projets: 9, taches: 48, revenue: 48000 },
         { month: 'Oct', projets: 12, taches: 61, revenue: 61000 },
         { month: 'Nov', projets: 11, taches: 58, revenue: 58000 },
-        { month: 'Déc', projets: projects?.length || 0, taches: tasks?.length || 0, revenue: totalRevenue },
+        { month: 'Déc', projets: projects?.length || 0, taches: tasksInProgressCount, revenue: totalRevenue },
       ];
 
       // Fetch projects by user (team + admin)
@@ -456,7 +460,7 @@ export default function Dashboard() {
         leads,
         clients: activeClients,
         openProjects: projects?.length || 0,
-        tasksInProgress: tasks?.length || 0,
+        tasksInProgress: tasksInProgressCount,
         totalRevenue,
       });
 
