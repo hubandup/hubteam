@@ -34,7 +34,9 @@ serve(async (req) => {
         status,
         project_id,
         projects (
-          name
+          name,
+          status,
+          archived
         )
       `)
       .gte('end_date', tomorrow.toISOString().split('T')[0])
@@ -47,10 +49,19 @@ serve(async (req) => {
       throw tasksError;
     }
 
-    console.log(`Found ${tasks?.length || 0} tasks with approaching deadlines`);
+    // Filter out tasks from completed or archived projects
+    const filteredTasks = (tasks || []).filter((task: any) => {
+      const project = task.projects;
+      if (!project) return true; // Keep tasks without project
+      // Exclude if project is completed, done, cancelled, or archived
+      const completedStatuses = ['completed', 'done', 'cancelled'];
+      return !completedStatuses.includes(project.status) && !project.archived;
+    });
 
-    if (tasks && tasks.length > 0) {
-      const notificationPromises = tasks.map(async (task) => {
+    console.log(`Found ${filteredTasks.length} tasks with approaching deadlines (excluding completed projects)`);
+
+    if (filteredTasks.length > 0) {
+      const notificationPromises = filteredTasks.map(async (task: any) => {
         try {
           const { error: notifError } = await supabase.functions.invoke('send-push-notification', {
             body: {
@@ -77,8 +88,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        tasksChecked: tasks?.length || 0,
-        message: `Checked ${tasks?.length || 0} tasks with approaching deadlines`
+        tasksChecked: filteredTasks.length,
+        message: `Checked ${filteredTasks.length} tasks with approaching deadlines`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
