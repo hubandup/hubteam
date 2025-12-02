@@ -29,7 +29,7 @@ import { fr } from 'date-fns/locale';
 import { ProjectTeamTab } from '@/components/project-details/ProjectTeamTab';
 import { ProjectTasksTab } from '@/components/project-details/ProjectTasksTab';
 import { ProjectTasksNotebookTab } from '@/components/project-details/ProjectTasksNotebookTab';
-import { ProjectCommentsTab } from '@/components/project-details/ProjectCommentsTab';
+
 import { ClientKDriveTab } from '@/components/client-details/ClientKDriveTab';
 import { SelectClientDialog } from '@/components/project-details/SelectClientDialog';
 import { EditProjectInfoDialog } from '@/components/project-details/EditProjectInfoDialog';
@@ -52,7 +52,6 @@ export default function ProjectDetails() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [pendingTasksCount, setPendingTasksCount] = useState(0);
-  const [unreadCommentsCount, setUnreadCommentsCount] = useState(0);
 
   useEffect(() => {
     if (id) {
@@ -92,15 +91,6 @@ export default function ProjectDetails() {
       if (tasksError) throw tasksError;
       const pending = tasks?.filter(t => t.status !== 'done').length || 0;
       setPendingTasksCount(pending);
-
-      // For comments, we'll show total count as "unread" indicator
-      const { count: comments, error: commentsError } = await supabase
-        .from('task_comments')
-        .select('*', { count: 'exact', head: true })
-        .eq('project_id', id);
-
-      if (commentsError) throw commentsError;
-      setUnreadCommentsCount(comments || 0);
     } catch (error) {
       console.error('Error fetching badge counts:', error);
     }
@@ -348,9 +338,41 @@ export default function ProjectDetails() {
 
       {/* Tabs */}
       <ResponsiveTabs
-        defaultValue="info"
+        defaultValue="tasks"
         storageKey="project-tabs"
         tabs={[
+          {
+            value: 'tasks',
+            label: 'Tâches',
+            icon: <FileText className="h-4 w-4" />,
+            badge: pendingTasksCount,
+            badgeVariant: pendingTasksCount > 0 ? 'destructive' : undefined,
+            content: <ProjectTasksNotebookTab 
+              projectId={id!} 
+              onTasksChange={() => {
+                fetchProjectDetails();
+                fetchBadgeCounts();
+              }}
+            />
+          },
+          {
+            value: 'team',
+            label: 'Équipe',
+            icon: <Users className="h-4 w-4" />,
+            content: <ProjectTeamTab projectId={id!} />
+          },
+          {
+            value: 'kdrive',
+            label: 'kDrive',
+            icon: <ExternalLink className="h-4 w-4" />,
+            content: client ? (
+              <ClientKDriveTab clientId={client.id} />
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                Aucun client associé à ce projet
+              </div>
+            )
+          },
           {
             value: 'info',
             label: 'Informations',
@@ -444,62 +466,6 @@ export default function ProjectDetails() {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
-            )
-          },
-          {
-            value: 'tasks',
-            label: 'Tâches',
-            icon: <FileText className="h-4 w-4" />,
-            badge: pendingTasksCount,
-            badgeVariant: pendingTasksCount > 0 ? 'destructive' : undefined,
-            content: <ProjectTasksNotebookTab 
-              projectId={id!} 
-              onTasksChange={() => {
-                fetchProjectDetails();
-                fetchBadgeCounts();
-              }}
-            />
-          },
-          {
-            value: 'comments',
-            label: 'Commentaires',
-            icon: <MessageSquare className="h-4 w-4" />,
-            badge: unreadCommentsCount,
-            badgeVariant: unreadCommentsCount > 0 ? 'secondary' : undefined,
-            content: <ProjectCommentsTab projectId={id!} />
-          },
-          {
-            value: 'team',
-            label: 'Équipe',
-            icon: <Users className="h-4 w-4" />,
-            content: <ProjectTeamTab projectId={id!} />
-          },
-          {
-            value: 'kdrive',
-            label: 'KDrive',
-            icon: <FileText className="h-4 w-4" />,
-            content: project?.project_clients?.[0]?.clients?.id ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">
-                      {project.project_clients[0].clients.company}
-                    </span>
-                  </div>
-                  <Link to={`/client/${project.project_clients[0].clients.id}`}>
-                    <Button variant="outline" size="sm">
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Voir la fiche client
-                    </Button>
-                  </Link>
-                </div>
-                <ClientKDriveTab clientId={project.project_clients[0].clients.id} />
-              </div>
-            ) : (
-              <div className="flex items-center justify-center p-8 text-muted-foreground">
-                Ce projet n'a pas de client associé
               </div>
             )
           }
