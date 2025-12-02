@@ -20,6 +20,7 @@ interface Task {
   status: string;
   assigned_to: string | null;
   end_date: string | null;
+  comment_count?: number;
   profiles?: {
     id: string;
     first_name: string;
@@ -95,23 +96,31 @@ export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTas
 
       if (error) throw error;
 
-      // Fetch profile data separately for assigned users
-      const tasksWithProfiles = await Promise.all(
+      // Fetch profile data and comment counts separately for each task
+      const tasksWithProfilesAndCounts = await Promise.all(
         (data || []).map(async (task) => {
+          // Fetch profile if assigned
+          let profile = null;
           if (task.assigned_to) {
-            const { data: profile } = await supabase
+            const { data: profileData } = await supabase
               .from('profiles')
               .select('id, first_name, last_name, avatar_url')
               .eq('id', task.assigned_to)
               .single();
-            
-            return { ...task, profiles: profile };
+            profile = profileData;
           }
-          return { ...task, profiles: null };
+          
+          // Fetch comment count
+          const { count } = await supabase
+            .from('task_comments')
+            .select('*', { count: 'exact', head: true })
+            .eq('task_id', task.id);
+          
+          return { ...task, profiles: profile, comment_count: count || 0 };
         })
       );
 
-      setTasks(tasksWithProfiles);
+      setTasks(tasksWithProfilesAndCounts);
       onTasksChange?.();
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -327,6 +336,10 @@ export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTas
 
       setNewComment(prev => ({ ...prev, [taskId]: '' }));
       fetchTaskComments(taskId);
+      // Update comment count
+      setTasks(prev => prev.map(t => 
+        t.id === taskId ? { ...t, comment_count: (t.comment_count || 0) + 1 } : t
+      ));
       toast.success('Commentaire ajouté');
     } catch (error) {
       console.error('Error adding comment:', error);
@@ -459,14 +472,22 @@ export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTas
                   {/* Comments Toggle */}
                   <Button 
                     variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8"
+                    size="sm" 
+                    className="h-8 px-2 gap-1"
                     onClick={() => handleToggleComments(task.id)}
                   >
                     <MessageSquare className={cn(
                       "h-4 w-4",
                       expandedTaskId === task.id && "text-primary"
                     )} />
+                    {(task.comment_count || 0) > 0 && (
+                      <span className={cn(
+                        "text-xs font-medium",
+                        expandedTaskId === task.id ? "text-primary" : "text-muted-foreground"
+                      )}>
+                        {task.comment_count}
+                      </span>
+                    )}
                   </Button>
 
                   {/* Delete Task */}
