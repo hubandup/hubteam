@@ -31,21 +31,31 @@ interface DataItem {
   metadata?: string;
 }
 
+type DataCategory = 'crm' | 'agencies' | 'projects' | 'users' | 'tasks' | 'invoices' | 'meeting_notes' | 'posts';
+
 export function DataManagementTab() {
   const [crmData, setCrmData] = useState<DataItem[]>([]);
   const [agenciesData, setAgenciesData] = useState<DataItem[]>([]);
   const [projectsData, setProjectsData] = useState<DataItem[]>([]);
   const [usersData, setUsersData] = useState<DataItem[]>([]);
+  const [tasksData, setTasksData] = useState<DataItem[]>([]);
+  const [invoicesData, setInvoicesData] = useState<DataItem[]>([]);
+  const [meetingNotesData, setMeetingNotesData] = useState<DataItem[]>([]);
+  const [postsData, setPostsData] = useState<DataItem[]>([]);
   
   const [selectedCrm, setSelectedCrm] = useState<Set<string>>(new Set());
   const [selectedAgencies, setSelectedAgencies] = useState<Set<string>>(new Set());
   const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
+  const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set());
+  const [selectedMeetingNotes, setSelectedMeetingNotes] = useState<Set<string>>(new Set());
+  const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
   
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteCategory, setDeleteCategory] = useState<'crm' | 'agencies' | 'projects' | 'users' | null>(null);
+  const [deleteCategory, setDeleteCategory] = useState<DataCategory | null>(null);
 
   useEffect(() => {
     fetchAllData();
@@ -117,6 +127,70 @@ export function DataManagementTab() {
           metadata: p.email,
         }))
       );
+
+      // Fetch Tasks
+      const { data: tasks, error: tasksError } = await supabase
+        .from('tasks')
+        .select('id, title, status, priority')
+        .order('created_at', { ascending: false });
+
+      if (tasksError) throw tasksError;
+
+      setTasksData(
+        (tasks || []).map(t => ({
+          id: t.id,
+          display: t.title,
+          metadata: `${t.status} - Priorité: ${t.priority}`,
+        }))
+      );
+
+      // Fetch Invoices
+      const { data: invoices, error: invoicesError } = await supabase
+        .from('invoices')
+        .select('id, invoice_number, amount, status')
+        .order('created_at', { ascending: false });
+
+      if (invoicesError) throw invoicesError;
+
+      setInvoicesData(
+        (invoices || []).map(i => ({
+          id: i.id,
+          display: i.invoice_number,
+          metadata: `${i.amount}€ - ${i.status}`,
+        }))
+      );
+
+      // Fetch Meeting Notes
+      const { data: meetingNotes, error: meetingNotesError } = await supabase
+        .from('meeting_notes')
+        .select('id, title, meeting_date')
+        .order('created_at', { ascending: false });
+
+      if (meetingNotesError) throw meetingNotesError;
+
+      setMeetingNotesData(
+        (meetingNotes || []).map(m => ({
+          id: m.id,
+          display: m.title || 'Sans titre',
+          metadata: m.meeting_date ? new Date(m.meeting_date).toLocaleDateString() : 'Pas de date',
+        }))
+      );
+
+      // Fetch User Posts
+      const { data: posts, error: postsError } = await supabase
+        .from('user_posts')
+        .select('id, content, created_at')
+        .order('created_at', { ascending: false });
+
+      if (postsError) throw postsError;
+
+      setPostsData(
+        (posts || []).map(p => ({
+          id: p.id,
+          display: p.content.substring(0, 50) + (p.content.length > 50 ? '...' : ''),
+          metadata: new Date(p.created_at).toLocaleDateString(),
+        }))
+      );
     } catch (error: any) {
       console.error('Error fetching data:', error);
       toast.error('Erreur lors du chargement des données');
@@ -125,19 +199,27 @@ export function DataManagementTab() {
     }
   };
 
-  const handleSelectAll = (category: 'crm' | 'agencies' | 'projects' | 'users', checked: boolean) => {
-    const dataMap: Record<'crm' | 'agencies' | 'projects' | 'users', DataItem[]> = {
+  const handleSelectAll = (category: DataCategory, checked: boolean) => {
+    const dataMap: Record<DataCategory, DataItem[]> = {
       crm: crmData,
       agencies: agenciesData,
       projects: projectsData,
       users: usersData,
+      tasks: tasksData,
+      invoices: invoicesData,
+      meeting_notes: meetingNotesData,
+      posts: postsData,
     };
 
-    const setterMap: Record<'crm' | 'agencies' | 'projects' | 'users', React.Dispatch<React.SetStateAction<Set<string>>>> = {
+    const setterMap: Record<DataCategory, React.Dispatch<React.SetStateAction<Set<string>>>> = {
       crm: setSelectedCrm,
       agencies: setSelectedAgencies,
       projects: setSelectedProjects,
       users: setSelectedUsers,
+      tasks: setSelectedTasks,
+      invoices: setSelectedInvoices,
+      meeting_notes: setSelectedMeetingNotes,
+      posts: setSelectedPosts,
     };
 
     if (checked) {
@@ -147,19 +229,27 @@ export function DataManagementTab() {
     }
   };
 
-  const handleSelectItem = (category: 'crm' | 'agencies' | 'projects' | 'users', id: string, checked: boolean) => {
-    const setterMap: Record<'crm' | 'agencies' | 'projects' | 'users', React.Dispatch<React.SetStateAction<Set<string>>>> = {
+  const handleSelectItem = (category: DataCategory, id: string, checked: boolean) => {
+    const setterMap: Record<DataCategory, React.Dispatch<React.SetStateAction<Set<string>>>> = {
       crm: setSelectedCrm,
       agencies: setSelectedAgencies,
       projects: setSelectedProjects,
       users: setSelectedUsers,
+      tasks: setSelectedTasks,
+      invoices: setSelectedInvoices,
+      meeting_notes: setSelectedMeetingNotes,
+      posts: setSelectedPosts,
     };
 
-    const selectedMap: Record<'crm' | 'agencies' | 'projects' | 'users', Set<string>> = {
+    const selectedMap: Record<DataCategory, Set<string>> = {
       crm: selectedCrm,
       agencies: selectedAgencies,
       projects: selectedProjects,
       users: selectedUsers,
+      tasks: selectedTasks,
+      invoices: selectedInvoices,
+      meeting_notes: selectedMeetingNotes,
+      posts: selectedPosts,
     };
 
     const newSet = new Set(selectedMap[category]);
@@ -171,12 +261,12 @@ export function DataManagementTab() {
     setterMap[category](newSet);
   };
 
-  const confirmDelete = (category: 'crm' | 'agencies' | 'projects' | 'users') => {
+  const confirmDelete = (category: DataCategory) => {
     setDeleteCategory(category);
     setDeleteDialogOpen(true);
   };
 
-  const exportToCSV = async (category: 'crm' | 'agencies' | 'projects' | 'users') => {
+  const exportToCSV = async (category: DataCategory) => {
     try {
       let data: any[] = [];
       let filename = '';
@@ -214,6 +304,38 @@ export function DataManagementTab() {
         if (error) throw error;
         data = profiles || [];
         filename = 'utilisateurs';
+      } else if (category === 'tasks') {
+        const { data: tasks, error } = await supabase
+          .from('tasks')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        data = tasks || [];
+        filename = 'taches';
+      } else if (category === 'invoices') {
+        const { data: invoices, error } = await supabase
+          .from('invoices')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        data = invoices || [];
+        filename = 'factures';
+      } else if (category === 'meeting_notes') {
+        const { data: meetingNotes, error } = await supabase
+          .from('meeting_notes')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        data = meetingNotes || [];
+        filename = 'comptes_rendus';
+      } else if (category === 'posts') {
+        const { data: posts, error } = await supabase
+          .from('user_posts')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        data = posts || [];
+        filename = 'publications';
       }
 
       if (data.length === 0) {
@@ -242,7 +364,7 @@ export function DataManagementTab() {
     }
   };
 
-  const exportToJSON = async (category: 'crm' | 'agencies' | 'projects' | 'users') => {
+  const exportToJSON = async (category: DataCategory) => {
     try {
       let data: any[] = [];
       let filename = '';
@@ -280,6 +402,38 @@ export function DataManagementTab() {
         if (error) throw error;
         data = profiles || [];
         filename = 'utilisateurs';
+      } else if (category === 'tasks') {
+        const { data: tasks, error } = await supabase
+          .from('tasks')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        data = tasks || [];
+        filename = 'taches';
+      } else if (category === 'invoices') {
+        const { data: invoices, error } = await supabase
+          .from('invoices')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        data = invoices || [];
+        filename = 'factures';
+      } else if (category === 'meeting_notes') {
+        const { data: meetingNotes, error } = await supabase
+          .from('meeting_notes')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        data = meetingNotes || [];
+        filename = 'comptes_rendus';
+      } else if (category === 'posts') {
+        const { data: posts, error } = await supabase
+          .from('user_posts')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        data = posts || [];
+        filename = 'publications';
       }
 
       if (data.length === 0) {
@@ -311,18 +465,15 @@ export function DataManagementTab() {
   const handleDelete = async () => {
     if (!deleteCategory) return;
 
-    const selectedMap: Record<'crm' | 'agencies' | 'projects' | 'users', Set<string>> = {
+    const selectedMap: Record<DataCategory, Set<string>> = {
       crm: selectedCrm,
       agencies: selectedAgencies,
       projects: selectedProjects,
       users: selectedUsers,
-    };
-
-    const tableMap: Record<'crm' | 'agencies' | 'projects' | 'users', string> = {
-      crm: 'clients',
-      agencies: 'agencies',
-      projects: 'projects',
-      users: 'profiles',
+      tasks: selectedTasks,
+      invoices: selectedInvoices,
+      meeting_notes: selectedMeetingNotes,
+      posts: selectedPosts,
     };
 
     const selected = selectedMap[deleteCategory];
@@ -377,6 +528,34 @@ export function DataManagementTab() {
           .in('id', idsToDelete);
         if (error) throw error;
         toast.success(`${selected.size} projet(s) supprimé(s) avec succès`);
+      } else if (deleteCategory === 'tasks') {
+        const { error } = await supabase
+          .from('tasks')
+          .delete()
+          .in('id', idsToDelete);
+        if (error) throw error;
+        toast.success(`${selected.size} tâche(s) supprimée(s) avec succès`);
+      } else if (deleteCategory === 'invoices') {
+        const { error } = await supabase
+          .from('invoices')
+          .delete()
+          .in('id', idsToDelete);
+        if (error) throw error;
+        toast.success(`${selected.size} facture(s) supprimée(s) avec succès`);
+      } else if (deleteCategory === 'meeting_notes') {
+        const { error } = await supabase
+          .from('meeting_notes')
+          .delete()
+          .in('id', idsToDelete);
+        if (error) throw error;
+        toast.success(`${selected.size} compte(s) rendu(s) supprimé(s) avec succès`);
+      } else if (deleteCategory === 'posts') {
+        const { error } = await supabase
+          .from('user_posts')
+          .delete()
+          .in('id', idsToDelete);
+        if (error) throw error;
+        toast.success(`${selected.size} publication(s) supprimée(s) avec succès`);
       }
       
       // Clear selection and refresh data
@@ -384,6 +563,10 @@ export function DataManagementTab() {
       if (deleteCategory === 'agencies') setSelectedAgencies(new Set());
       if (deleteCategory === 'projects') setSelectedProjects(new Set());
       if (deleteCategory === 'users') setSelectedUsers(new Set());
+      if (deleteCategory === 'tasks') setSelectedTasks(new Set());
+      if (deleteCategory === 'invoices') setSelectedInvoices(new Set());
+      if (deleteCategory === 'meeting_notes') setSelectedMeetingNotes(new Set());
+      if (deleteCategory === 'posts') setSelectedPosts(new Set());
       
       await fetchAllData();
     } catch (error: any) {
@@ -398,7 +581,7 @@ export function DataManagementTab() {
 
   const renderDataTable = (
     data: DataItem[],
-    category: 'crm' | 'agencies' | 'projects' | 'users',
+    category: DataCategory,
     selectedSet: Set<string>,
     title: string
   ) => {
@@ -511,10 +694,14 @@ export function DataManagementTab() {
       </Card>
 
       <Tabs defaultValue="crm" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
           <TabsTrigger value="crm">CRM ({crmData.length})</TabsTrigger>
           <TabsTrigger value="agencies">Agences ({agenciesData.length})</TabsTrigger>
           <TabsTrigger value="projects">Projets ({projectsData.length})</TabsTrigger>
+          <TabsTrigger value="tasks">Tâches ({tasksData.length})</TabsTrigger>
+          <TabsTrigger value="invoices">Factures ({invoicesData.length})</TabsTrigger>
+          <TabsTrigger value="meeting_notes">CR ({meetingNotesData.length})</TabsTrigger>
+          <TabsTrigger value="posts">Posts ({postsData.length})</TabsTrigger>
           <TabsTrigger value="users">Utilisateurs ({usersData.length})</TabsTrigger>
         </TabsList>
 
@@ -528,6 +715,22 @@ export function DataManagementTab() {
 
         <TabsContent value="projects" className="mt-6">
           {renderDataTable(projectsData, 'projects', selectedProjects, 'Projets')}
+        </TabsContent>
+
+        <TabsContent value="tasks" className="mt-6">
+          {renderDataTable(tasksData, 'tasks', selectedTasks, 'Tâches')}
+        </TabsContent>
+
+        <TabsContent value="invoices" className="mt-6">
+          {renderDataTable(invoicesData, 'invoices', selectedInvoices, 'Factures')}
+        </TabsContent>
+
+        <TabsContent value="meeting_notes" className="mt-6">
+          {renderDataTable(meetingNotesData, 'meeting_notes', selectedMeetingNotes, 'Comptes rendus')}
+        </TabsContent>
+
+        <TabsContent value="posts" className="mt-6">
+          {renderDataTable(postsData, 'posts', selectedPosts, 'Publications')}
         </TabsContent>
 
         <TabsContent value="users" className="mt-6">
@@ -545,6 +748,10 @@ export function DataManagementTab() {
               {deleteCategory === 'agencies' && selectedAgencies.size}
               {deleteCategory === 'projects' && selectedProjects.size}
               {deleteCategory === 'users' && selectedUsers.size}
+              {deleteCategory === 'tasks' && selectedTasks.size}
+              {deleteCategory === 'invoices' && selectedInvoices.size}
+              {deleteCategory === 'meeting_notes' && selectedMeetingNotes.size}
+              {deleteCategory === 'posts' && selectedPosts.size}
               {' '}élément(s) ?
               <br />
               <strong className="text-destructive">Cette action est irréversible.</strong>
