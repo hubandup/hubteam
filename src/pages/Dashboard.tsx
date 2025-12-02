@@ -111,7 +111,7 @@ export default function Dashboard() {
             )
           )
         `)
-        .in('status', ['planning', 'active']);
+        .in('status', ['planning', 'active', 'reco_in_progress']);
 
       if (projectsError) throw projectsError;
 
