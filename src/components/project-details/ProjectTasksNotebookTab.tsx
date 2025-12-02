@@ -1,0 +1,483 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Textarea } from '@/components/ui/textarea';
+import { Loader2, Calendar as CalendarIcon, MessageSquare, User, Send, Check, ChevronsUpDown } from 'lucide-react';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+
+interface Task {
+  id: string;
+  title: string;
+  status: string;
+  assigned_to: string | null;
+  end_date: string | null;
+  profiles?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    avatar_url: string | null;
+  } | null;
+}
+
+interface Comment {
+  id: string;
+  content: string;
+  created_at: string;
+  user_id: string;
+  profiles?: {
+    first_name: string;
+    last_name: string;
+    avatar_url: string | null;
+  };
+}
+
+interface TeamMember {
+  id: string;
+  first_name: string;
+  last_name: string;
+  avatar_url: string | null;
+  email: string;
+}
+
+interface ProjectTasksNotebookTabProps {
+  projectId: string;
+}
+
+export function ProjectTasksNotebookTab({ projectId }: ProjectTasksNotebookTabProps) {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [taskComments, setTaskComments] = useState<Record<string, Comment[]>>({});
+  const [newComment, setNewComment] = useState<Record<string, string>>({});
+  const [assignPopoverOpen, setAssignPopoverOpen] = useState<Record<string, boolean>>({});
+  const [datePopoverOpen, setDatePopoverOpen] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    fetchTasks();
+    fetchTeamMembers();
+
+    const channel = supabase
+      .channel('project-tasks-notebook')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `project_id=eq.${projectId}` }, () => {
+        fetchTasks();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'task_comments', filter: `project_id=eq.${projectId}` }, () => {
+        if (expandedTaskId) {
+          fetchTaskComments(expandedTaskId);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [projectId]);
+
+  const fetchTasks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('id, title, status, assigned_to, end_date')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Fetch profile data separately for assigned users
+      const tasksWithProfiles = await Promise.all(
+        (data || []).map(async (task) => {
+          if (task.assigned_to) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('id, first_name, last_name, avatar_url')
+              .eq('id', task.assigned_to)
+              .single();
+            
+            return { ...task, profiles: profile };
+          }
+          return { ...task, profiles: null };
+        })
+      );
+
+      setTasks(tasksWithProfiles);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      toast.error('Erreur lors du chargement des tâches');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTeamMembers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, avatar_url, email')
+        .order('first_name');
+
+      if (error) throw error;
+      setTeamMembers(data || []);
+    } catch (error) {
+      console.error('Error fetching team members:', error);
+    }
+  };
+
+  const fetchTaskComments = async (taskId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('task_comments')
+        .select('id, content, created_at, user_id')
+        .eq('task_id', taskId)
+        .is('parent_id', null)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      // Fetch profile data separately for each comment
+      const commentsWithProfiles = await Promise.all(
+        (data || []).map(async (comment) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('first_name, last_name, avatar_url')
+            .eq('id', comment.user_id)
+            .single();
+          
+          return { ...comment, profiles: profile };
+        })
+      );
+
+      setTaskComments(prev => ({ ...prev, [taskId]: commentsWithProfiles }));
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    }
+  };
+
+  const handleAddTask = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter' || !newTaskTitle.trim()) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert([{
+          title: newTaskTitle.trim(),
+          project_id: projectId,
+          status: 'todo',
+          priority: 'medium',
+          created_by: user.id,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setNewTaskTitle('');
+      toast.success('Tâche ajoutée');
+    } catch (error) {
+      console.error('Error adding task:', error);
+      toast.error('Erreur lors de l\'ajout de la tâche');
+    }
+  };
+
+  const handleToggleTask = async (taskId: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'done' ? 'todo' : 'done';
+      
+      const { error } = await supabase
+        .from('tasks')
+        .update({ status: newStatus })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      setTasks(prev => prev.map(t => 
+        t.id === taskId ? { ...t, status: newStatus } : t
+      ));
+    } catch (error) {
+      console.error('Error toggling task:', error);
+      toast.error('Erreur lors de la mise à jour');
+    }
+  };
+
+  const handleAssignUser = async (taskId: string, userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ assigned_to: userId })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      setAssignPopoverOpen(prev => ({ ...prev, [taskId]: false }));
+      toast.success('Utilisateur assigné');
+      fetchTasks();
+    } catch (error) {
+      console.error('Error assigning user:', error);
+      toast.error('Erreur lors de l\'assignation');
+    }
+  };
+
+  const handleSetDate = async (taskId: string, date: Date | undefined) => {
+    if (!date) return;
+
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ end_date: date.toISOString() })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      setDatePopoverOpen(prev => ({ ...prev, [taskId]: false }));
+      toast.success('Date définie');
+      fetchTasks();
+    } catch (error) {
+      console.error('Error setting date:', error);
+      toast.error('Erreur lors de la définition de la date');
+    }
+  };
+
+  const handleToggleComments = (taskId: string) => {
+    if (expandedTaskId === taskId) {
+      setExpandedTaskId(null);
+    } else {
+      setExpandedTaskId(taskId);
+      fetchTaskComments(taskId);
+    }
+  };
+
+  const handleAddComment = async (taskId: string) => {
+    const content = newComment[taskId]?.trim();
+    if (!content) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('task_comments')
+        .insert([{
+          task_id: taskId,
+          project_id: projectId,
+          user_id: user.id,
+          content: content,
+        }]);
+
+      if (error) throw error;
+
+      setNewComment(prev => ({ ...prev, [taskId]: '' }));
+      fetchTaskComments(taskId);
+      toast.success('Commentaire ajouté');
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      toast.error('Erreur lors de l\'ajout du commentaire');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Tâches du projet</h2>
+        
+        {/* Add Task Input */}
+        <div>
+          <Input
+            placeholder="Ajouter une tâche... (Appuyez sur Entrée)"
+            value={newTaskTitle}
+            onChange={(e) => setNewTaskTitle(e.target.value)}
+            onKeyDown={handleAddTask}
+            className="w-full"
+          />
+        </div>
+
+        {/* Tasks List */}
+        {tasks.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">Aucune tâche</p>
+        ) : (
+          <div className="space-y-3">
+            {tasks.map((task) => (
+              <div key={task.id} className="space-y-2">
+                {/* Task Row */}
+                <div className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                  <Checkbox
+                    checked={task.status === 'done'}
+                    onCheckedChange={() => handleToggleTask(task.id, task.status)}
+                  />
+                  
+                  <p className={cn(
+                    "flex-1 text-sm",
+                    task.status === 'done' && "line-through text-muted-foreground"
+                  )}>
+                    {task.title}
+                  </p>
+
+                  {/* Assign User */}
+                  <Popover 
+                    open={assignPopoverOpen[task.id]} 
+                    onOpenChange={(open) => setAssignPopoverOpen(prev => ({ ...prev, [task.id]: open }))}
+                  >
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        {task.profiles ? (
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={task.profiles.avatar_url || undefined} />
+                            <AvatarFallback className="text-xs">
+                              {task.profiles.first_name[0]}{task.profiles.last_name[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                        ) : (
+                          <User className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Rechercher..." />
+                        <CommandEmpty>Aucun membre trouvé.</CommandEmpty>
+                        <CommandGroup className="max-h-64 overflow-auto">
+                          {teamMembers.map((member) => (
+                            <CommandItem
+                              key={member.id}
+                              value={`${member.first_name} ${member.last_name}`}
+                              onSelect={() => handleAssignUser(task.id, member.id)}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  task.assigned_to === member.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <Avatar className="h-6 w-6 mr-2">
+                                <AvatarImage src={member.avatar_url || undefined} />
+                                <AvatarFallback className="text-xs">
+                                  {member.first_name[0]}{member.last_name[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                              {member.first_name} {member.last_name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Set Date */}
+                  <Popover 
+                    open={datePopoverOpen[task.id]} 
+                    onOpenChange={(open) => setDatePopoverOpen(prev => ({ ...prev, [task.id]: open }))}
+                  >
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <div className="flex items-center gap-1">
+                          <CalendarIcon className="h-4 w-4" />
+                          {task.end_date && (
+                            <span className="text-xs">
+                              {format(new Date(task.end_date), 'dd/MM', { locale: fr })}
+                            </span>
+                          )}
+                        </div>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={task.end_date ? new Date(task.end_date) : undefined}
+                        onSelect={(date) => handleSetDate(task.id, date)}
+                        locale={fr}
+                      />
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Comments Toggle */}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={() => handleToggleComments(task.id)}
+                  >
+                    <MessageSquare className={cn(
+                      "h-4 w-4",
+                      expandedTaskId === task.id && "text-primary"
+                    )} />
+                  </Button>
+                </div>
+
+                {/* Comments Section */}
+                {expandedTaskId === task.id && (
+                  <div className="ml-10 space-y-3 p-4 bg-muted/30 rounded-lg border">
+                    {/* Existing Comments */}
+                    {taskComments[task.id]?.map((comment) => (
+                      <div key={comment.id} className="flex gap-3">
+                        <Avatar className="h-8 w-8 flex-shrink-0">
+                          <AvatarImage src={comment.profiles?.avatar_url || undefined} />
+                          <AvatarFallback className="text-xs">
+                            {comment.profiles?.first_name[0]}{comment.profiles?.last_name[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">
+                              {comment.profiles?.first_name} {comment.profiles?.last_name}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(comment.created_at), 'dd MMM à HH:mm', { locale: fr })}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{comment.content}</p>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Add Comment */}
+                    <div className="flex gap-2">
+                      <Textarea
+                        placeholder="Écrivez un commentaire... (Entrée pour publier)"
+                        value={newComment[task.id] || ''}
+                        onChange={(e) => setNewComment(prev => ({ ...prev, [task.id]: e.target.value }))}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleAddComment(task.id);
+                          }
+                        }}
+                        className="flex-1 min-h-[60px]"
+                      />
+                      <Button 
+                        size="icon"
+                        onClick={() => handleAddComment(task.id)}
+                        disabled={!newComment[task.id]?.trim()}
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

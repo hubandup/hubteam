@@ -28,6 +28,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ProjectTeamTab } from '@/components/project-details/ProjectTeamTab';
 import { ProjectTasksTab } from '@/components/project-details/ProjectTasksTab';
+import { ProjectTasksNotebookTab } from '@/components/project-details/ProjectTasksNotebookTab';
 import { ProjectCommentsTab } from '@/components/project-details/ProjectCommentsTab';
 import { ClientKDriveTab } from '@/components/client-details/ClientKDriveTab';
 import { SelectClientDialog } from '@/components/project-details/SelectClientDialog';
@@ -434,7 +435,7 @@ export default function ProjectDetails() {
             icon: <FileText className="h-4 w-4" />,
             badge: pendingTasksCount,
             badgeVariant: pendingTasksCount > 0 ? 'destructive' : undefined,
-            content: <ProjectTasksTab projectId={id!} />
+            content: <ProjectTasksNotebookTab projectId={id!} />
           },
           {
             value: 'comments',
