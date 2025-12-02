@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useTasks } from '@/hooks/useTasks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Clock, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface TodayTask {
   id: string;
@@ -28,55 +28,35 @@ interface TodayTask {
 
 export function TodayTasks() {
   const navigate = useNavigate();
-  const [tasks, setTasks] = useState<TodayTask[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  const { data: allTasks, isLoading } = useTasks();
 
   useEffect(() => {
-    fetchTodayData();
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+    };
+    getUser();
   }, []);
 
-  const fetchTodayData = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const today = format(new Date(), 'yyyy-MM-dd');
-
-      // Fetch today's tasks
-      const { data: tasksData, error: tasksError } = await supabase
-        .from('tasks')
-        .select(`
-          id,
-          title,
-          end_date,
-          priority,
-          project_id,
-          projects (
-            id,
-            name,
-            project_clients (
-              clients (
-                id,
-                company,
-                logo_url
-              )
-            )
-          )
-        `)
-        .eq('assigned_to', user.id)
-        .eq('status', 'in_progress')
-        .lte('end_date', today)
-        .order('priority', { ascending: false });
-
-      if (tasksError) throw tasksError;
-
-      setTasks(tasksData || []);
-    } catch (error) {
-      console.error('Error fetching today data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const tasks = useMemo(() => {
+    if (!allTasks || !userId) return [];
+    
+    const today = format(new Date(), 'yyyy-MM-dd');
+    
+    return allTasks
+      .filter(task => 
+        task.assigned_to === userId &&
+        task.status === 'in_progress' &&
+        task.end_date &&
+        task.end_date <= today
+      )
+      .sort((a, b) => {
+        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        return (priorityOrder[b.priority as keyof typeof priorityOrder] || 0) - 
+               (priorityOrder[a.priority as keyof typeof priorityOrder] || 0);
+      });
+  }, [allTasks, userId]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -96,7 +76,7 @@ export function TodayTasks() {
     }
   };
 
-  if (loading) {
+  if (isLoading || !userId) {
     return (
       <Card>
         <CardHeader>
@@ -134,7 +114,7 @@ export function TodayTasks() {
           ) : (
             <div className="space-y-3">
               {tasks.map((task) => {
-                const client = task.projects?.project_clients?.[0]?.clients;
+                  const client = task.projects?.project_clients?.[0]?.clients;
                 return (
                   <div 
                     key={task.id} 
@@ -144,20 +124,11 @@ export function TodayTasks() {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         {client && (
-                          <>
-                            <Avatar className="h-6 w-6 cursor-pointer" onClick={() => navigate(`/crm/${client.id}`)}>
-                              <AvatarImage src={client.logo_url || ''} />
-                              <AvatarFallback className="bg-primary/10 text-xs">
-                                {client.company.substring(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span 
-                              className="text-sm font-semibold text-primary cursor-pointer hover:underline uppercase"
-                              onClick={() => navigate(`/crm/${client.id}`)}
-                            >
-                              {client.company}
-                            </span>
-                          </>
+                          <span 
+                            className="text-sm font-semibold text-primary uppercase"
+                          >
+                            {client.company}
+                          </span>
                         )}
                       </div>
                       {task.end_date && (
