@@ -50,9 +50,10 @@ interface TeamMember {
 
 interface ProjectTasksNotebookTabProps {
   projectId: string;
+  onTasksChange?: () => void;
 }
 
-export function ProjectTasksNotebookTab({ projectId }: ProjectTasksNotebookTabProps) {
+export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTasksNotebookTabProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,6 +112,7 @@ export function ProjectTasksNotebookTab({ projectId }: ProjectTasksNotebookTabPr
       );
 
       setTasks(tasksWithProfiles);
+      onTasksChange?.();
     } catch (error) {
       console.error('Error fetching tasks:', error);
       toast.error('Erreur lors du chargement des tâches');
@@ -170,24 +172,43 @@ export function ProjectTasksNotebookTab({ projectId }: ProjectTasksNotebookTabPr
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      const newTaskData = {
+        title: newTaskTitle.trim(),
+        project_id: projectId,
+        status: 'todo',
+        priority: 'medium',
+        created_by: user.id,
+      };
+
+      // Mise à jour optimiste
+      const tempTask: Task = {
+        id: `temp-${Date.now()}`,
+        title: newTaskData.title,
+        status: newTaskData.status,
+        assigned_to: null,
+        end_date: null,
+        profiles: null,
+      };
+      
+      setTasks(prev => [tempTask, ...prev]);
+      setNewTaskTitle('');
+
       const { data, error } = await supabase
         .from('tasks')
-        .insert([{
-          title: newTaskTitle.trim(),
-          project_id: projectId,
-          status: 'todo',
-          priority: 'medium',
-          created_by: user.id,
-        }])
+        .insert([newTaskData])
         .select()
         .single();
 
       if (error) throw error;
 
-      setNewTaskTitle('');
+      // Remplacer la tâche temporaire par la vraie
+      setTasks(prev => prev.map(t => t.id === tempTask.id ? { ...data, profiles: null } : t));
+      onTasksChange?.();
       toast.success('Tâche ajoutée');
     } catch (error) {
       console.error('Error adding task:', error);
+      // Retirer la tâche temporaire en cas d'erreur
+      fetchTasks();
       toast.error('Erreur lors de l\'ajout de la tâche');
     }
   };
@@ -196,6 +217,11 @@ export function ProjectTasksNotebookTab({ projectId }: ProjectTasksNotebookTabPr
     try {
       const newStatus = currentStatus === 'done' ? 'todo' : 'done';
       
+      // Mise à jour optimiste
+      setTasks(prev => prev.map(t => 
+        t.id === taskId ? { ...t, status: newStatus } : t
+      ));
+
       const { error } = await supabase
         .from('tasks')
         .update({ status: newStatus })
@@ -203,12 +229,12 @@ export function ProjectTasksNotebookTab({ projectId }: ProjectTasksNotebookTabPr
 
       if (error) throw error;
 
-      setTasks(prev => prev.map(t => 
-        t.id === taskId ? { ...t, status: newStatus } : t
-      ));
+      onTasksChange?.();
     } catch (error) {
       console.error('Error toggling task:', error);
       toast.error('Erreur lors de la mise à jour');
+      // Revenir à l'état précédent
+      fetchTasks();
     }
   };
 
