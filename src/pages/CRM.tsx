@@ -9,7 +9,7 @@ import { ImportClientsValidationDialog } from '@/components/ImportClientsValidat
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, LayoutGrid, Columns3, ArrowDownUp, List } from 'lucide-react';
+import { Search, LayoutGrid, Columns3, ArrowDownUp, List, Archive } from 'lucide-react';
 import { toast } from 'sonner';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -26,11 +26,18 @@ export default function CRM() {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'grid'>('kanban');
   const [sortBy, setSortBy] = useState<'created_at' | 'revenue_current_year' | 'alphabetical'>('alphabetical');
-  const [filterActive, setFilterActive] = useState(false);
   const [filterWithProjects, setFilterWithProjects] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const filteredClients = useMemo(() => {
     let result = clients;
+    
+    // Filter by archived status (inactive = archived)
+    if (showArchived) {
+      result = result.filter(client => client.active === false);
+    } else {
+      result = result.filter(client => client.active === true);
+    }
     
     // Apply search filter
     if (searchQuery.trim()) {
@@ -41,11 +48,6 @@ export default function CRM() {
         client.last_name?.toLowerCase().includes(query) ||
         client.email?.toLowerCase().includes(query)
       );
-    }
-    
-    // Apply active filter
-    if (filterActive) {
-      result = result.filter(client => client.active === true);
     }
     
     // Apply projects filter
@@ -69,7 +71,11 @@ export default function CRM() {
     }
     
     return result;
-  }, [clients, searchQuery, sortBy, filterActive, filterWithProjects]);
+  }, [clients, searchQuery, sortBy, filterWithProjects, showArchived]);
+
+  const archivedCount = useMemo(() => {
+    return clients.filter(client => client.active === false).length;
+  }, [clients]);
 
   const handleStageChange = async (clientId: string, newStage: string) => {
     try {
@@ -113,16 +119,33 @@ export default function CRM() {
     <div className="flex flex-col h-full min-h-0 overflow-hidden">
       {/* Header - Always visible */}
       <div className="flex-shrink-0 pb-2 md:pb-4 bg-background">
-        <div>
-          <h1 className="text-xl md:text-3xl font-bold text-foreground mb-0.5">CRM</h1>
-          <p className="text-muted-foreground text-xs md:text-base">Gérez vos clients et leurs projets</p>
-          {isMobile && (
-            <div className="mt-3">
-              <ProtectedAction module="crm" action="create">
-                <AddClientDialog onClientAdded={() => queryClient.invalidateQueries({ queryKey: ['clients'] })} />
-              </ProtectedAction>
-            </div>
-          )}
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-xl md:text-3xl font-bold text-foreground mb-0.5">
+              {showArchived ? 'Archives CRM' : 'CRM'}
+            </h1>
+            <p className="text-muted-foreground text-xs md:text-base">
+              {showArchived ? 'Clients inactifs archivés' : 'Gérez vos clients et leurs projets'}
+            </p>
+            {isMobile && (
+              <div className="mt-3">
+                <ProtectedAction module="crm" action="create">
+                  <AddClientDialog onClientAdded={() => queryClient.invalidateQueries({ queryKey: ['clients'] })} />
+                </ProtectedAction>
+              </div>
+            )}
+          </div>
+          <Button
+            variant={showArchived ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowArchived(!showArchived)}
+            className="gap-2"
+          >
+            <Archive className="h-4 w-4" />
+            {!isMobile && (
+              <span>Archives {archivedCount > 0 && `(${archivedCount})`}</span>
+            )}
+          </Button>
         </div>
         {!isMobile && (
           <div className="flex gap-2 mt-4 justify-end">
@@ -153,7 +176,7 @@ export default function CRM() {
               <ImportClientsValidationDialog onClientsImported={() => queryClient.invalidateQueries({ queryKey: ['clients'] })} />
             </ProtectedAction>
             <ProtectedAction module="crm" action="create">
-                <AddClientDialog onClientAdded={() => queryClient.invalidateQueries({ queryKey: ['clients'] })} />
+              <AddClientDialog onClientAdded={() => queryClient.invalidateQueries({ queryKey: ['clients'] })} />
             </ProtectedAction>
           </div>
         )}
@@ -186,15 +209,8 @@ export default function CRM() {
               </Select>
             )}
           </div>
-          {!isMobile && (
+          {!isMobile && !showArchived && (
             <div className="flex gap-2">
-              <Button
-                variant={filterActive ? "default" : "outline"}
-                size="sm"
-                onClick={() => setFilterActive(!filterActive)}
-              >
-                Actifs uniquement
-              </Button>
               <Button
                 variant={filterWithProjects ? "default" : "outline"}
                 size="sm"
