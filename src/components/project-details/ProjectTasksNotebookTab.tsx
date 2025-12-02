@@ -8,7 +8,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Calendar as CalendarIcon, MessageSquare, User, Send, Check, ChevronsUpDown } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, MessageSquare, User, Send, Check, ChevronsUpDown, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -238,6 +238,27 @@ export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTas
     }
   };
 
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      // Mise à jour optimiste
+      setTasks(prev => prev.filter(t => t.id !== taskId));
+
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      onTasksChange?.();
+      toast.success('Tâche supprimée');
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast.error('Erreur lors de la suppression');
+      fetchTasks();
+    }
+  };
+
   const handleAssignUser = async (taskId: string, userId: string) => {
     try {
       const { error } = await supabase
@@ -446,6 +467,16 @@ export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTas
                       "h-4 w-4",
                       expandedTaskId === task.id && "text-primary"
                     )} />
+                  </Button>
+
+                  {/* Delete Task */}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => handleDeleteTask(task.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
 
