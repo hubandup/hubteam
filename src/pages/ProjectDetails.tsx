@@ -59,6 +59,24 @@ export default function ProjectDetails() {
       fetchProjectDetails();
       fetchBadgeCounts();
     }
+
+    // Écoute temps réel pour les changements de tâches
+    const channel = supabase
+      .channel('project-details-tasks')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'tasks', 
+        filter: `project_id=eq.${id}` 
+      }, () => {
+        fetchProjectDetails();
+        fetchBadgeCounts();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [id]);
 
   const fetchBadgeCounts = async () => {
@@ -435,7 +453,13 @@ export default function ProjectDetails() {
             icon: <FileText className="h-4 w-4" />,
             badge: pendingTasksCount,
             badgeVariant: pendingTasksCount > 0 ? 'destructive' : undefined,
-            content: <ProjectTasksNotebookTab projectId={id!} />
+            content: <ProjectTasksNotebookTab 
+              projectId={id!} 
+              onTasksChange={() => {
+                fetchProjectDetails();
+                fetchBadgeCounts();
+              }}
+            />
           },
           {
             value: 'comments',
