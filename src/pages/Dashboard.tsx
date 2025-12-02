@@ -83,12 +83,18 @@ export default function Dashboard() {
       // Fetch clients stats
       const { data: clients, error: clientsError } = await supabase
         .from('clients')
-        .select('active, revenue, revenue_current_year');
+        .select('active, revenue, revenue_current_year, kanban_stage');
       
       if (clientsError) throw clientsError;
 
-      const leads = clients?.filter(c => !c.active).length || 0;
-      const activeClients = clients?.filter(c => c.active).length || 0;
+      // Leads: Prospect, RDV à prendre, À relancer, RDV Hub Date, RDV Pris, Reco en cours
+      const leadStages = ['prospect', 'rdv_a_prendre', 'a_relancer', 'rdv_hub_date', 'rdv_pris', 'reco_en_cours'];
+      const leads = clients?.filter(c => c.active && leadStages.includes(c.kanban_stage)).length || 0;
+      
+      // Clients: À fidéliser, Projet Validé
+      const clientStages = ['a_fideliser', 'projet_valide'];
+      const activeClients = clients?.filter(c => c.active && clientStages.includes(c.kanban_stage)).length || 0;
+      
       const totalRevenue = clients?.reduce((sum, c) => sum + (c.revenue_current_year || 0), 0) || 0;
 
       // Fetch projects for progress calculation (without relying on FK-based nested selects)
