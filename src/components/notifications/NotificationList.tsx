@@ -6,7 +6,6 @@ import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { AppBadgeInfo } from './AppBadgeInfo';
 
 export function NotificationList() {
   const { notifications, loading, markAsRead, markAllAsRead } = useNotifications();
@@ -39,7 +38,6 @@ export function NotificationList() {
   return (
     <div className="flex flex-col">
       <div className="p-4 border-b">
-        <AppBadgeInfo />
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
