@@ -633,37 +633,6 @@ export default function Dashboard() {
 
       {/* Charts Row */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Revenue Evolution Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Évolution du CA</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="month" className="text-xs" />
-                <YAxis className="text-xs" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--background))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px'
-                  }}
-                  formatter={(value: any) => `${value.toLocaleString('fr-FR')} €`}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="revenue" 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth={2}
-                  dot={{ fill: 'hsl(var(--primary))' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
         {/* Project Status Distribution */}
         <Card>
           <CardHeader>
@@ -679,17 +648,13 @@ export default function Dashboard() {
                   labelLine={false}
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   outerRadius={60}
-                  fill="hsl(var(--primary))"
+                  fill={chartColors[0]}
                   dataKey="value"
                 >
                   {projectStatusData.map((entry, index) => (
                     <Cell 
                       key={`cell-${index}`} 
-                      fill={
-                        index === 0 ? 'hsl(var(--primary))' : 
-                        index === 1 ? 'hsl(var(--warning))' : 
-                        'hsl(var(--success))'
-                      } 
+                      fill={chartColors[index % chartColors.length]} 
                     />
                   ))}
                 </Pie>
