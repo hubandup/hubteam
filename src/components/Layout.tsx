@@ -36,7 +36,7 @@ export function Layout({ children }: LayoutProps) {
       <div className="min-h-screen flex w-full">
         <Sidebar />
         <div className="flex-1 min-w-0 flex flex-col">
-          <header className="h-14 border-b bg-card flex items-center px-4">
+          <header className="h-14 border-b border-border/50 bg-background/95 backdrop-blur-sm flex items-center px-4 sticky top-0 z-10">
             <SidebarTrigger />
           </header>
           <main className="flex-1 min-h-0 min-w-0 overflow-hidden bg-background">
