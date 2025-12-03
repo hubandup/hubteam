@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Euro, Loader2, RefreshCw, TrendingUp, FileDown } from 'lucide-react';
+import { Euro, Loader2, RefreshCw, TrendingUp, FileDown, Users } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
@@ -31,6 +31,9 @@ export default function Finances() {
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState<string | null>(null);
   const [validatedQuotes, setValidatedQuotes] = useState<any[]>([]);
   const [isLoadingQuotes, setIsLoadingQuotes] = useState(false);
+  const [adhesionsTotal, setAdhesionsTotal] = useState(0);
+  const [adhesionsCount, setAdhesionsCount] = useState(0);
+  const [isLoadingAdhesions, setIsLoadingAdhesions] = useState(false);
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -42,6 +45,7 @@ export default function Finances() {
     if (isAdmin) {
       fetchFinancialData();
       fetchValidatedQuotes();
+      fetchAdhesions();
     }
   }, [isAdmin, roleLoading, navigate]);
 
@@ -151,6 +155,29 @@ export default function Finances() {
     }
   };
 
+  const fetchAdhesions = async () => {
+    setIsLoadingAdhesions(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-adhesions');
+      
+      if (error) {
+        console.error('Error fetching adhesions:', error);
+        toast.error('Erreur lors du chargement des adhésions');
+        return;
+      }
+
+      if (data) {
+        setAdhesionsTotal(data.total || 0);
+        setAdhesionsCount(data.count || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching adhesions:', error);
+      toast.error('Erreur lors du chargement des adhésions');
+    } finally {
+      setIsLoadingAdhesions(false);
+    }
+  };
+
   const handleManualSync = async () => {
     setIsSyncing(true);
     toast.info('Synchronisation Facturation.PRO en cours...');
@@ -169,6 +196,7 @@ export default function Finances() {
       // Refresh financial data
       fetchFinancialData();
       fetchValidatedQuotes();
+      fetchAdhesions();
     } catch (error) {
       console.error('Sync error:', error);
       toast.error(error instanceof Error ? error.message : 'Erreur lors de la synchronisation');
@@ -323,7 +351,7 @@ export default function Finances() {
       </div>
 
       {/* Financial Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">CA Année Fiscale</CardTitle>
@@ -334,6 +362,25 @@ export default function Finances() {
             <p className="text-xs text-muted-foreground">
               Chiffre d'affaires de l'année fiscale en cours
             </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Adhésions</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {isLoadingAdhesions ? (
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{adhesionsTotal.toLocaleString('fr-FR')} €</div>
+                <p className="text-xs text-muted-foreground">
+                  {adhesionsCount} facture{adhesionsCount > 1 ? 's' : ''} sur l'exercice fiscal
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
