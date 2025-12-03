@@ -515,13 +515,14 @@
     background-color: hsl(var(--primary-active));
   }
   
-  /* Logo white in dark mode */
+  /* Logo always white in sidebar (sidebar is always dark) */
+  [data-sidebar] img[alt="HubandUp"],
   .dark img[alt="HubandUp"] {
-    filter: brightness(0) invert(1);
+    filter: brightness(0) invert(1) !important;
   }
   
-  /* Logo normal in light mode */
-  img[alt="HubandUp"] {
+  /* Logo normal outside sidebar in light mode */
+  :root:not(.dark) img[alt="HubandUp"]:not([data-sidebar] *) {
     filter: none;
   }
   
