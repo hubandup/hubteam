@@ -80,3 +80,9 @@ verify_jwt = false
 
 [functions.send-notification-digest]
 verify_jwt = false
+
+[functions.fetch-adhesions]
+verify_jwt = false
+
+[functions.fetch-validated-quotes]
+verify_jwt = false
