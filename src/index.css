@@ -4,16 +4,16 @@
 
 @layer base {
   :root {
-    /* Fonts */
-    --font-heading: 'Instrument Sans';
+    /* Fonts - Premium Typography */
+    --font-heading: 'Plus Jakarta Sans', 'Instrument Sans', system-ui;
     --font-heading-weight: 700;
     --font-heading-size: 2.5rem;
-    --font-body: 'Roboto';
+    --font-body: 'Inter', 'Roboto', system-ui;
     --font-body-weight: 400;
     --font-body-size: 1rem;
     
-    /* Modern Light Theme */
-    --background: 0 0% 100%;
+    /* Premium Light Theme - Deep Navy & Gold Accents */
+    --background: 220 20% 97%;
     --foreground: 222 47% 11%;
     
     --card: 0 0% 100%;
@@ -22,118 +22,132 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
     
-    --primary: 210 99% 29%;
+    --primary: 217 91% 30%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 210 99% 35%;
-    --primary-active: 210 99% 23%;
+    --primary-hover: 217 91% 38%;
+    --primary-active: 217 91% 24%;
     
-    --secondary: 220 14% 96%;
+    --secondary: 220 14% 94%;
     --secondary-foreground: 222 47% 11%;
     
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 220 14% 94%;
+    --muted-foreground: 220 9% 42%;
     
-    --accent: 210 99% 85%;
-    --accent-foreground: 210 99% 29%;
+    --accent: 40 95% 55%;
+    --accent-foreground: 222 47% 11%;
     
-    --destructive: 0 72% 51%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 210 99% 29%;
+    --border: 220 13% 88%;
+    --input: 220 13% 88%;
+    --ring: 217 91% 30%;
     
-    --radius: 0.75rem;
+    --radius: 0.625rem;
     
     /* Custom tokens */
-    --primary-light: 210 99% 90%;
-    --success: 142 76% 36%;
+    --primary-light: 217 91% 95%;
+    --success: 152 69% 40%;
     --warning: 38 92% 50%;
     --info: 199 89% 48%;
     
-    /* Project status colors */
-    --status-planning: 260 75% 55%;
+    /* Premium shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.05);
+    
+    /* Project status colors - More refined */
+    --status-planning: 262 83% 58%;
     --status-planning-foreground: 0 0% 100%;
-    --status-reco-in-progress: 280 65% 60%;
+    --status-reco-in-progress: 280 65% 55%;
     --status-reco-in-progress-foreground: 0 0% 100%;
-    --status-active: 142 76% 36%;
+    --status-active: 152 69% 40%;
     --status-active-foreground: 0 0% 100%;
-    --status-completed: 220 14% 96%;
+    --status-completed: 220 14% 90%;
     --status-completed-foreground: 222 47% 11%;
-    --status-urgent: 0 75% 55%;
+    --status-urgent: 0 84% 60%;
     --status-urgent-foreground: 0 0% 100%;
-    --status-lost: 0 84% 60%;
+    --status-lost: 0 74% 55%;
     --status-lost-foreground: 0 0% 100%;
     
-    /* Sidebar */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5% 26%;
-    --sidebar-primary: 210 99% 29%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 99% 95%;
-    --sidebar-accent-foreground: 210 99% 29%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 210 99% 29%;
+    /* Sidebar - Elegant Navy */
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 220 20% 95%;
+    --sidebar-primary: 40 95% 55%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 222 47% 18%;
+    --sidebar-accent-foreground: 220 20% 95%;
+    --sidebar-border: 222 47% 18%;
+    --sidebar-ring: 40 95% 55%;
   }
   
   .dark {
-    --background: 222 47% 8%;
-    --foreground: 210 40% 98%;
+    /* Premium Dark Theme - Slate with Electric accents */
+    --background: 224 71% 4%;
+    --foreground: 220 20% 95%;
     
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
+    --card: 224 50% 8%;
+    --card-foreground: 220 20% 95%;
     
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 224 50% 8%;
+    --popover-foreground: 220 20% 95%;
     
-    --primary: 66 99% 71%;
-    --primary-foreground: 0 0% 10%;
-    --primary-hover: 66 99% 65%;
-    --primary-active: 66 99% 77%;
+    --primary: 40 95% 58%;
+    --primary-foreground: 224 71% 4%;
+    --primary-hover: 40 95% 52%;
+    --primary-active: 40 95% 64%;
     
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 224 40% 14%;
+    --secondary-foreground: 220 20% 95%;
     
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 224 40% 14%;
+    --muted-foreground: 220 20% 60%;
     
-    --accent: 66 99% 65%;
-    --accent-foreground: 0 0% 10%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 100%;
     
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 63% 40%;
+    --destructive-foreground: 220 20% 95%;
     
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 66 99% 71%;
+    --border: 224 40% 16%;
+    --input: 224 40% 16%;
+    --ring: 40 95% 58%;
     
-    --primary-light: 66 99% 50%;
-    --success: 142 71% 45%;
+    --primary-light: 40 95% 45%;
+    --success: 152 69% 45%;
     --warning: 38 92% 50%;
-    --info: 199 89% 48%;
+    --info: 199 89% 55%;
+    
+    /* Premium shadows for dark mode */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.6), 0 8px 10px -6px rgb(0 0 0 / 0.4);
     
     /* Project status colors */
     --status-planning: 280 60% 65%;
     --status-planning-foreground: 0 0% 100%;
-    --status-reco-in-progress: 260 55% 70%;
+    --status-reco-in-progress: 262 55% 68%;
     --status-reco-in-progress-foreground: 0 0% 100%;
-    --status-active: 142 71% 45%;
-    --status-active-foreground: 0 0% 10%;
-    --status-completed: 217 33% 17%;
-    --status-completed-foreground: 215 20% 65%;
+    --status-active: 152 69% 50%;
+    --status-active-foreground: 224 71% 4%;
+    --status-completed: 224 40% 18%;
+    --status-completed-foreground: 220 20% 60%;
     --status-urgent: 0 75% 60%;
     --status-urgent-foreground: 0 0% 100%;
     --status-lost: 0 84% 60%;
     --status-lost-foreground: 0 0% 100%;
     
-    --sidebar-background: 222 47% 5%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 66 99% 71%;
-    --sidebar-primary-foreground: 0 0% 10%;
-    --sidebar-accent: 217 33% 10%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 15%;
-    --sidebar-ring: 66 99% 71%;
+    /* Dark sidebar */
+    --sidebar-background: 224 71% 3%;
+    --sidebar-foreground: 220 20% 95%;
+    --sidebar-primary: 40 95% 58%;
+    --sidebar-primary-foreground: 224 71% 4%;
+    --sidebar-accent: 224 50% 10%;
+    --sidebar-accent-foreground: 220 20% 95%;
+    --sidebar-border: 224 40% 12%;
+    --sidebar-ring: 40 95% 58%;
   }
 }
 

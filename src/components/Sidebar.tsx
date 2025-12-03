@@ -81,17 +81,17 @@ export function Sidebar() {
   const showSettings = role === 'admin' || role === 'team' || role === 'agency';
 
   return (
-    <ShadcnSidebar>
-      <SidebarHeader className="border-b p-4">
+    <ShadcnSidebar className="border-r-0">
+      <SidebarHeader className="border-b border-sidebar-border p-4 bg-sidebar-background">
         <div className="flex items-center justify-between gap-2">
-          <img src={logo} alt="HubandUp" className="h-7 w-auto" />
+          <img src={logo} alt="HubandUp" className="h-7 w-auto brightness-0 invert" />
           <div className="flex items-center gap-1">
             <ThemeToggle />
             <NotificationBell />
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="bg-sidebar-background">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -109,14 +109,14 @@ export function Sidebar() {
                           end={item.url === '/' || item.url === '/dashboard'} 
                           matchParent={item.matchParent}
                           activePatterns={item.title === 'CRM' ? ['/client'] : item.title === 'Projets' ? ['/project'] : item.title === 'Agences' ? ['/agency'] : []}
-                          className="hover:bg-muted/50" 
-                          activeClassName="bg-primary/10 text-primary font-medium"
+                          className="text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-all duration-200 rounded-lg" 
+                          activeClassName="bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm"
                         >
                           <item.icon className="mr-2 h-4 w-4" />
                           <span>{item.title}</span>
                           {(item as any).isClientItem && (
                             <span className="ml-auto">
-                              <span className="inline-flex items-center justify-center w-2 h-2 rounded-full bg-primary" />
+                              <span className="inline-flex items-center justify-center w-2 h-2 rounded-full bg-sidebar-primary" />
                             </span>
                           )}
                         </NavLink>
@@ -127,7 +127,11 @@ export function Sidebar() {
               {showSettings && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to="/settings" className="hover:bg-muted/50" activeClassName="bg-primary/10 text-primary font-medium">
+                    <NavLink 
+                      to="/settings" 
+                      className="text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-all duration-200 rounded-lg" 
+                      activeClassName="bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm"
+                    >
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Settings</span>
                     </NavLink>
@@ -138,8 +142,8 @@ export function Sidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <Button variant="ghost" onClick={signOut} className="w-full justify-start">
+      <SidebarFooter className="bg-sidebar-background border-t border-sidebar-border">
+        <Button variant="ghost" onClick={signOut} className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent">
           <LogOut className="mr-2 h-4 w-4" />
           Déconnexion
         </Button>
