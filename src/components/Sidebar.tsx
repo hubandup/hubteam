@@ -84,7 +84,7 @@ export function Sidebar() {
     <ShadcnSidebar className="border-r-0">
       <SidebarHeader className="border-b border-sidebar-border p-4 bg-sidebar-background">
         <div className="flex items-center justify-between gap-2">
-          <img src={logo} alt="HubandUp" className="h-7 w-auto brightness-0 invert" />
+          <img src={logo} alt="HubandUp" className="h-7 w-auto [filter:brightness(0)_invert(1)]" />
           <div className="flex items-center gap-1">
             <ThemeToggle />
             <NotificationBell />
