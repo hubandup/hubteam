@@ -10,6 +10,7 @@ import { format, isPast } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { AddProjectDialog } from '@/components/AddProjectDialog';
 import { EditProjectInfoDialog } from '@/components/project-details/EditProjectInfoDialog';
+import { useUserRole } from '@/hooks/useUserRole';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +28,7 @@ interface ClientProjectsTabProps {
 
 export function ClientProjectsTab({ clientId }: ClientProjectsTabProps) {
   const navigate = useNavigate();
+  const { isAgency } = useUserRole();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -79,9 +81,11 @@ export function ClientProjectsTab({ clientId }: ClientProjectsTabProps) {
   if (projects.length === 0) {
     return (
       <div className="space-y-4">
-        <div className="flex justify-end">
-          <AddProjectDialog onProjectAdded={fetchProjects} />
-        </div>
+        {!isAgency && (
+          <div className="flex justify-end">
+            <AddProjectDialog onProjectAdded={fetchProjects} />
+          </div>
+        )}
         <Card>
           <CardContent className="py-12">
             <p className="text-center text-muted-foreground">
@@ -188,9 +192,11 @@ export function ClientProjectsTab({ clientId }: ClientProjectsTabProps) {
   return (
     <>
       <div className="space-y-4">
-        <div className="flex justify-end">
-          <AddProjectDialog onProjectAdded={fetchProjects} />
-        </div>
+        {!isAgency && (
+          <div className="flex justify-end">
+            <AddProjectDialog onProjectAdded={fetchProjects} />
+          </div>
+        )}
 
         <div className="grid gap-4 md:grid-cols-2">
           {projects.map((project) => {
@@ -215,32 +221,34 @@ export function ClientProjectsTab({ clientId }: ClientProjectsTabProps) {
                     </div>
                     <div className="flex items-center gap-2">
                       {getStatusBadge(project.status)}
-                      <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={(e) => handleEdit(e, project)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={(e) => handleDuplicate(e, project)}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={(e) => handleDelete(e, project)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {!isAgency && (
+                        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => handleEdit(e, project)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => handleDuplicate(e, project)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={(e) => handleDelete(e, project)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
