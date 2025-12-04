@@ -39,7 +39,7 @@ serve(async (req) => {
       fiscalYearEnd = new Date(currentYear, 2, 31); // March 31 current year
     }
 
-    console.log(`[ADHESIONS v3] Fetching for fiscal year: ${fiscalYearStart.toISOString()} to ${fiscalYearEnd.toISOString()}`);
+    console.log(`[ADHESIONS] Fetching for fiscal year: ${fiscalYearStart.toISOString()} to ${fiscalYearEnd.toISOString()}`);
     
     // First, fetch all categories to find "abonnements"
     const categoriesResponse = await fetch(
@@ -58,12 +58,7 @@ serve(async (req) => {
     }
 
     const categories = await categoriesResponse.json();
-    console.log(`[ADHESIONS v3] Found ${categories.length} categories`);
-    
-    // Log all categories for debugging
-    for (const cat of categories) {
-      console.log(`[ADHESIONS v3] Category: id=${cat.id}, title=${cat.title}`);
-    }
+    console.log(`[ADHESIONS] Found ${categories.length} categories`);
     
     // Find the "abonnements" category (case insensitive)
     const abonnementCategory = categories.find((cat: any) => 
@@ -71,7 +66,7 @@ serve(async (req) => {
     );
     
     if (!abonnementCategory) {
-      console.log(`[ADHESIONS v3] No 'abonnements' category found`);
+      console.log(`[ADHESIONS] No 'abonnements' category found`);
       return new Response(
         JSON.stringify({
           total: 0,
@@ -88,26 +83,48 @@ serve(async (req) => {
       );
     }
     
-    console.log(`[ADHESIONS v3] Found abonnements category: id=${abonnementCategory.id}, title=${abonnementCategory.title}`);
+    console.log(`[ADHESIONS] Found abonnements category: id=${abonnementCategory.id}, title=${abonnementCategory.title}`);
     
-    // Fetch all invoices
-    const invoicesResponse = await fetch(
-      `${FACTURATION_PRO_API_URL}/${firmId}/invoices.json?per_page=500`,
-      {
-        headers: {
-          'Authorization': `Basic ${credentials}`,
-          'Content-Type': 'application/json',
-        },
+    // Fetch ALL invoices with pagination
+    let allInvoices: any[] = [];
+    let page = 1;
+    const perPage = 50; // Facturation.PRO default limit
+    let hasMore = true;
+    
+    while (hasMore) {
+      const invoicesResponse = await fetch(
+        `${FACTURATION_PRO_API_URL}/${firmId}/invoices.json?page=${page}&per_page=${perPage}`,
+        {
+          headers: {
+            'Authorization': `Basic ${credentials}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!invoicesResponse.ok) {
+        console.error(`Error fetching invoices page ${page}: ${invoicesResponse.status}`);
+        throw new Error(`Failed to fetch invoices: ${invoicesResponse.status}`);
       }
-    );
 
-    if (!invoicesResponse.ok) {
-      console.error(`Error fetching invoices: ${invoicesResponse.status}`);
-      throw new Error(`Failed to fetch invoices: ${invoicesResponse.status}`);
+      const pageInvoices = await invoicesResponse.json();
+      console.log(`[ADHESIONS] Fetched ${pageInvoices.length} invoices from page ${page}`);
+      
+      if (pageInvoices.length === 0) {
+        hasMore = false;
+      } else {
+        allInvoices = allInvoices.concat(pageInvoices);
+        page++;
+        
+        // Safety limit to avoid infinite loops
+        if (page > 50) {
+          console.log(`[ADHESIONS] Reached page limit, stopping pagination`);
+          hasMore = false;
+        }
+      }
     }
-
-    const allInvoices = await invoicesResponse.json();
-    console.log(`[ADHESIONS v3] Fetched ${allInvoices.length} total invoices`);
+    
+    console.log(`[ADHESIONS] Total invoices fetched: ${allInvoices.length}`);
 
     let totalAdhesions = 0;
     const invoicesDetails: any[] = [];
@@ -136,14 +153,14 @@ serve(async (req) => {
           date: invoice.invoiced_on,
         });
         
-        console.log(`[ADHESIONS v3] Added: ${invoice.full_invoice_ref}, ${amount}€, ${clientName}`);
+        console.log(`[ADHESIONS] Added: ${invoice.full_invoice_ref}, ${amount}€, ${clientName}`);
       }
     }
 
     // Sort by date descending
     invoicesDetails.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    console.log(`[ADHESIONS v3] Total: ${totalAdhesions}€ from ${invoicesDetails.length} invoices`);
+    console.log(`[ADHESIONS] Total: ${totalAdhesions}€ from ${invoicesDetails.length} invoices`);
 
     return new Response(
       JSON.stringify({
