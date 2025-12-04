@@ -51,7 +51,7 @@ export function HeaderUserProfile() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="flex items-center gap-2 px-2 h-9">
           <Avatar className="h-7 w-7">
-            <AvatarImage src={profile?.avatar_url || undefined} alt={displayName} />
+            <AvatarImage src={profile?.avatar_url || undefined} alt={displayName} className="object-cover" />
             <AvatarFallback className="text-xs bg-primary/10 text-primary">
               {initials}
             </AvatarFallback>
