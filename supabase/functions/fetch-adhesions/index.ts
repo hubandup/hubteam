@@ -39,11 +39,11 @@ serve(async (req) => {
       fiscalYearEnd = new Date(currentYear, 2, 31); // March 31 current year
     }
 
-    console.log(`Fetching adhesions for fiscal year: ${fiscalYearStart.toISOString()} to ${fiscalYearEnd.toISOString()}`);
+    console.log(`[ADHESIONS v3] Fetching for fiscal year: ${fiscalYearStart.toISOString()} to ${fiscalYearEnd.toISOString()}`);
     
-    // First, list all recurring invoices
-    const listRecurringResponse = await fetch(
-      `${FACTURATION_PRO_API_URL}/${firmId}/recurring_invoices.json?per_page=100`,
+    // First, fetch all categories to find "abonnements"
+    const categoriesResponse = await fetch(
+      `${FACTURATION_PRO_API_URL}/${firmId}/categories.json`,
       {
         headers: {
           'Authorization': `Basic ${credentials}`,
@@ -52,86 +52,98 @@ serve(async (req) => {
       }
     );
 
-    if (!listRecurringResponse.ok) {
-      console.error(`Error listing recurring invoices: ${listRecurringResponse.status}`);
-      throw new Error(`Failed to list recurring invoices: ${listRecurringResponse.status}`);
+    if (!categoriesResponse.ok) {
+      console.error(`Error fetching categories: ${categoriesResponse.status}`);
+      throw new Error(`Failed to fetch categories: ${categoriesResponse.status}`);
     }
 
-    const allRecurringInvoices = await listRecurringResponse.json();
-    console.log(`Found ${allRecurringInvoices.length} recurring invoices total`);
+    const categories = await categoriesResponse.json();
+    console.log(`[ADHESIONS v3] Found ${categories.length} categories`);
+    
+    // Log all categories for debugging
+    for (const cat of categories) {
+      console.log(`[ADHESIONS v3] Category: id=${cat.id}, title=${cat.title}`);
+    }
+    
+    // Find the "abonnements" category (case insensitive)
+    const abonnementCategory = categories.find((cat: any) => 
+      (cat.title || '').toLowerCase().includes('abonnement')
+    );
+    
+    if (!abonnementCategory) {
+      console.log(`[ADHESIONS v3] No 'abonnements' category found`);
+      return new Response(
+        JSON.stringify({
+          total: 0,
+          count: 0,
+          invoices: [],
+          fiscalYearStart: fiscalYearStart.toISOString(),
+          fiscalYearEnd: fiscalYearEnd.toISOString(),
+          error: "Catégorie 'abonnements' non trouvée"
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    }
+    
+    console.log(`[ADHESIONS v3] Found abonnements category: id=${abonnementCategory.id}, title=${abonnementCategory.title}`);
+    
+    // Fetch all invoices
+    const invoicesResponse = await fetch(
+      `${FACTURATION_PRO_API_URL}/${firmId}/invoices.json?per_page=500`,
+      {
+        headers: {
+          'Authorization': `Basic ${credentials}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
-    // Filter recurring invoices by title containing "Adhésion Hub & Up"
-    const adhesionRecurring = allRecurringInvoices.filter((ri: any) => {
-      const title = ri.title || '';
-      return title.toLowerCase().includes('adhésion hub');
-    });
+    if (!invoicesResponse.ok) {
+      console.error(`Error fetching invoices: ${invoicesResponse.status}`);
+      throw new Error(`Failed to fetch invoices: ${invoicesResponse.status}`);
+    }
 
-    console.log(`Found ${adhesionRecurring.length} adhesion recurring invoices`);
+    const allInvoices = await invoicesResponse.json();
+    console.log(`[ADHESIONS v3] Fetched ${allInvoices.length} total invoices`);
 
     let totalAdhesions = 0;
     const invoicesDetails: any[] = [];
 
-    // For each matching recurring invoice, fetch generated invoices
-    for (const recurringInvoice of adhesionRecurring) {
-      try {
-        console.log(`Processing recurring invoice ${recurringInvoice.id}: ${recurringInvoice.title}`);
-
-        // Fetch invoices generated from this recurring invoice
-        const invoicesResponse = await fetch(
-          `${FACTURATION_PRO_API_URL}/${firmId}/invoices.json?recurring_invoice_id=${recurringInvoice.id}&per_page=100`,
-          {
-            headers: {
-              'Authorization': `Basic ${credentials}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-
-        if (!invoicesResponse.ok) {
-          console.log(`Error fetching invoices for recurring ${recurringInvoice.id}: ${invoicesResponse.status}`);
-          continue;
-        }
-
-        const invoices = await invoicesResponse.json();
-        console.log(`Found ${invoices.length} invoices for recurring ${recurringInvoice.id}`);
+    // Filter invoices by category_id and fiscal year
+    for (const invoice of allInvoices) {
+      // Check if this invoice belongs to the abonnements category
+      if (invoice.category_id !== abonnementCategory.id) continue;
+      
+      const invoiceDateStr = invoice.invoiced_on || invoice.created_at;
+      const invoiceDate = new Date(invoiceDateStr);
+      const isInFiscalYear = invoiceDate >= fiscalYearStart && invoiceDate <= fiscalYearEnd;
+      
+      if (isInFiscalYear) {
+        const amount = parseFloat(invoice.total) || 0;
+        totalAdhesions += amount;
         
-        // Log first invoice for debugging
-        if (invoices.length > 0) {
-          const sample = invoices[0];
-          console.log(`Sample invoice: date=${sample.invoiced_on}, status=${sample.status}, state=${sample.state}, total=${sample.total}`);
-        }
+        // customer_identity contains the client name
+        const clientName = invoice.customer_identity || 'Client inconnu';
         
-        // Filter invoices within fiscal year (status check removed - all returned invoices are valid)
-        for (const invoice of invoices) {
-          const invoiceDateStr = invoice.invoiced_on || invoice.created_at;
-          const invoiceDate = new Date(invoiceDateStr);
-          const isInFiscalYear = invoiceDate >= fiscalYearStart && invoiceDate <= fiscalYearEnd;
-          
-          if (isInFiscalYear) {
-            const amount = parseFloat(invoice.total) || 0;
-            totalAdhesions += amount;
-            
-            invoicesDetails.push({
-              reference: invoice.information || `FAC-${invoice.id}`,
-              title: invoice.title || recurringInvoice.title,
-              client: invoice.customer?.short_name || invoice.customer?.name || 'Unknown',
-              amount: amount,
-              date: invoice.invoiced_on,
-              recurringId: recurringInvoice.id,
-            });
-            
-            console.log(`Added invoice: ${invoice.information}, amount: ${amount}€, client: ${invoice.customer?.name}`);
-          }
-        }
-      } catch (error) {
-        console.error(`Error processing recurring invoice ${recurringInvoice.id}:`, error);
+        invoicesDetails.push({
+          reference: invoice.full_invoice_ref || invoice.invoice_ref || `FAC-${invoice.id}`,
+          title: invoice.title || 'Adhésion',
+          client: clientName,
+          amount: amount,
+          date: invoice.invoiced_on,
+        });
+        
+        console.log(`[ADHESIONS v3] Added: ${invoice.full_invoice_ref}, ${amount}€, ${clientName}`);
       }
     }
 
     // Sort by date descending
     invoicesDetails.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    console.log(`Total adhesions for fiscal year: ${totalAdhesions}€ from ${invoicesDetails.length} invoices`);
+    console.log(`[ADHESIONS v3] Total: ${totalAdhesions}€ from ${invoicesDetails.length} invoices`);
 
     return new Response(
       JSON.stringify({
