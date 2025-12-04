@@ -10,8 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Euro, Loader2, RefreshCw, TrendingUp, FileDown, Users, ChevronDown, ChevronUp } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Euro, Loader2, RefreshCw, TrendingUp, FileDown, Users } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
@@ -36,7 +35,6 @@ export default function Finances() {
   const [adhesionsCount, setAdhesionsCount] = useState(0);
   const [adhesionsDetails, setAdhesionsDetails] = useState<any[]>([]);
   const [isLoadingAdhesions, setIsLoadingAdhesions] = useState(false);
-  const [adhesionsOpen, setAdhesionsOpen] = useState(false);
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -369,62 +367,24 @@ export default function Finances() {
           </CardContent>
         </Card>
 
-        <Collapsible open={adhesionsOpen} onOpenChange={setAdhesionsOpen}>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Adhésions</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {isLoadingAdhesions ? (
-                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              ) : (
-                <>
-                  <div className="text-2xl font-bold">{adhesionsTotal.toLocaleString('fr-FR')} €</div>
-                  <p className="text-xs text-muted-foreground">
-                    {adhesionsCount} facture{adhesionsCount > 1 ? 's' : ''} sur l'exercice fiscal
-                  </p>
-                  {adhesionsCount > 0 && (
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="sm" className="mt-2 w-full gap-1">
-                        {adhesionsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                        {adhesionsOpen ? 'Masquer le détail' : 'Voir le détail'}
-                      </Button>
-                    </CollapsibleTrigger>
-                  )}
-                </>
-              )}
-            </CardContent>
-            <CollapsibleContent>
-              <CardContent className="pt-0">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Référence</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead className="text-right">Montant</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {adhesionsDetails.map((invoice, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="font-medium">{invoice.client}</TableCell>
-                          <TableCell>{invoice.reference}</TableCell>
-                          <TableCell>
-                            {invoice.date ? format(new Date(invoice.date), 'dd/MM/yyyy', { locale: fr }) : '-'}
-                          </TableCell>
-                          <TableCell className="text-right">{invoice.amount.toLocaleString('fr-FR')} €</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Adhésions</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {isLoadingAdhesions ? (
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{adhesionsTotal.toLocaleString('fr-FR')} €</div>
+                <p className="text-xs text-muted-foreground">
+                  {adhesionsCount} facture{adhesionsCount > 1 ? 's' : ''} sur l'exercice fiscal
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
