@@ -1,5 +1,4 @@
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2 } from 'lucide-react';
 import { ActivityFeedItem } from '@/components/feed/ActivityFeedItem';
 import { OnlineUsersIndicator } from '@/components/feed/OnlineUsersIndicator';
 import { CreatePostInput } from '@/components/feed/CreatePostInput';
@@ -7,6 +6,7 @@ import { UserPostItem } from '@/components/feed/UserPostItem';
 import { useAuth } from '@/hooks/useAuth';
 import { useFeedActivities } from '@/hooks/useFeedActivities';
 import { usePosts } from '@/hooks/usePosts';
+import { PageLoader } from '@/components/PageLoader';
 
 
 interface ActivityLog {
@@ -52,11 +52,7 @@ export default function Feed() {
   const loading = activitiesLoading || postsLoading;
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (

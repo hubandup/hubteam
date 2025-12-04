@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useQuery } from '@tanstack/react-query';
+import { PageLoader } from '@/components/PageLoader';
 
 export default function Prospection() {
   const navigate = useNavigate();
@@ -185,11 +186,7 @@ export default function Prospection() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-muted-foreground">Chargement...</div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (
