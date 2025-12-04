@@ -6,6 +6,8 @@ import { MobileBottomNav } from './MobileBottomNav';
 import { useIsMobile, useIsNative } from '@/hooks/use-mobile';
 import { useCapacitor } from '@/hooks/useCapacitor';
 import { HeaderUserProfile } from './HeaderUserProfile';
+import { NotificationBell } from './notifications/NotificationBell';
+import { ThemeToggle } from './ThemeToggle';
 
 interface LayoutProps {
   children: ReactNode;
@@ -39,7 +41,11 @@ export function Layout({ children }: LayoutProps) {
         <div className="flex-1 min-w-0 flex flex-col">
           <header className="h-14 border-b border-border/50 bg-background/95 backdrop-blur-sm flex items-center justify-between px-4 sticky top-0 z-10">
             <SidebarTrigger />
-            <HeaderUserProfile />
+            <div className="flex items-center gap-1">
+              <ThemeToggle />
+              <NotificationBell />
+              <HeaderUserProfile />
+            </div>
           </header>
           <main className="flex-1 min-h-0 min-w-0 overflow-hidden bg-background">
             <div className="px-4 md:px-6 py-4">
