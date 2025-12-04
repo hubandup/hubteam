@@ -16,10 +16,12 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useClients } from '@/hooks/useClients';
 import { useQueryClient } from '@tanstack/react-query';
+import { useUserRole } from '@/hooks/useUserRole';
 
 export default function CRM() {
   const navigate = useNavigate();
   const { canRead } = usePermissions();
+  const { isAgency } = useUserRole();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const { data: clients = [], isLoading: loading } = useClients();
@@ -204,7 +206,9 @@ export default function CRM() {
                 <SelectContent>
                   <SelectItem value="created_at">Date de création</SelectItem>
                   <SelectItem value="alphabetical">Ordre alphabétique</SelectItem>
-                  <SelectItem value="revenue_current_year">CA année fiscale ↓</SelectItem>
+                  {!isAgency && (
+                    <SelectItem value="revenue_current_year">CA année fiscale ↓</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             )}

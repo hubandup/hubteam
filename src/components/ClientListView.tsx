@@ -1,6 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Building2, Mail, Phone, Euro, FolderOpen } from 'lucide-react';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface ClientListViewProps {
   clients: any[];
@@ -8,6 +9,7 @@ interface ClientListViewProps {
 }
 
 export function ClientListView({ clients, onClientClick }: ClientListViewProps) {
+  const { isAgency } = useUserRole();
   return (
     <div className="space-y-2">
       {clients.map((client) => {
@@ -71,7 +73,7 @@ export function ClientListView({ clients, onClientClick }: ClientListViewProps) 
               </div>
             </div>
 
-            {client.revenue_current_year !== null && client.revenue_current_year !== undefined && (
+            {!isAgency && client.revenue_current_year !== null && client.revenue_current_year !== undefined && (
               <div className="flex items-center gap-2 text-sm flex-shrink-0 text-muted-foreground font-medium">
                 <Euro className="h-4 w-4" />
                 <span className="whitespace-nowrap">

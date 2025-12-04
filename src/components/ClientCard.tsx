@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Building2, Mail, Phone, Euro, Calendar, BellRing, FolderOpen } from 'lucide-react';
 import { format, isPast } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface ClientCardProps {
   client: {
@@ -29,6 +30,7 @@ interface ClientCardProps {
 }
 
 export function ClientCard({ client, onClick }: ClientCardProps) {
+  const { isAgency } = useUserRole();
   return (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow relative" onClick={onClick}>
       <CardHeader className="pb-2">
@@ -81,20 +83,22 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
             <span>{client.phone}</span>
           </div>
         )}
-        <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-2 text-xs md:text-sm font-medium text-success">
-            <Euro className="h-3.5 w-3.5 md:h-4 md:w-4 flex-shrink-0" />
-            <span>
-              {client.revenue_current_year !== undefined && client.revenue_current_year !== null 
-                ? client.revenue_current_year.toLocaleString('fr-FR')
-                : client.revenue.toLocaleString('fr-FR')
-              } €
-            </span>
+        {!isAgency && (
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-2 text-xs md:text-sm font-medium text-success">
+              <Euro className="h-3.5 w-3.5 md:h-4 md:w-4 flex-shrink-0" />
+              <span>
+                {client.revenue_current_year !== undefined && client.revenue_current_year !== null 
+                  ? client.revenue_current_year.toLocaleString('fr-FR')
+                  : client.revenue.toLocaleString('fr-FR')
+                } €
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground ml-5 md:ml-6">
+              <span>Année fiscale</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground ml-5 md:ml-6">
-            <span>Année fiscale</span>
-          </div>
-        </div>
+        )}
       </CardContent>
       
       <div className="absolute bottom-2 md:bottom-3 left-3 md:left-6 right-3 md:right-6 space-y-1">
