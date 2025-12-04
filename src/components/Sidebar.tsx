@@ -16,8 +16,6 @@ import {
   SidebarHeader,
 } from '@/components/ui/sidebar';
 import { Button } from './ui/button';
-import { NotificationBell } from './notifications/NotificationBell';
-import { ThemeToggle } from './ThemeToggle';
 import logo from '@/assets/logo-hubandup.svg';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -83,12 +81,8 @@ export function Sidebar() {
   return (
     <ShadcnSidebar className="border-r-0 shadow-[4px_0_24px_-8px_rgba(0,0,0,0.15)]">
       <SidebarHeader className="border-b border-sidebar-border/50 p-4 bg-gradient-to-b from-sidebar-background to-sidebar-accent/20">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-center">
           <img src={logo} alt="HubandUp" className="h-7 w-auto [filter:brightness(0)_invert(1)] drop-shadow-sm" />
-          <div className="flex items-center gap-1">
-            <ThemeToggle />
-            <NotificationBell />
-          </div>
         </div>
       </SidebarHeader>
       <SidebarContent className="bg-gradient-to-b from-sidebar-background via-sidebar-background to-sidebar-accent/10">
