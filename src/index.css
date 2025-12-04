@@ -72,15 +72,16 @@
     --status-lost: 0 74% 55%;
     --status-lost-foreground: 0 0% 100%;
     
-    /* Sidebar - Elegant Navy with Lime accent */
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 220 20% 95%;
+    /* Sidebar - Premium Navy with refined accents */
+    --sidebar-background: 220 40% 13%;
+    --sidebar-foreground: 220 20% 92%;
     --sidebar-primary: 68 100% 64%;
-    --sidebar-primary-foreground: 222 47% 11%;
-    --sidebar-accent: 222 47% 18%;
-    --sidebar-accent-foreground: 220 20% 95%;
-    --sidebar-border: 222 47% 18%;
+    --sidebar-primary-foreground: 220 40% 8%;
+    --sidebar-accent: 220 35% 20%;
+    --sidebar-accent-foreground: 220 20% 98%;
+    --sidebar-border: 220 30% 22%;
     --sidebar-ring: 68 100% 64%;
+    --sidebar-muted: 220 35% 18%;
   }
   
   .dark {

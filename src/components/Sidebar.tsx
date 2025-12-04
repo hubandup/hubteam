@@ -81,17 +81,17 @@ export function Sidebar() {
   const showSettings = role === 'admin' || role === 'team' || role === 'agency';
 
   return (
-    <ShadcnSidebar className="border-r-0">
-      <SidebarHeader className="border-b border-sidebar-border p-4 bg-sidebar-background">
+    <ShadcnSidebar className="border-r-0 shadow-[4px_0_24px_-8px_rgba(0,0,0,0.15)]">
+      <SidebarHeader className="border-b border-sidebar-border/50 p-4 bg-gradient-to-b from-sidebar-background to-sidebar-accent/20">
         <div className="flex items-center justify-between gap-2">
-          <img src={logo} alt="HubandUp" className="h-7 w-auto [filter:brightness(0)_invert(1)]" />
+          <img src={logo} alt="HubandUp" className="h-7 w-auto [filter:brightness(0)_invert(1)] drop-shadow-sm" />
           <div className="flex items-center gap-1">
             <ThemeToggle />
             <NotificationBell />
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent className="bg-sidebar-background">
+      <SidebarContent className="bg-gradient-to-b from-sidebar-background via-sidebar-background to-sidebar-accent/10">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -109,8 +109,8 @@ export function Sidebar() {
                           end={item.url === '/' || item.url === '/dashboard'} 
                           matchParent={item.matchParent}
                           activePatterns={item.title === 'CRM' ? ['/client'] : item.title === 'Projets' ? ['/project'] : item.title === 'Agences' ? ['/agency'] : []}
-                          className="text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-all duration-200 rounded-lg" 
-                          activeClassName="bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm"
+                          className="text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground transition-all duration-200 rounded-lg group" 
+                          activeClassName="bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-[0_2px_8px_-2px_rgba(232,255,76,0.3)]"
                         >
                           <item.icon className="mr-2 h-4 w-4" />
                           <span>{item.title}</span>
@@ -129,8 +129,8 @@ export function Sidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink 
                       to="/settings" 
-                      className="text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-all duration-200 rounded-lg" 
-                      activeClassName="bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm"
+                      className="text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground transition-all duration-200 rounded-lg" 
+                      activeClassName="bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-[0_2px_8px_-2px_rgba(232,255,76,0.3)]"
                     >
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Settings</span>
@@ -142,8 +142,8 @@ export function Sidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="bg-sidebar-background border-t border-sidebar-border">
-        <Button variant="ghost" onClick={signOut} className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent">
+      <SidebarFooter className="bg-gradient-to-t from-sidebar-accent/20 to-sidebar-background border-t border-sidebar-border/50">
+        <Button variant="ghost" onClick={signOut} className="w-full justify-start text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all duration-200">
           <LogOut className="mr-2 h-4 w-4" />
           Déconnexion
         </Button>
