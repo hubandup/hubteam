@@ -17,6 +17,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useClients } from '@/hooks/useClients';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUserRole } from '@/hooks/useUserRole';
+import { PageLoader } from '@/components/PageLoader';
 
 export default function CRM() {
   const navigate = useNavigate();
@@ -100,11 +101,7 @@ export default function CRM() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-muted-foreground">Chargement...</div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!canRead('crm')) {

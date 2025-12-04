@@ -4,13 +4,14 @@ import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, Calendar, User } from 'lucide-react';
+import { Search, Calendar, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { EditTaskDialog } from '@/components/project-details/EditTaskDialog';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useTasks } from '@/hooks/useTasks';
+import { PageLoader } from '@/components/PageLoader';
 
 export default function Tasks() {
   const navigate = useNavigate();
@@ -51,11 +52,7 @@ export default function Tasks() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!canRead('tasks')) {

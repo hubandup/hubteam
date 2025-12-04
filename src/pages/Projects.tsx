@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Search, LayoutGrid, List, Kanban, Archive, ArchiveRestore, Edit, Trash2 } from 'lucide-react';
+import { Search, LayoutGrid, List, Kanban, Archive, ArchiveRestore, Edit, Trash2 } from 'lucide-react';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -21,6 +21,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
 import { useProjects, useArchivedProjects } from '@/hooks/useProjects';
+import { PageLoader } from '@/components/PageLoader';
 
 export default function Projects() {
   const navigate = useNavigate();
@@ -120,11 +121,7 @@ export default function Projects() {
   }, [projects, activeTab, searchQuery]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!canRead('projects')) {

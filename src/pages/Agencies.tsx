@@ -12,6 +12,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { PageLoader } from '@/components/PageLoader';
 
 export default function Agencies() {
   const navigate = useNavigate();
@@ -158,11 +159,7 @@ export default function Agencies() {
   };
 
   if (loading || permissionsLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-muted-foreground">Chargement...</div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!canRead('agencies')) {
