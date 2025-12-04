@@ -9,7 +9,6 @@ import { Loader2, Paperclip, Download, Lock, Edit2, Trash2, X, Check } from 'luc
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { MeetingNoteForm } from './MeetingNoteForm';
-import { ProtectedAction } from '@/components/ProtectedAction';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,7 +21,7 @@ interface ClientMeetingNotesTabProps {
 
 export function ClientMeetingNotesTab({ clientId }: ClientMeetingNotesTabProps) {
   const { user } = useAuth();
-  const { isAdmin, isTeam } = useUserRole();
+  const { isAdmin, isTeam, isAgency } = useUserRole();
   const [notes, setNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
@@ -122,8 +121,14 @@ export function ClientMeetingNotesTab({ clientId }: ClientMeetingNotesTabProps) 
   };
 
   const canEditDelete = (note: any) => {
-    return user && (isAdmin || isTeam || note.user_id === user.id);
+    // Admin and Team can edit/delete any note
+    // Agency users can only edit/delete their own notes
+    if (!user) return false;
+    if (isAdmin || isTeam) return true;
+    return note.user_id === user.id;
   };
+
+  const canCreateNote = isAdmin || isTeam || isAgency;
 
   if (loading) {
     return (
@@ -135,13 +140,13 @@ export function ClientMeetingNotesTab({ clientId }: ClientMeetingNotesTabProps) 
 
   return (
     <div className="space-y-6">
-      <ProtectedAction module="crm" action="create">
+      {canCreateNote && (
         <Card>
           <CardContent className="pt-6">
             <MeetingNoteForm clientId={clientId} onNoteAdded={fetchNotes} />
           </CardContent>
         </Card>
-      </ProtectedAction>
+      )}
 
       {notes.length === 0 ? (
         <Card>
