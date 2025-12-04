@@ -21,7 +21,8 @@ import { useUserRole } from '@/hooks/useUserRole';
 export default function CRM() {
   const navigate = useNavigate();
   const { canRead } = usePermissions();
-  const { isAgency } = useUserRole();
+  const { isAgency, loading: roleLoading } = useUserRole();
+  const showRevenue = !roleLoading && !isAgency;
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const { data: clients = [], isLoading: loading } = useClients();
@@ -206,7 +207,7 @@ export default function CRM() {
                 <SelectContent>
                   <SelectItem value="created_at">Date de création</SelectItem>
                   <SelectItem value="alphabetical">Ordre alphabétique</SelectItem>
-                  {!isAgency && (
+                  {showRevenue && (
                     <SelectItem value="revenue_current_year">CA année fiscale ↓</SelectItem>
                   )}
                 </SelectContent>

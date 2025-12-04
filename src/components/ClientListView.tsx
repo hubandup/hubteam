@@ -9,7 +9,8 @@ interface ClientListViewProps {
 }
 
 export function ClientListView({ clients, onClientClick }: ClientListViewProps) {
-  const { isAgency } = useUserRole();
+  const { isAgency, loading: roleLoading } = useUserRole();
+  const showRevenue = !roleLoading && !isAgency;
   return (
     <div className="space-y-2">
       {clients.map((client) => {
@@ -73,7 +74,7 @@ export function ClientListView({ clients, onClientClick }: ClientListViewProps) 
               </div>
             </div>
 
-            {!isAgency && client.revenue_current_year !== null && client.revenue_current_year !== undefined && (
+            {showRevenue && client.revenue_current_year !== null && client.revenue_current_year !== undefined && (
               <div className="flex items-center gap-2 text-sm flex-shrink-0 text-muted-foreground font-medium">
                 <Euro className="h-4 w-4" />
                 <span className="whitespace-nowrap">

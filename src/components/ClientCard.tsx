@@ -30,7 +30,8 @@ interface ClientCardProps {
 }
 
 export function ClientCard({ client, onClick }: ClientCardProps) {
-  const { isAgency } = useUserRole();
+  const { isAgency, loading: roleLoading } = useUserRole();
+  const showRevenue = !roleLoading && !isAgency;
   return (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow relative" onClick={onClick}>
       <CardHeader className="pb-2">
@@ -83,7 +84,7 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
             <span>{client.phone}</span>
           </div>
         )}
-        {!isAgency && (
+        {showRevenue && (
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-2 text-xs md:text-sm font-medium text-success">
               <Euro className="h-3.5 w-3.5 md:h-4 md:w-4 flex-shrink-0" />
