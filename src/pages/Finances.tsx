@@ -388,7 +388,7 @@ export default function Finances() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Marge moyenne</CardTitle>
+            <CardTitle className="text-sm font-medium">Marge moyenne (Apports d'affaires)</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -396,7 +396,7 @@ export default function Finances() {
               {validatedQuotes.length > 0 ? `${averageMargin.toFixed(1)}%` : '-'}
             </div>
             <p className="text-xs text-muted-foreground">
-              Sur les 30 derniers projets validés
+              Soit {validatedQuotes.reduce((sum, quote) => sum + quote.margeEuro, 0).toLocaleString('fr-FR')} € HT sur les 30 derniers projets validés
             </p>
           </CardContent>
         </Card>
