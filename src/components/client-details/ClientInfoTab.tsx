@@ -84,6 +84,7 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
   const [totalProjects, setTotalProjects] = useState<number>(0);
   const [teamMember, setTeamMember] = useState<TeamMember | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [clientProjects, setClientProjects] = useState<Project[]>([]);
 
   useEffect(() => {
     fetchSectorAndStatus();
@@ -96,7 +97,25 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
     if (client.main_contact_id) {
       fetchMainContact();
     }
+    if (isAgency) {
+      fetchClientProjects();
+    }
   }, [client, isClient, isAgency]);
+
+  const fetchClientProjects = async () => {
+    const { data: projectsData } = await supabase
+      .from('project_clients')
+      .select('project_id, projects!inner(id, name, status, start_date, end_date)')
+      .eq('client_id', client.id)
+      .eq('projects.archived', false);
+
+    if (projectsData) {
+      const projects = projectsData
+        .map(pc => pc.projects as Project)
+        .filter(Boolean);
+      setClientProjects(projects);
+    }
+  };
 
   const fetchTeamMembers = async () => {
     const { data: rolesData } = await supabase
@@ -446,6 +465,42 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
                     <p className="text-sm text-muted-foreground">Tous mes projets</p>
                     <p className="text-lg font-bold text-primary">{totalProjects}</p>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : isAgency ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Projets</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {clientProjects.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Aucun projet pour ce client</p>
+                ) : (
+                  <div className="space-y-3">
+                    {clientProjects.map((project) => (
+                      <div key={project.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                        <div className="flex items-center gap-3">
+                          <FolderKanban className="h-4 w-4 text-primary" />
+                          <Link 
+                            to={`/project/${project.id}`} 
+                            className="font-medium hover:text-primary hover:underline"
+                          >
+                            {project.name}
+                          </Link>
+                        </div>
+                        <Badge variant={project.status === 'active' ? 'default' : 'secondary'}>
+                          {project.status === 'active' ? 'Actif' : 
+                           project.status === 'completed' ? 'Terminé' : 
+                           project.status === 'planning' ? 'Planification' : project.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <span className="text-sm text-muted-foreground">Total</span>
+                  <span className="font-semibold">{clientProjects.length} projet{clientProjects.length > 1 ? 's' : ''}</span>
                 </div>
               </CardContent>
             </Card>
