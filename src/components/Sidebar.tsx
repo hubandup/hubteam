@@ -82,7 +82,7 @@ export function Sidebar() {
     <ShadcnSidebar className="border-r-0 shadow-[4px_0_24px_-8px_rgba(0,0,0,0.15)]">
       <SidebarHeader className="border-b border-sidebar-border/50 p-4 bg-gradient-to-b from-sidebar-background to-sidebar-accent/20">
         <div className="flex items-center justify-center">
-          <img src={logo} alt="HubandUp" className="h-7 w-[2.6rem] [filter:brightness(0)_invert(1)] drop-shadow-sm" />
+          <img src={logo} alt="HubandUp" className="h-7 min-h-7 min-w-[2.6rem] w-auto object-contain flex-shrink-0 [filter:brightness(0)_invert(1)] drop-shadow-sm" />
         </div>
       </SidebarHeader>
       <SidebarContent className="bg-gradient-to-b from-sidebar-background via-sidebar-background to-sidebar-accent/10">
