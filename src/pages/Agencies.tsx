@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function Agencies() {
   const navigate = useNavigate();
-  const { canRead } = usePermissions();
+  const { canRead, loading: permissionsLoading } = usePermissions();
   const [agencies, setAgencies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -157,7 +157,7 @@ export default function Agencies() {
     return `${hue} 70% 50%`;
   };
 
-  if (loading) {
+  if (loading || permissionsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-muted-foreground">Chargement...</div>
