@@ -213,6 +213,8 @@ export function KDriveFolderSelector({
   const createFolder = async (folderName: string) => {
     setIsCreatingFolder(true);
     try {
+      console.log("Creating folder:", { folderName, parentId: currentFolderId });
+      
       const response = await supabase.functions.invoke("kdrive-api", {
         body: {
           action: "create-folder",
@@ -221,6 +223,8 @@ export function KDriveFolderSelector({
         },
       });
 
+      console.log("Create folder response:", response);
+
       if (response.error) {
         console.error("Erreur lors de la création du dossier:", response.error);
         toast.error("Impossible de créer le dossier kDrive");
@@ -228,18 +232,21 @@ export function KDriveFolderSelector({
       }
 
       if (response.data?.error) {
-        toast.error(response.data.error);
+        console.error("API error:", response.data.error);
+        toast.error(response.data.error?.description || response.data.error || "Erreur lors de la création du dossier");
         return;
       }
 
-      if (response.data?.result !== "success") {
+      // kDrive API returns { data: {...}, result: "success" } on success
+      // or just the folder data directly
+      if (response.data?.data || response.data?.result === "success") {
+        toast.success(`Dossier "${folderName}" créé avec succès`);
+        setSearchQuery("");
+        await loadFolders();
+      } else {
+        console.error("Unexpected response format:", response.data);
         toast.error("Erreur lors de la création du dossier");
-        return;
       }
-
-      toast.success(`Dossier "${folderName}" créé avec succès`);
-      setSearchQuery("");
-      await loadFolders();
     } catch (error: any) {
       console.error("Erreur:", error);
       toast.error(error.message || "Erreur lors de la création du dossier");
