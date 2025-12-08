@@ -185,44 +185,31 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
   const loadFiles = async (driveId: number | undefined, folderId: string, append = false, customOffset?: number) => {
     try {
       const effectiveDriveId = (driveId as any) ?? undefined;
-      let allFiles: KDriveFile[] = [];
-      let currentOffset = typeof customOffset === "number" ? customOffset : 0;
-      let hasMoreFiles = true;
 
-      // Load all files recursively until no more files
-      while (hasMoreFiles) {
-        const { data, error } = await supabase.functions.invoke("kdrive-api", {
-          body: {
-            action: "list-files",
-            driveId: effectiveDriveId,
-            folderId,
-            limit,
-            offset: currentOffset,
-          },
-        });
+      // Simple single request - no pagination loop
+      const { data, error } = await supabase.functions.invoke("kdrive-api", {
+        body: {
+          action: "list-files",
+          driveId: effectiveDriveId,
+          folderId,
+          limit: 500,
+          offset: 0,
+        },
+      });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        // Extract array and pagination
-        const arr = Array.isArray(data?.data) ? data.data : [];
-        allFiles = [...allFiles, ...arr];
-        
-        hasMoreFiles = Boolean((data as any)?.has_more);
-        currentOffset += arr.length;
-
-        // If no more files, exit loop
-        if (!hasMoreFiles || arr.length === 0) break;
-      }
+      const arr = Array.isArray(data?.data) ? data.data : [];
 
       // Get parent_id from first entry if available
-      const parentId = allFiles?.[0]?.parent_id ?? null;
+      const parentId = arr?.[0]?.parent_id ?? null;
       if (currentFolder) {
         setCurrentFolder((prev) => (prev ? { ...prev, parentId } : null));
       }
 
-      setHasMore(false); // All files loaded
-      setOffset(currentOffset);
-      setFiles((prev) => (append ? [...prev, ...allFiles] : allFiles));
+      setHasMore(false);
+      setOffset(arr.length);
+      setFiles(arr);
     } catch (error) {
       console.error("Error loading files:", error);
       toast.error("Erreur lors du chargement des fichiers");
