@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 
 // Fixed kDrive configuration
-const KDRIVE_DRIVE_ID = 969307; // Hub & Up (product id)
+const KDRIVE_DRIVE_ID = "969307"; // Hub & Up (product id) - must be string
 const KDRIVE_ROOT_FOLDER_ID = "50121"; // Common documents root folder (kDrive folder id)
 const DEBUG_NO_FILTER = false; // Set to true to disable server-side filtering
 
