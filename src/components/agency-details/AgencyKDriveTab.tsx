@@ -115,45 +115,32 @@ export function AgencyKDriveTab({
   const loadFiles = async (drive: number, folderId: string) => {
     try {
       setLoading(true);
-      let allFiles: KDriveFile[] = [];
-      let currentOffset = 0;
-      let hasMoreFiles = true;
-      const limit = 50;
 
-      // Load all files recursively until no more files
-      while (hasMoreFiles) {
-        const {
-          data,
-          error
-        } = await supabase.functions.invoke('kdrive-api', {
-          body: {
-            action: 'list-files',
-            driveId: drive,
-            folderId: folderId,
-            limit,
-            offset: currentOffset,
-          }
-        });
-        
-        if (error) throw error;
-        
-        const arr = Array.isArray(data?.data) ? data.data : [];
-        allFiles = [...allFiles, ...arr];
-        
-        hasMoreFiles = Boolean((data as any)?.has_more);
-        currentOffset += arr.length;
-
-        // If no more files, exit loop
-        if (!hasMoreFiles || arr.length === 0) break;
-      }
+      // Simple single request - no pagination loop
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('kdrive-api', {
+        body: {
+          action: 'list-files',
+          driveId: drive,
+          folderId: folderId,
+          limit: 500,
+          offset: 0,
+        }
+      });
+      
+      if (error) throw error;
+      
+      const arr = Array.isArray(data?.data) ? data.data : [];
 
       // Sort files
-      allFiles.sort((a: KDriveFile, b: KDriveFile) => {
+      arr.sort((a: KDriveFile, b: KDriveFile) => {
         if (a.type === 'dir' && b.type !== 'dir') return -1;
         if (a.type !== 'dir' && b.type === 'dir') return 1;
         return sortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
       });
-      setFiles(allFiles);
+      setFiles(arr);
     } catch (error) {
       console.error('Error loading files:', error);
       toast.error('Erreur lors du chargement des fichiers');
