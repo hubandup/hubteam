@@ -213,12 +213,14 @@ export function KDriveFolderSelector({
   const createFolder = async (folderName: string) => {
     setIsCreatingFolder(true);
     try {
-      console.log("Creating folder:", { folderName, parentId: currentFolderId });
+      console.log("Creating folder:", { folderName, parentId: currentFolderId, driveId: KDRIVE_DRIVE_ID });
       
       const response = await supabase.functions.invoke("kdrive-api", {
         body: {
           action: "create-folder",
-          parentId: currentFolderId,
+          driveId: KDRIVE_DRIVE_ID,
+          parentId: currentFolderId || KDRIVE_ROOT_FOLDER_ID,
+          rootFolderId: KDRIVE_ROOT_FOLDER_ID,
           folderName: folderName,
         },
       });
