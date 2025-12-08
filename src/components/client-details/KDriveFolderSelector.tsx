@@ -188,26 +188,33 @@ export function KDriveFolderSelector({
     });
   };
 
-  const selectCurrentFolder = async () => {
+  const selectFolder = async (folderId: string, folderPath: string) => {
     try {
       const { error } = await supabase
         .from("clients")
         .update({
-          kdrive_folder_id: currentFolderId,
-          kdrive_folder_path: currentPath,
+          kdrive_folder_id: folderId,
+          kdrive_folder_path: folderPath,
           // kdrive_drive_id intentionally omitted; resolved server-side
         })
         .eq("id", clientId);
 
       if (error) throw error;
 
-      toast.success(`Dossier "${currentPath}" associé au client`);
+      toast.success(`Dossier "${folderPath}" associé au client`);
       setIsOpen(false);
       onFolderConnected();
     } catch (error: any) {
       console.error("Erreur:", error);
       toast.error("Erreur lors de l'association du dossier");
     }
+  };
+
+  const selectCurrentFolder = () => selectFolder(currentFolderId, currentPath);
+
+  const selectSpecificFolder = (folder: KDriveFile) => {
+    const folderPath = `${currentPath}/${folder.name}`;
+    selectFolder(folder.id, folderPath);
   };
 
   const createFolder = async (folderName: string) => {
@@ -352,15 +359,30 @@ export function KDriveFolderSelector({
               ) : (
                 <div className="space-y-2">
                   {filteredFolders.map((folder) => (
-                    <Button
+                    <div
                       key={folder.id}
-                      variant="ghost"
-                      className="w-full justify-start gap-2"
-                      onClick={() => navigateToFolder(folder)}
+                      className="group flex items-center justify-between rounded-md hover:bg-accent"
                     >
-                      <Folder className="h-4 w-4" />
-                      <span>{folder.name}</span>
-                    </Button>
+                      <Button
+                        variant="ghost"
+                        className="flex-1 justify-start gap-2"
+                        onClick={() => navigateToFolder(folder)}
+                      >
+                        <Folder className="h-4 w-4" />
+                        <span>{folder.name}</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity mr-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          selectSpecificFolder(folder);
+                        }}
+                      >
+                        Sélectionner
+                      </Button>
+                    </div>
                   ))}
                 </div>
               )}
