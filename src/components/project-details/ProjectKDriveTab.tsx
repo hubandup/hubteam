@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,7 @@ interface KDriveFile {
 }
 
 export function ProjectKDriveTab({ projectId }: ProjectKDriveTabProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [files, setFiles] = useState<KDriveFile[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -34,6 +35,8 @@ export function ProjectKDriveTab({ projectId }: ProjectKDriveTabProps) {
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [creatingFolder, setCreatingFolder] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounter = useRef(0);
 
   useEffect(() => {
     loadProjectFolder();
@@ -105,14 +108,13 @@ export function ProjectKDriveTab({ projectId }: ProjectKDriveTabProps) {
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!event.target.files || event.target.files.length === 0 || !currentFolder || !driveId) return;
+  const handleFileUploadFromFiles = async (files: FileList) => {
+    if (!files || files.length === 0 || !currentFolder || !driveId) return;
 
-    const file = event.target.files[0];
+    const file = files[0];
     setUploading(true);
 
     try {
-      // Read file as base64
       const reader = new FileReader();
       reader.onload = async (e) => {
         const base64Content = e.target?.result as string;
@@ -140,6 +142,49 @@ export function ProjectKDriveTab({ projectId }: ProjectKDriveTabProps) {
       toast.error('Erreur lors de l\'upload du fichier');
     } finally {
       setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      handleFileUploadFromFiles(event.target.files);
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounter.current = 0;
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileUploadFromFiles(e.dataTransfer.files);
     }
   };
 
@@ -240,7 +285,23 @@ export function ProjectKDriveTab({ projectId }: ProjectKDriveTabProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div 
+      className="space-y-4 relative"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* Drag overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg border-2 border-dashed border-primary bg-primary/10 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-2 text-primary">
+            <Upload className="h-12 w-12" />
+            <p className="text-lg font-medium">Déposez vos fichiers ici</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Documents KDrive</h3>
@@ -260,6 +321,7 @@ export function ProjectKDriveTab({ projectId }: ProjectKDriveTabProps) {
               )}
               Uploader
               <input
+                ref={fileInputRef}
                 type="file"
                 className="hidden"
                 onChange={handleFileUpload}

@@ -579,6 +579,27 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     }
   };
 
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounter = useRef(0);
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setIsDragging(false);
+    }
+  };
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -587,6 +608,8 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setIsDragging(false);
+    dragCounter.current = 0;
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFileUpload(e.dataTransfer.files);
@@ -610,7 +633,23 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div 
+      className="space-y-4 relative"
+      onDragEnter={currentFolder ? handleDragEnter : undefined}
+      onDragLeave={currentFolder ? handleDragLeave : undefined}
+      onDragOver={currentFolder ? handleDragOver : undefined}
+      onDrop={currentFolder ? handleDrop : undefined}
+    >
+      {/* Drag overlay */}
+      {isDragging && currentFolder && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg border-2 border-dashed border-primary bg-primary/10 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-2 text-primary">
+            <Upload className="h-12 w-12" />
+            <p className="text-lg font-medium">Déposez vos fichiers ici</p>
+          </div>
+        </div>
+      )}
+
       {!client?.kdrive_folder_id && (
         <div className="rounded-md border border-warning/50 bg-warning/20 p-3 text-sm flex items-center justify-between gap-2">
           <span className="text-muted-foreground">Le drive kDrive n'est pas attribué pour ce dossier.</span>
