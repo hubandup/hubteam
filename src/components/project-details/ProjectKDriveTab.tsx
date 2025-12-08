@@ -84,36 +84,21 @@ export function ProjectKDriveTab({ projectId }: ProjectKDriveTabProps) {
 
   const loadFiles = async (driveId: number, folderId: string) => {
     try {
-      let allFiles: KDriveFile[] = [];
-      let currentOffset = 0;
-      let hasMoreFiles = true;
-      const limit = 200;
+      // Simple single request - no pagination loop needed for direct folder listing
+      const { data, error } = await supabase.functions.invoke('kdrive-api', {
+        body: {
+          action: 'list-files',
+          driveId,
+          folderId,
+          limit: 500,
+          offset: 0,
+        }
+      });
 
-      // Load all files recursively until no more files
-      while (hasMoreFiles) {
-        const { data, error } = await supabase.functions.invoke('kdrive-api', {
-          body: {
-            action: 'list-files',
-            driveId,
-            folderId,
-            limit,
-            offset: currentOffset,
-          }
-        });
+      if (error) throw error;
 
-        if (error) throw error;
-
-        const arr = Array.isArray(data?.data) ? data.data : [];
-        allFiles = [...allFiles, ...arr];
-        
-        hasMoreFiles = Boolean((data as any)?.has_more);
-        currentOffset += arr.length;
-
-        // If no more files, exit loop
-        if (!hasMoreFiles || arr.length === 0) break;
-      }
-
-      setFiles(allFiles);
+      const arr = Array.isArray(data?.data) ? data.data : [];
+      setFiles(arr);
     } catch (error: any) {
       console.error('Error loading files:', error);
       toast.error('Erreur lors du chargement des fichiers');
