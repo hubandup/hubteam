@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Folder, Loader2, HardDrive, Search, ArrowUpDown } from "lucide-react";
+import { Folder, Loader2, HardDrive, Search, ArrowUpDown, Plus } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +56,7 @@ export function KDriveFolderSelector({
     { id: KDRIVE_ROOT_FOLDER_ID, name: "Common documents" }
   ]);
   const [sortBy, setSortBy] = useState<"name-asc" | "name-desc">("name-asc");
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -209,6 +210,44 @@ export function KDriveFolderSelector({
     }
   };
 
+  const createFolder = async (folderName: string) => {
+    setIsCreatingFolder(true);
+    try {
+      const response = await supabase.functions.invoke("kdrive-api", {
+        body: {
+          action: "create-folder",
+          parentId: currentFolderId,
+          folderName: folderName,
+        },
+      });
+
+      if (response.error) {
+        console.error("Erreur lors de la création du dossier:", response.error);
+        toast.error("Impossible de créer le dossier kDrive");
+        return;
+      }
+
+      if (response.data?.error) {
+        toast.error(response.data.error);
+        return;
+      }
+
+      if (response.data?.result !== "success") {
+        toast.error("Erreur lors de la création du dossier");
+        return;
+      }
+
+      toast.success(`Dossier "${folderName}" créé avec succès`);
+      setSearchQuery("");
+      await loadFolders();
+    } catch (error: any) {
+      console.error("Erreur:", error);
+      toast.error(error.message || "Erreur lors de la création du dossier");
+    } finally {
+      setIsCreatingFolder(false);
+    }
+  };
+
   return (
     <>
       <Button
@@ -279,9 +318,27 @@ export function KDriveFolderSelector({
                 </div>
               ) : filteredFolders.length === 0 && searchQuery.trim() ? (
                 <div className="text-center py-8 space-y-4">
+                  <Folder className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
                   <p className="text-muted-foreground">
                     Aucun dossier ne correspond à "{searchQuery}"
                   </p>
+                  <Button 
+                    onClick={() => createFolder(searchQuery.trim())}
+                    disabled={isCreatingFolder}
+                    size="sm"
+                  >
+                    {isCreatingFolder ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Création en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Créer le dossier "{searchQuery.trim()}"
+                      </>
+                    )}
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-2">
