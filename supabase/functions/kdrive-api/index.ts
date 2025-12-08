@@ -334,15 +334,31 @@ serve(async (req) => {
         break;
 
       case 'create-folder':
+        console.log('=== CREATE FOLDER DEBUG ===');
+        console.log('Received driveId:', driveId);
+        console.log('Received parentId:', parentId);
+        console.log('Received folderName:', folderName);
+        console.log('Received rootFolderId:', rootFolderId);
+        
         // Get the actual drive ID from product if not provided
         let createDriveId = driveId;
         if (!createDriveId) {
+          console.log('No driveId provided, fetching from product...');
           const productsResp = await fetch(`${KDRIVE_API_BASE}/1/product`, { headers: kdriveHeaders });
           if (productsResp.ok) {
             const productsData = await productsResp.json();
             const driveProduct = productsData?.data?.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
             createDriveId = driveProduct?.id;
+            console.log('Fetched driveId from product:', createDriveId);
+          } else {
+            console.error('Failed to fetch products:', productsResp.status);
           }
+        }
+        
+        // Fallback to KDRIVE_PRODUCT_ID if still no drive ID
+        if (!createDriveId) {
+          createDriveId = KDRIVE_PRODUCT_ID;
+          console.log('Using fallback KDRIVE_PRODUCT_ID:', createDriveId);
         }
         
         if (!createDriveId) {
@@ -358,6 +374,8 @@ serve(async (req) => {
         const createParentId = parentId || rootFolderId || 1;
         const createFolderName = folderName || fileName;
         
+        console.log('Final values - driveId:', createDriveId, 'parentId:', createParentId, 'folderName:', createFolderName);
+        
         if (!createFolderName) {
           return new Response(
             JSON.stringify({ error: 'Folder name is required' }),
@@ -368,14 +386,19 @@ serve(async (req) => {
           );
         }
         
+        const createFolderUrl = `${KDRIVE_API_BASE}/2/drive/${createDriveId}/files/${createParentId}/directory`;
+        console.log('Creating folder at URL:', createFolderUrl);
+        
         response = await fetch(
-          `${KDRIVE_API_BASE}/2/drive/${createDriveId}/files/${createParentId}/directory`,
+          createFolderUrl,
           {
             method: 'POST',
             headers: kdriveHeaders,
             body: JSON.stringify({ name: createFolderName })
           }
         );
+        
+        console.log('Create folder response status:', response.status);
         
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
