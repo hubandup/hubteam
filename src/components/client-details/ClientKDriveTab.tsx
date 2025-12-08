@@ -47,6 +47,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { RenameFileDialog } from "./RenameFileDialog";
 import { FilePreviewPane } from "./FilePreviewPane";
+import { Progress } from "@/components/ui/progress";
+
+interface UploadProgress {
+  fileName: string;
+  progress: number;
+  status: 'pending' | 'uploading' | 'done' | 'error';
+}
 
 interface ClientKDriveTabProps {
   clientId: string;
@@ -94,6 +101,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
   const [showDeleteMultipleConfirm, setShowDeleteMultipleConfirm] = useState(false);
   const [renameItem, setRenameItem] = useState<{ id: number; name: string; type: "dir" | "file" } | null>(null);
   const [previewFile, setPreviewFile] = useState<KDriveFile | null>(null);
+  const [uploadQueue, setUploadQueue] = useState<UploadProgress[]>([]);
 
   useEffect(() => {
     loadClientFolder();
@@ -216,16 +224,50 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     }
   };
 
-  const handleFileUpload = async (files: FileList) => {
-    if (!files || files.length === 0 || !client || !currentFolder) return;
+  const handleFileUpload = async (fileList: FileList) => {
+    if (!fileList || fileList.length === 0 || !client || !currentFolder) return;
 
-    const file = files[0];
+    const filesArray = Array.from(fileList);
+    const initialQueue: UploadProgress[] = filesArray.map(f => ({
+      fileName: f.name,
+      progress: 0,
+      status: 'pending' as const
+    }));
+    
+    setUploadQueue(initialQueue);
     setUploading(true);
 
-    try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const base64 = e.target?.result?.toString().split(",")[1];
+    let successCount = 0;
+
+    for (let i = 0; i < filesArray.length; i++) {
+      const file = filesArray[i];
+      
+      setUploadQueue(prev => prev.map((item, idx) => 
+        idx === i ? { ...item, status: 'uploading', progress: 10 } : item
+      ));
+
+      try {
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const result = e.target?.result as string;
+            resolve(result.split(',')[1]);
+          };
+          reader.onerror = reject;
+          reader.onprogress = (e) => {
+            if (e.lengthComputable) {
+              const percent = Math.round((e.loaded / e.total) * 50);
+              setUploadQueue(prev => prev.map((item, idx) => 
+                idx === i ? { ...item, progress: percent } : item
+              ));
+            }
+          };
+          reader.readAsDataURL(file);
+        });
+
+        setUploadQueue(prev => prev.map((item, idx) => 
+          idx === i ? { ...item, progress: 60 } : item
+        ));
 
         const { error } = await supabase.functions.invoke("kdrive-api", {
           body: {
@@ -233,25 +275,36 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
             driveId: client.kdrive_drive_id,
             folderId: currentFolder.id.toString(),
             fileName: file.name,
-            fileContent: base64,
+            fileContent: base64Data,
           },
         });
 
         if (error) throw error;
 
-        toast.success("Fichier téléversé avec succès");
-        await loadFiles(client.kdrive_drive_id, currentFolder.id.toString());
-      };
-
-      reader.readAsDataURL(file);
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      toast.error("Erreur lors du téléversement du fichier");
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+        successCount++;
+        setUploadQueue(prev => prev.map((item, idx) => 
+          idx === i ? { ...item, status: 'done', progress: 100 } : item
+        ));
+      } catch (error) {
+        console.error("Error uploading file:", error);
+        setUploadQueue(prev => prev.map((item, idx) => 
+          idx === i ? { ...item, status: 'error', progress: 0 } : item
+        ));
       }
+    }
+
+    if (successCount > 0) {
+      toast.success(`${successCount} fichier(s) téléversé(s) avec succès`);
+    }
+    await loadFiles(client.kdrive_drive_id, currentFolder.id.toString());
+    
+    setTimeout(() => {
+      setUploadQueue([]);
+      setUploading(false);
+    }, 1500);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -752,6 +805,32 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
             <p className="text-sm font-medium text-primary">Glissez-déposez un fichier ici ou cliquez pour sélectionner</p>
           </div>
         </div>
+      )}
+
+      {/* Upload progress */}
+      {uploadQueue.length > 0 && (
+        <Card className="border-primary/20 bg-primary/5">
+          <div className="p-4 space-y-3">
+            <p className="text-sm font-medium">Upload en cours...</p>
+            {uploadQueue.map((item, idx) => (
+              <div key={idx} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="truncate max-w-[200px]">{item.fileName}</span>
+                  <span className={
+                    item.status === 'done' ? 'text-success' : 
+                    item.status === 'error' ? 'text-destructive' : 
+                    'text-muted-foreground'
+                  }>
+                    {item.status === 'done' ? '✓' : 
+                     item.status === 'error' ? '✗' : 
+                     `${item.progress}%`}
+                  </span>
+                </div>
+                <Progress value={item.progress} className="h-1.5" />
+              </div>
+            ))}
+          </div>
+        </Card>
       )}
 
       <div className="space-y-2">

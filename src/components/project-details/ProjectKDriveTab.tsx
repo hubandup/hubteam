@@ -10,6 +10,7 @@ import { fr } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Progress } from '@/components/ui/progress';
 
 interface ProjectKDriveTabProps {
   projectId: string;
@@ -25,6 +26,12 @@ interface KDriveFile {
   parent_id?: number | null;
 }
 
+interface UploadProgress {
+  fileName: string;
+  progress: number;
+  status: 'pending' | 'uploading' | 'done' | 'error';
+}
+
 export function ProjectKDriveTab({ projectId }: ProjectKDriveTabProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
@@ -37,6 +44,7 @@ export function ProjectKDriveTab({ projectId }: ProjectKDriveTabProps) {
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
+  const [uploadQueue, setUploadQueue] = useState<UploadProgress[]>([]);
 
   useEffect(() => {
     loadProjectFolder();
@@ -108,19 +116,50 @@ export function ProjectKDriveTab({ projectId }: ProjectKDriveTabProps) {
     }
   };
 
-  const handleFileUploadFromFiles = async (files: FileList) => {
-    if (!files || files.length === 0 || !currentFolder || !driveId) return;
+  const handleFileUploadFromFiles = async (fileList: FileList) => {
+    if (!fileList || fileList.length === 0 || !currentFolder || !driveId) return;
 
-    const file = files[0];
+    const filesArray = Array.from(fileList);
+    const initialQueue: UploadProgress[] = filesArray.map(f => ({
+      fileName: f.name,
+      progress: 0,
+      status: 'pending' as const
+    }));
+    
+    setUploadQueue(initialQueue);
     setUploading(true);
 
-    try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const base64Content = e.target?.result as string;
-        const base64Data = base64Content.split(',')[1];
+    for (let i = 0; i < filesArray.length; i++) {
+      const file = filesArray[i];
+      
+      setUploadQueue(prev => prev.map((item, idx) => 
+        idx === i ? { ...item, status: 'uploading', progress: 10 } : item
+      ));
 
-        const { data, error } = await supabase.functions.invoke('kdrive-api', {
+      try {
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const result = e.target?.result as string;
+            resolve(result.split(',')[1]);
+          };
+          reader.onerror = reject;
+          reader.onprogress = (e) => {
+            if (e.lengthComputable) {
+              const percent = Math.round((e.loaded / e.total) * 50);
+              setUploadQueue(prev => prev.map((item, idx) => 
+                idx === i ? { ...item, progress: percent } : item
+              ));
+            }
+          };
+          reader.readAsDataURL(file);
+        });
+
+        setUploadQueue(prev => prev.map((item, idx) => 
+          idx === i ? { ...item, progress: 60 } : item
+        ));
+
+        const { error } = await supabase.functions.invoke('kdrive-api', {
           body: {
             action: 'upload-file',
             driveId,
@@ -132,19 +171,28 @@ export function ProjectKDriveTab({ projectId }: ProjectKDriveTabProps) {
 
         if (error) throw error;
 
-        toast.success('Fichier uploadé avec succès !');
-        await loadFiles(driveId, currentFolder.id);
-      };
-
-      reader.readAsDataURL(file);
-    } catch (error: any) {
-      console.error('Error uploading file:', error);
-      toast.error('Erreur lors de l\'upload du fichier');
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        setUploadQueue(prev => prev.map((item, idx) => 
+          idx === i ? { ...item, status: 'done', progress: 100 } : item
+        ));
+      } catch (error: any) {
+        console.error('Error uploading file:', error);
+        setUploadQueue(prev => prev.map((item, idx) => 
+          idx === i ? { ...item, status: 'error', progress: 0 } : item
+        ));
       }
+    }
+
+    const successCount = uploadQueue.filter(u => u.status === 'done').length || filesArray.length;
+    toast.success(`${successCount} fichier(s) uploadé(s) avec succès !`);
+    await loadFiles(driveId, currentFolder.id);
+    
+    setTimeout(() => {
+      setUploadQueue([]);
+      setUploading(false);
+    }, 1500);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -331,6 +379,32 @@ export function ProjectKDriveTab({ projectId }: ProjectKDriveTabProps) {
           </Button>
         </div>
       </div>
+
+      {/* Upload progress */}
+      {uploadQueue.length > 0 && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="p-4 space-y-3">
+            <p className="text-sm font-medium">Upload en cours...</p>
+            {uploadQueue.map((item, idx) => (
+              <div key={idx} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="truncate max-w-[200px]">{item.fileName}</span>
+                  <span className={
+                    item.status === 'done' ? 'text-success' : 
+                    item.status === 'error' ? 'text-destructive' : 
+                    'text-muted-foreground'
+                  }>
+                    {item.status === 'done' ? '✓' : 
+                     item.status === 'error' ? '✗' : 
+                     `${item.progress}%`}
+                  </span>
+                </div>
+                <Progress value={item.progress} className="h-1.5" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4">
         {files.length === 0 ? (
