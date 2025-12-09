@@ -232,9 +232,9 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Generate invite link - redirects to set-password page
-    // Use the request origin to build the correct frontend URL
-    const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/') || '';
-    const redirectUrl = `${origin}/auth/set-password`;
+    // Use production URL for invitations to ensure consistency
+    const productionUrl = 'https://hubandup.org';
+    const redirectUrl = `${productionUrl}/auth/set-password`;
     console.log("Redirect URL:", redirectUrl);
     
     console.log("Generating invitation link...");
