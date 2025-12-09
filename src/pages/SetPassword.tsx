@@ -39,10 +39,53 @@ export default function SetPassword() {
   });
 
   useEffect(() => {
-    // Vérifier si l'utilisateur a un token valide dans l'URL
+    // Écouter les changements d'état d'authentification
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth event:', event, 'Session:', !!session);
+        
+        if (event === 'SIGNED_IN' && session) {
+          setIsValidToken(true);
+          setIsLoading(false);
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          setIsValidToken(true);
+          setIsLoading(false);
+        }
+      }
+    );
+
+    // Vérifier si l'utilisateur a un token valide dans l'URL ou une session existante
     const checkToken = async () => {
       try {
-        // Supabase gère automatiquement le token dans l'URL
+        // Vérifier d'abord s'il y a un hash avec des tokens dans l'URL
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        
+        if (accessToken && refreshToken) {
+          console.log('Found tokens in URL hash, setting session...');
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          
+          if (error) {
+            console.error('Error setting session from URL tokens:', error);
+            toast.error('Lien d\'invitation invalide ou expiré');
+            navigate('/auth');
+            return;
+          }
+          
+          if (data.session) {
+            setIsValidToken(true);
+            setIsLoading(false);
+            // Nettoyer l'URL
+            window.history.replaceState(null, '', window.location.pathname);
+            return;
+          }
+        }
+        
+        // Sinon, vérifier la session existante
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -67,6 +110,8 @@ export default function SetPassword() {
     };
 
     checkToken();
+    
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   const handleSetPassword = async (data: PasswordFormData) => {
