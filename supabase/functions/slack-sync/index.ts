@@ -18,6 +18,7 @@ interface PostToSlackRequest {
   author_name: string;
   post_id: string;
   media_urls?: string[];
+  pdf_url?: string;
 }
 
 interface SlackEventRequest {
@@ -80,7 +81,7 @@ async function postToSlack(request: PostToSlackRequest): Promise<Response> {
   }
 
   console.log(`Posting to Slack channel ${SLACK_CHANNEL_ID}: ${request.content.substring(0, 50)}...`);
-  console.log(`Media URLs: ${JSON.stringify(request.media_urls)}`);
+  console.log(`Media URLs: ${JSON.stringify(request.media_urls)}, PDF URL: ${request.pdf_url}`);
 
   // Build Slack Block Kit message with images
   const blocks: any[] = [
@@ -102,6 +103,27 @@ async function postToSlack(request: PostToSlackRequest): Promise<Response> {
         alt_text: "Image du post",
       });
     }
+  }
+
+  // Add PDF as a button link
+  if (request.pdf_url) {
+    blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: "📄 *Document PDF joint*",
+      },
+      accessory: {
+        type: "button",
+        text: {
+          type: "plain_text",
+          text: "Voir le PDF",
+          emoji: true,
+        },
+        url: request.pdf_url,
+        action_id: "view_pdf",
+      },
+    });
   }
 
   const slackMessage = {

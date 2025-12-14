@@ -213,6 +213,7 @@ export function CreatePostDialog({
             author_name: authorName,
             post_id: postData.id,
             media_urls: mediaUrls.length > 0 ? mediaUrls : undefined,
+            pdf_url: pdfUrl || undefined,
           },
         });
         console.log('Post synced to Slack');
