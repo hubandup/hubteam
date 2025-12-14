@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createSafeHtml } from '@/lib/sanitize';
 import { HelpCircle, Plus, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -106,7 +107,7 @@ function SortableFaqItem({ item, isAdmin, onEdit, onDelete }: SortableFaqItemPro
         <CollapsibleContent className="px-[30px] pb-4 pt-3 border-t bg-card">
           <div
             className="prose max-w-none mb-4 dark:prose-invert [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mb-4 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mb-3 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:mb-2 [&_a]:text-primary [&_a]:underline [&_a]:cursor-pointer"
-            dangerouslySetInnerHTML={{ __html: item.content }}
+            dangerouslySetInnerHTML={createSafeHtml(item.content)}
           />
           {item.pdf_url && (
             <div className="mb-4">

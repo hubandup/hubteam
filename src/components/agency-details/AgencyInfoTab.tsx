@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createSafeHtml } from '@/lib/sanitize';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -202,7 +203,7 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
                   <p className="text-sm text-muted-foreground">Description</p>
                   <div 
                     className="font-medium prose prose-sm dark:prose-invert max-w-none"
-                    dangerouslySetInnerHTML={{ __html: agency.description }}
+                    dangerouslySetInnerHTML={createSafeHtml(agency.description)}
                   />
                 </div>
               </div>
