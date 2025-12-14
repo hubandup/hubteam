@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createSafeHtml } from '@/lib/sanitize';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -313,7 +314,7 @@ export function QuickNotes() {
                 <div className="flex items-start justify-between gap-2 md:gap-3">
                     <div 
                       className="flex-1 text-sm"
-                      dangerouslySetInnerHTML={{ __html: note.content }}
+                      dangerouslySetInnerHTML={createSafeHtml(note.content)}
                     />
                     {hoveredNoteId === note.id && (
                       <div className="flex gap-1">
