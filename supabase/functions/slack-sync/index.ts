@@ -17,6 +17,7 @@ interface PostToSlackRequest {
   content: string;
   author_name: string;
   post_id: string;
+  media_urls?: string[];
 }
 
 interface SlackEventRequest {
@@ -79,10 +80,34 @@ async function postToSlack(request: PostToSlackRequest): Promise<Response> {
   }
 
   console.log(`Posting to Slack channel ${SLACK_CHANNEL_ID}: ${request.content.substring(0, 50)}...`);
+  console.log(`Media URLs: ${JSON.stringify(request.media_urls)}`);
+
+  // Build Slack Block Kit message with images
+  const blocks: any[] = [
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `*${request.author_name}* a publié sur le Feed Hub & Up:\n\n${request.content}`,
+      },
+    },
+  ];
+
+  // Add images as image blocks
+  if (request.media_urls && request.media_urls.length > 0) {
+    for (const imageUrl of request.media_urls) {
+      blocks.push({
+        type: "image",
+        image_url: imageUrl,
+        alt_text: "Image du post",
+      });
+    }
+  }
 
   const slackMessage = {
     channel: SLACK_CHANNEL_ID,
     text: `*${request.author_name}* a publié sur le Feed Hub & Up:\n\n${request.content}`,
+    blocks: blocks,
     unfurl_links: true,
   };
 
