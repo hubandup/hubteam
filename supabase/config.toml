@@ -86,3 +86,7 @@ verify_jwt = false
 
 [functions.fetch-validated-quotes]
 verify_jwt = false
+
+# Slack integration - public for webhooks
+[functions.slack-sync]
+verify_jwt = false

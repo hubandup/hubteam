@@ -180,7 +180,7 @@ export function CreatePostDialog({
         }
       }
 
-      const { error } = await supabase.from('user_posts').insert({
+      const { data: postData, error } = await supabase.from('user_posts').insert({
         user_id: user.id,
         content: content.trim(),
         media_urls: mediaUrls.length > 0 ? mediaUrls : null,
@@ -190,9 +190,36 @@ export function CreatePostDialog({
         link_image: linkMetadata?.link_image || null,
         link_site_name: linkMetadata?.link_site_name || null,
         pdf_url: pdfUrl,
-      });
+      }).select().single();
       
       if (error) throw error;
+
+      // Sync to Slack in background
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', user.id)
+          .single();
+        
+        const authorName = profile 
+          ? `${profile.first_name} ${profile.last_name}` 
+          : 'Utilisateur';
+        
+        await supabase.functions.invoke('slack-sync', {
+          body: {
+            action: 'post_to_slack',
+            content: content.trim(),
+            author_name: authorName,
+            post_id: postData.id,
+          },
+        });
+        console.log('Post synced to Slack');
+      } catch (slackError) {
+        console.error('Error syncing to Slack:', slackError);
+        // Don't show error to user, Slack sync is optional
+      }
+
       toast.success('Post publié avec succès');
       setContent('');
       setMediaFiles([]);
