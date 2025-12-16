@@ -80,38 +80,36 @@ export default function Finances() {
 
   // Update forecast in revenueData when forecastRevenue changes
   useEffect(() => {
-    if (forecastRevenue > 0) {
-      setRevenueData(prev => {
-        if (prev.length === 0) return prev;
-        
-        // Check if already has forecast data to avoid unnecessary updates
-        const hasForecasts = prev.some(d => d.forecast !== null);
-        if (hasForecasts) return prev;
-        
-        const forecastPerMonth = forecastRevenue / 3;
-        const lastActualRevenue = prev[5]?.revenue || 0;
-        
-        return prev.map((item, index) => {
-          // Last 3 months are forecast months (indices 6, 7, 8)
-          if (index >= 6) {
-            const monthsFromNow = index - 5;
-            return {
-              ...item,
-              forecast: forecastPerMonth * monthsFromNow,
-            };
-          }
-          // For the current month (index 5), add connection point for forecast line
-          if (index === 5) {
-            return {
-              ...item,
-              forecast: lastActualRevenue,
-            };
-          }
-          return item;
-        });
+    if (forecastRevenue > 0 && revenueData.length === 9) {
+      const forecastPerMonth = forecastRevenue / 3;
+      const lastActualRevenue = revenueData[5]?.revenue || 0;
+      
+      // Only update if forecast values are not already set
+      const needsUpdate = revenueData[6]?.forecast === null;
+      if (!needsUpdate) return;
+      
+      const updatedData = revenueData.map((item, index) => {
+        // Last 3 months are forecast months (indices 6, 7, 8)
+        if (index >= 6) {
+          const monthsFromNow = index - 5;
+          return {
+            ...item,
+            forecast: forecastPerMonth * monthsFromNow,
+          };
+        }
+        // For the current month (index 5), add connection point for forecast line
+        if (index === 5) {
+          return {
+            ...item,
+            forecast: lastActualRevenue,
+          };
+        }
+        return item;
       });
+      
+      setRevenueData(updatedData);
     }
-  }, [forecastRevenue]);
+  }, [forecastRevenue, revenueData]);
 
   const fetchFinancialData = async () => {
     try {
