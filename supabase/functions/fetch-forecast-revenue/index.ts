@@ -5,19 +5,20 @@ const corsHeaders = {
 
 const FACTURATION_PRO_API_URL = 'https://www.facturation.pro';
 
-interface FacturationProQuote {
-  id: number;
-  total: string;
-  quote_status: number;
-  quote_date: string;
-}
-
 interface FacturationProInvoice {
   id: number;
   total: string;
   paid: boolean;
   payment_status: number;
   invoice_date: string;
+  due_date: string;
+}
+
+interface MonthlyForecast {
+  month: number; // 1, 2, or 3 (months from now)
+  encaisser: number; // CA HT à encaisser
+  recurrent: number; // CA HT récurrent
+  total: number;
 }
 
 Deno.serve(async (req) => {
@@ -41,12 +42,26 @@ Deno.serve(async (req) => {
       'Content-Type': 'application/json',
     };
 
-    // Fetch unpaid invoices (CA HT à encaisser)
-    let totalForecast = 0;
+    // Get dates for next 3 months
+    const now = new Date();
+    const month1Start = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const month1End = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+    const month2Start = new Date(now.getFullYear(), now.getMonth() + 2, 1);
+    const month2End = new Date(now.getFullYear(), now.getMonth() + 3, 0);
+    const month3Start = new Date(now.getFullYear(), now.getMonth() + 3, 1);
+    const month3End = new Date(now.getFullYear(), now.getMonth() + 4, 0);
+
+    const monthlyForecasts: MonthlyForecast[] = [
+      { month: 1, encaisser: 0, recurrent: 0, total: 0 },
+      { month: 2, encaisser: 0, recurrent: 0, total: 0 },
+      { month: 3, encaisser: 0, recurrent: 0, total: 0 },
+    ];
+
+    // Fetch unpaid invoices (CA HT à encaisser) with due dates
     const perPage = 100;
     const maxPages = 20;
+    let totalEncaisser = 0;
 
-    // Fetch invoices to find unpaid ones
     for (let page = 1; page <= maxPages; page++) {
       const url = new URL(`${FACTURATION_PRO_API_URL}/firms/${firmId}/invoices.json`);
       url.searchParams.set('page', String(page));
@@ -67,25 +82,79 @@ Deno.serve(async (req) => {
 
       if (invoices.length === 0) break;
 
-      // Sum unpaid invoices (payment_status !== 3 means not fully paid, or paid === false)
+      // Process unpaid invoices
       for (const invoice of invoices) {
         const isPaid = invoice.paid === true || invoice.payment_status === 3;
         if (!isPaid) {
           const amount = parseFloat(invoice.total) || 0;
-          totalForecast += amount;
-          console.log(`[FORECAST] Unpaid invoice: ${amount}€`);
+          totalEncaisser += amount;
+          
+          // Categorize by due date into months
+          const dueDate = invoice.due_date ? new Date(invoice.due_date) : null;
+          
+          if (dueDate) {
+            if (dueDate >= month1Start && dueDate <= month1End) {
+              monthlyForecasts[0].encaisser += amount;
+            } else if (dueDate >= month2Start && dueDate <= month2End) {
+              monthlyForecasts[1].encaisser += amount;
+            } else if (dueDate >= month3Start && dueDate <= month3End) {
+              monthlyForecasts[2].encaisser += amount;
+            } else if (dueDate < month1Start) {
+              // Past due invoices count towards month 1
+              monthlyForecasts[0].encaisser += amount;
+            }
+          } else {
+            // No due date - distribute to month 1
+            monthlyForecasts[0].encaisser += amount;
+          }
         }
       }
 
       if (invoices.length < perPage) break;
     }
 
-    console.log(`[FORECAST] Total CA HT à encaisser: ${totalForecast}€`);
+    // Try to fetch recurring revenue if available
+    try {
+      const recurringUrl = new URL(`${FACTURATION_PRO_API_URL}/firms/${firmId}/recurring_invoices.json`);
+      recurringUrl.searchParams.set('per_page', '100');
+      
+      const recurringResponse = await fetch(recurringUrl.toString(), { headers });
+      
+      if (recurringResponse.ok) {
+        const recurringData = await recurringResponse.json();
+        const recurringInvoices = Array.isArray(recurringData) ? recurringData : (recurringData?.recurring_invoices || recurringData?.data || []);
+        
+        console.log(`[FORECAST] Found ${recurringInvoices.length} recurring invoices`);
+        
+        for (const recInvoice of recurringInvoices) {
+          if (recInvoice.active !== false) {
+            const amount = parseFloat(recInvoice.total || recInvoice.amount || '0') || 0;
+            // Add recurring amount to each of the 3 months
+            monthlyForecasts[0].recurrent += amount;
+            monthlyForecasts[1].recurrent += amount;
+            monthlyForecasts[2].recurrent += amount;
+          }
+        }
+      }
+    } catch (recurringError) {
+      console.log('[FORECAST] Could not fetch recurring invoices (may not be available):', recurringError);
+    }
+
+    // Calculate totals for each month
+    monthlyForecasts.forEach(mf => {
+      mf.total = mf.encaisser + mf.recurrent;
+    });
+
+    const totalForecast = monthlyForecasts.reduce((sum, mf) => sum + mf.total, 0);
+
+    console.log('[FORECAST] Monthly forecasts:', JSON.stringify(monthlyForecasts));
+    console.log(`[FORECAST] Total forecast: ${totalForecast}€`);
 
     return new Response(
       JSON.stringify({
         success: true,
         forecastRevenue: totalForecast,
+        monthlyForecasts,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
