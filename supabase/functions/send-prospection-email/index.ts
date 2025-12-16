@@ -26,6 +26,17 @@ interface ProspectionEmailRequest {
   message: string;
 }
 
+// HTML escape function to prevent injection attacks
+function escapeHtml(unsafe: string): string {
+  if (!unsafe) return "";
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -34,6 +45,17 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const { recipients, subject, message }: ProspectionEmailRequest = await req.json();
+
+    // Validate input
+    if (!message || typeof message !== "string" || message.length > 10000) {
+      throw new Error("Invalid message: must be a string under 10000 characters");
+    }
+    if (!subject || typeof subject !== "string" || subject.length > 500) {
+      throw new Error("Invalid subject: must be a string under 500 characters");
+    }
+    if (!Array.isArray(recipients) || recipients.length === 0 || recipients.length > 100) {
+      throw new Error("Invalid recipients: must be an array with 1-100 recipients");
+    }
 
     // Get user ID from authorization header
     const authHeader = req.headers.get("Authorization");
@@ -52,10 +74,16 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send emails to all recipients using Brevo API
     const emailPromises = recipients.map(async (recipient) => {
-      const personalizedMessage = message
-        .replace(/\{prénom\}/g, recipient.firstName)
-        .replace(/\{nom\}/g, recipient.lastName)
-        .replace(/\{société\}/g, recipient.company);
+      // Sanitize all user inputs before embedding in HTML
+      const safeFirstName = escapeHtml(recipient.firstName);
+      const safeLastName = escapeHtml(recipient.lastName);
+      const safeCompany = escapeHtml(recipient.company);
+      const safeMessage = escapeHtml(message);
+      
+      const personalizedMessage = safeMessage
+        .replace(/\{prénom\}/g, safeFirstName)
+        .replace(/\{nom\}/g, safeLastName)
+        .replace(/\{société\}/g, safeCompany);
 
       const response = await fetch("https://api.brevo.com/v3/smtp/email", {
         method: "POST",
