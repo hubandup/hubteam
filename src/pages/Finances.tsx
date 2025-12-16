@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Euro, Loader2, RefreshCw, TrendingUp, FileDown, Users, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ReferenceLine } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -40,6 +40,8 @@ export default function Finances() {
   const [treasuryData, setTreasuryData] = useState<{ month: string; balance: number }[]>([]);
   const [isLoadingTreasury, setIsLoadingTreasury] = useState(false);
   const [treasuryLastUpdated, setTreasuryLastUpdated] = useState<string | null>(null);
+  const [forecastRevenue, setForecastRevenue] = useState(0);
+  const [isLoadingForecast, setIsLoadingForecast] = useState(false);
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -53,6 +55,7 @@ export default function Finances() {
       fetchValidatedQuotes();
       fetchAdhesions();
       fetchTreasuryData();
+      fetchForecastRevenue();
     }
   }, [isAdmin, roleLoading, navigate]);
 
@@ -209,6 +212,26 @@ export default function Finances() {
       toast.error('Erreur lors du chargement des données de trésorerie');
     } finally {
       setIsLoadingTreasury(false);
+    }
+  };
+
+  const fetchForecastRevenue = async () => {
+    setIsLoadingForecast(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-forecast-revenue');
+      
+      if (error) {
+        console.error('Error fetching forecast revenue:', error);
+        return;
+      }
+
+      if (data?.success) {
+        setForecastRevenue(data.forecastRevenue || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching forecast revenue:', error);
+    } finally {
+      setIsLoadingForecast(false);
     }
   };
 
@@ -472,8 +495,16 @@ export default function Finances() {
 
       {/* Revenue Evolution Chart */}
       <Card>
-        <CardHeader>
-          <CardTitle>Évolution du CA</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Évolution du CA</CardTitle>
+            {forecastRevenue > 0 && (
+              <p className="text-sm text-muted-foreground mt-1">
+                CA prévisionnel (à encaisser) : <span className="font-semibold text-orange-500">{forecastRevenue.toLocaleString('fr-FR')} €</span>
+              </p>
+            )}
+          </div>
+          {isLoadingForecast && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
@@ -496,7 +527,10 @@ export default function Finances() {
                   borderRadius: '6px',
                   fontSize: '12px'
                 }}
-                formatter={(value: any) => [`${value.toLocaleString('fr-FR')} €`, 'CA']}
+                formatter={(value: any, name: string) => [
+                  `${value.toLocaleString('fr-FR')} €`, 
+                  name === 'revenue' ? 'CA réalisé' : name
+                ]}
               />
               <Legend wrapperStyle={{ fontSize: '12px' }} />
               <Line 
@@ -507,6 +541,20 @@ export default function Finances() {
                 dot={{ fill: 'hsl(var(--primary))', r: 4 }}
                 name="Chiffre d'affaires"
               />
+              {forecastRevenue > 0 && (
+                <ReferenceLine 
+                  y={forecastRevenue} 
+                  stroke="#f97316" 
+                  strokeDasharray="5 5" 
+                  strokeWidth={2}
+                  label={{ 
+                    value: `Prévisionnel: ${(forecastRevenue / 1000).toFixed(0)}k €`, 
+                    position: 'right',
+                    fill: '#f97316',
+                    fontSize: 11
+                  }}
+                />
+              )}
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
