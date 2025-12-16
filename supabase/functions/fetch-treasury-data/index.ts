@@ -84,15 +84,27 @@ async function fetchExcelData(accessToken: string): Promise<any[]> {
     },
   });
 
+  const defaultMonths = ['Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc', 'Jan', 'Fév', 'Mar'];
   let monthHeaders: string[] = [];
+  
   if (headersResponse.ok) {
     const headersData = await headersResponse.json();
-    monthHeaders = (headersData.values?.[0] || []).map((v: any) => String(v || ''));
-    console.log('[TREASURY] Month headers:', monthHeaders);
+    const rawHeaders = (headersData.values?.[0] || []).map((v: any) => String(v || '').trim());
+    console.log('[TREASURY] Raw month headers:', rawHeaders);
+    
+    // Check if headers are mostly empty - if so, use defaults
+    const nonEmptyCount = rawHeaders.filter((h: string) => h !== '').length;
+    if (nonEmptyCount < 3) {
+      console.log('[TREASURY] Headers mostly empty, using fiscal year defaults (Apr-Mar)');
+      monthHeaders = defaultMonths;
+    } else {
+      monthHeaders = rawHeaders;
+    }
   } else {
-    console.log('[TREASURY] Could not fetch headers, using default months');
-    monthHeaders = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+    console.log('[TREASURY] Could not fetch headers, using fiscal year defaults (Apr-Mar)');
+    monthHeaders = defaultMonths;
   }
+  console.log('[TREASURY] Final month headers:', monthHeaders);
 
   // Fetch the specific range C70:N70 for balance values
   const balanceRangeUrl = `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${fileId}/workbook/worksheets('${encodeURIComponent(firstWorksheet.name)}')/range(address='C70:N70')`;
