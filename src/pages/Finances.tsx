@@ -12,9 +12,9 @@ import {
 } from '@/components/ui/table';
 import { Euro, Loader2, RefreshCw, TrendingUp, FileDown, Users, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ReferenceLine } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { useNavigate } from 'react-router-dom';
-import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, addMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
@@ -78,6 +78,41 @@ export default function Finances() {
     };
   }, [isAdmin]);
 
+  // Update forecast in revenueData when forecastRevenue changes
+  useEffect(() => {
+    if (forecastRevenue > 0) {
+      setRevenueData(prev => {
+        if (prev.length === 0) return prev;
+        
+        // Check if already has forecast data to avoid unnecessary updates
+        const hasForecasts = prev.some(d => d.forecast !== null);
+        if (hasForecasts) return prev;
+        
+        const forecastPerMonth = forecastRevenue / 3;
+        const lastActualRevenue = prev[5]?.revenue || 0;
+        
+        return prev.map((item, index) => {
+          // Last 3 months are forecast months (indices 6, 7, 8)
+          if (index >= 6) {
+            const monthsFromNow = index - 5;
+            return {
+              ...item,
+              forecast: forecastPerMonth * monthsFromNow,
+            };
+          }
+          // For the current month (index 5), add connection point for forecast line
+          if (index === 5) {
+            return {
+              ...item,
+              forecast: lastActualRevenue,
+            };
+          }
+          return item;
+        });
+      });
+    }
+  }, [forecastRevenue]);
+
   const fetchFinancialData = async () => {
     try {
       setLoading(true);
@@ -97,8 +132,10 @@ export default function Finances() {
       // Top 5 clients
       setTopClients(clients?.slice(0, 5) || []);
 
-      // Revenue evolution (last 6 months)
+      // Revenue evolution (last 6 months + 3 future months for forecast)
       const revenueByMonth: any[] = [];
+      
+      // Past 6 months (actual data)
       for (let i = 5; i >= 0; i--) {
         const monthDate = subMonths(new Date(), i);
         const monthStart = startOfMonth(monthDate);
@@ -117,6 +154,17 @@ export default function Finances() {
         revenueByMonth.push({
           month: format(monthDate, 'MMM', { locale: fr }),
           revenue: monthRevenue,
+          forecast: null, // No forecast for past months
+        });
+      }
+      
+      // Add 3 future months (for forecast display)
+      for (let i = 1; i <= 3; i++) {
+        const monthDate = addMonths(new Date(), i);
+        revenueByMonth.push({
+          month: format(monthDate, 'MMM', { locale: fr }),
+          revenue: null, // No actual revenue for future months
+          forecast: null, // Will be filled by forecastRevenue effect
         });
       }
 
@@ -527,10 +575,13 @@ export default function Finances() {
                   borderRadius: '6px',
                   fontSize: '12px'
                 }}
-                formatter={(value: any, name: string) => [
-                  `${value.toLocaleString('fr-FR')} €`, 
-                  name === 'revenue' ? 'CA réalisé' : name
-                ]}
+                formatter={(value: any, name: string) => {
+                  if (value === null) return [null, null];
+                  return [
+                    `${value.toLocaleString('fr-FR')} €`, 
+                    name === 'revenue' ? 'CA réalisé' : 'CA prévisionnel'
+                  ];
+                }}
               />
               <Legend wrapperStyle={{ fontSize: '12px' }} />
               <Line 
@@ -539,22 +590,19 @@ export default function Finances() {
                 stroke="hsl(var(--primary))" 
                 strokeWidth={2}
                 dot={{ fill: 'hsl(var(--primary))', r: 4 }}
-                name="Chiffre d'affaires"
+                name="CA réalisé"
+                connectNulls={false}
               />
-              {forecastRevenue > 0 && (
-                <ReferenceLine 
-                  y={forecastRevenue} 
-                  stroke="#f97316" 
-                  strokeDasharray="5 5" 
-                  strokeWidth={2}
-                  label={{ 
-                    value: `Prévisionnel: ${(forecastRevenue / 1000).toFixed(0)}k €`, 
-                    position: 'right',
-                    fill: '#f97316',
-                    fontSize: 11
-                  }}
-                />
-              )}
+              <Line 
+                type="monotone" 
+                dataKey="forecast" 
+                stroke="#f97316" 
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={{ fill: '#f97316', r: 4 }}
+                name="CA prévisionnel"
+                connectNulls={false}
+              />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
