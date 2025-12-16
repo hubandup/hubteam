@@ -50,11 +50,11 @@ async function fetchExcelData(accessToken: string): Promise<any[]> {
   }
 
   // Use drives/{driveId}/items/{itemId} for application-level access
-  const url = `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${fileId}/workbook/worksheets`;
+  const baseUrl = `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${fileId}/workbook/worksheets`;
   
   console.log('[TREASURY] Fetching worksheets from drive:', driveId, 'file:', fileId);
   
-  const worksheetsResponse = await fetch(url, {
+  const worksheetsResponse = await fetch(baseUrl, {
     headers: {
       'Authorization': `Bearer ${accessToken}`,
     },
@@ -75,68 +75,70 @@ async function fetchExcelData(accessToken: string): Promise<any[]> {
 
   console.log('[TREASURY] Using worksheet:', firstWorksheet.name);
 
-  // Fetch the used range data
-  const rangeUrl = `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${fileId}/workbook/worksheets('${encodeURIComponent(firstWorksheet.name)}')/usedRange`;
+  // Fetch the specific range C3:N3 for month headers (row 3)
+  const headersRangeUrl = `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${fileId}/workbook/worksheets('${encodeURIComponent(firstWorksheet.name)}')/range(address='C3:N3')`;
   
-  const rangeResponse = await fetch(rangeUrl, {
+  const headersResponse = await fetch(headersRangeUrl, {
     headers: {
       'Authorization': `Bearer ${accessToken}`,
     },
   });
 
-  if (!rangeResponse.ok) {
-    const errorText = await rangeResponse.text();
-    console.error('[TREASURY] Range error:', errorText);
-    throw new Error(`Failed to fetch data range: ${rangeResponse.status}`);
+  let monthHeaders: string[] = [];
+  if (headersResponse.ok) {
+    const headersData = await headersResponse.json();
+    monthHeaders = (headersData.values?.[0] || []).map((v: any) => String(v || ''));
+    console.log('[TREASURY] Month headers:', monthHeaders);
+  } else {
+    console.log('[TREASURY] Could not fetch headers, using default months');
+    monthHeaders = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
   }
 
-  const rangeData = await rangeResponse.json();
-  const values = rangeData.values || [];
+  // Fetch the specific range C70:N70 for balance values
+  const balanceRangeUrl = `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${fileId}/workbook/worksheets('${encodeURIComponent(firstWorksheet.name)}')/range(address='C70:N70')`;
+  
+  console.log('[TREASURY] Fetching balance range C70:N70');
+  
+  const balanceResponse = await fetch(balanceRangeUrl, {
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+    },
+  });
 
-  console.log('[TREASURY] Fetched', values.length, 'rows');
-
-  // Parse the data - assume first row is headers
-  if (values.length < 2) {
-    return [];
+  if (!balanceResponse.ok) {
+    const errorText = await balanceResponse.text();
+    console.error('[TREASURY] Balance range error:', errorText);
+    throw new Error(`Failed to fetch balance range: ${balanceResponse.status}`);
   }
 
-  const headers = values[0].map((h: any) => String(h || '').toLowerCase().trim());
-  const rows = values.slice(1);
+  const balanceData = await balanceResponse.json();
+  const balanceValues = balanceData.values?.[0] || [];
 
-  // Try to find month and balance columns
-  const monthIndex = headers.findIndex((h: string) => 
-    h.includes('mois') || h.includes('month') || h.includes('date') || h.includes('période')
-  );
-  const balanceIndex = headers.findIndex((h: string) => 
-    h.includes('solde') || h.includes('balance') || h.includes('trésorerie') || h.includes('total')
-  );
+  console.log('[TREASURY] Balance values:', balanceValues);
 
-  console.log('[TREASURY] Column indices - month:', monthIndex, 'balance:', balanceIndex);
-  console.log('[TREASURY] Headers:', headers);
+  // Combine month headers with balance values
+  const treasuryData: { month: string; balance: number }[] = [];
+  
+  for (let i = 0; i < balanceValues.length; i++) {
+    const balanceValue = balanceValues[i];
+    const monthLabel = monthHeaders[i] || `Mois ${i + 1}`;
+    
+    // Parse balance - handle string numbers with spaces/commas
+    let balance = 0;
+    if (typeof balanceValue === 'number') {
+      balance = balanceValue;
+    } else if (typeof balanceValue === 'string' && balanceValue.trim() !== '') {
+      balance = parseFloat(balanceValue.replace(/\s/g, '').replace(',', '.')) || 0;
+    }
 
-  // If we can't find specific columns, use first two columns
-  const mIdx = monthIndex >= 0 ? monthIndex : 0;
-  const bIdx = balanceIndex >= 0 ? balanceIndex : 1;
-
-  const treasuryData = rows
-    .filter((row: any[]) => row[mIdx] && row[bIdx] !== undefined && row[bIdx] !== null && row[bIdx] !== '')
-    .map((row: any[]) => {
-      const monthValue = row[mIdx];
-      const balanceValue = row[bIdx];
-      
-      // Parse balance - handle string numbers with spaces/commas
-      let balance = 0;
-      if (typeof balanceValue === 'number') {
-        balance = balanceValue;
-      } else if (typeof balanceValue === 'string') {
-        balance = parseFloat(balanceValue.replace(/\s/g, '').replace(',', '.')) || 0;
-      }
-
-      return {
-        month: String(monthValue),
+    // Only add if we have a valid balance value
+    if (balance !== 0 || balanceValue === 0) {
+      treasuryData.push({
+        month: monthLabel,
         balance: balance,
-      };
-    });
+      });
+    }
+  }
 
   console.log('[TREASURY] Parsed', treasuryData.length, 'data points');
   
