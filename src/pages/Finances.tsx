@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Euro, Loader2, RefreshCw, TrendingUp, FileDown, Users, FileSpreadsheet, Wallet } from 'lucide-react';
+import { Euro, Loader2, RefreshCw, TrendingUp, FileDown, Users, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { useNavigate } from 'react-router-dom';
@@ -20,7 +20,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 export default function Finances() {
   const navigate = useNavigate();
@@ -420,324 +420,266 @@ export default function Finances() {
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList>
-          <TabsTrigger value="overview" className="gap-2">
-            <Euro className="h-4 w-4" />
-            Vue d'ensemble
-          </TabsTrigger>
-          <TabsTrigger value="treasury" className="gap-2">
-            <Wallet className="h-4 w-4" />
-            Trésorerie
-          </TabsTrigger>
-        </TabsList>
+      {/* Financial Stats Cards */}
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">CA Année Fiscale</CardTitle>
+            <Euro className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalRevenue.toLocaleString('fr-FR')} €</div>
+            <p className="text-xs text-muted-foreground">
+              Chiffre d'affaires de l'année fiscale en cours
+            </p>
+          </CardContent>
+        </Card>
 
-        <TabsContent value="overview" className="space-y-6 mt-6">
-          {/* Financial Stats Cards */}
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">CA Année Fiscale</CardTitle>
-                <Euro className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{totalRevenue.toLocaleString('fr-FR')} €</div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Adhésions</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {isLoadingAdhesions ? (
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{adhesionsTotal.toLocaleString('fr-FR')} €</div>
                 <p className="text-xs text-muted-foreground">
-                  Chiffre d'affaires de l'année fiscale en cours
+                  {adhesionsCount} facture{adhesionsCount > 1 ? 's' : ''} sur l'exercice fiscal
                 </p>
-              </CardContent>
-            </Card>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Adhésions</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                {isLoadingAdhesions ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                ) : (
-                  <>
-                    <div className="text-2xl font-bold">{adhesionsTotal.toLocaleString('fr-FR')} €</div>
-                    <p className="text-xs text-muted-foreground">
-                      {adhesionsCount} facture{adhesionsCount > 1 ? 's' : ''} sur l'exercice fiscal
-                    </p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Marge moyenne (Apports d'affaires)</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {validatedQuotes.length > 0 ? `${averageMargin.toFixed(1)}%` : '-'}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Soit {validatedQuotes.reduce((sum, quote) => sum + quote.margeEuro, 0).toLocaleString('fr-FR')} € HT sur les 50 derniers projets validés
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Revenue Evolution Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Évolution du CA</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="month" 
-                    stroke="hsl(var(--muted-foreground))"
-                    style={{ fontSize: '12px' }}
-                  />
-                  <YAxis 
-                    stroke="hsl(var(--muted-foreground))"
-                    style={{ fontSize: '12px' }}
-                    tickFormatter={(value) => `${(value / 1000).toFixed(0)}k €`}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--background))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '6px',
-                      fontSize: '12px'
-                    }}
-                    formatter={(value: any) => [`${value.toLocaleString('fr-FR')} €`, 'CA']}
-                  />
-                  <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
-                    dot={{ fill: 'hsl(var(--primary))', r: 4 }}
-                    name="Chiffre d'affaires"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Top 5 Clients */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Top 5 Clients</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {topClients.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Aucun client actif
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {topClients.map((client, index) => (
-                    <div key={index} className="flex items-center gap-4">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate uppercase">{client.company}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {client.first_name} {client.last_name}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-success">
-                          {(client.revenue_current_year || 0).toLocaleString('fr-FR')} €
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* 50 Derniers Projets Validés */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>50 Derniers Projets Validés</CardTitle>
-              {validatedQuotes.length > 0 && (
-                <Button
-                  onClick={handleExportXLS}
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                >
-                  <FileSpreadsheet className="h-4 w-4" />
-                  Exporter XLS
-                </Button>
-              )}
-            </CardHeader>
-            <CardContent>
-              {isLoadingQuotes ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : validatedQuotes.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Aucun projet validé trouvé
-                </p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Référence</TableHead>
-                        <TableHead>Titre</TableHead>
-                        <TableHead className="text-right">Montant HT</TableHead>
-                        <TableHead className="text-right">Montant HA</TableHead>
-                        <TableHead className="text-right">Marge (€)</TableHead>
-                        <TableHead className="text-right">Marge (%)</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {validatedQuotes.map((quote, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="font-medium">{quote.client}</TableCell>
-                          <TableCell>{quote.quoteRef}</TableCell>
-                          <TableCell className="max-w-xs truncate">{quote.title}</TableCell>
-                          <TableCell className="text-right">{quote.montantHT.toLocaleString('fr-FR')} €</TableCell>
-                          <TableCell className="text-right">{quote.montantHA.toLocaleString('fr-FR')} €</TableCell>
-                          <TableCell className="text-right font-medium">
-                            {quote.margeEuro.toLocaleString('fr-FR')} €
-                          </TableCell>
-                          <TableCell className="text-right font-bold">
-                            <span className={quote.margePercent >= 30 ? 'text-success' : quote.margePercent >= 15 ? 'text-warning' : 'text-destructive'}>
-                              {quote.margePercent.toFixed(1)}%
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="treasury" className="space-y-6 mt-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-foreground">Solde Mensuel</h2>
-              <p className="text-sm text-muted-foreground">
-                Données synchronisées depuis OneDrive
-                {treasuryLastUpdated && (
-                  <span> - Dernière mise à jour: {format(new Date(treasuryLastUpdated), 'dd/MM/yyyy à HH:mm', { locale: fr })}</span>
-                )}
-              </p>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Marge moyenne (Apports d'affaires)</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {validatedQuotes.length > 0 ? `${averageMargin.toFixed(1)}%` : '-'}
             </div>
-            <Button
-              onClick={fetchTreasuryData}
-              disabled={isLoadingTreasury}
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoadingTreasury ? 'animate-spin' : ''}`} />
-              Actualiser
-            </Button>
-          </div>
+            <p className="text-xs text-muted-foreground">
+              Soit {validatedQuotes.reduce((sum, quote) => sum + quote.margeEuro, 0).toLocaleString('fr-FR')} € HT sur les 50 derniers projets validés
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
+      {/* Revenue Evolution Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Évolution du CA</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={revenueData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis 
+                dataKey="month" 
+                stroke="hsl(var(--muted-foreground))"
+                style={{ fontSize: '12px' }}
+              />
+              <YAxis 
+                stroke="hsl(var(--muted-foreground))"
+                style={{ fontSize: '12px' }}
+                tickFormatter={(value) => `${(value / 1000).toFixed(0)}k €`}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'hsl(var(--background))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '6px',
+                  fontSize: '12px'
+                }}
+                formatter={(value: any) => [`${value.toLocaleString('fr-FR')} €`, 'CA']}
+              />
+              <Legend wrapperStyle={{ fontSize: '12px' }} />
+              <Line 
+                type="monotone" 
+                dataKey="revenue" 
+                stroke="hsl(var(--primary))" 
+                strokeWidth={2}
+                dot={{ fill: 'hsl(var(--primary))', r: 4 }}
+                name="Chiffre d'affaires"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Treasury Evolution Chart */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Évolution du Solde</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Données synchronisées depuis OneDrive
+              {treasuryLastUpdated && (
+                <span> - Mise à jour: {format(new Date(treasuryLastUpdated), 'dd/MM/yyyy à HH:mm', { locale: fr })}</span>
+              )}
+            </p>
+          </div>
+          <Button
+            onClick={fetchTreasuryData}
+            disabled={isLoadingTreasury}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoadingTreasury ? 'animate-spin' : ''}`} />
+            Actualiser
+          </Button>
+        </CardHeader>
+        <CardContent>
           {isLoadingTreasury ? (
             <div className="flex justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : treasuryData.length === 0 ? (
-            <Card>
-              <CardContent className="py-12">
-                <p className="text-center text-muted-foreground">
-                  Aucune donnée de trésorerie disponible. Vérifiez la configuration OneDrive.
-                </p>
-              </CardContent>
-            </Card>
+            <p className="text-center text-muted-foreground py-12">
+              Aucune donnée de trésorerie disponible. Vérifiez la configuration OneDrive.
+            </p>
           ) : (
-            <>
-              {/* Treasury Chart */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Évolution du Solde</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={treasuryData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis 
-                        dataKey="month" 
-                        stroke="hsl(var(--muted-foreground))"
-                        style={{ fontSize: '12px' }}
-                        angle={-45}
-                        textAnchor="end"
-                        height={80}
-                      />
-                      <YAxis 
-                        stroke="hsl(var(--muted-foreground))"
-                        style={{ fontSize: '12px' }}
-                        tickFormatter={(value) => `${(value / 1000).toFixed(0)}k €`}
-                      />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'hsl(var(--background))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '6px',
-                          fontSize: '12px'
-                        }}
-                        formatter={(value: any) => [`${value.toLocaleString('fr-FR')} €`, 'Solde']}
-                      />
-                      <Bar 
-                        dataKey="balance" 
-                        fill="hsl(var(--primary))"
-                        radius={[4, 4, 0, 0]}
-                        name="Solde"
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              {/* Treasury Table */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Détail par Mois</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Mois</TableHead>
-                          <TableHead className="text-right">Solde</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {treasuryData.map((row, index) => (
-                          <TableRow key={index}>
-                            <TableCell className="font-medium">{row.month}</TableCell>
-                            <TableCell className="text-right">
-                              <span className={row.balance >= 0 ? 'text-success' : 'text-destructive'}>
-                                {row.balance.toLocaleString('fr-FR')} €
-                              </span>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            </>
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={treasuryData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis 
+                  dataKey="month" 
+                  stroke="hsl(var(--muted-foreground))"
+                  style={{ fontSize: '12px' }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis 
+                  stroke="hsl(var(--muted-foreground))"
+                  style={{ fontSize: '12px' }}
+                  tickFormatter={(value) => `${(value / 1000).toFixed(0)}k €`}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px',
+                    fontSize: '12px'
+                  }}
+                  formatter={(value: any) => [`${value.toLocaleString('fr-FR')} €`, 'Solde']}
+                />
+                <Bar 
+                  dataKey="balance" 
+                  fill="hsl(var(--primary))"
+                  radius={[4, 4, 0, 0]}
+                  name="Solde"
+                />
+              </BarChart>
+            </ResponsiveContainer>
           )}
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
+
+      {/* Top 5 Clients */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Top 5 Clients</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {topClients.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Aucun client actif
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {topClients.map((client, index) => (
+                <div key={index} className="flex items-center gap-4">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold">
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate uppercase">{client.company}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {client.first_name} {client.last_name}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-success">
+                      {(client.revenue_current_year || 0).toLocaleString('fr-FR')} €
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 50 Derniers Projets Validés */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>50 Derniers Projets Validés</CardTitle>
+          {validatedQuotes.length > 0 && (
+            <Button
+              onClick={handleExportXLS}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Exporter XLS
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {isLoadingQuotes ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : validatedQuotes.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Aucun projet validé trouvé
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Référence</TableHead>
+                    <TableHead>Titre</TableHead>
+                    <TableHead className="text-right">Montant HT</TableHead>
+                    <TableHead className="text-right">Montant HA</TableHead>
+                    <TableHead className="text-right">Marge (€)</TableHead>
+                    <TableHead className="text-right">Marge (%)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {validatedQuotes.map((quote, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{quote.client}</TableCell>
+                      <TableCell>{quote.quoteRef}</TableCell>
+                      <TableCell className="max-w-xs truncate">{quote.title}</TableCell>
+                      <TableCell className="text-right">{quote.montantHT.toLocaleString('fr-FR')} €</TableCell>
+                      <TableCell className="text-right">{quote.montantHA.toLocaleString('fr-FR')} €</TableCell>
+                      <TableCell className="text-right font-medium">
+                        {quote.margeEuro.toLocaleString('fr-FR')} €
+                      </TableCell>
+                      <TableCell className="text-right font-bold">
+                        <span className={quote.margePercent >= 30 ? 'text-success' : quote.margePercent >= 15 ? 'text-warning' : 'text-destructive'}>
+                          {quote.margePercent.toFixed(1)}%
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
