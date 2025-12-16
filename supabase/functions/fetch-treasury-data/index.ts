@@ -43,15 +43,16 @@ async function getAccessToken(): Promise<string> {
 
 async function fetchExcelData(accessToken: string): Promise<any[]> {
   const fileId = Deno.env.get('ONEDRIVE_TREASURY_FILE_ID');
+  const driveId = Deno.env.get('ONEDRIVE_DRIVE_ID');
   
-  if (!fileId) {
-    throw new Error('Missing OneDrive file ID');
+  if (!fileId || !driveId) {
+    throw new Error('Missing OneDrive file ID or drive ID');
   }
 
-  // Get the workbook content - fetch the used range from the first worksheet
-  const url = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets`;
+  // Use drives/{driveId}/items/{itemId} for application-level access
+  const url = `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${fileId}/workbook/worksheets`;
   
-  console.log('[TREASURY] Fetching worksheets from file:', fileId);
+  console.log('[TREASURY] Fetching worksheets from drive:', driveId, 'file:', fileId);
   
   const worksheetsResponse = await fetch(url, {
     headers: {
@@ -75,7 +76,7 @@ async function fetchExcelData(accessToken: string): Promise<any[]> {
   console.log('[TREASURY] Using worksheet:', firstWorksheet.name);
 
   // Fetch the used range data
-  const rangeUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${encodeURIComponent(firstWorksheet.name)}')/usedRange`;
+  const rangeUrl = `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${fileId}/workbook/worksheets('${encodeURIComponent(firstWorksheet.name)}')/usedRange`;
   
   const rangeResponse = await fetch(rangeUrl, {
     headers: {
