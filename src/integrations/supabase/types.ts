@@ -634,6 +634,72 @@ export type Database = {
         }
         Relationships: []
       }
+      external_messages: {
+        Row: {
+          author_identifier: string
+          author_name: string
+          client_id: string | null
+          content: string | null
+          content_type: string
+          created_at: string
+          external_message_id: string | null
+          group_id: string
+          group_name: string | null
+          id: string
+          media_url: string | null
+          project_id: string | null
+          source: string
+          timestamp: string
+        }
+        Insert: {
+          author_identifier: string
+          author_name: string
+          client_id?: string | null
+          content?: string | null
+          content_type?: string
+          created_at?: string
+          external_message_id?: string | null
+          group_id: string
+          group_name?: string | null
+          id?: string
+          media_url?: string | null
+          project_id?: string | null
+          source?: string
+          timestamp: string
+        }
+        Update: {
+          author_identifier?: string
+          author_name?: string
+          client_id?: string | null
+          content?: string | null
+          content_type?: string
+          created_at?: string
+          external_message_id?: string | null
+          group_id?: string
+          group_name?: string | null
+          id?: string
+          media_url?: string | null
+          project_id?: string | null
+          source?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_messages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_messages_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       faq_categories: {
         Row: {
           color: string
