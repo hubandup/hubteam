@@ -19,6 +19,13 @@ interface FacturationProQuote {
   accepted_date?: string;
 }
 
+const extractQuotesFromApiResponse = (quotesData: any): FacturationProQuote[] => {
+  if (Array.isArray(quotesData)) return quotesData as FacturationProQuote[];
+  if (Array.isArray(quotesData?.quotes)) return quotesData.quotes as FacturationProQuote[];
+  if (Array.isArray(quotesData?.data)) return quotesData.data as FacturationProQuote[];
+  return [];
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -31,39 +38,71 @@ Deno.serve(async (req) => {
     const apiId = Deno.env.get('FACTURATION_PRO_API_ID');
     const firmId = Deno.env.get('FACTURATION_PRO_FIRM_ID');
 
-    console.log('API credentials check:', { 
-      hasApiKey: !!apiKey, 
-      hasApiId: !!apiId, 
-      hasFirmId: !!firmId 
+    console.log('API credentials check:', {
+      hasApiKey: !!apiKey,
+      hasApiId: !!apiId,
+      hasFirmId: !!firmId,
     });
 
     if (!apiKey || !apiId || !firmId) {
       throw new Error('Missing Facturation.PRO API credentials');
     }
 
-    // Fetch validated quotes (status 1 = accepted)
-    const quotesResponse = await fetch(
-      `${FACTURATION_PRO_API_URL}/firms/${firmId}/quotes.json`,
-      {
-        headers: {
-          'Authorization': `Basic ${btoa(`${apiId}:${apiKey}`)}`,
-          'Content-Type': 'application/json',
-        },
+    const headers = {
+      Authorization: `Basic ${btoa(`${apiId}:${apiKey}`)}`,
+      'Content-Type': 'application/json',
+    };
+
+    // Facturation.PRO seems to paginate results; fetch multiple pages.
+    const allQuotes: FacturationProQuote[] = [];
+    const perPage = 100;
+    const maxPages = 50;
+    let expectedPageSize: number | null = null;
+    let lastFirstId: number | null = null;
+
+    for (let page = 1; page <= maxPages; page++) {
+      const url = new URL(`${FACTURATION_PRO_API_URL}/firms/${firmId}/quotes.json`);
+      url.searchParams.set('page', String(page));
+      url.searchParams.set('per_page', String(perPage));
+      url.searchParams.set('limit', String(perPage));
+
+      const quotesResponse = await fetch(url.toString(), { headers });
+
+      console.log(`Facturation.PRO API response status (page ${page}):`, quotesResponse.status);
+
+      if (!quotesResponse.ok) {
+        const errorText = await quotesResponse.text();
+        console.error('Facturation.PRO API error response:', errorText);
+        throw new Error(
+          `Facturation.PRO API error: ${quotesResponse.status} ${quotesResponse.statusText}`,
+        );
       }
-    );
 
-    console.log('Facturation.PRO API response status:', quotesResponse.status);
+      const quotesData = await quotesResponse.json();
+      const pageQuotes = extractQuotesFromApiResponse(quotesData);
 
-    if (!quotesResponse.ok) {
-      const errorText = await quotesResponse.text();
-      console.error('Facturation.PRO API error response:', errorText);
-      throw new Error(`Facturation.PRO API error: ${quotesResponse.status} ${quotesResponse.statusText}`);
+      console.log(`Page ${page}: ${pageQuotes.length} quotes`);
+
+      if (expectedPageSize === null) expectedPageSize = pageQuotes.length;
+
+      // Stop if pagination is not supported and we keep getting the same page.
+      if (page > 1 && pageQuotes.length > 0 && lastFirstId !== null && pageQuotes[0]?.id === lastFirstId) {
+        console.warn('Pagination appears to repeat the same page; stopping to avoid infinite loop.');
+        break;
+      }
+      if (pageQuotes.length > 0) lastFirstId = pageQuotes[0].id;
+
+      allQuotes.push(...pageQuotes);
+
+      if (pageQuotes.length === 0) break;
+      if (expectedPageSize && pageQuotes.length < expectedPageSize) break;
+
+      // Optimization: if we already have plenty of accepted quotes, we can stop early.
+      const acceptedSoFar = allQuotes.reduce((acc, q) => acc + (q.quote_status === 1 ? 1 : 0), 0);
+      if (acceptedSoFar >= 80) break;
     }
 
-    const quotesData = await quotesResponse.json();
-    const allQuotes = Array.isArray(quotesData) ? quotesData : quotesData.quotes || [];
-
-    console.log(`Found ${allQuotes.length} total quotes`);
+    console.log(`Found ${allQuotes.length} total quotes (across pages)`);
 
     // Filter validated quotes (status 1) and sort by validation date
     const validatedQuotes = allQuotes
@@ -73,7 +112,7 @@ Deno.serve(async (req) => {
         const dateB = b.accepted_date ? new Date(b.accepted_date).getTime() : 0;
         return dateB - dateA; // Most recent first
       })
-      .slice(0, 50) // Get only the last 50
+      .slice(0, 50)
       .map((quote: FacturationProQuote) => {
         const montantHT = parseFloat(quote.total) || 0;
         const montantHA = parseFloat(quote.internal_note || '0') || 0;
@@ -87,7 +126,7 @@ Deno.serve(async (req) => {
           title: quote.title,
           montantHT,
           montantHA,
-          margeEuro
+          margeEuro,
         });
 
         return {
@@ -110,17 +149,14 @@ Deno.serve(async (req) => {
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      },
     );
   } catch (error) {
     console.error('Error fetching validated quotes:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      }
-    );
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500,
+    });
   }
 });
