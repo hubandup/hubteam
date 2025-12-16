@@ -90,3 +90,6 @@ verify_jwt = false
 # Slack integration - public for webhooks
 [functions.slack-sync]
 verify_jwt = false
+
+[functions.fetch-treasury-data]
+verify_jwt = false
