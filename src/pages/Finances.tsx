@@ -452,6 +452,15 @@ export default function Finances() {
     ? validatedQuotes.reduce((sum, quote) => sum + quote.margePercent, 0) / validatedQuotes.length
     : 0;
 
+  // Calculate total margin from validated quotes (Apports d'affaires)
+  const totalMargeApportsAffaires = validatedQuotes.reduce((sum, quote) => sum + quote.margeEuro, 0);
+  
+  // Calculate Marge Brute = Adhésions + Marge Apports d'affaires
+  const margeBrute = adhesionsTotal + totalMargeApportsAffaires;
+  
+  // Calculate Marge Brute percentage compared to CA Année Fiscale
+  const margeBrutePercent = totalRevenue > 0 ? (margeBrute / totalRevenue) * 100 : 0;
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -490,7 +499,7 @@ export default function Finances() {
       </div>
 
       {/* Financial Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">CA Année Fiscale</CardTitle>
@@ -533,8 +542,29 @@ export default function Finances() {
               {validatedQuotes.length > 0 ? `${averageMargin.toFixed(1)}%` : '-'}
             </div>
             <p className="text-xs text-muted-foreground">
-              Soit {validatedQuotes.reduce((sum, quote) => sum + quote.margeEuro, 0).toLocaleString('fr-FR')} € HT sur les 50 derniers projets validés
+              Soit {totalMargeApportsAffaires.toLocaleString('fr-FR')} € HT sur les 50 derniers projets validés
             </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Marge Brute</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {isLoadingAdhesions || isLoadingQuotes ? (
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {margeBrutePercent.toFixed(1)}%
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Soit {margeBrute.toLocaleString('fr-FR')} € HT (Adhésions + Apports d'affaires)
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
