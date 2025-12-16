@@ -316,92 +316,101 @@ export default function Finances() {
   const handleExportPDF = async () => {
     try {
       toast.info('Génération du PDF en cours...');
-      const doc = new jsPDF();
+      
+      // Page 1: Portrait - Résumé financier
+      const doc = new jsPDF('portrait', 'mm', 'a4');
       const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 15;
       
-      // Title
-      doc.setFontSize(20);
+      // Header avec fond coloré
+      doc.setFillColor(1, 74, 148); // #014a94
+      doc.rect(0, 0, pageWidth, 45, 'F');
+      
+      // Logo / Titre
+      doc.setFontSize(28);
       doc.setFont('helvetica', 'bold');
-      doc.text('Rapport Financier', pageWidth / 2, 20, { align: 'center' });
+      doc.setTextColor(255, 255, 255);
+      doc.text('Rapport Financier', pageWidth / 2, 22, { align: 'center' });
       
-      // Date
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Hub & Up - ${format(new Date(), 'dd MMMM yyyy', { locale: fr })}`, pageWidth / 2, 35, { align: 'center' });
+      
+      // Reset text color
+      doc.setTextColor(0, 0, 0);
+      
+      let yPos = 60;
+      
+      // Section KPIs - 2x2 grid
+      const cardWidth = (pageWidth - margin * 3) / 2;
+      const cardHeight = 35;
+      
+      // Card 1: CA Année Fiscale
+      doc.setFillColor(245, 247, 250);
+      doc.roundedRect(margin, yPos, cardWidth, cardHeight, 3, 3, 'F');
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}`, pageWidth / 2, 28, { align: 'center' });
-      
-      // CA Année Fiscale
-      doc.setFontSize(14);
+      doc.setTextColor(100, 100, 100);
+      doc.text('CA Année Fiscale', margin + 8, yPos + 12);
+      doc.setFontSize(22);
       doc.setFont('helvetica', 'bold');
-      doc.text('Chiffre d\'Affaires Année Fiscale', 14, 40);
-      doc.setFontSize(12);
+      doc.setTextColor(1, 74, 148);
+      doc.text(`${totalRevenue.toLocaleString('fr-FR')} €`, margin + 8, yPos + 27);
+      
+      // Card 2: Adhésions
+      doc.setFillColor(245, 247, 250);
+      doc.roundedRect(margin * 2 + cardWidth, yPos, cardWidth, cardHeight, 3, 3, 'F');
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text(`${totalRevenue.toLocaleString('fr-FR')} €`, 14, 48);
-      
-      // Adhésions
-      doc.setFontSize(14);
+      doc.setTextColor(100, 100, 100);
+      doc.text('Adhésions', margin * 2 + cardWidth + 8, yPos + 12);
+      doc.setFontSize(22);
       doc.setFont('helvetica', 'bold');
-      doc.text('Adhésions', 70, 40);
-      doc.setFontSize(12);
+      doc.setTextColor(1, 74, 148);
+      doc.text(`${adhesionsTotal.toLocaleString('fr-FR')} €`, margin * 2 + cardWidth + 8, yPos + 27);
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text(`${adhesionsTotal.toLocaleString('fr-FR')} € (${adhesionsCount} adhérents)`, 70, 48);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`(${adhesionsCount} adhérents)`, margin * 2 + cardWidth + 65, yPos + 27);
       
-      // Marge Moyenne
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Marge Moyenne (Apports d\'affaires)', 130, 40);
-      doc.setFontSize(12);
+      yPos += cardHeight + 10;
+      
+      // Card 3: Marge Moyenne
+      doc.setFillColor(245, 247, 250);
+      doc.roundedRect(margin, yPos, cardWidth, cardHeight, 3, 3, 'F');
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text(validatedQuotes.length > 0 ? `${averageMargin.toFixed(1)}%` : 'N/A', 130, 48);
-      
-      // Marge Brute
-      doc.setFontSize(14);
+      doc.setTextColor(100, 100, 100);
+      doc.text('Marge Moyenne (Apports d\'affaires)', margin + 8, yPos + 12);
+      doc.setFontSize(22);
       doc.setFont('helvetica', 'bold');
-      doc.text('Marge Brute', 14, 60);
-      doc.setFontSize(12);
+      doc.setTextColor(1, 74, 148);
+      doc.text(validatedQuotes.length > 0 ? `${averageMargin.toFixed(1)}%` : 'N/A', margin + 8, yPos + 27);
+      
+      // Card 4: Marge Brute
+      doc.setFillColor(245, 247, 250);
+      doc.roundedRect(margin * 2 + cardWidth, yPos, cardWidth, cardHeight, 3, 3, 'F');
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text(`${margeBrutePercent.toFixed(1)}% (${margeBrute.toLocaleString('fr-FR')} € HT)`, 14, 68);
+      doc.setTextColor(100, 100, 100);
+      doc.text('Marge Brute', margin * 2 + cardWidth + 8, yPos + 12);
+      doc.setFontSize(22);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(69, 108, 52); // Vert
+      doc.text(`${margeBrutePercent.toFixed(1)}%`, margin * 2 + cardWidth + 8, yPos + 27);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.text(`(${margeBrute.toLocaleString('fr-FR')} € HT)`, margin * 2 + cardWidth + 45, yPos + 27);
       
-      // Capture Revenue Evolution Chart
-      if (revenueChartRef.current) {
-        try {
-          const canvas = await html2canvas(revenueChartRef.current, {
-            backgroundColor: '#ffffff',
-            scale: 2,
-          });
-          const imgData = canvas.toDataURL('image/png');
-          doc.setFontSize(12);
-          doc.setFont('helvetica', 'bold');
-          doc.text('Évolution du CA', 14, 80);
-          doc.addImage(imgData, 'PNG', 14, 85, 180, 60);
-        } catch (chartError) {
-          console.warn('Could not capture revenue chart:', chartError);
-        }
-      }
+      yPos += cardHeight + 20;
       
-      // Capture Treasury Evolution Chart
-      if (treasuryChartRef.current && treasuryData.length > 0) {
-        try {
-          const canvas = await html2canvas(treasuryChartRef.current, {
-            backgroundColor: '#ffffff',
-            scale: 2,
-          });
-          const imgData = canvas.toDataURL('image/png');
-          doc.addPage();
-          doc.setFontSize(12);
-          doc.setFont('helvetica', 'bold');
-          doc.text('Évolution du Solde', 14, 20);
-          doc.addImage(imgData, 'PNG', 14, 25, 180, 70);
-        } catch (chartError) {
-          console.warn('Could not capture treasury chart:', chartError);
-        }
-      }
-      
-      // Top 5 Clients on new page
-      doc.addPage();
+      // Top 5 Clients
+      doc.setTextColor(0, 0, 0);
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('Top 5 Clients', 14, 20);
+      doc.text('Top 5 Clients', margin, yPos);
+      yPos += 8;
       
       const clientsData = topClients.map((client, index) => [
         `${index + 1}`,
@@ -411,24 +420,89 @@ export default function Finances() {
       ]);
       
       autoTable(doc, {
-        startY: 25,
-        head: [['#', 'Société', 'Contact', 'CA']],
+        startY: yPos,
+        head: [['#', 'Société', 'Contact', 'CA Année Fiscale']],
         body: clientsData,
-        theme: 'grid',
-        headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
-        styles: { fontSize: 10 },
+        theme: 'striped',
+        headStyles: { fillColor: [1, 74, 148], textColor: 255, fontStyle: 'bold', fontSize: 10 },
+        styles: { fontSize: 10, cellPadding: 4 },
+        columnStyles: {
+          0: { cellWidth: 15, halign: 'center' },
+          1: { cellWidth: 55 },
+          2: { cellWidth: 55 },
+          3: { cellWidth: 45, halign: 'right' },
+        },
+        margin: { left: margin, right: margin },
       });
       
-      // 50 Derniers Projets Validés
-      const finalY = (doc as any).lastAutoTable.finalY || 60;
-      doc.setFontSize(14);
+      // Page 2: Landscape - Graphique CA
+      doc.addPage('landscape');
+      const landscapeWidth = doc.internal.pageSize.getWidth();
+      const landscapeHeight = doc.internal.pageSize.getHeight();
+      
+      // Titre du graphique
+      doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
-      doc.text('50 Derniers Projets Validés', 14, finalY + 10);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Évolution du Chiffre d\'Affaires', margin, 20);
+      
+      // Capture Revenue Evolution Chart
+      if (revenueChartRef.current) {
+        try {
+          const canvas = await html2canvas(revenueChartRef.current, {
+            backgroundColor: '#ffffff',
+            scale: 3,
+            logging: false,
+          });
+          const imgData = canvas.toDataURL('image/png');
+          const chartWidth = landscapeWidth - margin * 2;
+          const chartHeight = landscapeHeight - 45;
+          doc.addImage(imgData, 'PNG', margin, 28, chartWidth, chartHeight);
+        } catch (chartError) {
+          console.warn('Could not capture revenue chart:', chartError);
+          doc.setFontSize(12);
+          doc.text('Graphique non disponible', margin, 50);
+        }
+      }
+      
+      // Page 3: Landscape - Graphique Trésorerie (si données)
+      if (treasuryChartRef.current && treasuryData.length > 0) {
+        doc.addPage('landscape');
+        
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text('Évolution du Solde de Trésorerie', margin, 20);
+        
+        try {
+          const canvas = await html2canvas(treasuryChartRef.current, {
+            backgroundColor: '#ffffff',
+            scale: 3,
+            logging: false,
+          });
+          const imgData = canvas.toDataURL('image/png');
+          const chartWidth = landscapeWidth - margin * 2;
+          const chartHeight = landscapeHeight - 45;
+          doc.addImage(imgData, 'PNG', margin, 28, chartWidth, chartHeight);
+        } catch (chartError) {
+          console.warn('Could not capture treasury chart:', chartError);
+        }
+      }
+      
+      // Page 4+: Portrait - Tableau des projets validés
+      doc.addPage('portrait');
+      
+      doc.setFillColor(1, 74, 148);
+      doc.rect(0, 0, pageWidth, 25, 'F');
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(255, 255, 255);
+      doc.text('50 Derniers Projets Validés', pageWidth / 2, 16, { align: 'center' });
       
       const quotesData = validatedQuotes.slice(0, 50).map((quote) => [
-        quote.client,
+        quote.client.length > 18 ? quote.client.substring(0, 18) + '...' : quote.client,
         quote.quoteRef,
-        quote.title.length > 30 ? quote.title.substring(0, 30) + '...' : quote.title,
+        quote.title.length > 25 ? quote.title.substring(0, 25) + '...' : quote.title,
         `${quote.montantHT.toLocaleString('fr-FR')} €`,
         `${quote.montantHA.toLocaleString('fr-FR')} €`,
         `${quote.margeEuro.toLocaleString('fr-FR')} €`,
@@ -436,20 +510,32 @@ export default function Finances() {
       ]);
       
       autoTable(doc, {
-        startY: finalY + 15,
-        head: [['Client', 'Réf', 'Titre', 'HT', 'HA', 'Marge €', 'Marge %']],
+        startY: 35,
+        head: [['Client', 'Réf Devis', 'Objet', 'Montant HT', 'Montant HA', 'Marge €', 'Marge %']],
         body: quotesData,
-        theme: 'grid',
-        headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
-        styles: { fontSize: 8 },
+        theme: 'striped',
+        headStyles: { fillColor: [1, 74, 148], textColor: 255, fontStyle: 'bold', fontSize: 9 },
+        styles: { fontSize: 8, cellPadding: 3 },
         columnStyles: {
-          0: { cellWidth: 25 },
+          0: { cellWidth: 28 },
           1: { cellWidth: 20 },
-          2: { cellWidth: 40 },
-          3: { cellWidth: 25 },
-          4: { cellWidth: 25 },
-          5: { cellWidth: 25 },
-          6: { cellWidth: 20 },
+          2: { cellWidth: 38 },
+          3: { cellWidth: 25, halign: 'right' },
+          4: { cellWidth: 25, halign: 'right' },
+          5: { cellWidth: 25, halign: 'right' },
+          6: { cellWidth: 18, halign: 'right' },
+        },
+        margin: { left: margin, right: margin },
+        didDrawPage: (data) => {
+          // Footer sur chaque page
+          doc.setFontSize(8);
+          doc.setTextColor(150, 150, 150);
+          doc.text(
+            `Hub & Up - Rapport généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}`,
+            pageWidth / 2,
+            doc.internal.pageSize.getHeight() - 10,
+            { align: 'center' }
+          );
         },
       });
       
