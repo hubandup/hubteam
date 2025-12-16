@@ -8,23 +8,32 @@ const FACTURATION_PRO_API_URL = 'https://www.facturation.pro';
 interface FacturationProInvoice {
   id: number;
   total: string;
-  paid: boolean;
-  payment_status: number;
-  invoice_date: string;
-  due_date: string;
+  paid?: boolean;
+  paid_on?: string | null;
+  payment_status?: number;
+  invoiced_on?: string;
+  invoice_date?: string;
+  term_on?: string | null;
+  due_date?: string;
+  due_on?: string;
+  pay_before?: string | number | null;
+  created_at?: string;
 }
 
 interface RecurringInvoice {
   id: number;
   total?: string;
   amount?: string;
-  frequency?: string;
+  frequency?: string | number;
   period?: string;
+  next_run_on?: string;
+  last_run_on?: string;
   next_date?: string;
   next_invoice_date?: string;
   active?: boolean;
   status?: string;
   end_date?: string;
+  term_on?: string | null;
   occurrences?: number;
   occurrences_count?: number;
 }
@@ -36,62 +45,126 @@ interface MonthlyForecast {
   total: number;
 }
 
+function getInvoiceDueDate(invoice: any): Date | null {
+  const dueStr = invoice?.due_date || invoice?.term_on || invoice?.due_on;
+  if (dueStr) {
+    const d = new Date(dueStr);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  const invoicedOn = invoice?.invoiced_on || invoice?.invoice_date || invoice?.created_at;
+  const payBeforeRaw = invoice?.pay_before;
+  if (!invoicedOn || payBeforeRaw === undefined || payBeforeRaw === null) return null;
+
+  const base = new Date(invoicedOn);
+  if (Number.isNaN(base.getTime())) return null;
+
+  const days = parseInt(String(payBeforeRaw), 10);
+  if (Number.isNaN(days)) return null;
+
+  base.setDate(base.getDate() + days);
+  return base;
+}
+
+function parseFrequencyNumber(frequency: unknown): number | null {
+  if (typeof frequency === 'number' && Number.isFinite(frequency)) return frequency;
+  if (typeof frequency === 'string' && frequency.trim() && /^[0-9]+$/.test(frequency.trim())) {
+    return parseInt(frequency.trim(), 10);
+  }
+  return null;
+}
+
+function advanceRecurringDate(currentDate: Date, frequency: unknown) {
+  const n = parseFrequencyNumber(frequency);
+  if (n !== null) {
+    switch (n) {
+      case 7:
+        currentDate.setDate(currentDate.getDate() + 7);
+        return;
+      case 14:
+        currentDate.setDate(currentDate.getDate() + 14);
+        return;
+      // Facturation.PRO appears to represent common periods as a number of days
+      // (ex: 30=mensuel, 90=trimestriel). We map these to calendar periods to avoid drift.
+      case 30:
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        return;
+      case 60:
+        currentDate.setMonth(currentDate.getMonth() + 2);
+        return;
+      case 90:
+        currentDate.setMonth(currentDate.getMonth() + 3);
+        return;
+      case 180:
+        currentDate.setMonth(currentDate.getMonth() + 6);
+        return;
+      case 365:
+      case 360:
+        currentDate.setFullYear(currentDate.getFullYear() + 1);
+        return;
+      default:
+        currentDate.setDate(currentDate.getDate() + n);
+        return;
+    }
+  }
+
+  const f = typeof frequency === 'string' ? frequency.toLowerCase() : '';
+  switch (f) {
+    case 'monthly':
+    case 'mensuel':
+    case 'mensuelle':
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      return;
+    case 'bimonthly':
+    case 'bimestriel':
+    case 'bimestrielle':
+      currentDate.setMonth(currentDate.getMonth() + 2);
+      return;
+    case 'quarterly':
+    case 'trimestriel':
+    case 'trimestrielle':
+      currentDate.setMonth(currentDate.getMonth() + 3);
+      return;
+    case 'semiannual':
+    case 'semestriel':
+    case 'semestrielle':
+      currentDate.setMonth(currentDate.getMonth() + 6);
+      return;
+    case 'yearly':
+    case 'annuel':
+    case 'annuelle':
+      currentDate.setFullYear(currentDate.getFullYear() + 1);
+      return;
+    default:
+      currentDate.setMonth(currentDate.getMonth() + 1);
+  }
+}
+
 // Helper to get all occurrences of a recurring invoice in the next 3 months
 function getOccurrencesInPeriod(
   nextDate: Date,
-  frequency: string,
+  frequency: unknown,
   endDate: Date | null,
   month1Start: Date,
   month3End: Date
 ): Date[] {
   const occurrences: Date[] = [];
   let currentDate = new Date(nextDate);
-  
+
   // Safety limit to prevent infinite loops
-  const maxIterations = 12;
+  const maxIterations = 24;
   let iterations = 0;
-  
+
   while (currentDate <= month3End && iterations < maxIterations) {
     // Check if occurrence is within our period and before end date
     if (currentDate >= month1Start && (!endDate || currentDate <= endDate)) {
       occurrences.push(new Date(currentDate));
     }
-    
-    // Move to next occurrence based on frequency
-    switch (frequency.toLowerCase()) {
-      case 'monthly':
-      case 'mensuel':
-      case 'mensuelle':
-        currentDate.setMonth(currentDate.getMonth() + 1);
-        break;
-      case 'bimonthly':
-      case 'bimestriel':
-      case 'bimestrielle':
-        currentDate.setMonth(currentDate.getMonth() + 2);
-        break;
-      case 'quarterly':
-      case 'trimestriel':
-      case 'trimestrielle':
-        currentDate.setMonth(currentDate.getMonth() + 3);
-        break;
-      case 'semiannual':
-      case 'semestriel':
-      case 'semestrielle':
-        currentDate.setMonth(currentDate.getMonth() + 6);
-        break;
-      case 'yearly':
-      case 'annuel':
-      case 'annuelle':
-        currentDate.setFullYear(currentDate.getFullYear() + 1);
-        break;
-      default:
-        // Default to monthly
-        currentDate.setMonth(currentDate.getMonth() + 1);
-    }
-    
+
+    advanceRecurringDate(currentDate, frequency);
     iterations++;
   }
-  
+
   return occurrences;
 }
 
@@ -178,19 +251,57 @@ Deno.serve(async (req) => {
 
       if (invoices.length === 0) break;
 
+      // Log one sample invoice structure (helps field mapping)
+      if (page === 1 && invoices.length > 0) {
+        const sample = invoices[0] as any;
+        console.log(
+          '[FORECAST] Sample invoice fields:',
+          JSON.stringify(
+            {
+              id: sample.id,
+              total: sample.total,
+              paid_on: sample.paid_on,
+              paid: sample.paid,
+              payment_status: sample.payment_status,
+              invoiced_on: sample.invoiced_on,
+              term_on: sample.term_on,
+              due_date: sample.due_date,
+              pay_before: sample.pay_before,
+            },
+            null,
+            2
+          )
+        );
+      }
+
       for (const invoice of invoices) {
-        const isPaid = invoice.paid === true || invoice.payment_status === 3;
+        const anyInv = invoice as any;
+
+        const isPaid =
+          Boolean(anyInv.paid_on) || anyInv.paid === true || anyInv.payment_status === 3;
         if (isPaid) continue;
-        
-        const amount = parseFloat(invoice.total) || 0;
-        const dueDate = invoice.due_date ? new Date(invoice.due_date) : null;
-        
+
+        const amount = parseFloat(String(anyInv.total ?? '0')) || 0;
+        const dueDate = getInvoiceDueDate(anyInv);
+
         if (!dueDate || amount === 0) continue;
-        
-        const bucket = getMonthBucket(dueDate, month1Start, month1End, month2Start, month2End, month3Start, month3End);
+
+        const bucket = getMonthBucket(
+          dueDate,
+          month1Start,
+          month1End,
+          month2Start,
+          month2End,
+          month3Start,
+          month3End
+        );
         if (bucket !== null) {
           monthlyForecasts[bucket].encaisser += amount;
-          console.log(`[FORECAST] Invoice ${invoice.id}: ${amount}€ → month +${bucket + 1} (due: ${invoice.due_date})`);
+          console.log(
+            `[FORECAST] Invoice ${anyInv.id}: ${amount}€ → month +${bucket + 1} (due: ${dueDate
+              .toISOString()
+              .split('T')[0]})`
+          );
         }
       }
 
@@ -228,15 +339,18 @@ Deno.serve(async (req) => {
             continue;
           }
           
-          const amount = parseFloat(recInvoice.total || recInvoice.amount || '0') || 0;
+          const amount = parseFloat(String(recInvoice.total || recInvoice.amount || '0')) || 0;
           if (amount === 0) continue;
-          
-          const frequency = recInvoice.frequency || recInvoice.period || 'monthly';
-          const nextDateStr = recInvoice.next_date || recInvoice.next_invoice_date;
-          const endDateStr = recInvoice.end_date;
-          
+
+          const frequency = (recInvoice as any).frequency ?? (recInvoice as any).period ?? 'monthly';
+          const nextDateStr =
+            (recInvoice as any).next_run_on ||
+            (recInvoice as any).next_date ||
+            (recInvoice as any).next_invoice_date;
+          const endDateStr = (recInvoice as any).term_on || (recInvoice as any).end_date;
+
           if (!nextDateStr) {
-            console.log(`[FORECAST] Recurring invoice ${recInvoice.id} has no next_date, skipping`);
+            console.log(`[FORECAST] Recurring invoice ${recInvoice.id} has no next_run_on, skipping`);
             continue;
           }
           
