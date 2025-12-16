@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Euro, Loader2, RefreshCw, TrendingUp, FileDown, Users, FileSpreadsheet } from 'lucide-react';
+import { Euro, Loader2, RefreshCw, TrendingUp, FileDown, Users, FileSpreadsheet, ExternalLink } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { useNavigate } from 'react-router-dom';
@@ -536,7 +536,7 @@ export default function Finances() {
               className="gap-2"
             >
               <FileDown className="h-4 w-4" />
-              Exporter PDF
+              PDF
             </Button>
             <Button
               onClick={handleManualSync}
@@ -546,7 +546,18 @@ export default function Finances() {
               className="gap-2"
             >
               <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              {isSyncing ? 'Synchronisation...' : 'Sync Facturation.PRO'}
+              {isSyncing ? 'Sync...' : 'Sync.'}
+            </Button>
+            <Button
+              asChild
+              size="sm"
+              className="gap-2"
+              style={{ backgroundColor: '#456c34' }}
+            >
+              <a href="https://www.facturation.pro/firms/65170" target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4" />
+                Facturation.Pro
+              </a>
             </Button>
           </div>
           {lastSyncTimestamp && (
