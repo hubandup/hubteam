@@ -41,6 +41,7 @@ export default function Finances() {
   const [isLoadingTreasury, setIsLoadingTreasury] = useState(false);
   const [treasuryLastUpdated, setTreasuryLastUpdated] = useState<string | null>(null);
   const [forecastRevenue, setForecastRevenue] = useState(0);
+  const [monthlyForecasts, setMonthlyForecasts] = useState<{ month: number; encaisser: number; recurrent: number; total: number }[]>([]);
   const [isLoadingForecast, setIsLoadingForecast] = useState(false);
 
   useEffect(() => {
@@ -78,38 +79,36 @@ export default function Finances() {
     };
   }, [isAdmin]);
 
-  // Update forecast in revenueData when forecastRevenue changes
+  // Update forecast in revenueData when monthlyForecasts changes
   useEffect(() => {
-    if (forecastRevenue > 0 && revenueData.length === 9) {
-      const forecastPerMonth = forecastRevenue / 3;
-      const lastActualRevenue = revenueData[5]?.revenue || 0;
-      
+    if (monthlyForecasts.length === 3 && revenueData.length === 9) {
       // Only update if forecast values are not already set
       const needsUpdate = revenueData[6]?.forecast === null;
       if (!needsUpdate) return;
+
+      const lastActualRevenue = revenueData[5]?.revenue || 0;
       
       const updatedData = revenueData.map((item, index) => {
         // Last 3 months are forecast months (indices 6, 7, 8)
-        if (index >= 6) {
-          const monthsFromNow = index - 5;
-          return {
-            ...item,
-            forecast: forecastPerMonth * monthsFromNow,
-          };
+        if (index === 6) {
+          return { ...item, forecast: monthlyForecasts[0].total };
+        }
+        if (index === 7) {
+          return { ...item, forecast: monthlyForecasts[1].total };
+        }
+        if (index === 8) {
+          return { ...item, forecast: monthlyForecasts[2].total };
         }
         // For the current month (index 5), add connection point for forecast line
         if (index === 5) {
-          return {
-            ...item,
-            forecast: lastActualRevenue,
-          };
+          return { ...item, forecast: lastActualRevenue };
         }
         return item;
       });
       
       setRevenueData(updatedData);
     }
-  }, [forecastRevenue, revenueData]);
+  }, [monthlyForecasts, revenueData]);
 
   const fetchFinancialData = async () => {
     try {
@@ -273,6 +272,7 @@ export default function Finances() {
 
       if (data?.success) {
         setForecastRevenue(data.forecastRevenue || 0);
+        setMonthlyForecasts(data.monthlyForecasts || []);
       }
     } catch (error) {
       console.error('Error fetching forecast revenue:', error);
