@@ -10,7 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Euro, Loader2, RefreshCw, TrendingUp, FileDown, Users } from 'lucide-react';
+import { Euro, Loader2, RefreshCw, TrendingUp, FileDown, Users, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
@@ -230,10 +231,10 @@ export default function Finances() {
       doc.setFont('helvetica', 'normal');
       doc.text(`${totalRevenue.toLocaleString('fr-FR')} €`, 14, 48);
       
-      // Marge Moyenne
+      // Marge Moyenne (50 derniers projets)
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('Marge Moyenne (30 derniers projets)', 14, 60);
+      doc.text('Marge Moyenne (50 derniers projets)', 14, 60);
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
       doc.text(validatedQuotes.length > 0 ? `${averageMargin.toFixed(1)}%` : 'N/A', 14, 68);
@@ -259,13 +260,13 @@ export default function Finances() {
         styles: { fontSize: 10 },
       });
       
-      // 30 Derniers Projets Validés
+      // 50 Derniers Projets Validés
       const finalY = (doc as any).lastAutoTable.finalY || 120;
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('30 Derniers Projets Validés', 14, finalY + 10);
+      doc.text('50 Derniers Projets Validés', 14, finalY + 10);
       
-      const quotesData = validatedQuotes.slice(0, 30).map((quote) => [
+      const quotesData = validatedQuotes.slice(0, 50).map((quote) => [
         quote.client,
         quote.quoteRef,
         quote.title.length > 30 ? quote.title.substring(0, 30) + '...' : quote.title,
@@ -299,6 +300,42 @@ export default function Finances() {
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast.error('Erreur lors de la génération du PDF');
+    }
+  };
+
+  const handleExportXLS = () => {
+    try {
+      const xlsData = validatedQuotes.map((quote) => ({
+        'Client': quote.client,
+        'N° Devis': quote.quoteRef,
+        'Objet du devis': quote.title,
+        'Montant HT (€)': quote.montantHT,
+        'Montant HA (€)': quote.montantHA,
+        'Marge (€)': quote.margeEuro,
+        'Marge (%)': parseFloat(quote.margePercent.toFixed(1)),
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(xlsData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Projets Validés');
+
+      // Auto-size columns
+      const maxWidths = [
+        { wch: 30 }, // Client
+        { wch: 15 }, // N° Devis
+        { wch: 50 }, // Objet
+        { wch: 15 }, // Montant HT
+        { wch: 15 }, // Montant HA
+        { wch: 15 }, // Marge €
+        { wch: 12 }, // Marge %
+      ];
+      worksheet['!cols'] = maxWidths;
+
+      XLSX.writeFile(workbook, `projets-valides-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+      toast.success('Export XLS généré avec succès');
+    } catch (error) {
+      console.error('Error generating XLS:', error);
+      toast.error('Erreur lors de la génération du fichier XLS');
     }
   };
 
@@ -396,7 +433,7 @@ export default function Finances() {
               {validatedQuotes.length > 0 ? `${averageMargin.toFixed(1)}%` : '-'}
             </div>
             <p className="text-xs text-muted-foreground">
-              Soit {validatedQuotes.reduce((sum, quote) => sum + quote.margeEuro, 0).toLocaleString('fr-FR')} € HT sur les 30 derniers projets validés
+              Soit {validatedQuotes.reduce((sum, quote) => sum + quote.margeEuro, 0).toLocaleString('fr-FR')} € HT sur les 50 derniers projets validés
             </p>
           </CardContent>
         </Card>
@@ -479,10 +516,21 @@ export default function Finances() {
         </CardContent>
       </Card>
 
-      {/* 30 Derniers Projets Validés */}
+      {/* 50 Derniers Projets Validés */}
       <Card>
-        <CardHeader>
-          <CardTitle>30 Derniers Projets Validés</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>50 Derniers Projets Validés</CardTitle>
+          {validatedQuotes.length > 0 && (
+            <Button
+              onClick={handleExportXLS}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Exporter XLS
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {isLoadingQuotes ? (

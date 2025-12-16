@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
         const dateB = b.accepted_date ? new Date(b.accepted_date).getTime() : 0;
         return dateB - dateA; // Most recent first
       })
-      .slice(0, 30) // Get only the last 30
+      .slice(0, 50) // Get only the last 50
       .map((quote: FacturationProQuote) => {
         const montantHT = parseFloat(quote.total) || 0;
         const montantHA = parseFloat(quote.internal_note || '0') || 0;
