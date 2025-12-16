@@ -357,6 +357,22 @@ Deno.serve(async (req) => {
           const nextDate = new Date(nextDateStr);
           const endDate = endDateStr ? new Date(endDateStr) : null;
           
+          // Skip TERMINATED recurring invoices:
+          // If next_date is in the past (more than 60 days ago), the invoice is considered terminated
+          const sixtyDaysAgo = new Date();
+          sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+          
+          if (nextDate < sixtyDaysAgo) {
+            console.log(`[FORECAST] Skipping TERMINATED recurring invoice ${recInvoice.id} (next_date ${nextDateStr} is in the past)`);
+            continue;
+          }
+          
+          // Also skip if end_date is in the past
+          if (endDate && endDate < now) {
+            console.log(`[FORECAST] Skipping ENDED recurring invoice ${recInvoice.id} (end_date ${endDateStr} is in the past)`);
+            continue;
+          }
+          
           console.log(`[FORECAST] Recurring ${recInvoice.id}: ${amount}€, freq=${frequency}, next=${nextDateStr}, end=${endDateStr || 'none'}`);
           
           // Calculate all occurrences in the next 3 months
