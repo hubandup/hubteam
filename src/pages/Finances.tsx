@@ -551,8 +551,8 @@ export default function Finances() {
             <Button
               asChild
               size="sm"
-              className="gap-2"
-              style={{ backgroundColor: '#456c34' }}
+              className="gap-2 text-white hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg, #456c34 0%, #54833e 100%)' }}
             >
               <a href="https://www.facturation.pro/firms/65170" target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="h-4 w-4" />
