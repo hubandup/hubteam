@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
 
 
 export default function Finances() {
@@ -43,6 +44,10 @@ export default function Finances() {
   const [forecastRevenue, setForecastRevenue] = useState(0);
   const [monthlyForecasts, setMonthlyForecasts] = useState<{ month: number; encaisser: number; recurrent: number; total: number }[]>([]);
   const [isLoadingForecast, setIsLoadingForecast] = useState(false);
+  
+  // Refs for charts to capture in PDF
+  const revenueChartRef = useRef<HTMLDivElement>(null);
+  const treasuryChartRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -308,10 +313,12 @@ export default function Finances() {
     }
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     try {
+      toast.info('Génération du PDF en cours...');
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
       
       // Title
       doc.setFontSize(20);
@@ -331,18 +338,70 @@ export default function Finances() {
       doc.setFont('helvetica', 'normal');
       doc.text(`${totalRevenue.toLocaleString('fr-FR')} €`, 14, 48);
       
-      // Marge Moyenne (50 derniers projets)
+      // Adhésions
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('Marge Moyenne (50 derniers projets)', 14, 60);
+      doc.text('Adhésions', 70, 40);
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
-      doc.text(validatedQuotes.length > 0 ? `${averageMargin.toFixed(1)}%` : 'N/A', 14, 68);
+      doc.text(`${adhesionsTotal.toLocaleString('fr-FR')} € (${adhesionsCount} adhérents)`, 70, 48);
       
-      // Top 5 Clients
+      // Marge Moyenne
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('Top 5 Clients', 14, 80);
+      doc.text('Marge Moyenne (Apports d\'affaires)', 130, 40);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(validatedQuotes.length > 0 ? `${averageMargin.toFixed(1)}%` : 'N/A', 130, 48);
+      
+      // Marge Brute
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Marge Brute', 14, 60);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${margeBrutePercent.toFixed(1)}% (${margeBrute.toLocaleString('fr-FR')} € HT)`, 14, 68);
+      
+      // Capture Revenue Evolution Chart
+      if (revenueChartRef.current) {
+        try {
+          const canvas = await html2canvas(revenueChartRef.current, {
+            backgroundColor: '#ffffff',
+            scale: 2,
+          });
+          const imgData = canvas.toDataURL('image/png');
+          doc.setFontSize(12);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Évolution du CA', 14, 80);
+          doc.addImage(imgData, 'PNG', 14, 85, 180, 60);
+        } catch (chartError) {
+          console.warn('Could not capture revenue chart:', chartError);
+        }
+      }
+      
+      // Capture Treasury Evolution Chart
+      if (treasuryChartRef.current && treasuryData.length > 0) {
+        try {
+          const canvas = await html2canvas(treasuryChartRef.current, {
+            backgroundColor: '#ffffff',
+            scale: 2,
+          });
+          const imgData = canvas.toDataURL('image/png');
+          doc.addPage();
+          doc.setFontSize(12);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Évolution du Solde', 14, 20);
+          doc.addImage(imgData, 'PNG', 14, 25, 180, 70);
+        } catch (chartError) {
+          console.warn('Could not capture treasury chart:', chartError);
+        }
+      }
+      
+      // Top 5 Clients on new page
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Top 5 Clients', 14, 20);
       
       const clientsData = topClients.map((client, index) => [
         `${index + 1}`,
@@ -352,7 +411,7 @@ export default function Finances() {
       ]);
       
       autoTable(doc, {
-        startY: 85,
+        startY: 25,
         head: [['#', 'Société', 'Contact', 'CA']],
         body: clientsData,
         theme: 'grid',
@@ -361,7 +420,7 @@ export default function Finances() {
       });
       
       // 50 Derniers Projets Validés
-      const finalY = (doc as any).lastAutoTable.finalY || 120;
+      const finalY = (doc as any).lastAutoTable.finalY || 60;
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.text('50 Derniers Projets Validés', 14, finalY + 10);
@@ -570,7 +629,7 @@ export default function Finances() {
       </div>
 
       {/* Revenue Evolution Chart */}
-      <Card>
+      <Card ref={revenueChartRef}>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Évolution du CA</CardTitle>
@@ -637,7 +696,7 @@ export default function Finances() {
       </Card>
 
       {/* Treasury Evolution Chart */}
-      <Card>
+      <Card ref={treasuryChartRef}>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Évolution du Solde</CardTitle>
