@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { toast } from 'sonner';
-import { Loader2, Bell, MessageSquare, Calendar, CheckCircle } from 'lucide-react';
+import { Loader2, Bell, MessageSquare, Calendar, CheckCircle, Smartphone, BellRing } from 'lucide-react';
 
 interface NotificationPreferences {
   task_assigned: boolean;
@@ -24,6 +26,15 @@ export function NotificationPreferencesTab() {
     mention: true,
     deadline_approaching: true,
   });
+
+  const { 
+    isSupported, 
+    permission, 
+    subscription, 
+    requestPermission, 
+    unsubscribe,
+    isPWAMode 
+  } = usePushNotifications();
 
   useEffect(() => {
     if (user) {
@@ -103,6 +114,35 @@ export function NotificationPreferencesTab() {
     }
   };
 
+  const handlePushToggle = async () => {
+    if (subscription) {
+      await unsubscribe();
+    } else {
+      await requestPermission();
+    }
+  };
+
+  const testPushNotification = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Vous devez être connecté');
+        return;
+      }
+
+      const { error } = await supabase.functions.invoke('push-test', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (error) throw error;
+      toast.success('Notification de test envoyée');
+    } catch (error) {
+      console.error('Error testing push:', error);
+      toast.error('Erreur lors du test');
+    }
+  };
 
   if (loading) {
     return (
@@ -115,18 +155,84 @@ export function NotificationPreferencesTab() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Bell className="h-5 w-5" />
-          Préférences de notifications
-        </CardTitle>
-        <CardDescription>
-          Choisissez les types de notifications que vous souhaitez recevoir
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Push Notifications Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Smartphone className="h-5 w-5" />
+            Notifications Push (PWA)
+          </CardTitle>
+          <CardDescription>
+            Recevez des notifications instantanées sur votre appareil, même lorsque l'application est fermée
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {!isSupported ? (
+            <div className="p-4 rounded-lg border bg-muted/50 text-muted-foreground">
+              <p className="text-sm">
+                Les notifications push ne sont pas supportées sur ce navigateur.
+                Pour les activer, installez l'application sur votre écran d'accueil.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between space-x-4 p-4 rounded-lg border bg-card">
+                <div className="flex items-start gap-3 flex-1">
+                  <BellRing className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div className="space-y-1">
+                    <Label className="text-base">
+                      Notifications push
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {permission === 'denied' 
+                        ? 'Permission refusée. Modifiez les paramètres de votre navigateur.'
+                        : subscription 
+                          ? 'Notifications activées sur cet appareil'
+                          : 'Activez pour recevoir des notifications instantanées'}
+                    </p>
+                    {!isPWAMode && permission !== 'denied' && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400">
+                        Pour une meilleure expérience, installez l'app sur votre écran d'accueil
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <Switch
+                  checked={!!subscription}
+                  onCheckedChange={handlePushToggle}
+                  disabled={permission === 'denied'}
+                />
+              </div>
+
+              {subscription && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={testPushNotification}
+                  className="w-full"
+                >
+                  <Bell className="h-4 w-4 mr-2" />
+                  Envoyer une notification de test
+                </Button>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Email Notification Preferences Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5" />
+            Préférences de notifications
+          </CardTitle>
+          <CardDescription>
+            Choisissez les types de notifications que vous souhaitez recevoir par email
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="flex items-center justify-between space-x-4 p-4 rounded-lg border bg-card">
             <div className="flex items-start gap-3 flex-1">
               <CheckCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
@@ -206,8 +312,8 @@ export function NotificationPreferencesTab() {
               disabled={saving}
             />
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
