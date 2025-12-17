@@ -1,9 +1,7 @@
-import { Home, StickyNote, Users, Briefcase, MessageCircle } from 'lucide-react';
+import { Rss, StickyNote, Users, Briefcase } from 'lucide-react';
 import { NavLink } from './NavLink';
-import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
 import { useIsNative } from '@/hooks/use-mobile';
-import { useNotifications } from '@/hooks/useNotifications';
 import { useActivities } from '@/hooks/useActivities';
 import { usePosts } from '@/hooks/usePosts';
 import { useTasks } from '@/hooks/useTasks';
@@ -15,7 +13,6 @@ import { Badge } from '@/components/ui/badge';
 export function MobileBottomNav() {
   const isNative = useIsNative();
   const { user } = useAuth();
-  const { notifications } = useNotifications();
   const { data: activities } = useActivities();
   const { data: posts } = usePosts();
   const { data: tasks } = useTasks();
@@ -66,18 +63,6 @@ export function MobileBottomNav() {
     ).length;
   }, [tasks, user, lastVisits.projects]);
 
-  // Count unread message notifications since last visit
-  const messagesCount = useMemo(() => {
-    if (!notifications) return 0;
-    const lastVisit = lastVisits.messages;
-    
-    return notifications.filter(n => 
-      !n.read && 
-      n.type === 'message' && 
-      new Date(n.created_at).getTime() > lastVisit
-    ).length;
-  }, [notifications, lastVisits.messages]);
-
   // Check if running as PWA or native app
   const isMobileApp = useMemo(() => 
     isNative ||
@@ -89,7 +74,7 @@ export function MobileBottomNav() {
   const navItems = useMemo(() => [
     {
       to: '/feed',
-      icon: Home,
+      icon: Rss,
       label: 'Feed',
     },
     {
@@ -107,11 +92,6 @@ export function MobileBottomNav() {
       icon: Briefcase,
       label: 'Projets',
     },
-    {
-      to: '/messages',
-      icon: MessageCircle,
-      label: 'Messages',
-    },
   ], []);
 
   return (
@@ -121,7 +101,6 @@ export function MobileBottomNav() {
           const Icon = item.icon;
           
           let badgeCount = 0;
-          if (item.to === '/messages') badgeCount = messagesCount;
           if (item.to === '/feed') badgeCount = feedCount;
           if (item.to === '/crm') badgeCount = crmCount;
           if (item.to === '/projects') badgeCount = projectsCount;

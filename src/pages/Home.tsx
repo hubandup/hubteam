@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { TodoList } from '@/components/home/TodoList';
 import { QuickNotes } from '@/components/home/QuickNotes';
 import { TodayTasks } from '@/components/home/TodayTasks';
-import { CalendarView } from '@/components/home/CalendarView';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -59,7 +58,6 @@ export default function Home() {
       
       <div className="grid gap-6 lg:grid-cols-2">
         <TodayTasks />
-        <CalendarView />
       </div>
     </div>
   );
