@@ -21,18 +21,18 @@ export function Layout({ children }: LayoutProps) {
   // Sur mobile/PWA, layout simplifié sans sidebar
   if (isMobile || isNative) {
     return (
-      <div className="min-h-screen flex flex-col w-full bg-background">
-        {/* Header mobile simplifié */}
-        <header className="sticky top-0 z-50 bg-sidebar px-4 py-3 flex items-center justify-between safe-area-top">
-          <img src={logo} alt="Hub & Up" className="h-6 [filter:brightness(0)_invert(1)]" />
-          <div className="flex items-center gap-1">
+      <div className="min-h-screen flex flex-col w-full bg-sidebar">
+        {/* Header mobile simplifié - fond continu avec la status bar */}
+        <header className="sticky top-0 z-50 bg-sidebar px-4 pt-[env(safe-area-inset-top)] pb-3 flex items-center justify-between">
+          <img src={logo} alt="Hub & Up" className="h-8 [filter:brightness(0)_invert(1)]" />
+          <div className="flex items-center gap-1 [&_button]:text-white [&_svg]:text-white">
             <ThemeToggle />
             <NotificationBell />
           </div>
         </header>
         
         {/* Contenu principal */}
-        <main className="flex-1 overflow-auto bg-background">
+        <main className="flex-1 overflow-auto bg-background rounded-t-2xl">
           <div className="px-4 py-4 pb-24">
             {children}
           </div>

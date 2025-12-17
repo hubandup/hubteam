@@ -25,14 +25,14 @@ import { PageLoader } from '@/components/PageLoader';
 
 export default function Projects() {
   const navigate = useNavigate();
-  const { canRead } = usePermissions();
+  const { canRead, loading: permissionsLoading } = usePermissions();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const { isClient } = useUserRole();
   const { user } = useAuth();
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: archivedProjects = [], isLoading: archivedLoading } = useArchivedProjects();
-  const loading = projectsLoading || archivedLoading;
+  const loading = projectsLoading || archivedLoading || permissionsLoading;
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'kanban' | 'list'>('grid');
