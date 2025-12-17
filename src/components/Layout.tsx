@@ -8,6 +8,7 @@ import { useCapacitor } from '@/hooks/useCapacitor';
 import { HeaderUserProfile } from './HeaderUserProfile';
 import { NotificationBell } from './notifications/NotificationBell';
 import { ThemeToggle } from './ThemeToggle';
+import logo from '@/assets/logo-hubandup.svg';
 
 interface LayoutProps {
   children: ReactNode;
@@ -17,17 +18,27 @@ export function Layout({ children }: LayoutProps) {
   const isMobile = useIsMobile();
   const { isNative } = useCapacitor();
 
-  // Sur mobile/PWA, on ne wrap pas avec SidebarProvider pour éviter les conflits
+  // Sur mobile/PWA, layout simplifié sans sidebar
   if (isMobile || isNative) {
     return (
-      <div className="min-h-screen flex w-full">
-        <div className="flex-1 min-w-0 flex flex-col">
-          <main className="flex-1 min-h-0 min-w-0 overflow-auto bg-background pb-20">
-            <div className="px-2 py-3">
-              {children}
-            </div>
-          </main>
-        </div>
+      <div className="min-h-screen flex flex-col w-full bg-background">
+        {/* Header mobile simplifié */}
+        <header className="sticky top-0 z-50 bg-sidebar px-4 py-3 flex items-center justify-between safe-area-top">
+          <img src={logo} alt="Hub & Up" className="h-6 [filter:brightness(0)_invert(1)]" />
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <NotificationBell />
+          </div>
+        </header>
+        
+        {/* Contenu principal */}
+        <main className="flex-1 overflow-auto bg-background">
+          <div className="px-4 py-4 pb-24">
+            {children}
+          </div>
+        </main>
+        
+        {/* Navigation bas */}
         <MobileBottomNav />
       </div>
     );
