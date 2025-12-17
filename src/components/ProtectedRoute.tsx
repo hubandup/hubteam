@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
-import { PageLoader } from '@/components/PageLoader';
+import { AppSkeleton } from '@/components/AppSkeleton';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -14,7 +14,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const location = useLocation();
 
   if (loading || roleLoading || (!role && user)) {
-    return <PageLoader />;
+    return <AppSkeleton />;
   }
 
   if (!user) {
