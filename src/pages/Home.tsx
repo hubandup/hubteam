@@ -51,12 +51,9 @@ export default function Home() {
         <p className="text-muted-foreground mt-1 capitalize">{today}</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2 mb-6">
+      <div className="grid gap-6 lg:grid-cols-3">
         <TodoList />
         <QuickNotes />
-      </div>
-      
-      <div className="grid gap-6 lg:grid-cols-2">
         <TodayTasks />
       </div>
     </div>
