@@ -15,9 +15,10 @@ import { PageLoader } from '@/components/PageLoader';
 
 export default function Tasks() {
   const navigate = useNavigate();
-  const { canRead } = usePermissions();
+  const { canRead, loading: permissionsLoading } = usePermissions();
   const { isClient } = useUserRole();
-  const { data: tasks = [], isLoading: loading } = useTasks();
+  const { data: tasks = [], isLoading: tasksLoading } = useTasks();
+  const loading = tasksLoading || permissionsLoading;
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);

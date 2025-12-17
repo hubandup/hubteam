@@ -21,12 +21,13 @@ import { PageLoader } from '@/components/PageLoader';
 
 export default function CRM() {
   const navigate = useNavigate();
-  const { canRead } = usePermissions();
+  const { canRead, loading: permissionsLoading } = usePermissions();
   const { isAgency, loading: roleLoading } = useUserRole();
   const showRevenue = !roleLoading && !isAgency;
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
-  const { data: clients = [], isLoading: loading } = useClients();
+  const { data: clients = [], isLoading: clientsLoading } = useClients();
+  const loading = clientsLoading || permissionsLoading;
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'grid'>('kanban');
   const [sortBy, setSortBy] = useState<'created_at' | 'revenue_current_year' | 'alphabetical'>('alphabetical');
