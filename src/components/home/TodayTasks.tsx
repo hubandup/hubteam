@@ -47,7 +47,7 @@ export function TodayTasks() {
     return allTasks
       .filter(task => 
         task.assigned_to === userId &&
-        task.status === 'in_progress' &&
+        (task.status === 'in_progress' || task.status === 'todo') &&
         task.end_date &&
         task.end_date <= today
       )
