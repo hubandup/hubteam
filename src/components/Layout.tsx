@@ -3,6 +3,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Sidebar } from './Sidebar';
 import { Breadcrumbs } from './Breadcrumbs';
 import { MobileBottomNav } from './MobileBottomNav';
+import { PWAInstallBanner } from './PWAInstallBanner';
 import { useIsMobile, useIsNative } from '@/hooks/use-mobile';
 import { useCapacitor } from '@/hooks/useCapacitor';
 import { HeaderUserProfile } from './HeaderUserProfile';
@@ -40,6 +41,9 @@ export function Layout({ children }: LayoutProps) {
         
         {/* Navigation bas */}
         <MobileBottomNav />
+        
+        {/* Bannière d'installation PWA */}
+        <PWAInstallBanner />
       </div>
     );
   }
