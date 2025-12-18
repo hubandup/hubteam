@@ -349,58 +349,85 @@ Deno.serve(async (req) => {
 
     // =========================================
     // 3. Fetch quotes with status "À facturer" (quote_status = 1)
-    // These are added to the TOTAL forecast (not per month)
+    // Added to the corresponding month bucket based on the quote "validity" date
     // =========================================
     try {
       const quotesUrl = new URL(`${FACTURATION_PRO_API_URL}/firms/${firmId}/quotes.json`);
       quotesUrl.searchParams.set('per_page', '100');
-      
+
       const quotesResponse = await fetch(quotesUrl.toString(), { headers });
-      
+
       if (quotesResponse.ok) {
         const quotesData = await quotesResponse.json();
-        const quotes: FacturationProQuote[] = Array.isArray(quotesData) 
-          ? quotesData 
+        const quotes: FacturationProQuote[] = Array.isArray(quotesData)
+          ? quotesData
           : (quotesData?.quotes || quotesData?.data || []);
-        
+
         console.log(`[FORECAST] Found ${quotes.length} quotes`);
-        
-        // Filter quotes with status "À facturer" (status 1 = Validated/Accepted, ready to invoice)
+
+        // Status 1 = "À facturer" (ready to invoice)
         const quotesToInvoice = quotes.filter((q: any) => q.quote_status === 1);
         console.log(`[FORECAST] Quotes "À facturer" (status=1): ${quotesToInvoice.length}`);
-        
+
         for (const quote of quotesToInvoice) {
           const amount = parseFloat(String(quote.total ?? '0')) || 0;
           if (amount === 0) continue;
-          
+
+          // "Date de validité" (Facturation.PRO) is not explicitly documented here;
+          // We prioritize term_on, then due_date, then quote_date, then accepted_date.
+          const validityStr =
+            (quote as any).term_on ||
+            (quote as any).due_date ||
+            (quote as any).quote_date ||
+            (quote as any).accepted_date;
+
+          if (!validityStr) continue;
+
+          const validityDate = new Date(validityStr);
+          if (Number.isNaN(validityDate.getTime())) continue;
+
+          const bucket = getMonthBucket(
+            validityDate,
+            month1Start,
+            month1End,
+            month2Start,
+            month2End,
+            month3Start,
+            month3End,
+          );
+
+          if (bucket === null) continue;
+
+          monthlyForecasts[bucket].devisAFacturer += amount;
           totalDevisAFacturer += amount;
-          console.log(`[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": ${amount}€ (À facturer)`);
+
+          console.log(
+            `[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": +${amount}€ → month +${bucket + 1} (validity: ${validityDate.toISOString().split('T')[0]})`,
+          );
         }
       }
     } catch (quotesError) {
       console.log('[FORECAST] Could not fetch quotes:', quotesError);
     }
 
-    console.log(`[FORECAST] Total Devis "À facturer": ${totalDevisAFacturer}€`);
+    console.log(
+      `[FORECAST] Devis "À facturer": M+1=${monthlyForecasts[0].devisAFacturer}€, M+2=${monthlyForecasts[1].devisAFacturer}€, M+3=${monthlyForecasts[2].devisAFacturer}€`,
+    );
 
     // Calculate totals for each month
-    monthlyForecasts.forEach(mf => {
-      mf.total = mf.encaisser + mf.recurrent;
+    monthlyForecasts.forEach((mf) => {
+      mf.total = mf.encaisser + mf.recurrent + mf.devisAFacturer;
     });
 
-    // Add devis to month+1 for display purposes (the quotes are cumulated with M+1 to M+3)
-    monthlyForecasts[0].devisAFacturer = totalDevisAFacturer;
-
-    // Total forecast = sum of 3 months + devis à facturer
+    // Total forecast = sum of 3 months (including devis à facturer)
     const totalEncaisser = monthlyForecasts.reduce((sum, mf) => sum + mf.encaisser, 0);
     const totalRecurrent = monthlyForecasts.reduce((sum, mf) => sum + mf.recurrent, 0);
-    const totalForecast = totalEncaisser + totalRecurrent + totalDevisAFacturer;
+    const totalForecast = monthlyForecasts.reduce((sum, mf) => sum + mf.total, 0);
 
     console.log('[FORECAST] === FINAL RESULTS ===');
-    console.log(`[FORECAST] Month +1: encaisser=${monthlyForecasts[0].encaisser}€ + recurrent=${monthlyForecasts[0].recurrent}€ = ${monthlyForecasts[0].total}€`);
-    console.log(`[FORECAST] Month +2: encaisser=${monthlyForecasts[1].encaisser}€ + recurrent=${monthlyForecasts[1].recurrent}€ = ${monthlyForecasts[1].total}€`);
-    console.log(`[FORECAST] Month +3: encaisser=${monthlyForecasts[2].encaisser}€ + recurrent=${monthlyForecasts[2].recurrent}€ = ${monthlyForecasts[2].total}€`);
-    console.log(`[FORECAST] Devis "À facturer": ${totalDevisAFacturer}€`);
+    console.log(`[FORECAST] Month +1: encaisser=${monthlyForecasts[0].encaisser}€ + recurrent=${monthlyForecasts[0].recurrent}€ + devis=${monthlyForecasts[0].devisAFacturer}€ = ${monthlyForecasts[0].total}€`);
+    console.log(`[FORECAST] Month +2: encaisser=${monthlyForecasts[1].encaisser}€ + recurrent=${monthlyForecasts[1].recurrent}€ + devis=${monthlyForecasts[1].devisAFacturer}€ = ${monthlyForecasts[1].total}€`);
+    console.log(`[FORECAST] Month +3: encaisser=${monthlyForecasts[2].encaisser}€ + recurrent=${monthlyForecasts[2].recurrent}€ + devis=${monthlyForecasts[2].devisAFacturer}€ = ${monthlyForecasts[2].total}€`);
     console.log(`[FORECAST] TOTAL CA Prévisionnel: ${totalForecast}€`);
 
     return new Response(
