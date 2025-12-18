@@ -42,7 +42,6 @@ export default function Finances() {
   const [isLoadingTreasury, setIsLoadingTreasury] = useState(false);
   const [treasuryLastUpdated, setTreasuryLastUpdated] = useState<string | null>(null);
   const [forecastRevenue, setForecastRevenue] = useState(0);
-  const [forecastBreakdown, setForecastBreakdown] = useState<{ encaisser: number; recurrent: number; devisAFacturer: number } | null>(null);
   const [monthlyForecasts, setMonthlyForecasts] = useState<{ month: number; encaisser: number; recurrent: number; devisAFacturer?: number; total: number }[]>([]);
   const [isLoadingForecast, setIsLoadingForecast] = useState(false);
   
@@ -282,7 +281,6 @@ export default function Finances() {
       if (data?.success) {
         setForecastRevenue(data.forecastRevenue || 0);
         setMonthlyForecasts(data.monthlyForecasts || []);
-        setForecastBreakdown(data.breakdown || null);
       }
     } catch (error) {
       console.error('Error fetching forecast revenue:', error);
@@ -738,15 +736,11 @@ export default function Finances() {
             {forecastRevenue > 0 && (
               <div className="text-sm text-muted-foreground mt-1">
                 <p>
-                  CA prévisionnel (M+1 à M+3) : <span className="font-semibold text-orange-500">{forecastRevenue.toLocaleString('fr-FR')} €</span>
+                  CA prévisionnel (M+1 à M+3) :{' '}
+                  <span className="font-semibold text-orange-500">
+                    {forecastRevenue.toLocaleString('fr-FR')} €
+                  </span>
                 </p>
-                {forecastBreakdown && (
-                  <p className="text-xs mt-0.5">
-                    À encaisser: {forecastBreakdown.encaisser.toLocaleString('fr-FR')} € + 
-                    Récurrent: {forecastBreakdown.recurrent.toLocaleString('fr-FR')} € + 
-                    Devis à facturer: {forecastBreakdown.devisAFacturer.toLocaleString('fr-FR')} €
-                  </p>
-                )}
               </div>
             )}
           </div>
