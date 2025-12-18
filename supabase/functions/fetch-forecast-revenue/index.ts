@@ -155,8 +155,8 @@ function getOccurrencesInPeriod(
   nextDate: Date,
   frequency: unknown,
   endDate: Date | null,
-  month1Start: Date,
-  month1End: Date
+  periodStart: Date,
+  periodEnd: Date
 ): Date[] {
   const occurrences: Date[] = [];
   let currentDate = new Date(nextDate);
@@ -164,8 +164,8 @@ function getOccurrencesInPeriod(
   const maxIterations = 24;
   let iterations = 0;
 
-  while (currentDate <= month1End && iterations < maxIterations) {
-    if (currentDate >= month1Start && (!endDate || currentDate <= endDate)) {
+  while (currentDate <= periodEnd && iterations < maxIterations) {
+    if (currentDate >= periodStart && (!endDate || currentDate <= endDate)) {
       occurrences.push(new Date(currentDate));
     }
 
@@ -174,6 +174,22 @@ function getOccurrencesInPeriod(
   }
 
   return occurrences;
+}
+
+// Helper to determine which month bucket a date falls into
+function getMonthBucket(
+  date: Date,
+  month1Start: Date,
+  month1End: Date,
+  month2Start: Date,
+  month2End: Date,
+  month3Start: Date,
+  month3End: Date
+): number | null {
+  if (date >= month1Start && date <= month1End) return 0;
+  if (date >= month2Start && date <= month2End) return 1;
+  if (date >= month3Start && date <= month3End) return 2;
+  return null;
 }
 
 Deno.serve(async (req) => {
@@ -197,32 +213,31 @@ Deno.serve(async (req) => {
       'Content-Type': 'application/json',
     };
 
-    // Get dates for next month only (month+1)
+    // Get dates for next 3 months
     const now = new Date();
     const month1Start = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const month1End = new Date(now.getFullYear(), now.getMonth() + 2, 0, 23, 59, 59);
+    const month2Start = new Date(now.getFullYear(), now.getMonth() + 2, 1);
+    const month2End = new Date(now.getFullYear(), now.getMonth() + 3, 0, 23, 59, 59);
+    const month3Start = new Date(now.getFullYear(), now.getMonth() + 3, 1);
+    const month3End = new Date(now.getFullYear(), now.getMonth() + 4, 0, 23, 59, 59);
 
     const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
     console.log(`[FORECAST] Month +1: ${monthNames[month1Start.getMonth()]} ${month1Start.getFullYear()}`);
+    console.log(`[FORECAST] Month +2: ${monthNames[month2Start.getMonth()]} ${month2Start.getFullYear()}`);
+    console.log(`[FORECAST] Month +3: ${monthNames[month3Start.getMonth()]} ${month3Start.getFullYear()}`);
 
-    // Initialize forecast for month+1 only
-    const monthlyForecast: MonthlyForecast = {
-      month: 1,
-      encaisser: 0,
-      recurrent: 0,
-      devisAFacturer: 0,
-      total: 0,
-    };
-
-    // Keep 3-month array for chart compatibility
+    // Initialize forecasts for 3 months
     const monthlyForecasts: MonthlyForecast[] = [
       { month: 1, encaisser: 0, recurrent: 0, devisAFacturer: 0, total: 0 },
       { month: 2, encaisser: 0, recurrent: 0, devisAFacturer: 0, total: 0 },
       { month: 3, encaisser: 0, recurrent: 0, devisAFacturer: 0, total: 0 },
     ];
 
+    let totalDevisAFacturer = 0;
+
     // =========================================
-    // 1. Fetch unpaid invoices due in month+1 (CA HT à encaisser)
+    // 1. Fetch unpaid invoices (CA HT à encaisser) for all 3 months
     // =========================================
     const perPage = 100;
     const maxPages = 20;
@@ -259,21 +274,20 @@ Deno.serve(async (req) => {
 
         if (!dueDate || amount === 0) continue;
 
-        // Only count invoices due in month+1
-        if (dueDate >= month1Start && dueDate <= month1End) {
-          monthlyForecast.encaisser += amount;
-          monthlyForecasts[0].encaisser += amount;
-          console.log(`[FORECAST] Invoice ${anyInv.id}: ${amount}€ → month +1 (due: ${dueDate.toISOString().split('T')[0]})`);
+        const bucket = getMonthBucket(dueDate, month1Start, month1End, month2Start, month2End, month3Start, month3End);
+        if (bucket !== null) {
+          monthlyForecasts[bucket].encaisser += amount;
+          console.log(`[FORECAST] Invoice ${anyInv.id}: ${amount}€ → month +${bucket + 1} (due: ${dueDate.toISOString().split('T')[0]})`);
         }
       }
 
       if (invoices.length < perPage) break;
     }
 
-    console.log(`[FORECAST] CA à encaisser M+1: ${monthlyForecast.encaisser}€`);
+    console.log(`[FORECAST] CA à encaisser: M+1=${monthlyForecasts[0].encaisser}€, M+2=${monthlyForecasts[1].encaisser}€, M+3=${monthlyForecasts[2].encaisser}€`);
 
     // =========================================
-    // 2. Fetch recurring invoices for month+1 (CA HT récurrent)
+    // 2. Fetch recurring invoices (CA HT récurrent) for all 3 months
     // =========================================
     try {
       const recurringUrl = new URL(`${FACTURATION_PRO_API_URL}/firms/${firmId}/recurring_invoices.json`);
@@ -315,14 +329,14 @@ Deno.serve(async (req) => {
           if (nextDate < sixtyDaysAgo) continue;
           if (endDate && endDate < now) continue;
           
-          // Calculate occurrences only for month+1
-          const occurrences = getOccurrencesInPeriod(nextDate, frequency, endDate, month1Start, month1End);
+          // Calculate occurrences for all 3 months
+          const occurrences = getOccurrencesInPeriod(nextDate, frequency, endDate, month1Start, month3End);
           
           for (const occDate of occurrences) {
-            if (occDate >= month1Start && occDate <= month1End) {
-              monthlyForecast.recurrent += amount;
-              monthlyForecasts[0].recurrent += amount;
-              console.log(`[FORECAST] Recurring ${recInvoice.id}: +${amount}€ → month +1 (occurrence: ${occDate.toISOString().split('T')[0]})`);
+            const bucket = getMonthBucket(occDate, month1Start, month1End, month2Start, month2End, month3Start, month3End);
+            if (bucket !== null) {
+              monthlyForecasts[bucket].recurrent += amount;
+              console.log(`[FORECAST] Recurring ${recInvoice.id}: +${amount}€ → month +${bucket + 1} (occurrence: ${occDate.toISOString().split('T')[0]})`);
             }
           }
         }
@@ -331,10 +345,11 @@ Deno.serve(async (req) => {
       console.log('[FORECAST] Could not fetch recurring invoices:', recurringError);
     }
 
-    console.log(`[FORECAST] CA récurrent M+1: ${monthlyForecast.recurrent}€`);
+    console.log(`[FORECAST] CA récurrent: M+1=${monthlyForecasts[0].recurrent}€, M+2=${monthlyForecasts[1].recurrent}€, M+3=${monthlyForecasts[2].recurrent}€`);
 
     // =========================================
     // 3. Fetch quotes with status "À facturer" (quote_status = 1)
+    // These are added to the TOTAL forecast (not per month)
     // =========================================
     try {
       const quotesUrl = new URL(`${FACTURATION_PRO_API_URL}/firms/${firmId}/quotes.json`);
@@ -358,8 +373,7 @@ Deno.serve(async (req) => {
           const amount = parseFloat(String(quote.total ?? '0')) || 0;
           if (amount === 0) continue;
           
-          monthlyForecast.devisAFacturer += amount;
-          monthlyForecasts[0].devisAFacturer += amount;
+          totalDevisAFacturer += amount;
           console.log(`[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": ${amount}€ (À facturer)`);
         }
       }
@@ -367,16 +381,26 @@ Deno.serve(async (req) => {
       console.log('[FORECAST] Could not fetch quotes:', quotesError);
     }
 
-    console.log(`[FORECAST] Devis "À facturer": ${monthlyForecast.devisAFacturer}€`);
+    console.log(`[FORECAST] Total Devis "À facturer": ${totalDevisAFacturer}€`);
 
-    // Calculate total for month+1
-    monthlyForecast.total = monthlyForecast.encaisser + monthlyForecast.recurrent + monthlyForecast.devisAFacturer;
-    monthlyForecasts[0].total = monthlyForecasts[0].encaisser + monthlyForecasts[0].recurrent + monthlyForecasts[0].devisAFacturer;
+    // Calculate totals for each month
+    monthlyForecasts.forEach(mf => {
+      mf.total = mf.encaisser + mf.recurrent;
+    });
 
-    const totalForecast = monthlyForecast.total;
+    // Add devis to month+1 for display purposes (the quotes are cumulated with M+1 to M+3)
+    monthlyForecasts[0].devisAFacturer = totalDevisAFacturer;
+
+    // Total forecast = sum of 3 months + devis à facturer
+    const totalEncaisser = monthlyForecasts.reduce((sum, mf) => sum + mf.encaisser, 0);
+    const totalRecurrent = monthlyForecasts.reduce((sum, mf) => sum + mf.recurrent, 0);
+    const totalForecast = totalEncaisser + totalRecurrent + totalDevisAFacturer;
 
     console.log('[FORECAST] === FINAL RESULTS ===');
-    console.log(`[FORECAST] Month +1: encaisser=${monthlyForecast.encaisser}€ + recurrent=${monthlyForecast.recurrent}€ + devis=${monthlyForecast.devisAFacturer}€ = ${monthlyForecast.total}€`);
+    console.log(`[FORECAST] Month +1: encaisser=${monthlyForecasts[0].encaisser}€ + recurrent=${monthlyForecasts[0].recurrent}€ = ${monthlyForecasts[0].total}€`);
+    console.log(`[FORECAST] Month +2: encaisser=${monthlyForecasts[1].encaisser}€ + recurrent=${monthlyForecasts[1].recurrent}€ = ${monthlyForecasts[1].total}€`);
+    console.log(`[FORECAST] Month +3: encaisser=${monthlyForecasts[2].encaisser}€ + recurrent=${monthlyForecasts[2].recurrent}€ = ${monthlyForecasts[2].total}€`);
+    console.log(`[FORECAST] Devis "À facturer": ${totalDevisAFacturer}€`);
     console.log(`[FORECAST] TOTAL CA Prévisionnel: ${totalForecast}€`);
 
     return new Response(
@@ -385,9 +409,9 @@ Deno.serve(async (req) => {
         forecastRevenue: totalForecast,
         monthlyForecasts,
         breakdown: {
-          encaisser: monthlyForecast.encaisser,
-          recurrent: monthlyForecast.recurrent,
-          devisAFacturer: monthlyForecast.devisAFacturer,
+          encaisser: totalEncaisser,
+          recurrent: totalRecurrent,
+          devisAFacturer: totalDevisAFacturer,
         },
       }),
       {

@@ -735,7 +735,7 @@ export default function Finances() {
             {forecastRevenue > 0 && (
               <div className="text-sm text-muted-foreground mt-1">
                 <p>
-                  CA prévisionnel M+1 : <span className="font-semibold text-orange-500">{forecastRevenue.toLocaleString('fr-FR')} €</span>
+                  CA prévisionnel (M+1 à M+3) : <span className="font-semibold text-orange-500">{forecastRevenue.toLocaleString('fr-FR')} €</span>
                 </p>
                 {forecastBreakdown && (
                   <p className="text-xs mt-0.5">
