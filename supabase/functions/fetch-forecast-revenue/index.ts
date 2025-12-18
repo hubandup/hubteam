@@ -362,17 +362,22 @@ Deno.serve(async (req) => {
         const amount = parseFloat(String(quote.total ?? '0')) || 0;
         if (amount === 0) continue;
 
-        // Date de validité: priorité term_on, puis due_date, puis quote_date, puis accepted_date
-        const validityStr =
-          (quote as any).term_on ||
-          (quote as any).due_date ||
-          (quote as any).quote_date ||
-          (quote as any).accepted_date;
+        // Log all date fields for debugging
+        console.log(`[FORECAST] Quote ${quote.id}: term_on=${(quote as any).term_on}, due_date=${(quote as any).due_date}, quote_date=${(quote as any).quote_date}, accepted_date=${(quote as any).accepted_date}`);
 
-        if (!validityStr) continue;
+        // Date d'échéance: priorité term_on (date d'échéance)
+        const validityStr = (quote as any).term_on;
+
+        if (!validityStr) {
+          console.log(`[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": skipped (no term_on date)`);
+          continue;
+        }
 
         const validityDate = new Date(validityStr);
-        if (Number.isNaN(validityDate.getTime())) continue;
+        if (Number.isNaN(validityDate.getTime())) {
+          console.log(`[FORECAST] Quote ${quote.id}: invalid date ${validityStr}`);
+          continue;
+        }
 
         const bucket = getMonthBucket(
           validityDate,
@@ -384,13 +389,17 @@ Deno.serve(async (req) => {
           month3End,
         );
 
-        if (bucket === null) continue;
+        if (bucket === null) {
+          console.log(`[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": ${amount}€ outside range (term_on: ${validityDate.toISOString().split('T')[0]})`);
+          totalDevisAFacturer += amount;
+          continue;
+        }
 
         monthlyForecasts[bucket].devisAFacturer += amount;
         totalDevisAFacturer += amount;
 
         console.log(
-          `[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": +${amount}€ → month +${bucket + 1} (validity: ${validityDate.toISOString().split('T')[0]})`,
+          `[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": +${amount}€ → month +${bucket + 1} (term_on: ${validityDate.toISOString().split('T')[0]})`,
         );
       }
     } catch (quotesError) {
