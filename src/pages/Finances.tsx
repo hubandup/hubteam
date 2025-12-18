@@ -42,7 +42,8 @@ export default function Finances() {
   const [isLoadingTreasury, setIsLoadingTreasury] = useState(false);
   const [treasuryLastUpdated, setTreasuryLastUpdated] = useState<string | null>(null);
   const [forecastRevenue, setForecastRevenue] = useState(0);
-  const [monthlyForecasts, setMonthlyForecasts] = useState<{ month: number; encaisser: number; recurrent: number; total: number }[]>([]);
+  const [forecastBreakdown, setForecastBreakdown] = useState<{ encaisser: number; recurrent: number; devisAFacturer: number } | null>(null);
+  const [monthlyForecasts, setMonthlyForecasts] = useState<{ month: number; encaisser: number; recurrent: number; devisAFacturer?: number; total: number }[]>([]);
   const [isLoadingForecast, setIsLoadingForecast] = useState(false);
   
   // Refs for charts to capture in PDF
@@ -278,6 +279,7 @@ export default function Finances() {
       if (data?.success) {
         setForecastRevenue(data.forecastRevenue || 0);
         setMonthlyForecasts(data.monthlyForecasts || []);
+        setForecastBreakdown(data.breakdown || null);
       }
     } catch (error) {
       console.error('Error fetching forecast revenue:', error);
@@ -731,9 +733,18 @@ export default function Finances() {
           <div>
             <CardTitle>Évolution du CA</CardTitle>
             {forecastRevenue > 0 && (
-              <p className="text-sm text-muted-foreground mt-1">
-                CA prévisionnel (à encaisser) : <span className="font-semibold text-orange-500">{forecastRevenue.toLocaleString('fr-FR')} €</span>
-              </p>
+              <div className="text-sm text-muted-foreground mt-1">
+                <p>
+                  CA prévisionnel M+1 : <span className="font-semibold text-orange-500">{forecastRevenue.toLocaleString('fr-FR')} €</span>
+                </p>
+                {forecastBreakdown && (
+                  <p className="text-xs mt-0.5">
+                    À encaisser: {forecastBreakdown.encaisser.toLocaleString('fr-FR')} € + 
+                    Récurrent: {forecastBreakdown.recurrent.toLocaleString('fr-FR')} € + 
+                    Devis à facturer: {forecastBreakdown.devisAFacturer.toLocaleString('fr-FR')} €
+                  </p>
+                )}
+              </div>
             )}
           </div>
           {isLoadingForecast && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
