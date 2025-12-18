@@ -237,77 +237,27 @@ Deno.serve(async (req) => {
     let totalDevisAFacturer = 0;
 
     // =========================================
-    // 1. Fetch unpaid invoices (CA HT à encaisser) for all 3 months
-    // =========================================
-    const perPage = 100;
-    const maxPages = 20;
-
-    for (let page = 1; page <= maxPages; page++) {
-      const url = new URL(`${FACTURATION_PRO_API_URL}/firms/${firmId}/invoices.json`);
-      url.searchParams.set('page', String(page));
-      url.searchParams.set('per_page', String(perPage));
-
-      const response = await fetch(url.toString(), { headers });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[FORECAST] API error:', errorText);
-        throw new Error(`Facturation.PRO API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const invoices: FacturationProInvoice[] = Array.isArray(data) ? data : (data?.invoices || data?.data || []);
-
-      console.log(`[FORECAST] Invoices page ${page}: ${invoices.length} items`);
-
-      if (invoices.length === 0) break;
-
-      for (const invoice of invoices) {
-        const anyInv = invoice as any;
-
-        const isPaid =
-          Boolean(anyInv.paid_on) || anyInv.paid === true || anyInv.payment_status === 3;
-        if (isPaid) continue;
-
-        const amount = parseFloat(String(anyInv.total ?? '0')) || 0;
-        const dueDate = getInvoiceDueDate(anyInv);
-
-        if (!dueDate || amount === 0) continue;
-
-        const bucket = getMonthBucket(dueDate, month1Start, month1End, month2Start, month2End, month3Start, month3End);
-        if (bucket !== null) {
-          monthlyForecasts[bucket].encaisser += amount;
-          console.log(`[FORECAST] Invoice ${anyInv.id}: ${amount}€ → month +${bucket + 1} (due: ${dueDate.toISOString().split('T')[0]})`);
-        }
-      }
-
-      if (invoices.length < perPage) break;
-    }
-
-    console.log(`[FORECAST] CA à encaisser: M+1=${monthlyForecasts[0].encaisser}€, M+2=${monthlyForecasts[1].encaisser}€, M+3=${monthlyForecasts[2].encaisser}€`);
-
-    // =========================================
-    // 2. Fetch recurring invoices (CA HT récurrent) for all 3 months
+    // 1. Fetch recurring invoices (CA HT récurrent) for all 3 months
     // =========================================
     try {
       const recurringUrl = new URL(`${FACTURATION_PRO_API_URL}/firms/${firmId}/recurring_invoices.json`);
       recurringUrl.searchParams.set('per_page', '100');
-      
+
       const recurringResponse = await fetch(recurringUrl.toString(), { headers });
-      
+
       if (recurringResponse.ok) {
         const recurringData = await recurringResponse.json();
-        const recurringInvoices: RecurringInvoice[] = Array.isArray(recurringData) 
-          ? recurringData 
+        const recurringInvoices: RecurringInvoice[] = Array.isArray(recurringData)
+          ? recurringData
           : (recurringData?.recurring_invoices || recurringData?.data || []);
-        
+
         console.log(`[FORECAST] Found ${recurringInvoices.length} recurring invoices`);
-        
+
         for (const recInvoice of recurringInvoices) {
           if (recInvoice.active === false || recInvoice.status === 'inactive' || recInvoice.status === 'suspended') {
             continue;
           }
-          
+
           const amount = parseFloat(String(recInvoice.total || recInvoice.amount || '0')) || 0;
           if (amount === 0) continue;
 
@@ -319,24 +269,34 @@ Deno.serve(async (req) => {
           const endDateStr = (recInvoice as any).term_on || (recInvoice as any).end_date;
 
           if (!nextDateStr) continue;
-          
+
           const nextDate = new Date(nextDateStr);
           const endDate = endDateStr ? new Date(endDateStr) : null;
-          
+
           const sixtyDaysAgo = new Date();
           sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-          
+
           if (nextDate < sixtyDaysAgo) continue;
           if (endDate && endDate < now) continue;
-          
+
           // Calculate occurrences for all 3 months
           const occurrences = getOccurrencesInPeriod(nextDate, frequency, endDate, month1Start, month3End);
-          
+
           for (const occDate of occurrences) {
-            const bucket = getMonthBucket(occDate, month1Start, month1End, month2Start, month2End, month3Start, month3End);
+            const bucket = getMonthBucket(
+              occDate,
+              month1Start,
+              month1End,
+              month2Start,
+              month2End,
+              month3Start,
+              month3End,
+            );
             if (bucket !== null) {
               monthlyForecasts[bucket].recurrent += amount;
-              console.log(`[FORECAST] Recurring ${recInvoice.id}: +${amount}€ → month +${bucket + 1} (occurrence: ${occDate.toISOString().split('T')[0]})`);
+              console.log(
+                `[FORECAST] Recurring ${recInvoice.id}: +${amount}€ → month +${bucket + 1} (occurrence: ${occDate.toISOString().split('T')[0]})`,
+              );
             }
           }
         }
@@ -345,66 +305,93 @@ Deno.serve(async (req) => {
       console.log('[FORECAST] Could not fetch recurring invoices:', recurringError);
     }
 
-    console.log(`[FORECAST] CA récurrent: M+1=${monthlyForecasts[0].recurrent}€, M+2=${monthlyForecasts[1].recurrent}€, M+3=${monthlyForecasts[2].recurrent}€`);
+    console.log(
+      `[FORECAST] CA récurrent: M+1=${monthlyForecasts[0].recurrent}€, M+2=${monthlyForecasts[1].recurrent}€, M+3=${monthlyForecasts[2].recurrent}€`,
+    );
 
     // =========================================
-    // 3. Fetch quotes with status "À facturer" (quote_status = 1)
+    // 2. Fetch quotes with status "À facturer" (API status=to_invoice)
     // Added to the corresponding month bucket based on the quote "validity" date
     // =========================================
     try {
-      const quotesUrl = new URL(`${FACTURATION_PRO_API_URL}/firms/${firmId}/quotes.json`);
-      quotesUrl.searchParams.set('per_page', '100');
+      const perPage = 100;
+      const maxPages = 50;
+      let expectedPageSize: number | null = null;
+      let lastFirstId: number | null = null;
 
-      const quotesResponse = await fetch(quotesUrl.toString(), { headers });
+      const allQuotesToInvoice: FacturationProQuote[] = [];
 
-      if (quotesResponse.ok) {
+      for (let page = 1; page <= maxPages; page++) {
+        const quotesUrl = new URL(`${FACTURATION_PRO_API_URL}/firms/${firmId}/quotes.json`);
+        quotesUrl.searchParams.set('page', String(page));
+        quotesUrl.searchParams.set('per_page', String(perPage));
+        quotesUrl.searchParams.set('limit', String(perPage));
+        // Docs Facturation.PRO: status=to_invoice => A facturer (devis acceptés et non soldés)
+        quotesUrl.searchParams.set('status', 'to_invoice');
+
+        const quotesResponse = await fetch(quotesUrl.toString(), { headers });
+        if (!quotesResponse.ok) {
+          const errorText = await quotesResponse.text();
+          console.error('[FORECAST] Quotes API error:', errorText);
+          throw new Error(`Facturation.PRO Quotes API error: ${quotesResponse.status}`);
+        }
+
         const quotesData = await quotesResponse.json();
-        const quotes: FacturationProQuote[] = Array.isArray(quotesData)
+        const pageQuotes: FacturationProQuote[] = Array.isArray(quotesData)
           ? quotesData
           : (quotesData?.quotes || quotesData?.data || []);
 
-        console.log(`[FORECAST] Found ${quotes.length} quotes`);
+        if (expectedPageSize === null) expectedPageSize = pageQuotes.length;
 
-        // Status 1 = "À facturer" (ready to invoice)
-        const quotesToInvoice = quotes.filter((q: any) => q.quote_status === 1);
-        console.log(`[FORECAST] Quotes "À facturer" (status=1): ${quotesToInvoice.length}`);
-
-        for (const quote of quotesToInvoice) {
-          const amount = parseFloat(String(quote.total ?? '0')) || 0;
-          if (amount === 0) continue;
-
-          // "Date de validité" (Facturation.PRO) is not explicitly documented here;
-          // We prioritize term_on, then due_date, then quote_date, then accepted_date.
-          const validityStr =
-            (quote as any).term_on ||
-            (quote as any).due_date ||
-            (quote as any).quote_date ||
-            (quote as any).accepted_date;
-
-          if (!validityStr) continue;
-
-          const validityDate = new Date(validityStr);
-          if (Number.isNaN(validityDate.getTime())) continue;
-
-          const bucket = getMonthBucket(
-            validityDate,
-            month1Start,
-            month1End,
-            month2Start,
-            month2End,
-            month3Start,
-            month3End,
-          );
-
-          if (bucket === null) continue;
-
-          monthlyForecasts[bucket].devisAFacturer += amount;
-          totalDevisAFacturer += amount;
-
-          console.log(
-            `[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": +${amount}€ → month +${bucket + 1} (validity: ${validityDate.toISOString().split('T')[0]})`,
-          );
+        // Stop if pagination is not supported and we keep getting the same page.
+        if (page > 1 && pageQuotes.length > 0 && lastFirstId !== null && pageQuotes[0]?.id === lastFirstId) {
+          console.warn('[FORECAST] Pagination appears to repeat the same page; stopping.');
+          break;
         }
+        if (pageQuotes.length > 0) lastFirstId = pageQuotes[0].id;
+
+        allQuotesToInvoice.push(...pageQuotes);
+
+        if (pageQuotes.length === 0) break;
+        if (expectedPageSize && pageQuotes.length < expectedPageSize) break;
+      }
+
+      console.log(`[FORECAST] Quotes "À facturer" (status=to_invoice): ${allQuotesToInvoice.length}`);
+
+      for (const quote of allQuotesToInvoice) {
+        const amount = parseFloat(String(quote.total ?? '0')) || 0;
+        if (amount === 0) continue;
+
+        // Date de validité: priorité term_on, puis due_date, puis quote_date, puis accepted_date
+        const validityStr =
+          (quote as any).term_on ||
+          (quote as any).due_date ||
+          (quote as any).quote_date ||
+          (quote as any).accepted_date;
+
+        if (!validityStr) continue;
+
+        const validityDate = new Date(validityStr);
+        if (Number.isNaN(validityDate.getTime())) continue;
+
+        const bucket = getMonthBucket(
+          validityDate,
+          month1Start,
+          month1End,
+          month2Start,
+          month2End,
+          month3Start,
+          month3End,
+        );
+
+        if (bucket === null) continue;
+
+        monthlyForecasts[bucket].devisAFacturer += amount;
+        totalDevisAFacturer += amount;
+
+        console.log(
+          `[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": +${amount}€ → month +${bucket + 1} (validity: ${validityDate.toISOString().split('T')[0]})`,
+        );
       }
     } catch (quotesError) {
       console.log('[FORECAST] Could not fetch quotes:', quotesError);
@@ -414,20 +401,25 @@ Deno.serve(async (req) => {
       `[FORECAST] Devis "À facturer": M+1=${monthlyForecasts[0].devisAFacturer}€, M+2=${monthlyForecasts[1].devisAFacturer}€, M+3=${monthlyForecasts[2].devisAFacturer}€`,
     );
 
-    // Calculate totals for each month
+    // Calculate totals for each month (ONLY: récurrent + devis à facturer)
     monthlyForecasts.forEach((mf) => {
-      mf.total = mf.encaisser + mf.recurrent + mf.devisAFacturer;
+      mf.total = mf.recurrent + mf.devisAFacturer;
     });
 
-    // Total forecast = sum of 3 months (including devis à facturer)
-    const totalEncaisser = monthlyForecasts.reduce((sum, mf) => sum + mf.encaisser, 0);
+    // Total forecast = sum of 3 months
     const totalRecurrent = monthlyForecasts.reduce((sum, mf) => sum + mf.recurrent, 0);
     const totalForecast = monthlyForecasts.reduce((sum, mf) => sum + mf.total, 0);
 
     console.log('[FORECAST] === FINAL RESULTS ===');
-    console.log(`[FORECAST] Month +1: encaisser=${monthlyForecasts[0].encaisser}€ + recurrent=${monthlyForecasts[0].recurrent}€ + devis=${monthlyForecasts[0].devisAFacturer}€ = ${monthlyForecasts[0].total}€`);
-    console.log(`[FORECAST] Month +2: encaisser=${monthlyForecasts[1].encaisser}€ + recurrent=${monthlyForecasts[1].recurrent}€ + devis=${monthlyForecasts[1].devisAFacturer}€ = ${monthlyForecasts[1].total}€`);
-    console.log(`[FORECAST] Month +3: encaisser=${monthlyForecasts[2].encaisser}€ + recurrent=${monthlyForecasts[2].recurrent}€ + devis=${monthlyForecasts[2].devisAFacturer}€ = ${monthlyForecasts[2].total}€`);
+    console.log(
+      `[FORECAST] Month +1: recurrent=${monthlyForecasts[0].recurrent}€ + devis=${monthlyForecasts[0].devisAFacturer}€ = ${monthlyForecasts[0].total}€`,
+    );
+    console.log(
+      `[FORECAST] Month +2: recurrent=${monthlyForecasts[1].recurrent}€ + devis=${monthlyForecasts[1].devisAFacturer}€ = ${monthlyForecasts[1].total}€`,
+    );
+    console.log(
+      `[FORECAST] Month +3: recurrent=${monthlyForecasts[2].recurrent}€ + devis=${monthlyForecasts[2].devisAFacturer}€ = ${monthlyForecasts[2].total}€`,
+    );
     console.log(`[FORECAST] TOTAL CA Prévisionnel: ${totalForecast}€`);
 
     return new Response(
@@ -436,7 +428,6 @@ Deno.serve(async (req) => {
         forecastRevenue: totalForecast,
         monthlyForecasts,
         breakdown: {
-          encaisser: totalEncaisser,
           recurrent: totalRecurrent,
           devisAFacturer: totalDevisAFacturer,
         },
