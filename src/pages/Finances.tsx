@@ -87,33 +87,36 @@ export default function Finances() {
 
   // Update forecast in revenueData when monthlyForecasts changes
   useEffect(() => {
-    if (monthlyForecasts.length === 3 && revenueData.length === 9) {
-      // Only update if forecast values are not already set
-      const needsUpdate = revenueData[6]?.forecast === null;
-      if (!needsUpdate) return;
+    if (monthlyForecasts.length !== 3 || revenueData.length !== 9) return;
 
-      const lastActualRevenue = revenueData[5]?.revenue || 0;
-      
-      const updatedData = revenueData.map((item, index) => {
-        // Last 3 months are forecast months (indices 6, 7, 8)
-        if (index === 6) {
-          return { ...item, forecast: monthlyForecasts[0].total };
-        }
-        if (index === 7) {
-          return { ...item, forecast: monthlyForecasts[1].total };
-        }
-        if (index === 8) {
-          return { ...item, forecast: monthlyForecasts[2].total };
-        }
-        // For the current month (index 5), add connection point for forecast line
-        if (index === 5) {
-          return { ...item, forecast: lastActualRevenue };
-        }
-        return item;
-      });
-      
-      setRevenueData(updatedData);
-    }
+    const lastActualRevenue = revenueData[5]?.revenue || 0;
+    const nextForecast = [
+      monthlyForecasts[0].total,
+      monthlyForecasts[1].total,
+      monthlyForecasts[2].total,
+    ];
+
+    const alreadyUpToDate =
+      revenueData[5]?.forecast === lastActualRevenue &&
+      revenueData[6]?.forecast === nextForecast[0] &&
+      revenueData[7]?.forecast === nextForecast[1] &&
+      revenueData[8]?.forecast === nextForecast[2];
+
+    if (alreadyUpToDate) return;
+
+    const updatedData = revenueData.map((item, index) => {
+      // Last 3 months are forecast months (indices 6, 7, 8)
+      if (index === 6) return { ...item, forecast: nextForecast[0] };
+      if (index === 7) return { ...item, forecast: nextForecast[1] };
+      if (index === 8) return { ...item, forecast: nextForecast[2] };
+
+      // For the current month (index 5), add connection point for forecast line
+      if (index === 5) return { ...item, forecast: lastActualRevenue };
+
+      return item;
+    });
+
+    setRevenueData(updatedData);
   }, [monthlyForecasts, revenueData]);
 
   const fetchFinancialData = async () => {
