@@ -94,8 +94,8 @@ async function fetchExcelData(accessToken: string): Promise<any[]> {
 
   console.log('[TREASURY] Using worksheet:', firstWorksheet.name);
 
-  // Fetch the specific range C3:N3 for month headers (row 3)
-  const headersRangeUrl = `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${fileId}/workbook/worksheets('${encodeURIComponent(firstWorksheet.name)}')/range(address='C3:N3')`;
+  // Fetch the specific range C4:N4 for month headers (row 4)
+  const headersRangeUrl = `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${fileId}/workbook/worksheets('${encodeURIComponent(firstWorksheet.name)}')/range(address='C4:N4')`;
 
   const headersResponse = await fetch(headersRangeUrl, {
     headers: {
