@@ -42,13 +42,40 @@ export default function Projects() {
   const [viewMode, setViewMode] = useState<'grid' | 'kanban' | 'list'>('grid');
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
-  // Update URL when tab or search changes
+  // Sync state from URL on mount (when navigating back)
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (activeTab !== 'all') params.set('tab', activeTab);
-    if (searchQuery) params.set('q', searchQuery);
+    const urlTab = searchParams.get('tab');
+    const urlQuery = searchParams.get('q');
+    if (urlTab && urlTab !== activeTab) {
+      setActiveTab(urlTab);
+    }
+    if (urlQuery !== null && urlQuery !== searchQuery) {
+      setSearchQuery(urlQuery);
+    }
+  }, [searchParams]);
+
+  // Update URL when tab or search changes (user interaction)
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+    const params = new URLSearchParams(searchParams);
+    if (newTab !== 'all') {
+      params.set('tab', newTab);
+    } else {
+      params.delete('tab');
+    }
     setSearchParams(params, { replace: true });
-  }, [activeTab, searchQuery, setSearchParams]);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    const params = new URLSearchParams(searchParams);
+    if (value) {
+      params.set('q', value);
+    } else {
+      params.delete('q');
+    }
+    setSearchParams(params, { replace: true });
+  };
 
   const unarchiveMutation = useMutation({
     mutationFn: async (projectId: string) => {
@@ -177,7 +204,7 @@ export default function Projects() {
             <Input
               placeholder="Rechercher..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-8 bg-white dark:bg-background h-10 text-sm"
             />
           </div>
@@ -210,7 +237,7 @@ export default function Projects() {
       )}
 
 {isMobile ? (
-        <Select value={activeTab} onValueChange={setActiveTab}>
+        <Select value={activeTab} onValueChange={handleTabChange}>
           <SelectTrigger className="w-full mb-3 bg-background h-10">
             <SelectValue />
           </SelectTrigger>
@@ -230,7 +257,7 @@ export default function Projects() {
           </SelectContent>
         </Select>
       ) : (
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList>
             <TabsTrigger value="all">Tous ({projects.length})</TabsTrigger>
             <TabsTrigger value="planning">À faire ({projects.filter(p => p.status === 'planning').length})</TabsTrigger>
