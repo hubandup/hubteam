@@ -37,6 +37,117 @@ function escapeHtml(unsafe: string): string {
     .replace(/'/g, "&#039;");
 }
 
+// Find or create a prospect by email
+async function findOrCreateProspect(
+  email: string,
+  firstName: string,
+  lastName: string,
+  company: string,
+  userId: string | null
+): Promise<string | null> {
+  try {
+    // First, try to find existing prospect by email
+    const { data: existingProspect, error: findError } = await supabaseAdmin
+      .from('prospects')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (findError) {
+      console.error(`Error finding prospect for ${email}:`, findError);
+      return null;
+    }
+
+    if (existingProspect) {
+      console.log(`Found existing prospect for ${email}: ${existingProspect.id}`);
+      return existingProspect.id;
+    }
+
+    // Create new prospect
+    const { data: newProspect, error: createError } = await supabaseAdmin
+      .from('prospects')
+      .insert({
+        email: email,
+        contact_name: `${firstName} ${lastName}`.trim() || 'N/A',
+        company_name: company || 'N/A',
+        channel: 'Email',
+        status: 'Contacté',
+        priority: 'B',
+        owner_id: userId,
+        last_contact_at: new Date().toISOString().split('T')[0],
+        last_action: 'Email de prospection',
+      })
+      .select('id')
+      .single();
+
+    if (createError) {
+      console.error(`Error creating prospect for ${email}:`, createError);
+      return null;
+    }
+
+    console.log(`Created new prospect for ${email}: ${newProspect.id}`);
+    return newProspect.id;
+  } catch (error) {
+    console.error(`Exception in findOrCreateProspect for ${email}:`, error);
+    return null;
+  }
+}
+
+// Create a CRM interaction for the email
+async function createEmailInteraction(
+  prospectId: string,
+  subject: string,
+  userId: string | null
+): Promise<void> {
+  try {
+    const { error } = await supabaseAdmin
+      .from('interactions')
+      .insert({
+        prospect_id: prospectId,
+        action_type: 'Email',
+        channel: 'Email',
+        subject: subject,
+        content: `Email de prospection envoyé`,
+        outcome: 'Email envoyé avec succès',
+        happened_at: new Date().toISOString(),
+        created_by: userId,
+      });
+
+    if (error) {
+      console.error(`Error creating interaction for prospect ${prospectId}:`, error);
+    } else {
+      console.log(`Created email interaction for prospect ${prospectId}`);
+    }
+  } catch (error) {
+    console.error(`Exception in createEmailInteraction for ${prospectId}:`, error);
+  }
+}
+
+// Update prospect's last contact info
+async function updateProspectLastContact(
+  prospectId: string,
+  subject: string
+): Promise<void> {
+  try {
+    const { error } = await supabaseAdmin
+      .from('prospects')
+      .update({
+        last_contact_at: new Date().toISOString().split('T')[0],
+        last_action: `Email: ${subject.substring(0, 100)}`,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', prospectId);
+
+    if (error) {
+      console.error(`Error updating prospect ${prospectId}:`, error);
+    } else {
+      console.log(`Updated last contact for prospect ${prospectId}`);
+    }
+  } catch (error) {
+    console.error(`Exception in updateProspectLastContact for ${prospectId}:`, error);
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -59,14 +170,14 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Get user ID from authorization header
     const authHeader = req.headers.get("Authorization");
-    let userId = null;
+    let userId: string | null = null;
     if (authHeader) {
       const token = authHeader.replace("Bearer ", "");
       const { data: { user } } = await supabaseAdmin.auth.getUser(token);
-      userId = user?.id;
+      userId = user?.id || null;
     }
 
-    console.log(`Sending prospection emails to ${recipients.length} recipients`);
+    console.log(`Sending prospection emails to ${recipients.length} recipients (user: ${userId})`);
 
     if (!BREVO_API_KEY) {
       throw new Error("BREVO_API_KEY is not configured");
@@ -130,7 +241,7 @@ const handler = async (req: Request): Promise<Response> => {
         throw new Error(`Brevo API error: ${error}`);
       }
 
-      // Log successful email
+      // Log successful email to prospection_email_logs (existing behavior)
       await supabaseAdmin.from('prospection_email_logs').insert({
         user_id: userId,
         recipient_email: recipient.email,
@@ -138,6 +249,22 @@ const handler = async (req: Request): Promise<Response> => {
         subject: subject,
         status: 'sent',
       });
+
+      // NEW: CRM Integration - Find or create prospect and log interaction
+      const prospectId = await findOrCreateProspect(
+        recipient.email,
+        recipient.firstName,
+        recipient.lastName,
+        recipient.company,
+        userId
+      );
+
+      if (prospectId) {
+        // Create email interaction in CRM
+        await createEmailInteraction(prospectId, subject, userId);
+        // Update prospect's last contact info
+        await updateProspectLastContact(prospectId, subject);
+      }
 
       return response.json();
     });
