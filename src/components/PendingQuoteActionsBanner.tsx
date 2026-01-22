@@ -253,51 +253,55 @@ export function PendingQuoteActionsBanner() {
         </div>
 
         {isExpanded && (
-          <div className="px-4 pb-4 space-y-3">
-            {pendingActions.map((action) => (
-              <div 
-                key={action.id}
-                className="group relative flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-card/80 backdrop-blur-sm rounded-xl border border-border/50 hover:border-primary/30 hover:shadow-sm transition-all duration-200"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground truncate">
-                    {action.quote_ref} — {action.quote_title}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {action.customer_name}
-                  </p>
+          <div className="px-4 pb-4">
+            <div className="divide-y divide-border/40">
+              {pendingActions.map((action) => (
+                <div 
+                  key={action.id}
+                  className="group flex flex-col gap-2 py-3 first:pt-0 last:pb-0"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <p className="font-medium text-foreground leading-relaxed">
+                        <span className="text-muted-foreground font-normal">{action.quote_ref}</span> — {action.quote_title}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Client : {action.customer_name}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 rounded-lg border-border/60 hover:border-primary/50 hover:bg-primary/5"
+                        onClick={() => openLinkDialog(action)}
+                        disabled={isLoading}
+                      >
+                        <Link2 className="h-3.5 w-3.5 mr-1.5" />
+                        Associer
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="h-8 rounded-lg bg-[#014a94] hover:bg-[#014a94]/90 text-white shadow-sm"
+                        onClick={() => handleCreateProject(action)}
+                        disabled={isLoading}
+                      >
+                        <FolderPlus className="h-3.5 w-3.5 mr-1.5" />
+                        Créer le projet
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 rounded-full opacity-40 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => handleDismiss(action)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="rounded-lg border-border/60 hover:border-primary/50 hover:bg-primary/5"
-                    onClick={() => openLinkDialog(action)}
-                    disabled={isLoading}
-                  >
-                    <Link2 className="h-4 w-4 mr-1.5" />
-                    Associer
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="rounded-lg bg-[#014a94] hover:bg-[#014a94]/90 text-white shadow-sm"
-                    onClick={() => handleCreateProject(action)}
-                    disabled={isLoading}
-                  >
-                    <FolderPlus className="h-4 w-4 mr-1.5" />
-                    Créer le projet
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8 rounded-full opacity-60 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() => handleDismiss(action)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>
