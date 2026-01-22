@@ -298,7 +298,13 @@ export function AgencyContactsManager({ agencyId, mainContactId }: AgencyContact
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => navigate('/messages')}
+                    onClick={() => navigate('/messages', { 
+                      state: { 
+                        newConversation: true,
+                        contactEmail: contact.email,
+                        contactName: `${contact.first_name} ${contact.last_name}`
+                      } 
+                    })}
                   >
                     <MessageSquare className="h-4 w-4 mr-2" />
                     Envoyer un message
