@@ -328,9 +328,10 @@ export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTas
     if (!date) return;
 
     try {
+      // Use format to get local date string (yyyy-MM-dd) to avoid timezone issues
       const { error } = await supabase
         .from('tasks')
-        .update({ end_date: date.toISOString() })
+        .update({ end_date: format(date, 'yyyy-MM-dd') })
         .eq('id', taskId);
 
       if (error) throw error;
