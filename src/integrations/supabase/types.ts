@@ -828,6 +828,59 @@ export type Database = {
           },
         ]
       }
+      interactions: {
+        Row: {
+          action_type: Database["public"]["Enums"]["interaction_action_type"]
+          channel: Database["public"]["Enums"]["prospect_channel"] | null
+          content: string | null
+          created_at: string
+          created_by: string | null
+          happened_at: string
+          id: string
+          next_action_at: string | null
+          next_step: string | null
+          outcome: string | null
+          prospect_id: string
+          subject: string | null
+        }
+        Insert: {
+          action_type: Database["public"]["Enums"]["interaction_action_type"]
+          channel?: Database["public"]["Enums"]["prospect_channel"] | null
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          happened_at?: string
+          id?: string
+          next_action_at?: string | null
+          next_step?: string | null
+          outcome?: string | null
+          prospect_id: string
+          subject?: string | null
+        }
+        Update: {
+          action_type?: Database["public"]["Enums"]["interaction_action_type"]
+          channel?: Database["public"]["Enums"]["prospect_channel"] | null
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          happened_at?: string
+          id?: string
+          next_action_at?: string | null
+          next_step?: string | null
+          outcome?: string | null
+          prospect_id?: string
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interactions_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           amount: number
@@ -1396,6 +1449,92 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      prospects: {
+        Row: {
+          channel: Database["public"]["Enums"]["prospect_channel"] | null
+          company_name: string
+          contact_id: string | null
+          contact_name: string
+          created_at: string
+          email: string
+          estimated_amount: number | null
+          id: string
+          last_action: string | null
+          last_contact_at: string | null
+          linkedin_url: string | null
+          need_summary: string | null
+          next_action: string | null
+          next_action_at: string | null
+          notes: string | null
+          offer_tag: string | null
+          owner_id: string | null
+          phone: string | null
+          priority: Database["public"]["Enums"]["prospect_priority"] | null
+          probability: number | null
+          referrer: string | null
+          status: Database["public"]["Enums"]["prospect_status"] | null
+          updated_at: string
+        }
+        Insert: {
+          channel?: Database["public"]["Enums"]["prospect_channel"] | null
+          company_name: string
+          contact_id?: string | null
+          contact_name: string
+          created_at?: string
+          email: string
+          estimated_amount?: number | null
+          id?: string
+          last_action?: string | null
+          last_contact_at?: string | null
+          linkedin_url?: string | null
+          need_summary?: string | null
+          next_action?: string | null
+          next_action_at?: string | null
+          notes?: string | null
+          offer_tag?: string | null
+          owner_id?: string | null
+          phone?: string | null
+          priority?: Database["public"]["Enums"]["prospect_priority"] | null
+          probability?: number | null
+          referrer?: string | null
+          status?: Database["public"]["Enums"]["prospect_status"] | null
+          updated_at?: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["prospect_channel"] | null
+          company_name?: string
+          contact_id?: string | null
+          contact_name?: string
+          created_at?: string
+          email?: string
+          estimated_amount?: number | null
+          id?: string
+          last_action?: string | null
+          last_contact_at?: string | null
+          linkedin_url?: string | null
+          need_summary?: string | null
+          next_action?: string | null
+          next_action_at?: string | null
+          notes?: string | null
+          offer_tag?: string | null
+          owner_id?: string | null
+          phone?: string | null
+          priority?: Database["public"]["Enums"]["prospect_priority"] | null
+          probability?: number | null
+          referrer?: string | null
+          status?: Database["public"]["Enums"]["prospect_status"] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospects_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       push_subscriptions: {
         Row: {
@@ -1983,8 +2122,28 @@ export type Database = {
         | "prospection"
         | "notes"
       app_role: "admin" | "team" | "client" | "agency"
+      interaction_action_type:
+        | "Email"
+        | "Appel"
+        | "Message LinkedIn"
+        | "RDV"
+        | "Autre"
       permission_action: "read" | "create" | "update" | "delete"
       permission_scope: "all" | "limited" | "own"
+      prospect_channel: "Email" | "Téléphone" | "LinkedIn" | "Bouche-à-oreille"
+      prospect_priority: "A" | "B" | "C"
+      prospect_status:
+        | "À contacter"
+        | "Contacté"
+        | "Relance 1"
+        | "Relance 2"
+        | "RDV planifié"
+        | "Besoin qualifié"
+        | "Proposition envoyée"
+        | "Négociation"
+        | "Gagné"
+        | "Perdu"
+        | "En veille"
       team_member_type:
         | "profile"
         | "agency_contact"
@@ -2139,8 +2298,30 @@ export const Constants = {
         "notes",
       ],
       app_role: ["admin", "team", "client", "agency"],
+      interaction_action_type: [
+        "Email",
+        "Appel",
+        "Message LinkedIn",
+        "RDV",
+        "Autre",
+      ],
       permission_action: ["read", "create", "update", "delete"],
       permission_scope: ["all", "limited", "own"],
+      prospect_channel: ["Email", "Téléphone", "LinkedIn", "Bouche-à-oreille"],
+      prospect_priority: ["A", "B", "C"],
+      prospect_status: [
+        "À contacter",
+        "Contacté",
+        "Relance 1",
+        "Relance 2",
+        "RDV planifié",
+        "Besoin qualifié",
+        "Proposition envoyée",
+        "Négociation",
+        "Gagné",
+        "Perdu",
+        "En veille",
+      ],
       team_member_type: [
         "profile",
         "agency_contact",
