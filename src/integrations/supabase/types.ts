@@ -1535,7 +1535,7 @@ export type Database = {
           next_action: string | null
           next_action_at: string | null
           notes: string | null
-          offer_tag: string | null
+          offer_tags: string[] | null
           owner_id: string | null
           phone: string | null
           priority: Database["public"]["Enums"]["prospect_priority"] | null
@@ -1562,7 +1562,7 @@ export type Database = {
           next_action?: string | null
           next_action_at?: string | null
           notes?: string | null
-          offer_tag?: string | null
+          offer_tags?: string[] | null
           owner_id?: string | null
           phone?: string | null
           priority?: Database["public"]["Enums"]["prospect_priority"] | null
@@ -1589,7 +1589,7 @@ export type Database = {
           next_action?: string | null
           next_action_at?: string | null
           notes?: string | null
-          offer_tag?: string | null
+          offer_tags?: string[] | null
           owner_id?: string | null
           phone?: string | null
           priority?: Database["public"]["Enums"]["prospect_priority"] | null
