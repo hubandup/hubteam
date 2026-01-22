@@ -32,6 +32,7 @@ export default function Agencies() {
       const { data: agenciesData, error: agenciesError } = await supabase
         .from('agencies')
         .select('*')
+        .eq('active', true)
         .order('created_at', { ascending: false });
 
       if (agenciesError) throw agenciesError;
