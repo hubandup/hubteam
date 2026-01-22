@@ -77,18 +77,7 @@ export default function Unsubscribe() {
                 Cliquez sur le bouton ci-dessous pour vous désabonner.
               </p>
               
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Raison du désabonnement (optionnel)
-                </label>
-                <Textarea
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  placeholder="Dites-nous pourquoi vous vous désabonnez..."
-                  className="resize-none"
-                  rows={3}
-                />
-              </div>
+              
               
               <Button 
                 onClick={handleUnsubscribe} 
