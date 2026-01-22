@@ -29,6 +29,7 @@ import { fr } from 'date-fns/locale';
 import { ProjectTeamTab } from '@/components/project-details/ProjectTeamTab';
 import { ProjectTasksTab } from '@/components/project-details/ProjectTasksTab';
 import { ProjectTasksNotebookTab } from '@/components/project-details/ProjectTasksNotebookTab';
+import { ProjectNotesTab } from '@/components/project-details/ProjectNotesTab';
 
 import { ClientKDriveTab } from '@/components/client-details/ClientKDriveTab';
 import { SelectClientDialog } from '@/components/project-details/SelectClientDialog';
@@ -36,7 +37,7 @@ import { EditProjectInfoDialog } from '@/components/project-details/EditProjectI
 import { useUserRole } from '@/hooks/useUserRole';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, StickyNote } from 'lucide-react';
 import { RecoTimeline } from '@/components/project-details/RecoTimeline';
 
 export default function ProjectDetails() {
@@ -354,6 +355,12 @@ export default function ProjectDetails() {
                 fetchBadgeCounts();
               }}
             />
+          },
+          {
+            value: 'notes',
+            label: 'Notes',
+            icon: <StickyNote className="h-4 w-4" />,
+            content: <ProjectNotesTab projectId={id!} />
           },
           {
             value: 'team',

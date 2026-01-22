@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,12 +9,13 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Calendar as CalendarIcon, MessageSquare, User, Send, Check, ChevronsUpDown, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Loader2, Calendar as CalendarIcon, MessageSquare, User, Send, Check, ChevronsUpDown, Trash2, FolderPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 interface Task {
   id: string;
   title: string;
@@ -55,6 +57,7 @@ interface ProjectTasksNotebookTabProps {
 }
 
 export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTasksNotebookTabProps) {
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +67,7 @@ export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTas
   const [newComment, setNewComment] = useState<Record<string, string>>({});
   const [assignPopoverOpen, setAssignPopoverOpen] = useState<Record<string, boolean>>({});
   const [datePopoverOpen, setDatePopoverOpen] = useState<Record<string, boolean>>({});
-
+  const [taskToConvert, setTaskToConvert] = useState<Task | null>(null);
   useEffect(() => {
     fetchTasks();
     fetchTeamMembers();
@@ -347,6 +350,64 @@ export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTas
     }
   };
 
+  const handleConvertToProject = async () => {
+    if (!taskToConvert) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Récupérer le client du projet actuel
+      const { data: projectData } = await supabase
+        .from('project_clients')
+        .select('client_id')
+        .eq('project_id', projectId)
+        .single();
+
+      // Créer le nouveau projet avec le nom de la tâche
+      const { data: newProject, error: projectError } = await supabase
+        .from('projects')
+        .insert([{
+          name: taskToConvert.title,
+          status: 'planning',
+          created_by: user.id,
+        }])
+        .select()
+        .single();
+
+      if (projectError) throw projectError;
+
+      // Associer le client au nouveau projet s'il existe
+      if (projectData?.client_id) {
+        await supabase
+          .from('project_clients')
+          .insert([{
+            project_id: newProject.id,
+            client_id: projectData.client_id,
+          }]);
+      }
+
+      // Supprimer la tâche originale
+      const { error: deleteError } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', taskToConvert.id);
+
+      if (deleteError) throw deleteError;
+
+      toast.success('Tâche convertie en projet');
+      setTaskToConvert(null);
+      fetchTasks();
+      onTasksChange?.();
+
+      // Naviguer vers le nouveau projet
+      navigate(`/project/${newProject.id}`);
+    } catch (error) {
+      console.error('Error converting task to project:', error);
+      toast.error('Erreur lors de la conversion');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -490,6 +551,23 @@ export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTas
                     )}
                   </Button>
 
+                  {/* Convert to Project */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={() => setTaskToConvert(task)}
+                      >
+                        <FolderPlus className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Transformer en projet</p>
+                    </TooltipContent>
+                  </Tooltip>
+
                   {/* Delete Task */}
                   <Button 
                     variant="ghost" 
@@ -556,6 +634,24 @@ export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTas
           </div>
         )}
       </div>
+
+      {/* Convert to Project Confirmation Dialog */}
+      <AlertDialog open={!!taskToConvert} onOpenChange={() => setTaskToConvert(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Transformer en projet</AlertDialogTitle>
+            <AlertDialogDescription>
+              Voulez-vous transformer la tâche "{taskToConvert?.title}" en nouveau projet ? La tâche sera supprimée.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConvertToProject}>
+              Créer le projet
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
