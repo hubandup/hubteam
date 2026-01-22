@@ -25,6 +25,44 @@ interface Project {
       logo_url: string | null;
     };
   }>;
+  tasks_total?: number;
+  tasks_completed?: number;
+}
+
+async function addTaskCounts(projects: Project[]): Promise<Project[]> {
+  if (projects.length === 0) return projects;
+
+  const projectIds = projects.map(p => p.id);
+  
+  // Fetch all tasks for these projects in one query
+  const { data: tasks, error } = await supabase
+    .from('tasks')
+    .select('project_id, status')
+    .in('project_id', projectIds);
+
+  if (error) {
+    console.error('Error fetching task counts:', error);
+    return projects;
+  }
+
+  // Group tasks by project
+  const taskCountsByProject = new Map<string, { total: number; completed: number }>();
+  
+  for (const task of tasks || []) {
+    const current = taskCountsByProject.get(task.project_id) || { total: 0, completed: 0 };
+    current.total++;
+    if (task.status === 'done') {
+      current.completed++;
+    }
+    taskCountsByProject.set(task.project_id, current);
+  }
+
+  // Add counts to projects
+  return projects.map(project => ({
+    ...project,
+    tasks_total: taskCountsByProject.get(project.id)?.total || 0,
+    tasks_completed: taskCountsByProject.get(project.id)?.completed || 0,
+  }));
 }
 
 async function fetchProjects(isClient: boolean, userId: string | null) {
@@ -69,7 +107,8 @@ async function fetchProjects(isClient: boolean, userId: string | null) {
 
     if (error) throw error;
     
-    return (data?.map(pc => pc.projects).filter(Boolean) || []) as Project[];
+    const projects = (data?.map(pc => pc.projects).filter(Boolean) || []) as Project[];
+    return await addTaskCounts(projects);
   } else {
     // For admin/team, show all projects
     const { data, error } = await supabase
@@ -87,7 +126,8 @@ async function fetchProjects(isClient: boolean, userId: string | null) {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return (data || []) as Project[];
+    const projects = (data || []) as Project[];
+    return await addTaskCounts(projects);
   }
 }
 
@@ -133,7 +173,8 @@ async function fetchArchivedProjects(isClient: boolean, userId: string | null) {
 
     if (error) throw error;
     
-    return (data?.map(pc => pc.projects).filter(Boolean) || []) as Project[];
+    const projects = (data?.map(pc => pc.projects).filter(Boolean) || []) as Project[];
+    return await addTaskCounts(projects);
   } else {
     // For admin/team, show all archived projects
     const { data, error } = await supabase
@@ -151,7 +192,8 @@ async function fetchArchivedProjects(isClient: boolean, userId: string | null) {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return (data || []) as Project[];
+    const projects = (data || []) as Project[];
+    return await addTaskCounts(projects);
   }
 }
 

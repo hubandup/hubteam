@@ -1,7 +1,6 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { FolderKanban, Calendar, Building2 } from 'lucide-react';
+import { Calendar, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -20,6 +19,8 @@ interface ProjectCardProps {
         logo_url?: string;
       };
     }>;
+    tasks_total?: number;
+    tasks_completed?: number;
   };
   onClick: () => void;
 }
@@ -40,9 +41,23 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
   const clientLogo = client?.logo_url;
   
   const isOverdue = project.end_date && new Date(project.end_date) < new Date() && project.status !== 'completed';
+  
+  const tasksTotal = project.tasks_total || 0;
+  const tasksCompleted = project.tasks_completed || 0;
+  const progressPercentage = tasksTotal > 0 ? Math.round((tasksCompleted / tasksTotal) * 100) : 0;
 
   return (
-    <div className="border rounded-lg bg-card/50 cursor-pointer hover:shadow-lg transition-shadow p-2 md:p-6" onClick={onClick}>
+    <div className="border rounded-lg bg-card/50 cursor-pointer hover:shadow-lg transition-shadow p-2 md:p-6 relative overflow-hidden" onClick={onClick}>
+      {/* Discrete progress bar at the bottom */}
+      {tasksTotal > 0 && (
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted">
+          <div 
+            className="h-full bg-primary/60 transition-all duration-300"
+            style={{ width: `${progressPercentage}%` }}
+          />
+        </div>
+      )}
+      
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-2 md:gap-3">
           <div className="flex items-start gap-2 md:gap-3 flex-1 min-w-0">
@@ -76,9 +91,16 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
               )}
             </div>
           </div>
-          <Badge className={`flex-shrink-0 border-0 text-xs md:text-sm ${statusInfo.color}`}>
-            {statusInfo.label}
-          </Badge>
+          <div className="flex flex-col items-end gap-1.5">
+            <Badge className={`flex-shrink-0 border-0 text-xs md:text-sm ${statusInfo.color}`}>
+              {statusInfo.label}
+            </Badge>
+            {tasksTotal > 0 && (
+              <span className="text-[10px] md:text-xs text-muted-foreground">
+                {tasksCompleted}/{tasksTotal} tâches
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
