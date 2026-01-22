@@ -4,6 +4,7 @@ import { Prospect, PROSPECT_STATUSES } from '@/hooks/useProspects';
 import { Building2, User, Phone, Mail, Calendar, AlertTriangle, Euro } from 'lucide-react';
 import { format, isToday, isPast, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { generateColorFromString } from '@/lib/utils';
 
 interface ProspectCardProps {
   prospect: Prospect;
@@ -28,6 +29,8 @@ export function ProspectCard({ prospect, onClick, compact = false }: ProspectCar
     C: 'bg-green-500',
   };
 
+  const offerTags = prospect.offer_tags || [];
+
   if (compact) {
     return (
       <Card 
@@ -47,6 +50,34 @@ export function ProspectCard({ prospect, onClick, compact = false }: ProspectCar
             <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
               <Euro className="h-3 w-3" />
               <span>{weightedRevenue.toLocaleString('fr-FR')} € pondéré</span>
+            </div>
+          )}
+
+          {/* Expertise tags - compact view (max 2 visible) */}
+          {offerTags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {offerTags.slice(0, 2).map((tag) => {
+                const tagColor = generateColorFromString(tag);
+                return (
+                  <span
+                    key={tag}
+                    className="inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium truncate max-w-[80px]"
+                    style={{
+                      backgroundColor: `${tagColor}20`.replace('hsl', 'hsla').replace(')', ', 0.15)'),
+                      color: tagColor,
+                      borderColor: tagColor,
+                    }}
+                    title={tag}
+                  >
+                    {tag}
+                  </span>
+                );
+              })}
+              {offerTags.length > 2 && (
+                <span className="inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground">
+                  +{offerTags.length - 2}
+                </span>
+              )}
             </div>
           )}
           
@@ -104,6 +135,29 @@ export function ProspectCard({ prospect, onClick, compact = false }: ProspectCar
             <span className="truncate">{prospect.email}</span>
           </div>
         </div>
+
+        {/* Expertise tags - full view */}
+        {offerTags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {offerTags.map((tag) => {
+              const tagColor = generateColorFromString(tag);
+              return (
+                <Badge
+                  key={tag}
+                  variant="outline"
+                  className="text-[10px] px-1.5 py-0"
+                  style={{
+                    backgroundColor: `${tagColor}15`.replace('hsl', 'hsla').replace(')', ', 0.1)'),
+                    borderColor: tagColor,
+                    color: tagColor,
+                  }}
+                >
+                  {tag}
+                </Badge>
+              );
+            })}
+          </div>
+        )}
 
         {prospect.estimated_amount > 0 && (
           <div className="flex items-center justify-between text-sm mb-3 bg-muted/50 rounded px-2 py-1">
