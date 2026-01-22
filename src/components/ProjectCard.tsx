@@ -52,7 +52,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
       {tasksTotal > 0 && (
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted">
           <div 
-            className="h-full bg-primary/60 transition-all duration-300"
+            className="h-full bg-green-500 transition-all duration-300"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
