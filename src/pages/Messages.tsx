@@ -824,7 +824,7 @@ export default function Messages() {
                             {room.last_message && (
                               <p
                                 className={cn(
-                                  'text-xs truncate -mt-0.5',
+                                  'text-xs truncate -mt-1',
                                   isSelected 
                                     ? 'text-primary-foreground/70' 
                                     : hasUnread 
