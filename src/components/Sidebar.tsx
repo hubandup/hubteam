@@ -65,11 +65,11 @@ export function Sidebar() {
   const mainItems = [
     { title: 'Accueil', url: '/', icon: Home, module: 'dashboard' as const },
     ...(role === 'client' && clientId ? [{ title: 'Ma fiche client', url: `/client/${clientId}`, icon: Users, module: 'crm' as const, matchParent: true, isClientItem: true }] : []),
-    { title: 'Feed', url: '/feed', icon: Rss, module: 'dashboard' as const },
+    { title: 'Feed', url: '/feed', icon: Rss, module: 'dashboard' as const, hideForClient: true },
     { title: 'Activité', url: '/dashboard', icon: LayoutDashboard, module: 'dashboard' as const },
     { title: 'Finances', url: '/finances', icon: Euro, module: 'dashboard' as const, adminOnly: true },
     { title: 'CRM', url: '/crm', icon: Users, module: 'crm' as const, matchParent: true },
-    { title: 'Prospection', url: '/prospection', icon: ListTodo, module: 'crm' as const, hideForAgency: true },
+    { title: 'Prospection', url: '/prospection', icon: ListTodo, module: 'crm' as const, hideForAgency: true, hideForClient: true },
     { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const, matchParent: true },
     { title: 'Projets', url: '/projects', icon: FolderKanban, module: 'projects' as const, matchParent: true },
     { title: 'FAQ', url: '/faq', icon: HelpCircle, module: 'faq' as const },
@@ -93,6 +93,7 @@ export function Sidebar() {
                 .filter(item => !(item as any).adminOnly || role === 'admin')
                 .filter(item => item.title !== 'CRM' || role !== 'client')
                 .filter(item => !(item as any).hideForAgency || role !== 'agency')
+                .filter(item => !(item as any).hideForClient || role !== 'client')
                 .map((item) =>
                   canRead(item.module) ? (
                     <SidebarMenuItem key={item.title}>
