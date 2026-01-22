@@ -715,6 +715,44 @@ export type Database = {
         }
         Relationships: []
       }
+      email_unsubscribes: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          ip_address: string | null
+          prospect_id: string | null
+          reason: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          ip_address?: string | null
+          prospect_id?: string | null
+          reason?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          ip_address?: string | null
+          prospect_id?: string | null
+          reason?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_unsubscribes_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       external_messages: {
         Row: {
           author_identifier: string
@@ -1504,6 +1542,8 @@ export type Database = {
           probability: number | null
           referrer: string | null
           status: Database["public"]["Enums"]["prospect_status"] | null
+          unsubscribed: boolean
+          unsubscribed_at: string | null
           updated_at: string
         }
         Insert: {
@@ -1529,6 +1569,8 @@ export type Database = {
           probability?: number | null
           referrer?: string | null
           status?: Database["public"]["Enums"]["prospect_status"] | null
+          unsubscribed?: boolean
+          unsubscribed_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -1554,6 +1596,8 @@ export type Database = {
           probability?: number | null
           referrer?: string | null
           status?: Database["public"]["Enums"]["prospect_status"] | null
+          unsubscribed?: boolean
+          unsubscribed_at?: string | null
           updated_at?: string
         }
         Relationships: [
