@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface AgencyProjectsTabProps {
   agencyId: string;
@@ -14,14 +16,17 @@ interface AgencyProjectsTabProps {
 export function AgencyProjectsTab({ agencyId }: AgencyProjectsTabProps) {
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const { role } = useUserRole();
 
   useEffect(() => {
     fetchProjects();
-  }, [agencyId]);
+  }, [agencyId, user, role]);
 
   const fetchProjects = async () => {
     try {
-      const { data, error } = await supabase
+      // Get all projects linked to this agency
+      const { data: agencyProjects, error: agencyError } = await supabase
         .from('project_agencies')
         .select(`
           project_id,
@@ -37,9 +42,45 @@ export function AgencyProjectsTab({ agencyId }: AgencyProjectsTabProps) {
         `)
         .eq('agency_id', agencyId);
 
-      if (error) throw error;
+      if (agencyError) throw agencyError;
       
-      const projectsData = data?.map((item: any) => item.projects).filter(Boolean) || [];
+      let projectsData = agencyProjects?.map((item: any) => item.projects).filter(Boolean) || [];
+
+      // If user is a client, filter to only show projects linked to their client record
+      if (role === 'client' && user) {
+        // Get the user's email
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.email) {
+          // Get the client ID for this email
+          const { data: client } = await supabase
+            .from('clients')
+            .select('id')
+            .eq('email', profile.email)
+            .maybeSingle();
+
+          if (client) {
+            // Get project IDs linked to this client
+            const { data: clientProjects } = await supabase
+              .from('project_clients')
+              .select('project_id')
+              .eq('client_id', client.id);
+
+            const clientProjectIds = clientProjects?.map(cp => cp.project_id) || [];
+            
+            // Filter to only show projects that are also linked to the client
+            projectsData = projectsData.filter(p => clientProjectIds.includes(p.id));
+          } else {
+            // No client found for this user, show no projects
+            projectsData = [];
+          }
+        }
+      }
+
       setProjects(projectsData);
     } catch (error) {
       console.error('Error fetching projects:', error);
