@@ -185,16 +185,25 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send emails to all recipients using Brevo API
     const emailPromises = recipients.map(async (recipient) => {
-      // Sanitize all user inputs before embedding in HTML
+      // Sanitize name inputs but NOT the message (to preserve HTML for images)
       const safeFirstName = escapeHtml(recipient.firstName);
       const safeLastName = escapeHtml(recipient.lastName);
       const safeCompany = escapeHtml(recipient.company);
-      const safeMessage = escapeHtml(message);
       
-      const personalizedMessage = safeMessage
+      // Process message - convert image placeholders to HTML img tags
+      let processedMessage = message
         .replace(/\{prénom\}/g, safeFirstName)
         .replace(/\{nom\}/g, safeLastName)
         .replace(/\{société\}/g, safeCompany);
+      
+      // Convert [Image: URL] format to actual img tags
+      processedMessage = processedMessage.replace(
+        /\[Image:\s*(https?:\/\/[^\]]+)\]/g,
+        '<img src="$1" alt="Image" style="max-width: 100%; height: auto; margin: 10px 0; display: block;" />'
+      );
+      
+      // Convert newlines to <br> for HTML display
+      processedMessage = processedMessage.replace(/\n/g, '<br />');
 
       const response = await fetch("https://api.brevo.com/v3/smtp/email", {
         method: "POST",
@@ -215,7 +224,7 @@ const handler = async (req: Request): Promise<Response> => {
           subject: subject,
           htmlContent: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <div style="white-space: pre-wrap;">${personalizedMessage}</div>
+              <div>${processedMessage}</div>
               <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;" />
               <p style="color: #666; font-size: 12px;">
                 Cet email a été envoyé depuis Hub Team

@@ -30,6 +30,8 @@ import { AddInteractionDialog } from '@/components/prospection/AddInteractionDia
 import { ScheduleFollowupDialog } from '@/components/prospection/ScheduleFollowupDialog';
 import { CloseProspectDialog } from '@/components/prospection/CloseProspectDialog';
 import { ProspectDetailDialog } from '@/components/prospection/ProspectDetailDialog';
+import { EmailTemplateManager } from '@/components/prospection/EmailTemplateManager';
+import { EmailImageUploader } from '@/components/prospection/EmailImageUploader';
 
 export default function Prospection() {
   const navigate = useNavigate();
@@ -582,7 +584,7 @@ export default function Prospection() {
                       Envoyer email ({selectedClients.length})
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[500px]">
+                  <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Envoyer un email</DialogTitle>
                       <DialogDescription>
@@ -591,6 +593,16 @@ export default function Prospection() {
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
+                      {/* Template Manager */}
+                      <EmailTemplateManager
+                        currentSubject={emailSubject}
+                        currentMessage={emailMessage}
+                        onSelectTemplate={(subject, message) => {
+                          setEmailSubject(subject);
+                          setEmailMessage(message);
+                        }}
+                      />
+
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Sujet</label>
                         <Input
@@ -608,6 +620,18 @@ export default function Prospection() {
                           rows={8}
                         />
                       </div>
+
+                      {/* Image Uploader */}
+                      <EmailImageUploader
+                        onImageInsert={(imageUrl, imageHtml) => {
+                          // Insert image HTML at the end of the message
+                          setEmailMessage((prev) => prev + '\n\n[Image: ' + imageUrl + ']');
+                        }}
+                      />
+
+                      <p className="text-xs text-muted-foreground">
+                        💡 Les images seront affichées dans l'email. Format supporté: HTML.
+                      </p>
                     </div>
                     <DialogFooter>
                       <Button variant="outline" onClick={() => setEmailDialogOpen(false)}>
