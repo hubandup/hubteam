@@ -20,6 +20,8 @@ import {
   File,
   X,
   Download,
+  Reply,
+  CornerDownRight,
 } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -71,6 +73,8 @@ interface ChatMessage {
   attachment_url?: string | null;
   attachment_type?: string | null;
   attachment_name?: string | null;
+  reply_to_id?: string | null;
+  reply_to?: ChatMessage | null;
   user?: {
     first_name: string;
     last_name: string;
@@ -110,8 +114,10 @@ export default function Messages() {
   const [uploadingFile, setUploadingFile] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState<ChatRoom | null>(null);
   const [deletingRoom, setDeletingRoom] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -456,7 +462,7 @@ export default function Messages() {
     try {
       const { data, error } = await supabase
         .from('chat_messages')
-        .select('*, attachment_url, attachment_type, attachment_name')
+        .select('*, attachment_url, attachment_type, attachment_name, reply_to_id')
         .eq('room_id', roomId)
         .order('created_at', { ascending: true });
 
@@ -470,9 +476,33 @@ export default function Messages() {
             .eq('id', msg.user_id)
             .single();
 
+          // Fetch reply_to message if exists
+          let replyTo = null;
+          if (msg.reply_to_id) {
+            const { data: replyMsg } = await supabase
+              .from('chat_messages')
+              .select('id, content, user_id, attachment_type')
+              .eq('id', msg.reply_to_id)
+              .single();
+            
+            if (replyMsg) {
+              const { data: replyProfile } = await supabase
+                .from('profiles')
+                .select('first_name, last_name')
+                .eq('id', replyMsg.user_id)
+                .single();
+              
+              replyTo = {
+                ...replyMsg,
+                user: replyProfile,
+              };
+            }
+          }
+
           return {
             ...msg,
             user: profile,
+            reply_to: replyTo,
           };
         })
       );
@@ -555,12 +585,14 @@ export default function Messages() {
         attachment_url: attachmentData?.url || null,
         attachment_type: attachmentData?.type || null,
         attachment_name: attachmentData?.name || null,
+        reply_to_id: replyingTo?.id || null,
       });
 
       if (error) throw error;
 
       setNewMessage('');
       handleRemoveFile();
+      setReplyingTo(null);
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error("Erreur lors de l'envoi du message");
@@ -568,6 +600,21 @@ export default function Messages() {
       setSendingMessage(false);
       setUploadingFile(false);
     }
+  };
+
+  const handleReply = (message: ChatMessage) => {
+    setReplyingTo(message);
+    inputRef.current?.focus();
+  };
+
+  const cancelReply = () => {
+    setReplyingTo(null);
+  };
+
+  const getReplyPreviewContent = (message: ChatMessage) => {
+    if (message.attachment_type === 'image') return '📷 Photo';
+    if (message.attachment_type === 'file') return '📎 Fichier';
+    return message.content?.substring(0, 50) + (message.content && message.content.length > 50 ? '...' : '');
   };
 
   const handleDeleteMessage = async () => {
@@ -913,6 +960,10 @@ export default function Messages() {
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => handleReply(message)}>
+                                        <Reply className="h-4 w-4 mr-2" />
+                                        Répondre
+                                      </DropdownMenuItem>
                                       <DropdownMenuItem
                                         className="text-destructive focus:text-destructive"
                                         onClick={() => setMessageToDelete(message.id)}
@@ -923,55 +974,87 @@ export default function Messages() {
                                     </DropdownMenuContent>
                                   </DropdownMenu>
                                 )}
-                                <div
-                                  className={cn(
-                                    'px-4 py-2.5 rounded-2xl',
-                                    isOwn
-                                      ? 'bg-primary text-primary-foreground rounded-br-md'
-                                      : 'bg-muted rounded-bl-md'
-                                  )}
-                                >
-                                  {/* Attachment Display */}
-                                  {message.attachment_url && (
-                                    <div className="mb-2">
-                                      {message.attachment_type === 'image' ? (
-                                        <a 
-                                          href={message.attachment_url} 
-                                          target="_blank" 
-                                          rel="noopener noreferrer"
-                                          className="block"
-                                        >
-                                          <img
-                                            src={message.attachment_url}
-                                            alt={message.attachment_name || 'Image'}
-                                            className="max-w-full max-h-64 rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                          />
-                                        </a>
-                                      ) : (
-                                        <a
-                                          href={message.attachment_url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className={cn(
-                                            'flex items-center gap-2 p-2 rounded-lg transition-colors',
-                                            isOwn 
-                                              ? 'bg-primary-foreground/10 hover:bg-primary-foreground/20' 
-                                              : 'bg-background hover:bg-accent'
-                                          )}
-                                        >
-                                          <File className="h-5 w-5 shrink-0" />
-                                          <span className="text-sm truncate flex-1">
-                                            {message.attachment_name || 'Fichier'}
-                                          </span>
-                                          <Download className="h-4 w-4 shrink-0" />
-                                        </a>
+                                {!isOwn && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() => handleReply(message)}
+                                  >
+                                    <Reply className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                                <div className={cn('flex flex-col', isOwn ? 'items-end' : 'items-start')}>
+                                  {/* Reply Preview */}
+                                  {message.reply_to && (
+                                    <div
+                                      className={cn(
+                                        'px-3 py-1.5 rounded-t-xl text-xs mb-0 border-l-2',
+                                        isOwn
+                                          ? 'bg-primary/80 text-primary-foreground/80 border-primary-foreground/40 rounded-br-md'
+                                          : 'bg-muted/80 text-muted-foreground border-primary/60 rounded-bl-md'
                                       )}
+                                    >
+                                      <div className="flex items-center gap-1 font-medium opacity-80">
+                                        <CornerDownRight className="h-3 w-3" />
+                                        {message.reply_to.user?.first_name} {message.reply_to.user?.last_name}
+                                      </div>
+                                      <p className="truncate max-w-48 opacity-70">
+                                        {getReplyPreviewContent(message.reply_to as ChatMessage)}
+                                      </p>
                                     </div>
                                   )}
-                                  {/* Only show text if it's not just the attachment placeholder */}
-                                  {message.content && !message.content.startsWith('📎') && (
-                                    <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
-                                  )}
+                                  <div
+                                    className={cn(
+                                      'px-4 py-2.5 rounded-2xl',
+                                      isOwn
+                                        ? 'bg-primary text-primary-foreground rounded-br-md'
+                                        : 'bg-muted rounded-bl-md',
+                                      message.reply_to && 'rounded-t-none'
+                                    )}
+                                  >
+                                    {/* Attachment Display */}
+                                    {message.attachment_url && (
+                                      <div className="mb-2">
+                                        {message.attachment_type === 'image' ? (
+                                          <a 
+                                            href={message.attachment_url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="block"
+                                          >
+                                            <img
+                                              src={message.attachment_url}
+                                              alt={message.attachment_name || 'Image'}
+                                              className="max-w-full max-h-64 rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                            />
+                                          </a>
+                                        ) : (
+                                          <a
+                                            href={message.attachment_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={cn(
+                                              'flex items-center gap-2 p-2 rounded-lg transition-colors',
+                                              isOwn 
+                                                ? 'bg-primary-foreground/10 hover:bg-primary-foreground/20' 
+                                                : 'bg-background hover:bg-accent'
+                                            )}
+                                          >
+                                            <File className="h-5 w-5 shrink-0" />
+                                            <span className="text-sm truncate flex-1">
+                                              {message.attachment_name || 'Fichier'}
+                                            </span>
+                                            <Download className="h-4 w-4 shrink-0" />
+                                          </a>
+                                        )}
+                                      </div>
+                                    )}
+                                    {/* Only show text if it's not just the attachment placeholder */}
+                                    {message.content && !message.content.startsWith('📎') && (
+                                      <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -1027,6 +1110,31 @@ export default function Messages() {
                   </div>
                 )}
 
+                {/* Reply Preview */}
+                {replyingTo && (
+                  <div className="px-4 py-2 border-t bg-muted/30">
+                    <div className="flex items-center gap-3 p-2 bg-background rounded-lg max-w-3xl mx-auto border-l-2 border-primary">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1 text-xs text-primary font-medium">
+                          <Reply className="h-3 w-3" />
+                          Réponse à {replyingTo.user?.first_name} {replyingTo.user?.last_name}
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {getReplyPreviewContent(replyingTo)}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={cancelReply}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Message Input */}
                 <form onSubmit={handleSendMessage} className="p-4 border-t bg-muted/30">
                   <div className="flex gap-2 max-w-3xl mx-auto items-end">
@@ -1048,9 +1156,10 @@ export default function Messages() {
                       <Paperclip className="h-5 w-5" />
                     </Button>
                     <Input
+                      ref={inputRef}
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
-                      placeholder="Écrivez votre message..."
+                      placeholder={replyingTo ? "Écrivez votre réponse..." : "Écrivez votre message..."}
                       disabled={sendingMessage}
                       className="flex-1 rounded-full bg-background px-4"
                     />
