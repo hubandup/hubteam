@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import {
   MessageSquare,
   Send,
@@ -14,6 +15,11 @@ import {
   MoreVertical,
   Search,
   ArrowLeft,
+  Paperclip,
+  Image as ImageIcon,
+  File,
+  X,
+  Download,
 } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -46,6 +52,7 @@ interface ChatRoom {
     content: string;
     created_at: string;
     user_name: string;
+    attachment_type?: string | null;
   };
   members?: {
     id: string;
@@ -53,6 +60,7 @@ interface ChatRoom {
     last_name: string;
     avatar_url: string | null;
   }[];
+  unread_count?: number;
 }
 
 interface ChatMessage {
@@ -60,12 +68,29 @@ interface ChatMessage {
   content: string;
   created_at: string;
   user_id: string;
+  attachment_url?: string | null;
+  attachment_type?: string | null;
+  attachment_name?: string | null;
   user?: {
     first_name: string;
     last_name: string;
     avatar_url: string | null;
   };
 }
+
+const ALLOWED_FILE_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+];
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export default function Messages() {
   const { user } = useAuth();
@@ -81,7 +106,10 @@ export default function Messages() {
   const [searchQuery, setSearchQuery] = useState('');
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
   const [deletingMessage, setDeletingMessage] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -107,6 +135,7 @@ export default function Messages() {
   useEffect(() => {
     if (selectedRoom) {
       fetchMessages(selectedRoom.id);
+      markRoomAsRead(selectedRoom.id);
 
       const channel = supabase
         .channel(`room-${selectedRoom.id}`)
@@ -134,6 +163,11 @@ export default function Messages() {
                   user: profile,
                 },
               ]);
+              
+              // Mark as read if the message is from another user
+              if (newMsg.user_id !== user?.id) {
+                markRoomAsRead(selectedRoom.id);
+              }
             } else if (payload.eventType === 'DELETE') {
               setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
             }
@@ -146,6 +180,26 @@ export default function Messages() {
       };
     }
   }, [selectedRoom]);
+
+  const markRoomAsRead = async (roomId: string) => {
+    if (!user) return;
+    
+    try {
+      await supabase
+        .from('chat_message_reads')
+        .upsert(
+          { room_id: roomId, user_id: user.id, last_read_at: new Date().toISOString() },
+          { onConflict: 'room_id,user_id' }
+        );
+      
+      // Update local state
+      setRooms(prev => prev.map(room => 
+        room.id === roomId ? { ...room, unread_count: 0 } : room
+      ));
+    } catch (error) {
+      console.error('Error marking room as read:', error);
+    }
+  };
 
   const handleCreateConversation = async (contactEmail: string, contactName: string) => {
     if (!user) return;
@@ -296,11 +350,22 @@ export default function Messages() {
 
       if (roomsError) throw roomsError;
 
+      // Fetch read status for all rooms
+      const { data: readStatuses } = await supabase
+        .from('chat_message_reads')
+        .select('room_id, last_read_at')
+        .eq('user_id', user.id)
+        .in('room_id', roomIds);
+
+      const readStatusMap = new Map(
+        readStatuses?.map(r => [r.room_id, r.last_read_at]) || []
+      );
+
       const roomsWithDetails = await Promise.all(
         (roomsData || []).map(async (room) => {
           const { data: lastMessage } = await supabase
             .from('chat_messages')
-            .select('content, created_at, user_id')
+            .select('content, created_at, user_id, attachment_type')
             .eq('room_id', room.id)
             .order('created_at', { ascending: false })
             .limit(1)
@@ -318,6 +383,7 @@ export default function Messages() {
               content: lastMessage.content,
               created_at: lastMessage.created_at,
               user_name: msgUser ? `${msgUser.first_name} ${msgUser.last_name}` : 'Utilisateur',
+              attachment_type: lastMessage.attachment_type,
             };
           }
 
@@ -337,13 +403,43 @@ export default function Messages() {
             })
           );
 
+          // Calculate unread count
+          const lastReadAt = readStatusMap.get(room.id);
+          let unreadCount = 0;
+          
+          if (lastReadAt) {
+            const { count } = await supabase
+              .from('chat_messages')
+              .select('*', { count: 'exact', head: true })
+              .eq('room_id', room.id)
+              .gt('created_at', lastReadAt)
+              .neq('user_id', user.id);
+            unreadCount = count || 0;
+          } else {
+            // If never read, count all messages from others
+            const { count } = await supabase
+              .from('chat_messages')
+              .select('*', { count: 'exact', head: true })
+              .eq('room_id', room.id)
+              .neq('user_id', user.id);
+            unreadCount = count || 0;
+          }
+
           return {
             ...room,
             last_message: lastMessageWithUser,
             members: memberProfiles.filter(Boolean),
+            unread_count: unreadCount,
           };
         })
       );
+
+      // Sort by last message date
+      roomsWithDetails.sort((a, b) => {
+        const dateA = a.last_message?.created_at || a.created_at;
+        const dateB = b.last_message?.created_at || b.created_at;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
 
       setRooms(roomsWithDetails);
     } catch (error) {
@@ -358,7 +454,7 @@ export default function Messages() {
     try {
       const { data, error } = await supabase
         .from('chat_messages')
-        .select('*')
+        .select('*, attachment_url, attachment_type, attachment_name')
         .eq('room_id', roomId)
         .order('created_at', { ascending: true });
 
@@ -386,26 +482,89 @@ export default function Messages() {
     }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      toast.error('Type de fichier non supporté. Utilisez des images, PDF ou documents Office.');
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('Le fichier est trop volumineux. Maximum 10 Mo.');
+      return;
+    }
+
+    setSelectedFile(file);
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadFile = async (file: File): Promise<{ url: string; type: string; name: string } | null> => {
+    if (!user) return null;
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('message-attachments')
+      .upload(fileName, file);
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw uploadError;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('message-attachments')
+      .getPublicUrl(fileName);
+
+    return {
+      url: publicUrl,
+      type: file.type.startsWith('image/') ? 'image' : 'file',
+      name: file.name,
+    };
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedRoom || !user) return;
+    if ((!newMessage.trim() && !selectedFile) || !selectedRoom || !user) return;
 
     setSendingMessage(true);
+    setUploadingFile(!!selectedFile);
+
     try {
+      let attachmentData: { url: string; type: string; name: string } | null = null;
+
+      if (selectedFile) {
+        attachmentData = await uploadFile(selectedFile);
+      }
+
       const { error } = await supabase.from('chat_messages').insert({
         room_id: selectedRoom.id,
         user_id: user.id,
-        content: newMessage.trim(),
+        content: newMessage.trim() || (attachmentData ? `📎 ${attachmentData.name}` : ''),
+        attachment_url: attachmentData?.url || null,
+        attachment_type: attachmentData?.type || null,
+        attachment_name: attachmentData?.name || null,
       });
 
       if (error) throw error;
 
       setNewMessage('');
+      handleRemoveFile();
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error("Erreur lors de l'envoi du message");
     } finally {
       setSendingMessage(false);
+      setUploadingFile(false);
     }
   };
 
@@ -464,9 +623,22 @@ export default function Messages() {
     return format(date, 'dd/MM HH:mm', { locale: fr });
   };
 
+  const getLastMessagePreview = (room: ChatRoom) => {
+    if (!room.last_message) return null;
+    
+    if (room.last_message.attachment_type === 'image') {
+      return '📷 Photo';
+    } else if (room.last_message.attachment_type === 'file') {
+      return '📎 Fichier';
+    }
+    return room.last_message.content;
+  };
+
   const filteredRooms = rooms.filter((room) =>
     getRoomDisplayName(room).toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const totalUnread = rooms.reduce((acc, room) => acc + (room.unread_count || 0), 0);
 
   if (loading) {
     return (
@@ -492,7 +664,14 @@ export default function Messages() {
           >
             {/* Search Header */}
             <div className="p-4 border-b bg-muted/30">
-              <h2 className="text-lg font-semibold mb-3">Messages</h2>
+              <div className="flex items-center gap-2 mb-3">
+                <h2 className="text-lg font-semibold">Messages</h2>
+                {totalUnread > 0 && (
+                  <Badge variant="destructive" className="h-5 min-w-5 flex items-center justify-center text-xs px-1.5">
+                    {totalUnread > 99 ? '99+' : totalUnread}
+                  </Badge>
+                )}
+              </div>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -516,38 +695,54 @@ export default function Messages() {
                   {filteredRooms.map((room) => {
                     const avatar = getRoomAvatar(room);
                     const isSelected = selectedRoom?.id === room.id;
+                    const hasUnread = (room.unread_count || 0) > 0;
                     return (
                       <button
                         key={room.id}
                         onClick={() => setSelectedRoom(room)}
                         className={cn(
-                          'w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200',
+                          'w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 relative',
                           isSelected
                             ? 'bg-primary text-primary-foreground shadow-md'
+                            : hasUnread
+                            ? 'hover:bg-accent/50 bg-accent/30'
                             : 'hover:bg-accent/50'
                         )}
                       >
-                        <Avatar className="h-11 w-11 ring-2 ring-background shadow-sm">
-                          <AvatarImage src={avatar.url || undefined} />
-                          <AvatarFallback
-                            className={cn(
-                              'font-medium',
-                              isSelected ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary'
-                            )}
-                          >
-                            {avatar.initials}
-                          </AvatarFallback>
-                        </Avatar>
+                        <div className="relative">
+                          <Avatar className="h-11 w-11 ring-2 ring-background shadow-sm">
+                            <AvatarImage src={avatar.url || undefined} />
+                            <AvatarFallback
+                              className={cn(
+                                'font-medium',
+                                isSelected ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary'
+                              )}
+                            >
+                              {avatar.initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          {hasUnread && !isSelected && (
+                            <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 flex items-center justify-center bg-destructive text-destructive-foreground text-[10px] font-medium rounded-full px-1">
+                              {room.unread_count! > 9 ? '9+' : room.unread_count}
+                            </span>
+                          )}
+                        </div>
                         <div className="flex-1 min-w-0 text-left">
-                          <p className="font-medium truncate">{getRoomDisplayName(room)}</p>
+                          <p className={cn('font-medium truncate', hasUnread && !isSelected && 'font-semibold')}>
+                            {getRoomDisplayName(room)}
+                          </p>
                           {room.last_message && (
                             <p
                               className={cn(
                                 'text-xs truncate mt-0.5',
-                                isSelected ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                                isSelected 
+                                  ? 'text-primary-foreground/70' 
+                                  : hasUnread 
+                                  ? 'text-foreground font-medium' 
+                                  : 'text-muted-foreground'
                               )}
                             >
-                              {room.last_message.content}
+                              {getLastMessagePreview(room)}
                             </p>
                           )}
                         </div>
@@ -665,7 +860,47 @@ export default function Messages() {
                                       : 'bg-muted rounded-bl-md'
                                   )}
                                 >
-                                  <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                                  {/* Attachment Display */}
+                                  {message.attachment_url && (
+                                    <div className="mb-2">
+                                      {message.attachment_type === 'image' ? (
+                                        <a 
+                                          href={message.attachment_url} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="block"
+                                        >
+                                          <img
+                                            src={message.attachment_url}
+                                            alt={message.attachment_name || 'Image'}
+                                            className="max-w-full max-h-64 rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                          />
+                                        </a>
+                                      ) : (
+                                        <a
+                                          href={message.attachment_url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className={cn(
+                                            'flex items-center gap-2 p-2 rounded-lg transition-colors',
+                                            isOwn 
+                                              ? 'bg-primary-foreground/10 hover:bg-primary-foreground/20' 
+                                              : 'bg-background hover:bg-accent'
+                                          )}
+                                        >
+                                          <File className="h-5 w-5 shrink-0" />
+                                          <span className="text-sm truncate flex-1">
+                                            {message.attachment_name || 'Fichier'}
+                                          </span>
+                                          <Download className="h-4 w-4 shrink-0" />
+                                        </a>
+                                      )}
+                                    </div>
+                                  )}
+                                  {/* Only show text if it's not just the attachment placeholder */}
+                                  {message.content && !message.content.startsWith('📎') && (
+                                    <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -686,9 +921,61 @@ export default function Messages() {
                   </div>
                 </ScrollArea>
 
+                {/* File Preview */}
+                {selectedFile && (
+                  <div className="px-4 py-2 border-t bg-muted/30">
+                    <div className="flex items-center gap-3 p-2 bg-background rounded-lg max-w-md">
+                      {selectedFile.type.startsWith('image/') ? (
+                        <div className="h-12 w-12 rounded overflow-hidden shrink-0">
+                          <img
+                            src={URL.createObjectURL(selectedFile)}
+                            alt="Preview"
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-12 w-12 rounded bg-muted flex items-center justify-center shrink-0">
+                          <File className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{selectedFile.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {(selectedFile.size / 1024 / 1024).toFixed(2)} Mo
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={handleRemoveFile}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Message Input */}
                 <form onSubmit={handleSendMessage} className="p-4 border-t bg-muted/30">
-                  <div className="flex gap-2 max-w-3xl mx-auto">
+                  <div className="flex gap-2 max-w-3xl mx-auto items-end">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept={ALLOWED_FILE_TYPES.join(',')}
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0 rounded-full h-10 w-10"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={sendingMessage}
+                    >
+                      <Paperclip className="h-5 w-5" />
+                    </Button>
                     <Input
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
@@ -699,10 +986,14 @@ export default function Messages() {
                     <Button
                       type="submit"
                       size="icon"
-                      disabled={sendingMessage || !newMessage.trim()}
+                      disabled={sendingMessage || (!newMessage.trim() && !selectedFile)}
                       className="rounded-full h-10 w-10 shrink-0"
                     >
-                      {sendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                      {sendingMessage ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </form>
