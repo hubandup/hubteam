@@ -163,7 +163,7 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
         )}
       </div>
       
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className={`grid gap-6 ${role === 'client' ? 'md:grid-cols-1' : 'md:grid-cols-2'}`}>
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Informations générales</CardTitle>
@@ -235,69 +235,71 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Statistiques</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-start gap-3">
-                <FolderKanban className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Projets totaux</p>
-                  <p className="text-2xl font-bold">{projectStats.total}</p>
+        {role !== 'client' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Statistiques</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-start gap-3">
+                  <FolderKanban className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Projets totaux</p>
+                    <p className="text-2xl font-bold">{projectStats.total}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <FolderKanban className="h-5 w-5 text-blue-500 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Projets en cours</p>
+                    <p className="text-2xl font-bold text-blue-500">{projectStats.active}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <FolderKanban className="h-5 w-5 text-success mt-0.5" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Projets terminés</p>
+                    <p className="text-2xl font-bold text-success">{projectStats.completed}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <FolderKanban className="h-5 w-5 text-destructive mt-0.5" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Projets perdus</p>
+                    <p className="text-2xl font-bold text-destructive">{projectStats.lost}</p>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3">
-                <FolderKanban className="h-5 w-5 text-blue-500 mt-0.5" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Projets en cours</p>
-                  <p className="text-2xl font-bold text-blue-500">{projectStats.active}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <FolderKanban className="h-5 w-5 text-success mt-0.5" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Projets terminés</p>
-                  <p className="text-2xl font-bold text-success">{projectStats.completed}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <FolderKanban className="h-5 w-5 text-destructive mt-0.5" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Projets perdus</p>
-                  <p className="text-2xl font-bold text-destructive">{projectStats.lost}</p>
-                </div>
-              </div>
-            </div>
-
-            {activeProjects.length > 0 && (
-              <div className="pt-4 border-t">
-                <h4 className="text-sm font-medium mb-3">Projets en cours</h4>
-                <div className="space-y-2">
-                  {activeProjects.map((project) => (
-                    <div
-                      key={project.id}
-                      className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-accent cursor-pointer transition-colors"
-                      onClick={() => navigate(`/project/${project.id}`)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <FolderKanban className="h-4 w-4 text-primary" />
-                        <span className="font-medium text-sm">{project.name}</span>
+              {activeProjects.length > 0 && (
+                <div className="pt-4 border-t">
+                  <h4 className="text-sm font-medium mb-3">Projets en cours</h4>
+                  <div className="space-y-2">
+                    {activeProjects.map((project) => (
+                      <div
+                        key={project.id}
+                        className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-accent cursor-pointer transition-colors"
+                        onClick={() => navigate(`/project/${project.id}`)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <FolderKanban className="h-4 w-4 text-primary" />
+                          <span className="font-medium text-sm">{project.name}</span>
+                        </div>
+                        <Badge variant="default" className="bg-blue-500 text-xs">
+                          En cours
+                        </Badge>
                       </div>
-                      <Badge variant="default" className="bg-blue-500 text-xs">
-                        En cours
-                      </Badge>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <AgencyContactsManager agencyId={agency.id} mainContactId={agency.main_contact_id} />
