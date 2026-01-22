@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,13 @@ import { fr } from 'date-fns/locale';
 import { Building2, User, Phone, Mail, Linkedin, Calendar, Euro, MessageSquare, Edit2, Save, X, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { AddInteractionDialog } from './AddInteractionDialog';
+import { supabase } from '@/integrations/supabase/client';
+
+interface AgencyTag {
+  id: string;
+  name: string;
+  color: string;
+}
 
 interface ProspectDetailDialogProps {
   open: boolean;
@@ -29,6 +36,18 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<Prospect>>({});
   const [addInteractionOpen, setAddInteractionOpen] = useState(false);
+  const [availableTags, setAvailableTags] = useState<AgencyTag[]>([]);
+
+  useEffect(() => {
+    const loadTags = async () => {
+      const { data } = await supabase
+        .from('agency_tags')
+        .select('*')
+        .order('name');
+      setAvailableTags(data || []);
+    };
+    loadTags();
+  }, []);
 
   if (!prospect) return null;
 
@@ -356,14 +375,34 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
                     <CardContent className="space-y-3">
                       {isEditing ? (
                         <>
-                          <div className="space-y-1">
-                            <Label className="text-xs">Tag offre</Label>
-                            <Input
-                              value={editData.offer_tag || ''}
-                              onChange={(e) => setEditData(prev => ({ ...prev, offer_tag: e.target.value }))}
-                              className="h-8"
-                              placeholder="Formation, Conseil..."
-                            />
+                          <div className="space-y-2">
+                            <Label className="text-xs">Tag offre (expertise)</Label>
+                            <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 border rounded-md bg-muted/30">
+                              {availableTags.map((tag) => {
+                                const isSelected = editData.offer_tag === tag.name;
+                                return (
+                                  <Badge
+                                    key={tag.id}
+                                    variant={isSelected ? 'default' : 'outline'}
+                                    className="cursor-pointer transition-all hover:scale-105 text-xs"
+                                    style={isSelected ? {
+                                      backgroundColor: tag.color,
+                                      borderColor: tag.color,
+                                      color: 'white',
+                                    } : {
+                                      borderColor: `${tag.color}80`,
+                                      color: tag.color,
+                                    }}
+                                    onClick={() => setEditData(prev => ({ 
+                                      ...prev, 
+                                      offer_tag: isSelected ? '' : tag.name 
+                                    }))}
+                                  >
+                                    {tag.name}
+                                  </Badge>
+                                );
+                              })}
+                            </div>
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs">Résumé du besoin</Label>
@@ -376,9 +415,21 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
                         </>
                       ) : (
                         <>
-                          {prospect.offer_tag && (
-                            <Badge variant="outline">{prospect.offer_tag}</Badge>
-                          )}
+                          {prospect.offer_tag && (() => {
+                            const tagConfig = availableTags.find(t => t.name === prospect.offer_tag);
+                            return (
+                              <Badge 
+                                variant="outline"
+                                style={tagConfig ? {
+                                  borderColor: tagConfig.color,
+                                  color: tagConfig.color,
+                                  backgroundColor: `${tagConfig.color}15`,
+                                } : {}}
+                              >
+                                {prospect.offer_tag}
+                              </Badge>
+                            );
+                          })()}
                           {prospect.need_summary ? (
                             <p className="text-sm">{prospect.need_summary}</p>
                           ) : (
