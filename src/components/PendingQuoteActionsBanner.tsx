@@ -229,7 +229,7 @@ export function PendingQuoteActionsBanner() {
 
   return (
     <>
-      <div className="mb-6 overflow-hidden rounded-2xl border border-[#E8FF4C]/40 shadow-lg shadow-black/5 bg-white dark:bg-card">
+      <div className="mb-6 overflow-hidden rounded-2xl border border-border/50 shadow-md shadow-black/10 dark:shadow-black/30 bg-white dark:bg-card">
         <div 
           className="flex items-center justify-between p-4 cursor-pointer hover:bg-[#E8FF4C]/5 transition-colors"
           onClick={() => setIsExpanded(!isExpanded)}
