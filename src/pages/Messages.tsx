@@ -108,6 +108,8 @@ export default function Messages() {
   const [deletingMessage, setDeletingMessage] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [roomToDelete, setRoomToDelete] = useState<ChatRoom | null>(null);
+  const [deletingRoom, setDeletingRoom] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -588,6 +590,44 @@ export default function Messages() {
     }
   };
 
+  const handleDeleteRoom = async () => {
+    if (!roomToDelete) return;
+
+    setDeletingRoom(true);
+    try {
+      // Delete all messages first (they should cascade, but let's be explicit)
+      await supabase.from('chat_messages').delete().eq('room_id', roomToDelete.id);
+      
+      // Delete read status
+      await supabase.from('chat_message_reads').delete().eq('room_id', roomToDelete.id);
+      
+      // Delete room members
+      await supabase.from('chat_room_members').delete().eq('room_id', roomToDelete.id);
+      
+      // Delete the room
+      const { error } = await supabase.from('chat_rooms').delete().eq('id', roomToDelete.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setRooms((prev) => prev.filter((r) => r.id !== roomToDelete.id));
+      
+      // If the deleted room was selected, deselect it
+      if (selectedRoom?.id === roomToDelete.id) {
+        setSelectedRoom(null);
+        setMessages([]);
+      }
+      
+      toast.success('Conversation supprimée');
+    } catch (error) {
+      console.error('Error deleting room:', error);
+      toast.error('Erreur lors de la suppression de la conversation');
+    } finally {
+      setDeletingRoom(false);
+      setRoomToDelete(null);
+    }
+  };
+
   const getRoomDisplayName = (room: ChatRoom) => {
     if (room.name) return room.name;
     if (room.type === 'direct' && room.members) {
@@ -697,11 +737,10 @@ export default function Messages() {
                     const isSelected = selectedRoom?.id === room.id;
                     const hasUnread = (room.unread_count || 0) > 0;
                     return (
-                      <button
+                      <div
                         key={room.id}
-                        onClick={() => setSelectedRoom(room)}
                         className={cn(
-                          'w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 relative',
+                          'w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 relative group',
                           isSelected
                             ? 'bg-primary text-primary-foreground shadow-md'
                             : hasUnread
@@ -709,54 +748,86 @@ export default function Messages() {
                             : 'hover:bg-accent/50'
                         )}
                       >
-                        <div className="relative">
-                          <Avatar className="h-11 w-11 ring-2 ring-background shadow-sm">
-                            <AvatarImage src={avatar.url || undefined} />
-                            <AvatarFallback
+                        <button
+                          onClick={() => setSelectedRoom(room)}
+                          className="flex items-center gap-3 flex-1 min-w-0"
+                        >
+                          <div className="relative shrink-0">
+                            <Avatar className="h-11 w-11 ring-2 ring-background shadow-sm">
+                              <AvatarImage src={avatar.url || undefined} />
+                              <AvatarFallback
+                                className={cn(
+                                  'font-medium',
+                                  isSelected ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary'
+                                )}
+                              >
+                                {avatar.initials}
+                              </AvatarFallback>
+                            </Avatar>
+                            {hasUnread && !isSelected && (
+                              <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 flex items-center justify-center bg-destructive text-destructive-foreground text-[10px] font-medium rounded-full px-1">
+                                {room.unread_count! > 9 ? '9+' : room.unread_count}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0 text-left">
+                            <p className={cn('font-medium truncate', hasUnread && !isSelected && 'font-semibold')}>
+                              {getRoomDisplayName(room)}
+                            </p>
+                            {room.last_message && (
+                              <p
+                                className={cn(
+                                  'text-xs truncate mt-0.5',
+                                  isSelected 
+                                    ? 'text-primary-foreground/70' 
+                                    : hasUnread 
+                                    ? 'text-foreground font-medium' 
+                                    : 'text-muted-foreground'
+                                )}
+                              >
+                                {getLastMessagePreview(room)}
+                              </p>
+                            )}
+                          </div>
+                          {room.last_message && (
+                            <span
                               className={cn(
-                                'font-medium',
-                                isSelected ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary'
+                                'text-[10px] whitespace-nowrap shrink-0',
+                                isSelected ? 'text-primary-foreground/60' : 'text-muted-foreground'
                               )}
                             >
-                              {avatar.initials}
-                            </AvatarFallback>
-                          </Avatar>
-                          {hasUnread && !isSelected && (
-                            <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 flex items-center justify-center bg-destructive text-destructive-foreground text-[10px] font-medium rounded-full px-1">
-                              {room.unread_count! > 9 ? '9+' : room.unread_count}
+                              {formatMessageDate(room.last_message.created_at)}
                             </span>
                           )}
-                        </div>
-                        <div className="flex-1 min-w-0 text-left">
-                          <p className={cn('font-medium truncate', hasUnread && !isSelected && 'font-semibold')}>
-                            {getRoomDisplayName(room)}
-                          </p>
-                          {room.last_message && (
-                            <p
+                        </button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className={cn(
-                                'text-xs truncate mt-0.5',
-                                isSelected 
-                                  ? 'text-primary-foreground/70' 
-                                  : hasUnread 
-                                  ? 'text-foreground font-medium' 
-                                  : 'text-muted-foreground'
+                                'h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity',
+                                isSelected ? 'hover:bg-primary-foreground/20 text-primary-foreground' : ''
                               )}
+                              onClick={(e) => e.stopPropagation()}
                             >
-                              {getLastMessagePreview(room)}
-                            </p>
-                          )}
-                        </div>
-                        {room.last_message && (
-                          <span
-                            className={cn(
-                              'text-[10px] whitespace-nowrap',
-                              isSelected ? 'text-primary-foreground/60' : 'text-muted-foreground'
-                            )}
-                          >
-                            {formatMessageDate(room.last_message.created_at)}
-                          </span>
-                        )}
-                      </button>
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRoomToDelete(room);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Supprimer la conversation
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     );
                   })}
                 </div>
@@ -1015,7 +1086,7 @@ export default function Messages() {
         )}
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Message Confirmation Dialog */}
       <AlertDialog open={!!messageToDelete} onOpenChange={() => setMessageToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1032,6 +1103,29 @@ export default function Messages() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deletingMessage ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Room Confirmation Dialog */}
+      <AlertDialog open={!!roomToDelete} onOpenChange={() => setRoomToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette conversation ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Tous les messages de cette conversation seront définitivement supprimés pour tous les participants.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingRoom}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteRoom}
+              disabled={deletingRoom}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletingRoom ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Supprimer
             </AlertDialogAction>
           </AlertDialogFooter>
