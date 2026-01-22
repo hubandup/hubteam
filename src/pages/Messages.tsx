@@ -1,16 +1,41 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, Send, Loader2, Plus, Users } from 'lucide-react';
-import { format } from 'date-fns';
+import {
+  MessageSquare,
+  Send,
+  Loader2,
+  Trash2,
+  MoreVertical,
+  Search,
+  ArrowLeft,
+} from 'lucide-react';
+import { format, isToday, isYesterday } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ChatRoom {
   id: string;
@@ -45,6 +70,7 @@ interface ChatMessage {
 export default function Messages() {
   const { user } = useAuth();
   const location = useLocation();
+  const isMobile = useIsMobile();
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -52,13 +78,24 @@ export default function Messages() {
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [creatingRoom, setCreatingRoom] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
+  const [deletingMessage, setDeletingMessage] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   // Handle new conversation from navigation state
   useEffect(() => {
     const state = location.state as { newConversation?: boolean; contactEmail?: string; contactName?: string } | null;
     if (state?.newConversation && state?.contactEmail && user && !creatingRoom) {
       handleCreateConversation(state.contactEmail, state.contactName || 'Contact');
-      // Clear the state to prevent re-triggering
       window.history.replaceState({}, document.title);
     }
   }, [location.state, user]);
@@ -71,33 +108,35 @@ export default function Messages() {
     if (selectedRoom) {
       fetchMessages(selectedRoom.id);
 
-      // Subscribe to new messages
       const channel = supabase
         .channel(`room-${selectedRoom.id}`)
         .on(
           'postgres_changes',
           {
-            event: 'INSERT',
+            event: '*',
             schema: 'public',
             table: 'chat_messages',
             filter: `room_id=eq.${selectedRoom.id}`,
           },
           async (payload) => {
-            const newMsg = payload.new as any;
-            // Fetch user info for the new message
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('first_name, last_name, avatar_url')
-              .eq('id', newMsg.user_id)
-              .single();
+            if (payload.eventType === 'INSERT') {
+              const newMsg = payload.new as any;
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('first_name, last_name, avatar_url')
+                .eq('id', newMsg.user_id)
+                .single();
 
-            setMessages((prev) => [
-              ...prev,
-              {
-                ...newMsg,
-                user: profile,
-              },
-            ]);
+              setMessages((prev) => [
+                ...prev,
+                {
+                  ...newMsg,
+                  user: profile,
+                },
+              ]);
+            } else if (payload.eventType === 'DELETE') {
+              setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
+            }
           }
         )
         .subscribe();
@@ -110,10 +149,9 @@ export default function Messages() {
 
   const handleCreateConversation = async (contactEmail: string, contactName: string) => {
     if (!user) return;
-    
+
     setCreatingRoom(true);
     try {
-      // First try to find a registered user with this email
       const { data: targetProfile } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, avatar_url')
@@ -121,7 +159,6 @@ export default function Messages() {
         .maybeSingle();
 
       if (targetProfile) {
-        // User exists - check for existing direct room
         const { data: myRooms } = await supabase
           .from('chat_room_members')
           .select('room_id')
@@ -132,9 +169,9 @@ export default function Messages() {
           .select('room_id')
           .eq('user_id', targetProfile.id);
 
-        const myRoomIds = myRooms?.map(r => r.room_id) || [];
-        const theirRoomIds = theirRooms?.map(r => r.room_id) || [];
-        const commonRoomIds = myRoomIds.filter(id => theirRoomIds.includes(id));
+        const myRoomIds = myRooms?.map((r) => r.room_id) || [];
+        const theirRoomIds = theirRooms?.map((r) => r.room_id) || [];
+        const commonRoomIds = myRoomIds.filter((id) => theirRoomIds.includes(id));
 
         if (commonRoomIds.length > 0) {
           for (const roomId of commonRoomIds) {
@@ -153,9 +190,9 @@ export default function Messages() {
 
               if (count === 2) {
                 await fetchRooms();
-                const existingRoom = rooms.find(r => r.id === roomId) || {
+                const existingRoom = rooms.find((r) => r.id === roomId) || {
                   ...room,
-                  members: [targetProfile]
+                  members: [targetProfile],
                 };
                 setSelectedRoom(existingRoom);
                 toast.success(`Conversation avec ${contactName} ouverte`);
@@ -166,28 +203,21 @@ export default function Messages() {
           }
         }
 
-        // Create new direct room with registered user
-        // IMPORTANT: don't rely on returning/select here because the room may not be selectable
-        // until the membership rows exist.
         const roomId = crypto.randomUUID();
         const nowIso = new Date().toISOString();
 
-        const { error: roomError } = await supabase
-          .from('chat_rooms')
-          .insert({
-            id: roomId,
-            type: 'direct',
-            name: null,
-          });
+        const { error: roomError } = await supabase.from('chat_rooms').insert({
+          id: roomId,
+          type: 'direct',
+          name: null,
+        });
 
         if (roomError) throw roomError;
 
-        const { error: memberError } = await supabase
-          .from('chat_room_members')
-          .insert([
-            { room_id: roomId, user_id: user.id },
-            { room_id: roomId, user_id: targetProfile.id },
-          ]);
+        const { error: memberError } = await supabase.from('chat_room_members').insert([
+          { room_id: roomId, user_id: user.id },
+          { room_id: roomId, user_id: targetProfile.id },
+        ]);
 
         if (memberError) throw memberError;
 
@@ -201,27 +231,20 @@ export default function Messages() {
         });
         toast.success(`Nouvelle conversation créée avec ${contactName}`);
       } else {
-        // User doesn't exist - create a named room that only the current user can see
-        // This allows sending messages to external contacts
         const roomId = crypto.randomUUID();
         const nowIso = new Date().toISOString();
 
-        const { error: roomError } = await supabase
-          .from('chat_rooms')
-          .insert({
-            id: roomId,
-            type: 'direct',
-            name: contactName, // Store contact name since they don't have a profile
-          });
+        const { error: roomError } = await supabase.from('chat_rooms').insert({
+          id: roomId,
+          type: 'direct',
+          name: contactName,
+        });
 
         if (roomError) throw roomError;
 
-        // Only add current user as member
         const { error: memberError } = await supabase
           .from('chat_room_members')
-          .insert([
-            { room_id: roomId, user_id: user.id },
-          ]);
+          .insert([{ room_id: roomId, user_id: user.id }]);
 
         if (memberError) throw memberError;
 
@@ -234,7 +257,9 @@ export default function Messages() {
           members: [],
         });
         toast.success(`Nouvelle conversation créée pour ${contactName}`);
-        toast.info(`${contactName} n'a pas encore de compte. Il pourra voir vos messages une fois inscrit.`, { duration: 5000 });
+        toast.info(`${contactName} n'a pas encore de compte. Il pourra voir vos messages une fois inscrit.`, {
+          duration: 5000,
+        });
       }
     } catch (error) {
       console.error('Error creating conversation:', error);
@@ -248,7 +273,6 @@ export default function Messages() {
     if (!user) return;
 
     try {
-      // Get rooms where user is a member
       const { data: memberRooms, error: memberError } = await supabase
         .from('chat_room_members')
         .select('room_id')
@@ -272,10 +296,8 @@ export default function Messages() {
 
       if (roomsError) throw roomsError;
 
-      // Fetch last message and members for each room
       const roomsWithDetails = await Promise.all(
         (roomsData || []).map(async (room) => {
-          // Get last message
           const { data: lastMessage } = await supabase
             .from('chat_messages')
             .select('content, created_at, user_id')
@@ -299,7 +321,6 @@ export default function Messages() {
             };
           }
 
-          // Get members
           const { data: members } = await supabase
             .from('chat_room_members')
             .select('user_id')
@@ -343,7 +364,6 @@ export default function Messages() {
 
       if (error) throw error;
 
-      // Fetch user info for each message
       const messagesWithUsers = await Promise.all(
         (data || []).map(async (msg) => {
           const { data: profile } = await supabase
@@ -389,6 +409,26 @@ export default function Messages() {
     }
   };
 
+  const handleDeleteMessage = async () => {
+    if (!messageToDelete) return;
+
+    setDeletingMessage(true);
+    try {
+      const { error } = await supabase.from('chat_messages').delete().eq('id', messageToDelete);
+
+      if (error) throw error;
+
+      setMessages((prev) => prev.filter((m) => m.id !== messageToDelete));
+      toast.success('Message supprimé');
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      toast.error('Erreur lors de la suppression du message');
+    } finally {
+      setDeletingMessage(false);
+      setMessageToDelete(null);
+    }
+  };
+
   const getRoomDisplayName = (room: ChatRoom) => {
     if (room.name) return room.name;
     if (room.type === 'direct' && room.members) {
@@ -398,6 +438,36 @@ export default function Messages() {
     return 'Conversation';
   };
 
+  const getRoomAvatar = (room: ChatRoom) => {
+    if (room.type === 'direct' && room.members) {
+      const otherMember = room.members.find((m) => m.id !== user?.id);
+      if (otherMember) {
+        return {
+          url: otherMember.avatar_url,
+          initials: `${otherMember.first_name?.[0] || ''}${otherMember.last_name?.[0] || ''}`,
+        };
+      }
+    }
+    return {
+      url: null,
+      initials: room.name?.[0]?.toUpperCase() || 'C',
+    };
+  };
+
+  const formatMessageDate = (dateString: string) => {
+    const date = new Date(dateString);
+    if (isToday(date)) {
+      return format(date, 'HH:mm', { locale: fr });
+    } else if (isYesterday(date)) {
+      return `Hier ${format(date, 'HH:mm', { locale: fr })}`;
+    }
+    return format(date, 'dd/MM HH:mm', { locale: fr });
+  };
+
+  const filteredRooms = rooms.filter((room) =>
+    getRoomDisplayName(room).toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-200px)]">
@@ -406,128 +476,276 @@ export default function Messages() {
     );
   }
 
-  return (
-    <div className="p-6 h-[calc(100vh-100px)]">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Messages</h1>
-      </div>
+  const showConversationList = !isMobile || !selectedRoom;
+  const showMessages = !isMobile || selectedRoom;
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100%-80px)]">
-        {/* Rooms List */}
-        <Card className="md:col-span-1 flex flex-col">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Conversations
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 p-0">
-            <ScrollArea className="h-[calc(100vh-350px)]">
-              {rooms.length === 0 ? (
-                <div className="p-4 text-center text-muted-foreground">
-                  <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>Aucune conversation</p>
+  return (
+    <div className="h-[calc(100vh-100px)] p-4 md:p-6">
+      <div className="h-full flex gap-4 max-w-7xl mx-auto">
+        {/* Conversations List */}
+        {showConversationList && (
+          <div
+            className={cn(
+              'flex flex-col bg-card rounded-2xl border shadow-sm overflow-hidden',
+              isMobile ? 'w-full' : 'w-80 min-w-80'
+            )}
+          >
+            {/* Search Header */}
+            <div className="p-4 border-b bg-muted/30">
+              <h2 className="text-lg font-semibold mb-3">Messages</h2>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 bg-background"
+                />
+              </div>
+            </div>
+
+            {/* Rooms List */}
+            <ScrollArea className="flex-1">
+              {filteredRooms.length === 0 ? (
+                <div className="p-6 text-center text-muted-foreground">
+                  <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">Aucune conversation</p>
                 </div>
               ) : (
-                <div className="space-y-1 p-2">
-                  {rooms.map((room) => (
-                    <button
-                      key={room.id}
-                      onClick={() => setSelectedRoom(room)}
-                      className={`w-full text-left p-3 rounded-lg transition-colors ${
-                        selectedRoom?.id === room.id
-                          ? 'bg-primary text-primary-foreground'
-                          : 'hover:bg-accent'
-                      }`}
-                    >
-                      <p className="font-medium truncate">{getRoomDisplayName(room)}</p>
-                      {room.last_message && (
-                        <p className={`text-sm truncate ${
-                          selectedRoom?.id === room.id ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                        }`}>
-                          {room.last_message.user_name}: {room.last_message.content}
-                        </p>
-                      )}
-                    </button>
-                  ))}
+                <div className="p-2">
+                  {filteredRooms.map((room) => {
+                    const avatar = getRoomAvatar(room);
+                    const isSelected = selectedRoom?.id === room.id;
+                    return (
+                      <button
+                        key={room.id}
+                        onClick={() => setSelectedRoom(room)}
+                        className={cn(
+                          'w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200',
+                          isSelected
+                            ? 'bg-primary text-primary-foreground shadow-md'
+                            : 'hover:bg-accent/50'
+                        )}
+                      >
+                        <Avatar className="h-11 w-11 ring-2 ring-background shadow-sm">
+                          <AvatarImage src={avatar.url || undefined} />
+                          <AvatarFallback
+                            className={cn(
+                              'font-medium',
+                              isSelected ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary'
+                            )}
+                          >
+                            {avatar.initials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0 text-left">
+                          <p className="font-medium truncate">{getRoomDisplayName(room)}</p>
+                          {room.last_message && (
+                            <p
+                              className={cn(
+                                'text-xs truncate mt-0.5',
+                                isSelected ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                              )}
+                            >
+                              {room.last_message.content}
+                            </p>
+                          )}
+                        </div>
+                        {room.last_message && (
+                          <span
+                            className={cn(
+                              'text-[10px] whitespace-nowrap',
+                              isSelected ? 'text-primary-foreground/60' : 'text-muted-foreground'
+                            )}
+                          >
+                            {formatMessageDate(room.last_message.created_at)}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </ScrollArea>
-          </CardContent>
-        </Card>
+          </div>
+        )}
 
         {/* Messages Area */}
-        <Card className="md:col-span-2 flex flex-col">
-          {selectedRoom ? (
-            <>
-              <CardHeader className="pb-3 border-b">
-                <CardTitle className="text-lg">{getRoomDisplayName(selectedRoom)}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 p-0 flex flex-col">
-                <ScrollArea className="flex-1 h-[calc(100vh-450px)] p-4">
-                  <div className="space-y-4">
-                    {messages.map((message) => {
-                      const isOwn = message.user_id === user?.id;
-                      return (
-                        <div
-                          key={message.id}
-                          className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
-                        >
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={message.user?.avatar_url || undefined} />
-                            <AvatarFallback>
-                              {message.user?.first_name?.[0]}
-                              {message.user?.last_name?.[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className={`max-w-[70%] ${isOwn ? 'text-right' : ''}`}>
-                            <p className="text-xs text-muted-foreground mb-1">
-                              {message.user?.first_name} {message.user?.last_name} •{' '}
-                              {format(new Date(message.created_at), 'HH:mm', { locale: fr })}
-                            </p>
-                            <div
-                              className={`inline-block p-3 rounded-lg ${
-                                isOwn
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted'
-                              }`}
-                            >
-                              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+        {showMessages && (
+          <div className="flex-1 flex flex-col bg-card rounded-2xl border shadow-sm overflow-hidden">
+            {selectedRoom ? (
+              <>
+                {/* Chat Header */}
+                <div className="flex items-center gap-3 p-4 border-b bg-muted/30">
+                  {isMobile && (
+                    <Button variant="ghost" size="icon" onClick={() => setSelectedRoom(null)} className="shrink-0">
+                      <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                  )}
+                  <Avatar className="h-10 w-10 ring-2 ring-background shadow-sm">
+                    <AvatarImage src={getRoomAvatar(selectedRoom).url || undefined} />
+                    <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                      {getRoomAvatar(selectedRoom).initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold truncate">{getRoomDisplayName(selectedRoom)}</h3>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedRoom.members?.length
+                        ? `${selectedRoom.members.length + 1} participants`
+                        : 'Conversation directe'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Messages */}
+                <ScrollArea className="flex-1 p-4">
+                  <div className="space-y-4 max-w-3xl mx-auto">
+                    {messages.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                        <p className="text-sm">Commencez la conversation</p>
+                      </div>
+                    ) : (
+                      messages.map((message) => {
+                        const isOwn = message.user_id === user?.id;
+                        return (
+                          <div
+                            key={message.id}
+                            className={cn('flex gap-2 group', isOwn ? 'justify-end' : 'justify-start')}
+                          >
+                            {!isOwn && (
+                              <Avatar className="h-8 w-8 mt-1 shrink-0">
+                                <AvatarImage src={message.user?.avatar_url || undefined} />
+                                <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+                                  {message.user?.first_name?.[0]}
+                                  {message.user?.last_name?.[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
+                            <div className={cn('max-w-[75%] flex flex-col', isOwn ? 'items-end' : 'items-start')}>
+                              <div className="flex items-center gap-2 mb-1">
+                                {!isOwn && (
+                                  <span className="text-xs font-medium text-muted-foreground">
+                                    {message.user?.first_name} {message.user?.last_name}
+                                  </span>
+                                )}
+                                <span className="text-[10px] text-muted-foreground/60">
+                                  {formatMessageDate(message.created_at)}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {isOwn && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      >
+                                        <MoreVertical className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem
+                                        className="text-destructive focus:text-destructive"
+                                        onClick={() => setMessageToDelete(message.id)}
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Supprimer
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
+                                <div
+                                  className={cn(
+                                    'px-4 py-2.5 rounded-2xl',
+                                    isOwn
+                                      ? 'bg-primary text-primary-foreground rounded-br-md'
+                                      : 'bg-muted rounded-bl-md'
+                                  )}
+                                >
+                                  <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                                </div>
+                              </div>
                             </div>
+                            {isOwn && (
+                              <Avatar className="h-8 w-8 mt-1 shrink-0">
+                                <AvatarImage src={message.user?.avatar_url || undefined} />
+                                <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                  {message.user?.first_name?.[0]}
+                                  {message.user?.last_name?.[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })
+                    )}
+                    <div ref={messagesEndRef} />
                   </div>
                 </ScrollArea>
-                <form onSubmit={handleSendMessage} className="p-4 border-t flex gap-2">
-                  <Input
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Écrivez votre message..."
-                    disabled={sendingMessage}
-                  />
-                  <Button type="submit" disabled={sendingMessage || !newMessage.trim()}>
-                    {sendingMessage ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </Button>
+
+                {/* Message Input */}
+                <form onSubmit={handleSendMessage} className="p-4 border-t bg-muted/30">
+                  <div className="flex gap-2 max-w-3xl mx-auto">
+                    <Input
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder="Écrivez votre message..."
+                      disabled={sendingMessage}
+                      className="flex-1 rounded-full bg-background px-4"
+                    />
+                    <Button
+                      type="submit"
+                      size="icon"
+                      disabled={sendingMessage || !newMessage.trim()}
+                      className="rounded-full h-10 w-10 shrink-0"
+                    >
+                      {sendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </form>
-              </CardContent>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <MessageSquare className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <p className="text-lg">Sélectionnez une conversation</p>
-                <p className="text-sm">ou créez-en une nouvelle</p>
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                    <MessageSquare className="h-10 w-10 opacity-50" />
+                  </div>
+                  <p className="text-lg font-medium">Sélectionnez une conversation</p>
+                  <p className="text-sm text-muted-foreground/70 mt-1">
+                    Choisissez une discussion dans la liste
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
-        </Card>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!messageToDelete} onOpenChange={() => setMessageToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce message ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Le message sera définitivement supprimé.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingMessage}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteMessage}
+              disabled={deletingMessage}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletingMessage ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
