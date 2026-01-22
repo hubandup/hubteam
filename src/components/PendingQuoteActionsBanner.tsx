@@ -229,7 +229,7 @@ export function PendingQuoteActionsBanner() {
 
   return (
     <>
-      <Card className="border-primary/50 bg-primary/5 mb-4">
+      <Card className="border-primary/50 mb-4" style={{ backgroundColor: 'rgba(231, 255, 71, 0.5)' }}>
         <div className="p-4">
           <div 
             className="flex items-center justify-between cursor-pointer"
@@ -259,7 +259,6 @@ export function PendingQuoteActionsBanner() {
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {action.customer_name}
-                      {action.amount && ` • ${action.amount.toLocaleString('fr-FR')} €`}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
