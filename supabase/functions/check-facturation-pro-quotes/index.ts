@@ -165,30 +165,54 @@ Deno.serve(async (req) => {
         continue
       }
 
-      // Get all admin users for notifications
-      const { data: adminUsers } = await supabaseClient
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'admin')
+      // Find the target user for notification: client's main contact or first admin
+      let targetUserId: string | null = null
 
-      // Create notifications for all admins
-      if (adminUsers && adminUsers.length > 0) {
-        const notifications = adminUsers.map(admin => ({
-          user_id: admin.user_id,
-          type: 'quote_accepted',
-          title: 'Devis accepté',
-          message: `Le devis ${quote.quote_ref || `#${quote.id}`} "${quote.title}" vient d'être accepté. Action requise.`,
-          link: '/projects?pending_quotes=true',
-        }))
+      // 1. Try to get the client's main_contact_id (the person responsible for this client)
+      if (client?.id) {
+        const { data: clientData } = await supabaseClient
+          .from('clients')
+          .select('main_contact_id')
+          .eq('id', client.id)
+          .single()
+        
+        if (clientData?.main_contact_id) {
+          targetUserId = clientData.main_contact_id
+          console.log(`Using client's main contact: ${targetUserId}`)
+        }
+      }
 
+      // 2. Fallback: get one admin (the first one found)
+      if (!targetUserId) {
+        const { data: adminUser } = await supabaseClient
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'admin')
+          .limit(1)
+          .single()
+        
+        if (adminUser) {
+          targetUserId = adminUser.user_id
+          console.log(`Using fallback admin: ${targetUserId}`)
+        }
+      }
+
+      // Create notification only for the target user
+      if (targetUserId) {
         const { error: notifError } = await supabaseClient
           .from('notifications')
-          .insert(notifications)
+          .insert({
+            user_id: targetUserId,
+            type: 'quote_accepted',
+            title: 'Devis accepté',
+            message: `Le devis ${quote.quote_ref || `#${quote.id}`} "${quote.title}" vient d'être accepté. Action requise.`,
+            link: '/projects?pending_quotes=true',
+          })
 
         if (notifError) {
-          console.error('Error creating notifications:', notifError)
+          console.error('Error creating notification:', notifError)
         } else {
-          console.log(`Created ${notifications.length} notifications for pending quote action`)
+          console.log(`Created notification for user ${targetUserId}`)
         }
       }
 

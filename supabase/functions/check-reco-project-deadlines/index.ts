@@ -85,24 +85,33 @@ Deno.serve(async (req) => {
 
     console.log(`Found ${upcomingSteps.length} upcoming steps to notify`);
 
-    // Get users with admin, team, or agency roles (exclude clients)
-    const { data: userRoles, error: rolesError } = await supabaseClient
-      .from('user_roles')
-      .select('user_id, role')
-      .in('role', ['admin', 'team', 'agency']);
-
-    if (rolesError) throw rolesError;
-
-    const eligibleUserIds = [...new Set(userRoles?.map(ur => ur.user_id) || [])];
-
-    console.log(`Found ${eligibleUserIds.length} eligible users for notifications`);
-
-    // Send notifications for each upcoming step
+    // Send notifications for each upcoming step - only to project team members
     for (const step of upcomingSteps) {
+      // Get team members for this specific project
+      const { data: teamMembers, error: teamError } = await supabaseClient
+        .from('project_team_members')
+        .select('member_id')
+        .eq('project_id', step.project_id)
+        .eq('member_type', 'profile');
+
+      if (teamError) {
+        console.error(`Error fetching team members for project ${step.project_id}:`, teamError);
+        continue;
+      }
+
+      const projectUserIds = [...new Set(teamMembers?.map(tm => tm.member_id) || [])];
+
+      if (projectUserIds.length === 0) {
+        console.log(`No team members found for project ${step.project_id}, skipping notification`);
+        continue;
+      }
+
+      console.log(`Found ${projectUserIds.length} team members for project ${step.project_name}`);
+
       const notificationMessage = `L'étape ${step.step_name} du projet ${step.project_name} est prévue demain.`;
 
-      // Create notifications for eligible users
-      const notifications = eligibleUserIds.map(userId => ({
+      // Create notifications only for project team members
+      const notifications = projectUserIds.map(userId => ({
         user_id: userId,
         type: 'deadline_approaching',
         title: 'Rappel : Étape de projet',
@@ -119,8 +128,8 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Send email notifications via Brevo
-      for (const userId of eligibleUserIds) {
+      // Send email notifications via Brevo only to project team members
+      for (const userId of projectUserIds) {
         try {
           const { error: emailError } = await supabaseClient.functions.invoke('send-notification-email', {
             body: {
@@ -152,7 +161,7 @@ Deno.serve(async (req) => {
       if (trackError) {
         console.error('Error tracking notification:', trackError);
       } else {
-        console.log(`Sent notifications for ${step.step_name} on project ${step.project_name}`);
+        console.log(`Sent ${projectUserIds.length} notifications for ${step.step_name} on project ${step.project_name}`);
       }
     }
 
