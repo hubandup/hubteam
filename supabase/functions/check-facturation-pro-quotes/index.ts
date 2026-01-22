@@ -10,8 +10,11 @@ const FACTURATION_PRO_API_URL = 'https://www.facturation.pro'
 interface FacturationProQuote {
   id: number
   customer_id: number
+  customer_identity?: string
   title: string
+  quote_ref?: string
   quote_status: number
+  total?: string
   accepted_date?: string
   invoiced_on?: string
   fully_invoiced?: boolean
@@ -81,8 +84,8 @@ Deno.serve(async (req) => {
       }
     })
 
-    // Filter for quotes to create projects
-    // Status 1 = À facturer (ready to invoice) -> create project
+    // Filter for quotes to process
+    // Status 1 = À facturer (ready to invoice) -> create pending action
     const quotesToProcess = quotes.filter(q => q.quote_status === 1)
     console.log(`Found ${quotesToProcess.length} quotes to process (À facturer)`)
 
@@ -108,11 +111,23 @@ Deno.serve(async (req) => {
     })
     console.log(`Found ${completedQuotes.length} completed quotes from previous fiscal year to archive`)
 
-    let createdProjects = 0
+    let pendingActionsCreated = 0
     let archivedProjects = 0
 
-    // Process quotes to create projects
+    // Process quotes to create pending actions instead of auto-creating projects
     for (const quote of quotesToProcess) {
+      // Check if a pending action already exists for this quote
+      const { data: existingAction } = await supabaseClient
+        .from('pending_quote_actions')
+        .select('id, status')
+        .eq('quote_id', quote.id)
+        .single()
+
+      if (existingAction) {
+        console.log(`Pending action already exists for quote ${quote.id} (status: ${existingAction.status})`)
+        continue
+      }
+
       // Check if project already exists for this quote
       const { data: existingProject } = await supabaseClient
         .from('projects')
@@ -125,15 +140,28 @@ Deno.serve(async (req) => {
         continue
       }
 
-      // Find the corresponding client in our CRM
+      // Find the corresponding client in our CRM to get customer name
       const { data: client } = await supabaseClient
         .from('clients')
-        .select('id')
+        .select('id, company')
         .eq('facturation_pro_id', quote.customer_id.toString())
         .single()
 
-      if (!client) {
-        console.warn(`Client not found for Facturation.PRO customer_id: ${quote.customer_id}`)
+      // Create pending action
+      const { error: insertError } = await supabaseClient
+        .from('pending_quote_actions')
+        .insert({
+          quote_id: quote.id,
+          quote_ref: quote.quote_ref || `D-${quote.id}`,
+          quote_title: quote.title,
+          customer_id: quote.customer_id,
+          customer_name: client?.company || quote.customer_identity || 'Client inconnu',
+          amount: quote.total ? parseFloat(quote.total) : null,
+          status: 'pending',
+        })
+
+      if (insertError) {
+        console.error(`Error creating pending action for quote ${quote.id}:`, insertError)
         continue
       }
 
@@ -143,42 +171,14 @@ Deno.serve(async (req) => {
         .select('user_id')
         .eq('role', 'admin')
 
-      const firstAdmin = adminUsers?.[0]
-
-      // Create the project
-      const { data: newProject, error: projectError } = await supabaseClient
-        .from('projects')
-        .insert({
-          name: quote.title,
-          description: `Projet créé automatiquement depuis le devis #${quote.id}`,
-          status: 'active',
-          start_date: quote.accepted_date || new Date().toISOString().split('T')[0],
-          created_by: firstAdmin?.user_id,
-        })
-        .select()
-        .single()
-
-      if (projectError) {
-        console.error(`Error creating project for quote ${quote.id}:`, projectError)
-        continue
-      }
-
-      // Link the project to the client
-      await supabaseClient
-        .from('project_clients')
-        .insert({
-          project_id: newProject.id,
-          client_id: client.id,
-        })
-
       // Create notifications for all admins
       if (adminUsers && adminUsers.length > 0) {
         const notifications = adminUsers.map(admin => ({
           user_id: admin.user_id,
-          type: 'project_created',
-          title: 'Nouveau projet créé automatiquement',
-          message: `Le projet "${quote.title}" a été créé depuis un devis accepté`,
-          link: `/project/${newProject.id}`,
+          type: 'quote_accepted',
+          title: 'Devis accepté',
+          message: `Le devis ${quote.quote_ref || `#${quote.id}`} "${quote.title}" vient d'être accepté. Action requise.`,
+          link: '/projects?pending_quotes=true',
         }))
 
         const { error: notifError } = await supabaseClient
@@ -186,36 +186,14 @@ Deno.serve(async (req) => {
           .insert(notifications)
 
         if (notifError) {
-          console.error('Error creating notifications:', notifError);
+          console.error('Error creating notifications:', notifError)
         } else {
-          console.log(`Created ${notifications.length} notifications`);
-
-          // Send email notifications via Brevo
-          for (const notification of notifications) {
-            try {
-              const { error: emailError } = await supabaseClient.functions.invoke('send-notification-email', {
-                body: {
-                  userId: notification.user_id,
-                  title: notification.title,
-                  message: notification.message,
-                  link: notification.link,
-                }
-              });
-
-              if (emailError) {
-                console.error(`Error sending email to ${notification.user_id}:`, emailError);
-              } else {
-                console.log(`Email sent to ${notification.user_id}`);
-              }
-            } catch (emailErr) {
-              console.error('Failed to invoke email function:', emailErr);
-            }
-          }
+          console.log(`Created ${notifications.length} notifications for pending quote action`)
         }
       }
 
-      createdProjects++
-      console.log(`Created project "${quote.title}" for quote ${quote.id} (status: ${quote.quote_status})`)
+      pendingActionsCreated++
+      console.log(`Created pending action for quote ${quote.id}: "${quote.title}"`)
     }
 
     // Archive projects for completed quotes from previous fiscal year
@@ -258,7 +236,7 @@ Deno.serve(async (req) => {
         totalQuotes: quotes.length,
         quotesToProcess: quotesToProcess.length,
         completedQuotesFromPreviousFiscalYear: completedQuotes.length,
-        createdProjects,
+        pendingActionsCreated,
         archivedProjects,
         message: 'Quote check completed',
       }),

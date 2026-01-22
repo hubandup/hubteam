@@ -22,6 +22,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
 import { useProjects, useArchivedProjects } from '@/hooks/useProjects';
 import { PageLoader } from '@/components/PageLoader';
+import { PendingQuoteActionsBanner } from '@/components/PendingQuoteActionsBanner';
 
 export default function Projects() {
   const navigate = useNavigate();
@@ -148,6 +149,8 @@ export default function Projects() {
 
   return (
     <div className="space-y-3 md:space-y-6">
+      <PendingQuoteActionsBanner />
+      
       <div>
         <h1 className="text-xl md:text-3xl font-bold text-foreground mb-0.5">Projets</h1>
         <p className="text-muted-foreground text-xs md:text-base">Gérez tous vos projets</p>
