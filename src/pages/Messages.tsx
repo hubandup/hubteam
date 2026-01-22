@@ -113,95 +113,117 @@ export default function Messages() {
     
     setCreatingRoom(true);
     try {
-      // Find the user by email
+      // First try to find a registered user with this email
       const { data: targetProfile } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, avatar_url')
         .eq('email', contactEmail)
         .maybeSingle();
 
-      if (!targetProfile) {
-        toast.error(`L'utilisateur ${contactName} n'a pas encore de compte sur la plateforme`);
-        setCreatingRoom(false);
-        return;
-      }
+      if (targetProfile) {
+        // User exists - check for existing direct room
+        const { data: myRooms } = await supabase
+          .from('chat_room_members')
+          .select('room_id')
+          .eq('user_id', user.id);
 
-      // Check if a direct room already exists between these two users
-      const { data: myRooms } = await supabase
-        .from('chat_room_members')
-        .select('room_id')
-        .eq('user_id', user.id);
+        const { data: theirRooms } = await supabase
+          .from('chat_room_members')
+          .select('room_id')
+          .eq('user_id', targetProfile.id);
 
-      const { data: theirRooms } = await supabase
-        .from('chat_room_members')
-        .select('room_id')
-        .eq('user_id', targetProfile.id);
+        const myRoomIds = myRooms?.map(r => r.room_id) || [];
+        const theirRoomIds = theirRooms?.map(r => r.room_id) || [];
+        const commonRoomIds = myRoomIds.filter(id => theirRoomIds.includes(id));
 
-      const myRoomIds = myRooms?.map(r => r.room_id) || [];
-      const theirRoomIds = theirRooms?.map(r => r.room_id) || [];
-      const commonRoomIds = myRoomIds.filter(id => theirRoomIds.includes(id));
+        if (commonRoomIds.length > 0) {
+          for (const roomId of commonRoomIds) {
+            const { data: room } = await supabase
+              .from('chat_rooms')
+              .select('*')
+              .eq('id', roomId)
+              .eq('type', 'direct')
+              .single();
 
-      if (commonRoomIds.length > 0) {
-        // Check if any of these are direct rooms with only 2 members
-        for (const roomId of commonRoomIds) {
-          const { data: room } = await supabase
-            .from('chat_rooms')
-            .select('*')
-            .eq('id', roomId)
-            .eq('type', 'direct')
-            .single();
+            if (room) {
+              const { count } = await supabase
+                .from('chat_room_members')
+                .select('*', { count: 'exact', head: true })
+                .eq('room_id', roomId);
 
-          if (room) {
-            const { count } = await supabase
-              .from('chat_room_members')
-              .select('*', { count: 'exact', head: true })
-              .eq('room_id', roomId);
-
-            if (count === 2) {
-              // Found existing direct conversation
-              await fetchRooms();
-              const existingRoom = rooms.find(r => r.id === roomId) || {
-                ...room,
-                members: [targetProfile]
-              };
-              setSelectedRoom(existingRoom);
-              toast.success(`Conversation avec ${contactName} ouverte`);
-              setCreatingRoom(false);
-              return;
+              if (count === 2) {
+                await fetchRooms();
+                const existingRoom = rooms.find(r => r.id === roomId) || {
+                  ...room,
+                  members: [targetProfile]
+                };
+                setSelectedRoom(existingRoom);
+                toast.success(`Conversation avec ${contactName} ouverte`);
+                setCreatingRoom(false);
+                return;
+              }
             }
           }
         }
+
+        // Create new direct room with registered user
+        const { data: newRoom, error: roomError } = await supabase
+          .from('chat_rooms')
+          .insert({
+            type: 'direct',
+            name: null,
+          })
+          .select()
+          .single();
+
+        if (roomError) throw roomError;
+
+        const { error: memberError } = await supabase
+          .from('chat_room_members')
+          .insert([
+            { room_id: newRoom.id, user_id: user.id },
+            { room_id: newRoom.id, user_id: targetProfile.id },
+          ]);
+
+        if (memberError) throw memberError;
+
+        await fetchRooms();
+        setSelectedRoom({
+          ...newRoom,
+          members: [targetProfile],
+        });
+        toast.success(`Nouvelle conversation créée avec ${contactName}`);
+      } else {
+        // User doesn't exist - create a named room that only the current user can see
+        // This allows sending messages to external contacts
+        const { data: newRoom, error: roomError } = await supabase
+          .from('chat_rooms')
+          .insert({
+            type: 'direct',
+            name: contactName, // Store contact name since they don't have a profile
+          })
+          .select()
+          .single();
+
+        if (roomError) throw roomError;
+
+        // Only add current user as member
+        const { error: memberError } = await supabase
+          .from('chat_room_members')
+          .insert([
+            { room_id: newRoom.id, user_id: user.id },
+          ]);
+
+        if (memberError) throw memberError;
+
+        await fetchRooms();
+        setSelectedRoom({
+          ...newRoom,
+          members: [],
+        });
+        toast.success(`Nouvelle conversation créée pour ${contactName}`);
+        toast.info(`${contactName} n'a pas encore de compte. Il pourra voir vos messages une fois inscrit.`, { duration: 5000 });
       }
-
-      // Create new direct room
-      const { data: newRoom, error: roomError } = await supabase
-        .from('chat_rooms')
-        .insert({
-          type: 'direct',
-          name: null,
-        })
-        .select()
-        .single();
-
-      if (roomError) throw roomError;
-
-      // Add both users as members
-      const { error: memberError } = await supabase
-        .from('chat_room_members')
-        .insert([
-          { room_id: newRoom.id, user_id: user.id },
-          { room_id: newRoom.id, user_id: targetProfile.id },
-        ]);
-
-      if (memberError) throw memberError;
-
-      // Refresh rooms and select the new one
-      await fetchRooms();
-      setSelectedRoom({
-        ...newRoom,
-        members: [targetProfile],
-      });
-      toast.success(`Nouvelle conversation créée avec ${contactName}`);
     } catch (error) {
       console.error('Error creating conversation:', error);
       toast.error('Erreur lors de la création de la conversation');
