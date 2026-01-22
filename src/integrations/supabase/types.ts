@@ -1570,6 +1570,7 @@ export type Database = {
           description: string | null
           end_date: string | null
           id: string
+          position: number | null
           priority: string
           project_id: string | null
           start_date: string | null
@@ -1584,6 +1585,7 @@ export type Database = {
           description?: string | null
           end_date?: string | null
           id?: string
+          position?: number | null
           priority?: string
           project_id?: string | null
           start_date?: string | null
@@ -1598,6 +1600,7 @@ export type Database = {
           description?: string | null
           end_date?: string | null
           id?: string
+          position?: number | null
           priority?: string
           project_id?: string | null
           start_date?: string | null
