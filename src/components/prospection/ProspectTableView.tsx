@@ -8,6 +8,7 @@ import { fr } from 'date-fns/locale';
 import { MoreHorizontal, Phone, Calendar, AlertTriangle, CheckCircle, XCircle, Plus } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ProspectCard } from './ProspectCard';
+import { generateColorFromString } from '@/lib/utils';
 
 interface ProspectTableViewProps {
   prospects: Prospect[];
@@ -44,6 +45,7 @@ export function ProspectTableView({ prospects, onProspectClick, onQuickAction }:
         <TableRow>
           <TableHead>Entreprise</TableHead>
           <TableHead>Contact</TableHead>
+          <TableHead>Expertises</TableHead>
           <TableHead>Canal</TableHead>
           <TableHead>Statut</TableHead>
           <TableHead className="text-center">Priorité</TableHead>
@@ -76,6 +78,37 @@ export function ProspectTableView({ prospects, onProspectClick, onQuickAction }:
             >
               <TableCell className="font-medium">{prospect.company_name}</TableCell>
               <TableCell>{prospect.contact_name}</TableCell>
+              <TableCell>
+                <div className="flex flex-wrap gap-1 max-w-[150px]">
+                  {(prospect.offer_tags || []).slice(0, 2).map((tag) => {
+                    const tagColor = generateColorFromString(tag);
+                    return (
+                      <span
+                        key={tag}
+                        className="inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium truncate max-w-[70px]"
+                        style={{
+                          backgroundColor: `${tagColor}15`.replace('hsl', 'hsla').replace(')', ', 0.15)'),
+                          color: tagColor,
+                        }}
+                        title={tag}
+                      >
+                        {tag}
+                      </span>
+                    );
+                  })}
+                  {(prospect.offer_tags || []).length > 2 && (
+                    <span 
+                      className="inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground"
+                      title={(prospect.offer_tags || []).slice(2).join(', ')}
+                    >
+                      +{(prospect.offer_tags || []).length - 2}
+                    </span>
+                  )}
+                  {(!prospect.offer_tags || prospect.offer_tags.length === 0) && (
+                    <span className="text-muted-foreground text-xs">-</span>
+                  )}
+                </div>
+              </TableCell>
               <TableCell>
                 <Badge variant="outline" className="text-xs">
                   {prospect.channel}
