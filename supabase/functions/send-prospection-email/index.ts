@@ -226,8 +226,9 @@ const handler = async (req: Request): Promise<Response> => {
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <div>${processedMessage}</div>
               <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;" />
-              <p style="color: #666; font-size: 12px;">
-                Cet email a été envoyé depuis Hub Team
+              <p style="color: #666; font-size: 12px; text-align: center;">
+                Cet email a été envoyé depuis Hub Team<br />
+                <a href="mailto:noreply@hubandup.com?subject=Désabonnement&body=Je souhaite me désabonner de vos communications." style="color: #666; text-decoration: underline;">Se désabonner</a>
               </p>
             </div>
           `,
