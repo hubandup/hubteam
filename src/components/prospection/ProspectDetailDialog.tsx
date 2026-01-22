@@ -381,25 +381,30 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
                               {availableTags.map((tag) => {
                                 const isSelected = editData.offer_tag === tag.name;
                                 return (
-                                  <Badge
+                                  <button
                                     key={tag.id}
-                                    variant={isSelected ? 'default' : 'outline'}
-                                    className="cursor-pointer transition-all hover:scale-105 text-xs"
+                                    type="button"
+                                    className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer hover:scale-105 ${isSelected ? 'text-white' : ''}`}
                                     style={isSelected ? {
                                       backgroundColor: tag.color,
                                       borderColor: tag.color,
                                       color: 'white',
                                     } : {
-                                      borderColor: `${tag.color}80`,
+                                      borderColor: tag.color,
                                       color: tag.color,
+                                      backgroundColor: 'transparent',
                                     }}
-                                    onClick={() => setEditData(prev => ({ 
-                                      ...prev, 
-                                      offer_tag: isSelected ? '' : tag.name 
-                                    }))}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setEditData(prev => ({ 
+                                        ...prev, 
+                                        offer_tag: isSelected ? '' : tag.name 
+                                      }));
+                                    }}
                                   >
                                     {tag.name}
-                                  </Badge>
+                                  </button>
                                 );
                               })}
                             </div>
