@@ -60,8 +60,13 @@ export default function Unsubscribe() {
             Désabonnement
           </CardTitle>
           <CardDescription>
-            {email ? `Gérez vos préférences email pour ${email}` : "Gérez vos préférences email"}
+            Gérez vos préférences email
           </CardDescription>
+          {email && (
+            <p className="mt-2 text-sm font-medium text-foreground bg-muted px-3 py-1.5 rounded-md inline-block">
+              {email}
+            </p>
+          )}
         </CardHeader>
         
         <CardContent className="space-y-4">
