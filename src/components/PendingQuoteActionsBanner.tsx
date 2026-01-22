@@ -229,71 +229,78 @@ export function PendingQuoteActionsBanner() {
 
   return (
     <>
-      <Card className="border-primary/50 mb-4" style={{ backgroundColor: 'rgba(231, 255, 71, 0.5)' }}>
-        <div className="p-4">
-          <div 
-            className="flex items-center justify-between cursor-pointer"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              <span className="font-semibold text-primary">
+      <div className="mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-[#E8FF4C]/20 via-[#E8FF4C]/10 to-transparent border border-[#E8FF4C]/30 backdrop-blur-sm">
+        <div 
+          className="flex items-center justify-between p-4 cursor-pointer hover:bg-[#E8FF4C]/5 transition-colors"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#E8FF4C]/20 border border-[#E8FF4C]/30">
+              <FileText className="h-5 w-5 text-[#014a94] dark:text-[#E8FF4C]" />
+            </div>
+            <div>
+              <span className="font-semibold text-foreground">
                 {pendingActions.length} devis accepté{pendingActions.length > 1 ? 's' : ''} en attente d'action
               </span>
+              <p className="text-xs text-muted-foreground">
+                Créez ou associez un projet pour chaque devis
+              </p>
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
           </div>
-
-          {isExpanded && (
-            <div className="mt-4 space-y-3">
-              {pendingActions.map((action) => (
-                <div 
-                  key={action.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-background rounded-lg border"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">
-                      Devis {action.quote_ref} - {action.quote_title}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {action.customer_name}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openLinkDialog(action)}
-                      disabled={isLoading}
-                    >
-                      <Link2 className="h-4 w-4 mr-1" />
-                      Associer
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => handleCreateProject(action)}
-                      disabled={isLoading}
-                    >
-                      <FolderPlus className="h-4 w-4 mr-1" />
-                      Créer le projet
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8"
-                      onClick={() => handleDismiss(action)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-[#E8FF4C]/20">
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
         </div>
-      </Card>
+
+        {isExpanded && (
+          <div className="px-4 pb-4 space-y-3">
+            {pendingActions.map((action) => (
+              <div 
+                key={action.id}
+                className="group relative flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-card/80 backdrop-blur-sm rounded-xl border border-border/50 hover:border-primary/30 hover:shadow-sm transition-all duration-200"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground truncate">
+                    {action.quote_ref} — {action.quote_title}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {action.customer_name}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-lg border-border/60 hover:border-primary/50 hover:bg-primary/5"
+                    onClick={() => openLinkDialog(action)}
+                    disabled={isLoading}
+                  >
+                    <Link2 className="h-4 w-4 mr-1.5" />
+                    Associer
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="rounded-lg bg-[#014a94] hover:bg-[#014a94]/90 text-white shadow-sm"
+                    onClick={() => handleCreateProject(action)}
+                    disabled={isLoading}
+                  >
+                    <FolderPlus className="h-4 w-4 mr-1.5" />
+                    Créer le projet
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 rounded-full opacity-60 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => handleDismiss(action)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
         <DialogContent>
