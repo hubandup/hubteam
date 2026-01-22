@@ -107,7 +107,6 @@ export default function AgencyDetails() {
       value: 'projects',
       label: 'Projets',
       icon: <FolderKanban className="h-4 w-4" />,
-      badge: projectsCount,
       content: <AgencyProjectsTab agencyId={agency.id} />
     },
     {
