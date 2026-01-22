@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import { useCreateProspect, PROSPECT_CHANNELS, PROSPECT_PRIORITIES, PROSPECT_STA
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { generateColorFromString } from '@/lib/utils';
-import { Check } from 'lucide-react';
+import { Check, Search } from 'lucide-react';
 
 interface AddProspectDialogProps {
   open: boolean;
@@ -26,6 +26,7 @@ interface AddProspectDialogProps {
 export function AddProspectDialog({ open, onOpenChange, defaultValues }: AddProspectDialogProps) {
   const createProspect = useCreateProspect();
   const [availableExpertises, setAvailableExpertises] = useState<string[]>([]);
+  const [expertiseSearch, setExpertiseSearch] = useState('');
 
   const [formData, setFormData] = useState({
     company_name: defaultValues?.company_name || '',
@@ -84,6 +85,14 @@ export function AddProspectDialog({ open, onOpenChange, defaultValues }: AddPros
       }
     });
   };
+
+  const filteredExpertises = useMemo(() => {
+    if (!expertiseSearch.trim()) return availableExpertises;
+    const search = expertiseSearch.toLowerCase().trim();
+    return availableExpertises.filter(tag => 
+      tag.toLowerCase().includes(search)
+    );
+  }, [availableExpertises, expertiseSearch]);
 
   const handleSubmit = async () => {
     if (!formData.company_name.trim() || !formData.contact_name.trim() || !formData.email.trim()) {
@@ -312,43 +321,59 @@ export function AddProspectDialog({ open, onOpenChange, defaultValues }: AddPros
             />
           </div>
 
-          {/* Expertises multi-select */}
+          {/* Expertises multi-select with search */}
           <div className="space-y-2">
-            <Label>Expertises</Label>
+            <Label>Expertises {formData.offer_tags.length > 0 && <span className="text-muted-foreground">({formData.offer_tags.length} sélectionnée{formData.offer_tags.length > 1 ? 's' : ''})</span>}</Label>
             {availableExpertises.length === 0 ? (
               <p className="text-xs text-muted-foreground italic">
                 Aucune expertise disponible. Ajoutez des tags sur vos fiches agences.
               </p>
             ) : (
-              <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 border rounded-md bg-muted/30">
-                {availableExpertises.map((tag) => {
-                  const isSelected = formData.offer_tags.includes(tag);
-                  const tagColor = generateColorFromString(tag);
-                  return (
-                    <button
-                      key={tag}
-                      type="button"
-                      className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer hover:scale-105`}
-                      style={isSelected ? {
-                        backgroundColor: tagColor,
-                        borderColor: tagColor,
-                        color: 'white',
-                      } : {
-                        borderColor: tagColor,
-                        color: tagColor,
-                        backgroundColor: 'transparent',
-                      }}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggleExpertise(tag);
-                      }}
-                    >
-                      {isSelected && <Check className="h-3 w-3" />}
-                      {tag}
-                    </button>
-                  );
-                })}
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Rechercher une expertise..."
+                    value={expertiseSearch}
+                    onChange={(e) => setExpertiseSearch(e.target.value)}
+                    className="pl-8 h-8"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 border rounded-md bg-muted/30">
+                  {filteredExpertises.length === 0 ? (
+                    <p className="text-xs text-muted-foreground italic py-2">Aucune expertise trouvée</p>
+                  ) : (
+                    filteredExpertises.map((tag) => {
+                      const isSelected = formData.offer_tags.includes(tag);
+                      const tagColor = generateColorFromString(tag);
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer hover:scale-105`}
+                          style={isSelected ? {
+                            backgroundColor: tagColor,
+                            borderColor: tagColor,
+                            color: 'white',
+                          } : {
+                            borderColor: tagColor,
+                            color: tagColor,
+                            backgroundColor: 'transparent',
+                          }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toggleExpertise(tag);
+                          }}
+                        >
+                          {isSelected && <Check className="h-3 w-3" />}
+                          {tag}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
               </div>
             )}
           </div>
