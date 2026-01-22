@@ -167,43 +167,52 @@ export default function Messages() {
         }
 
         // Create new direct room with registered user
-        const { data: newRoom, error: roomError } = await supabase
+        // IMPORTANT: don't rely on returning/select here because the room may not be selectable
+        // until the membership rows exist.
+        const roomId = crypto.randomUUID();
+        const nowIso = new Date().toISOString();
+
+        const { error: roomError } = await supabase
           .from('chat_rooms')
           .insert({
+            id: roomId,
             type: 'direct',
             name: null,
-          })
-          .select()
-          .single();
+          });
 
         if (roomError) throw roomError;
 
         const { error: memberError } = await supabase
           .from('chat_room_members')
           .insert([
-            { room_id: newRoom.id, user_id: user.id },
-            { room_id: newRoom.id, user_id: targetProfile.id },
+            { room_id: roomId, user_id: user.id },
+            { room_id: roomId, user_id: targetProfile.id },
           ]);
 
         if (memberError) throw memberError;
 
         await fetchRooms();
         setSelectedRoom({
-          ...newRoom,
+          id: roomId,
+          type: 'direct',
+          name: null,
+          created_at: nowIso,
           members: [targetProfile],
         });
         toast.success(`Nouvelle conversation créée avec ${contactName}`);
       } else {
         // User doesn't exist - create a named room that only the current user can see
         // This allows sending messages to external contacts
-        const { data: newRoom, error: roomError } = await supabase
+        const roomId = crypto.randomUUID();
+        const nowIso = new Date().toISOString();
+
+        const { error: roomError } = await supabase
           .from('chat_rooms')
           .insert({
+            id: roomId,
             type: 'direct',
             name: contactName, // Store contact name since they don't have a profile
-          })
-          .select()
-          .single();
+          });
 
         if (roomError) throw roomError;
 
@@ -211,14 +220,17 @@ export default function Messages() {
         const { error: memberError } = await supabase
           .from('chat_room_members')
           .insert([
-            { room_id: newRoom.id, user_id: user.id },
+            { room_id: roomId, user_id: user.id },
           ]);
 
         if (memberError) throw memberError;
 
         await fetchRooms();
         setSelectedRoom({
-          ...newRoom,
+          id: roomId,
+          type: 'direct',
+          name: contactName,
+          created_at: nowIso,
           members: [],
         });
         toast.success(`Nouvelle conversation créée pour ${contactName}`);
