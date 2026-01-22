@@ -93,3 +93,7 @@ verify_jwt = false
 
 [functions.fetch-treasury-data]
 verify_jwt = false
+
+# Unsubscribe handler - public for email links
+[functions.handle-unsubscribe]
+verify_jwt = false

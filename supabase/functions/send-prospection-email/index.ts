@@ -4,6 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const APP_URL = "https://hubteam.lovable.app";
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -177,14 +178,38 @@ const handler = async (req: Request): Promise<Response> => {
       userId = user?.id || null;
     }
 
-    console.log(`Sending prospection emails to ${recipients.length} recipients (user: ${userId})`);
+    console.log(`Processing ${recipients.length} recipients (user: ${userId})`);
 
     if (!BREVO_API_KEY) {
       throw new Error("BREVO_API_KEY is not configured");
     }
 
-    // Send emails to all recipients using Brevo API
-    const emailPromises = recipients.map(async (recipient) => {
+    // Check for unsubscribed emails
+    const emails = recipients.map(r => r.email.toLowerCase().trim());
+    const { data: unsubscribedProspects } = await supabaseAdmin
+      .from('prospects')
+      .select('email')
+      .in('email', emails)
+      .eq('unsubscribed', true);
+    
+    const unsubscribedEmails = new Set(
+      (unsubscribedProspects || []).map(p => p.email.toLowerCase())
+    );
+    
+    // Filter out unsubscribed recipients
+    const eligibleRecipients = recipients.filter(
+      r => !unsubscribedEmails.has(r.email.toLowerCase().trim())
+    );
+    const skippedCount = recipients.length - eligibleRecipients.length;
+    
+    if (skippedCount > 0) {
+      console.log(`Skipped ${skippedCount} unsubscribed recipients`);
+    }
+    
+    console.log(`Sending emails to ${eligibleRecipients.length} eligible recipients`);
+
+    // Send emails to eligible recipients using Brevo API
+    const emailPromises = eligibleRecipients.map(async (recipient) => {
       // Sanitize name inputs but NOT the message (to preserve HTML for images)
       const safeFirstName = escapeHtml(recipient.firstName);
       const safeLastName = escapeHtml(recipient.lastName);
@@ -228,7 +253,7 @@ const handler = async (req: Request): Promise<Response> => {
               <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;" />
               <p style="color: #666; font-size: 12px; text-align: center;">
                 Cet email a été envoyé depuis Hub Team<br />
-                <a href="mailto:noreply@hubandup.com?subject=Désabonnement&body=Je souhaite me désabonner de vos communications." style="color: #666; text-decoration: underline;">Se désabonner</a>
+                <a href="${APP_URL}/unsubscribe?email=${encodeURIComponent(recipient.email)}" style="color: #666; text-decoration: underline;">Se désabonner</a>
               </p>
             </div>
           `,
@@ -284,14 +309,15 @@ const handler = async (req: Request): Promise<Response> => {
     const successCount = results.filter(r => r.status === 'fulfilled').length;
     const failureCount = results.filter(r => r.status === 'rejected').length;
 
-    console.log(`Emails sent: ${successCount} succeeded, ${failureCount} failed`);
+    console.log(`Emails sent: ${successCount} succeeded, ${failureCount} failed, ${skippedCount} skipped (unsubscribed)`);
 
     return new Response(
       JSON.stringify({ 
         success: true,
         sent: successCount,
-        failed: failureCount 
-      }), 
+        failed: failureCount,
+        skipped: skippedCount
+      }),
       {
         status: 200,
         headers: {

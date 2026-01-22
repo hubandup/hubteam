@@ -28,6 +28,7 @@ import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import SetPassword from "./pages/SetPassword";
 import Install from "./pages/Install";
+import Unsubscribe from "./pages/Unsubscribe";
 import NotFound from "./pages/NotFound";
 import { useEffect, useState } from "react";
 
@@ -85,6 +86,7 @@ const App = () => {
             <Route path="/faq" element={<ProtectedRoute><Layout><FAQ /></Layout></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
             <Route path="/install" element={<Install />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
