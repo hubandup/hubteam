@@ -818,7 +818,7 @@ export default function Messages() {
                             )}
                           </div>
                           <div className="flex-1 min-w-0 text-left">
-                            <p className={cn('font-medium truncate', hasUnread && !isSelected && 'font-semibold')}>
+                            <p className={cn('font-medium truncate mt-1', hasUnread && !isSelected && 'font-semibold')}>
                               {getRoomDisplayName(room)}
                             </p>
                             {room.last_message && (
