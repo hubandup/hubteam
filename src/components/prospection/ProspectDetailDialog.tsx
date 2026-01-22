@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Prospect, Interaction, useInteractions, useUpdateProspect, PROSPECT_STATUSES, PROSPECT_CHANNELS, PROSPECT_PRIORITIES, ProspectStatus, ProspectChannel, ProspectPriority } from '@/hooks/useProspects';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Building2, User, Phone, Mail, Linkedin, Calendar, Euro, MessageSquare, Edit2, Save, X, Plus, Check } from 'lucide-react';
+import { Building2, User, Phone, Mail, Linkedin, Calendar, Euro, MessageSquare, Edit2, Save, X, Plus, Check, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { AddInteractionDialog } from './AddInteractionDialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,6 +32,7 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
   const [editData, setEditData] = useState<Partial<Prospect>>({});
   const [addInteractionOpen, setAddInteractionOpen] = useState(false);
   const [availableExpertises, setAvailableExpertises] = useState<string[]>([]);
+  const [expertiseSearch, setExpertiseSearch] = useState('');
 
   useEffect(() => {
     const loadExpertises = async () => {
@@ -56,6 +57,14 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
     };
     loadExpertises();
   }, []);
+
+  const filteredExpertises = useMemo(() => {
+    if (!expertiseSearch.trim()) return availableExpertises;
+    const search = expertiseSearch.toLowerCase().trim();
+    return availableExpertises.filter(tag => 
+      tag.toLowerCase().includes(search)
+    );
+  }, [availableExpertises, expertiseSearch]);
 
   if (!prospect) return null;
 
@@ -395,41 +404,57 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
                       {isEditing ? (
                         <>
                           <div className="space-y-2">
-                            <Label className="text-xs">Expertises (cliquez pour sélectionner)</Label>
+                            <Label className="text-xs">Expertises {(editData.offer_tags || []).length > 0 && <span className="text-muted-foreground">({(editData.offer_tags || []).length} sélectionnée{(editData.offer_tags || []).length > 1 ? 's' : ''})</span>}</Label>
                             {availableExpertises.length === 0 ? (
                               <p className="text-xs text-muted-foreground italic">
                                 Aucune expertise disponible. Ajoutez des tags sur vos fiches agences.
                               </p>
                             ) : (
-                              <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-2 border rounded-md bg-muted/30">
-                                {availableExpertises.map((tag) => {
-                                  const isSelected = (editData.offer_tags || []).includes(tag);
-                                  const tagColor = generateColorFromString(tag);
-                                  return (
-                                    <button
-                                      key={tag}
-                                      type="button"
-                                      className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer hover:scale-105`}
-                                      style={isSelected ? {
-                                        backgroundColor: tagColor,
-                                        borderColor: tagColor,
-                                        color: 'white',
-                                      } : {
-                                        borderColor: tagColor,
-                                        color: tagColor,
-                                        backgroundColor: 'transparent',
-                                      }}
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        toggleExpertise(tag);
-                                      }}
-                                    >
-                                      {isSelected && <Check className="h-3 w-3" />}
-                                      {tag}
-                                    </button>
-                                  );
-                                })}
+                              <div className="space-y-2">
+                                <div className="relative">
+                                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                  <Input
+                                    type="text"
+                                    placeholder="Rechercher une expertise..."
+                                    value={expertiseSearch}
+                                    onChange={(e) => setExpertiseSearch(e.target.value)}
+                                    className="pl-8 h-8"
+                                  />
+                                </div>
+                                <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-2 border rounded-md bg-muted/30">
+                                  {filteredExpertises.length === 0 ? (
+                                    <p className="text-xs text-muted-foreground italic py-2">Aucune expertise trouvée</p>
+                                  ) : (
+                                    filteredExpertises.map((tag) => {
+                                      const isSelected = (editData.offer_tags || []).includes(tag);
+                                      const tagColor = generateColorFromString(tag);
+                                      return (
+                                        <button
+                                          key={tag}
+                                          type="button"
+                                          className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer hover:scale-105`}
+                                          style={isSelected ? {
+                                            backgroundColor: tagColor,
+                                            borderColor: tagColor,
+                                            color: 'white',
+                                          } : {
+                                            borderColor: tagColor,
+                                            color: tagColor,
+                                            backgroundColor: 'transparent',
+                                          }}
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            toggleExpertise(tag);
+                                          }}
+                                        >
+                                          {isSelected && <Check className="h-3 w-3" />}
+                                          {tag}
+                                        </button>
+                                      );
+                                    })
+                                  )}
+                                </div>
                               </div>
                             )}
                           </div>
