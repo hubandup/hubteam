@@ -10,18 +10,37 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Loader2, Calendar as CalendarIcon, MessageSquare, User, Send, Check, ChevronsUpDown, Trash2, FolderPlus } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, MessageSquare, User, Send, Check, ChevronsUpDown, Trash2, FolderPlus, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
 interface Task {
   id: string;
   title: string;
   status: string;
   assigned_to: string | null;
   end_date: string | null;
+  position: number;
   comment_count?: number;
   profiles?: {
     id: string;
@@ -89,13 +108,24 @@ export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTas
     };
   }, [projectId]);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   const fetchTasks = async () => {
     try {
       const { data, error } = await supabase
         .from('tasks')
-        .select('id, title, status, assigned_to, end_date')
+        .select('id, title, status, assigned_to, end_date, position')
         .eq('project_id', projectId)
-        .order('created_at', { ascending: false });
+        .order('position', { ascending: true });
 
       if (error) throw error;
 
@@ -184,12 +214,16 @@ export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTas
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Get max position for new task
+      const maxPosition = tasks.length > 0 ? Math.max(...tasks.map(t => t.position || 0)) + 1 : 0;
+
       const newTaskData = {
         title: newTaskTitle.trim(),
         project_id: projectId,
         status: 'todo',
         priority: 'medium',
         created_by: user.id,
+        position: 0, // New tasks go to top
       };
 
       // Mise à jour optimiste
@@ -199,10 +233,11 @@ export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTas
         status: newTaskData.status,
         assigned_to: null,
         end_date: null,
+        position: 0,
         profiles: null,
       };
       
-      setTasks(prev => [tempTask, ...prev]);
+      setTasks(prev => [tempTask, ...prev.map(t => ({ ...t, position: t.position + 1 }))]);
       setNewTaskTitle('');
 
       const { data, error } = await supabase
@@ -214,7 +249,7 @@ export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTas
       if (error) throw error;
 
       // Remplacer la tâche temporaire par la vraie
-      setTasks(prev => prev.map(t => t.id === tempTask.id ? { ...data, profiles: null } : t));
+      setTasks(prev => prev.map(t => t.id === tempTask.id ? { ...data, profiles: null, position: 0 } : t));
       onTasksChange?.();
       toast.success('Tâche ajoutée');
     } catch (error) {
@@ -408,6 +443,40 @@ export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTas
     }
   };
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = tasks.findIndex((t) => t.id === active.id);
+      const newIndex = tasks.findIndex((t) => t.id === over.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        // Mise à jour optimiste
+        const reorderedTasks = arrayMove(tasks, oldIndex, newIndex);
+        setTasks(reorderedTasks);
+
+        // Mettre à jour les positions en base
+        try {
+          const updates = reorderedTasks.map((task, index) => ({
+            id: task.id,
+            position: index,
+          }));
+
+          for (const update of updates) {
+            await supabase
+              .from('tasks')
+              .update({ position: update.position })
+              .eq('id', update.id);
+          }
+        } catch (error) {
+          console.error('Error updating task positions:', error);
+          toast.error('Erreur lors de la réorganisation');
+          fetchTasks(); // Revenir à l'état précédent
+        }
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -436,202 +505,38 @@ export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTas
         {tasks.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">Aucune tâche</p>
         ) : (
-          <div className="space-y-3">
-            {tasks.map((task) => (
-              <div key={task.id} className="space-y-2">
-                {/* Task Row */}
-                <div className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                  <Checkbox
-                    checked={task.status === 'done'}
-                    onCheckedChange={() => handleToggleTask(task.id, task.status)}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+              <div className="space-y-3">
+                {tasks.map((task) => (
+                  <SortableTaskItem
+                    key={task.id}
+                    task={task}
+                    expandedTaskId={expandedTaskId}
+                    taskComments={taskComments}
+                    newComment={newComment}
+                    assignPopoverOpen={assignPopoverOpen}
+                    datePopoverOpen={datePopoverOpen}
+                    teamMembers={teamMembers}
+                    onToggleTask={handleToggleTask}
+                    onAssignUser={handleAssignUser}
+                    onSetDate={handleSetDate}
+                    onToggleComments={handleToggleComments}
+                    onAddComment={handleAddComment}
+                    onDeleteTask={handleDeleteTask}
+                    onConvertToProject={setTaskToConvert}
+                    onCommentChange={(taskId, value) => setNewComment(prev => ({ ...prev, [taskId]: value }))}
+                    onAssignPopoverChange={(taskId, open) => setAssignPopoverOpen(prev => ({ ...prev, [taskId]: open }))}
+                    onDatePopoverChange={(taskId, open) => setDatePopoverOpen(prev => ({ ...prev, [taskId]: open }))}
                   />
-                  
-                  <p className={cn(
-                    "flex-1 text-sm",
-                    task.status === 'done' && "line-through text-muted-foreground"
-                  )}>
-                    {task.title}
-                  </p>
-
-                  {/* Assign User */}
-                  <Popover 
-                    open={assignPopoverOpen[task.id]} 
-                    onOpenChange={(open) => setAssignPopoverOpen(prev => ({ ...prev, [task.id]: open }))}
-                  >
-                    <PopoverTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        {task.profiles ? (
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={task.profiles.avatar_url || undefined} />
-                            <AvatarFallback className="text-xs">
-                              {task.profiles.first_name[0]}{task.profiles.last_name[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                        ) : (
-                          <User className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-64 p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Rechercher..." />
-                        <CommandEmpty>Aucun membre trouvé.</CommandEmpty>
-                        <CommandGroup className="max-h-64 overflow-auto">
-                          {teamMembers.map((member) => (
-                            <CommandItem
-                              key={member.id}
-                              value={`${member.first_name} ${member.last_name}`}
-                              onSelect={() => handleAssignUser(task.id, member.id)}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  task.assigned_to === member.id ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <Avatar className="h-6 w-6 mr-2">
-                                <AvatarImage src={member.avatar_url || undefined} />
-                                <AvatarFallback className="text-xs">
-                                  {member.first_name[0]}{member.last_name[0]}
-                                </AvatarFallback>
-                              </Avatar>
-                              {member.first_name} {member.last_name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-
-                  {/* Set Date */}
-                  <Popover 
-                    open={datePopoverOpen[task.id]} 
-                    onOpenChange={(open) => setDatePopoverOpen(prev => ({ ...prev, [task.id]: open }))}
-                  >
-                    <PopoverTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <div className="flex items-center gap-1">
-                          <CalendarIcon className="h-4 w-4" />
-                          {task.end_date && (
-                            <span className="text-xs">
-                              {format(new Date(task.end_date), 'dd/MM', { locale: fr })}
-                            </span>
-                          )}
-                        </div>
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={task.end_date ? new Date(task.end_date) : undefined}
-                        onSelect={(date) => handleSetDate(task.id, date)}
-                        locale={fr}
-                      />
-                    </PopoverContent>
-                  </Popover>
-
-                  {/* Comments Toggle */}
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-8 px-2 gap-1"
-                    onClick={() => handleToggleComments(task.id)}
-                  >
-                    <MessageSquare className={cn(
-                      "h-4 w-4",
-                      expandedTaskId === task.id && "text-primary"
-                    )} />
-                    {(task.comment_count || 0) > 0 && (
-                      <span className={cn(
-                        "text-xs font-medium",
-                        expandedTaskId === task.id ? "text-primary" : "text-muted-foreground"
-                      )}>
-                        {task.comment_count}
-                      </span>
-                    )}
-                  </Button>
-
-                  {/* Convert to Project */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-muted-foreground hover:text-primary"
-                        onClick={() => setTaskToConvert(task)}
-                      >
-                        <FolderPlus className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Transformer en projet</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  {/* Delete Task */}
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => handleDeleteTask(task.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* Comments Section */}
-                {expandedTaskId === task.id && (
-                  <div className="ml-10 space-y-3 p-4 bg-muted/30 rounded-lg border">
-                    {/* Existing Comments */}
-                    {taskComments[task.id]?.map((comment) => (
-                      <div key={comment.id} className="flex gap-3">
-                        <Avatar className="h-8 w-8 flex-shrink-0">
-                          <AvatarImage src={comment.profiles?.avatar_url || undefined} />
-                          <AvatarFallback className="text-xs">
-                            {comment.profiles?.first_name[0]}{comment.profiles?.last_name[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">
-                              {comment.profiles?.first_name} {comment.profiles?.last_name}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {format(new Date(comment.created_at), 'dd MMM à HH:mm', { locale: fr })}
-                            </span>
-                          </div>
-                          <p className="text-sm text-muted-foreground">{comment.content}</p>
-                        </div>
-                      </div>
-                    ))}
-
-                    {/* Add Comment */}
-                    <div className="flex gap-2">
-                      <Textarea
-                        placeholder="Écrivez un commentaire... (Entrée pour publier)"
-                        value={newComment[task.id] || ''}
-                        onChange={(e) => setNewComment(prev => ({ ...prev, [task.id]: e.target.value }))}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleAddComment(task.id);
-                          }
-                        }}
-                        className="flex-1 min-h-[60px]"
-                      />
-                      <Button 
-                        size="icon"
-                        onClick={() => handleAddComment(task.id)}
-                        disabled={!newComment[task.id]?.trim()}
-                      >
-                        <Send className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         )}
       </div>
 
@@ -652,6 +557,266 @@ export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTas
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+// Sortable Task Item Component
+interface SortableTaskItemProps {
+  task: Task;
+  expandedTaskId: string | null;
+  taskComments: Record<string, Comment[]>;
+  newComment: Record<string, string>;
+  assignPopoverOpen: Record<string, boolean>;
+  datePopoverOpen: Record<string, boolean>;
+  teamMembers: TeamMember[];
+  onToggleTask: (taskId: string, status: string) => void;
+  onAssignUser: (taskId: string, userId: string) => void;
+  onSetDate: (taskId: string, date: Date | undefined) => void;
+  onToggleComments: (taskId: string) => void;
+  onAddComment: (taskId: string) => void;
+  onDeleteTask: (taskId: string) => void;
+  onConvertToProject: (task: Task) => void;
+  onCommentChange: (taskId: string, value: string) => void;
+  onAssignPopoverChange: (taskId: string, open: boolean) => void;
+  onDatePopoverChange: (taskId: string, open: boolean) => void;
+}
+
+function SortableTaskItem({
+  task,
+  expandedTaskId,
+  taskComments,
+  newComment,
+  assignPopoverOpen,
+  datePopoverOpen,
+  teamMembers,
+  onToggleTask,
+  onAssignUser,
+  onSetDate,
+  onToggleComments,
+  onAddComment,
+  onDeleteTask,
+  onConvertToProject,
+  onCommentChange,
+  onAssignPopoverChange,
+  onDatePopoverChange,
+}: SortableTaskItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="space-y-2">
+      {/* Task Row */}
+      <div className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+        {/* Drag Handle */}
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+
+        <Checkbox
+          checked={task.status === 'done'}
+          onCheckedChange={() => onToggleTask(task.id, task.status)}
+        />
+        
+        <p className={cn(
+          "flex-1 text-sm",
+          task.status === 'done' && "line-through text-muted-foreground"
+        )}>
+          {task.title}
+        </p>
+
+        {/* Assign User */}
+        <Popover 
+          open={assignPopoverOpen[task.id]} 
+          onOpenChange={(open) => onAssignPopoverChange(task.id, open)}
+        >
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              {task.profiles ? (
+                <Avatar className="h-6 w-6">
+                  <AvatarImage src={task.profiles.avatar_url || undefined} />
+                  <AvatarFallback className="text-xs">
+                    {task.profiles.first_name[0]}{task.profiles.last_name[0]}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <User className="h-4 w-4" />
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-0" align="start">
+            <Command>
+              <CommandInput placeholder="Rechercher..." />
+              <CommandEmpty>Aucun membre trouvé.</CommandEmpty>
+              <CommandGroup className="max-h-64 overflow-auto">
+                {teamMembers.map((member) => (
+                  <CommandItem
+                    key={member.id}
+                    value={`${member.first_name} ${member.last_name}`}
+                    onSelect={() => onAssignUser(task.id, member.id)}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        task.assigned_to === member.id ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    <Avatar className="h-6 w-6 mr-2">
+                      <AvatarImage src={member.avatar_url || undefined} />
+                      <AvatarFallback className="text-xs">
+                        {member.first_name[0]}{member.last_name[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    {member.first_name} {member.last_name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </Command>
+          </PopoverContent>
+        </Popover>
+
+        {/* Set Date */}
+        <Popover 
+          open={datePopoverOpen[task.id]} 
+          onOpenChange={(open) => onDatePopoverChange(task.id, open)}
+        >
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <div className="flex items-center gap-1">
+                <CalendarIcon className="h-4 w-4" />
+                {task.end_date && (
+                  <span className="text-xs">
+                    {format(new Date(task.end_date), 'dd/MM', { locale: fr })}
+                  </span>
+                )}
+              </div>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={task.end_date ? new Date(task.end_date) : undefined}
+              onSelect={(date) => onSetDate(task.id, date)}
+              locale={fr}
+            />
+          </PopoverContent>
+        </Popover>
+
+        {/* Comments Toggle */}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-8 px-2 gap-1"
+          onClick={() => onToggleComments(task.id)}
+        >
+          <MessageSquare className={cn(
+            "h-4 w-4",
+            expandedTaskId === task.id && "text-primary"
+          )} />
+          {(task.comment_count || 0) > 0 && (
+            <span className={cn(
+              "text-xs font-medium",
+              expandedTaskId === task.id ? "text-primary" : "text-muted-foreground"
+            )}>
+              {task.comment_count}
+            </span>
+          )}
+        </Button>
+
+        {/* Convert to Project */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 text-muted-foreground hover:text-primary"
+              onClick={() => onConvertToProject(task)}
+            >
+              <FolderPlus className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Transformer en projet</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* Delete Task */}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+          onClick={() => onDeleteTask(task.id)}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Comments Section */}
+      {expandedTaskId === task.id && (
+        <div className="ml-10 space-y-3 p-4 bg-muted/30 rounded-lg border">
+          {/* Existing Comments */}
+          {taskComments[task.id]?.map((comment) => (
+            <div key={comment.id} className="flex gap-3">
+              <Avatar className="h-8 w-8 flex-shrink-0">
+                <AvatarImage src={comment.profiles?.avatar_url || undefined} />
+                <AvatarFallback className="text-xs">
+                  {comment.profiles?.first_name[0]}{comment.profiles?.last_name[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">
+                    {comment.profiles?.first_name} {comment.profiles?.last_name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {format(new Date(comment.created_at), 'dd MMM à HH:mm', { locale: fr })}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">{comment.content}</p>
+              </div>
+            </div>
+          ))}
+
+          {/* Add Comment */}
+          <div className="flex gap-2">
+            <Textarea
+              placeholder="Écrivez un commentaire... (Entrée pour publier)"
+              value={newComment[task.id] || ''}
+              onChange={(e) => onCommentChange(task.id, e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  onAddComment(task.id);
+                }
+              }}
+              className="flex-1 min-h-[60px]"
+            />
+            <Button 
+              size="icon"
+              onClick={() => onAddComment(task.id)}
+              disabled={!newComment[task.id]?.trim()}
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
