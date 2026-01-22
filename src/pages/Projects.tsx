@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ProjectCard } from '@/components/ProjectCard';
 import { ProjectKanbanView } from '@/components/ProjectKanbanView';
@@ -25,6 +25,7 @@ import { PageLoader } from '@/components/PageLoader';
 
 export default function Projects() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { canRead, loading: permissionsLoading } = usePermissions();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
@@ -33,10 +34,20 @@ export default function Projects() {
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: archivedProjects = [], isLoading: archivedLoading } = useArchivedProjects();
   const loading = projectsLoading || archivedLoading || permissionsLoading;
-  const [activeTab, setActiveTab] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Persist tab and search in URL params
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'all');
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') || '');
   const [viewMode, setViewMode] = useState<'grid' | 'kanban' | 'list'>('grid');
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+
+  // Update URL when tab or search changes
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (activeTab !== 'all') params.set('tab', activeTab);
+    if (searchQuery) params.set('q', searchQuery);
+    setSearchParams(params, { replace: true });
+  }, [activeTab, searchQuery, setSearchParams]);
 
   const unarchiveMutation = useMutation({
     mutationFn: async (projectId: string) => {
