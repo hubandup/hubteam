@@ -797,7 +797,7 @@ export default function Messages() {
                       >
                         <button
                           onClick={() => setSelectedRoom(room)}
-                          className="flex items-center gap-3 flex-1 min-w-0"
+                          className="flex items-start gap-3 flex-1 min-w-0"
                         >
                           <div className="relative shrink-0">
                             <Avatar className="h-11 w-11 ring-2 ring-background shadow-sm">
@@ -818,7 +818,7 @@ export default function Messages() {
                             )}
                           </div>
                           <div className="flex-1 min-w-0 text-left">
-                            <p className={cn('font-medium truncate mt-1', hasUnread && !isSelected && 'font-semibold')}>
+                            <p className={cn('font-medium truncate', hasUnread && !isSelected && 'font-semibold')}>
                               {getRoomDisplayName(room)}
                             </p>
                             {room.last_message && (
