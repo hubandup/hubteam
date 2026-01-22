@@ -210,7 +210,7 @@ const handler = async (req: Request): Promise<Response> => {
           },
           to: [{
             email: recipient.email,
-            name: `${recipient.firstName} ${recipient.lastName}`,
+            name: `${recipient.firstName} ${recipient.lastName}`.trim() || recipient.company || recipient.email,
           }],
           subject: subject,
           htmlContent: `
