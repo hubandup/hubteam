@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateProspect, PROSPECT_CHANNELS, PROSPECT_PRIORITIES, PROSPECT_STATUSES, ProspectChannel, ProspectPriority, ProspectStatus } from '@/hooks/useProspects';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { generateColorFromString } from '@/lib/utils';
+import { Check } from 'lucide-react';
 
 interface AddProspectDialogProps {
   open: boolean;
@@ -22,6 +25,7 @@ interface AddProspectDialogProps {
 
 export function AddProspectDialog({ open, onOpenChange, defaultValues }: AddProspectDialogProps) {
   const createProspect = useCreateProspect();
+  const [availableExpertises, setAvailableExpertises] = useState<string[]>([]);
 
   const [formData, setFormData] = useState({
     company_name: defaultValues?.company_name || '',
@@ -36,12 +40,50 @@ export function AddProspectDialog({ open, onOpenChange, defaultValues }: AddPros
     estimated_amount: 0,
     probability: 0.5,
     need_summary: '',
-    offer_tag: '',
+    offer_tags: [] as string[],
     next_action: '',
     next_action_at: '',
     notes: '',
     contact_id: defaultValues?.contact_id || null,
   });
+
+  useEffect(() => {
+    const loadExpertises = async () => {
+      const { data: agencies } = await supabase
+        .from('agencies')
+        .select('tags');
+      
+      // Extract and deduplicate tags from agencies
+      const allTags = new Set<string>();
+      agencies?.forEach(a => {
+        if (Array.isArray(a.tags)) {
+          a.tags.forEach((t: string) => allTags.add(t));
+        }
+      });
+      
+      // Sort alphabetically
+      const sortedTags = Array.from(allTags).sort((a, b) => 
+        a.localeCompare(b, 'fr')
+      );
+      
+      setAvailableExpertises(sortedTags);
+    };
+    
+    if (open) {
+      loadExpertises();
+    }
+  }, [open]);
+
+  const toggleExpertise = (tag: string) => {
+    setFormData(prev => {
+      const current = prev.offer_tags || [];
+      if (current.includes(tag)) {
+        return { ...prev, offer_tags: current.filter(t => t !== tag) };
+      } else {
+        return { ...prev, offer_tags: [...current, tag] };
+      }
+    });
+  };
 
   const handleSubmit = async () => {
     if (!formData.company_name.trim() || !formData.contact_name.trim() || !formData.email.trim()) {
@@ -71,7 +113,7 @@ export function AddProspectDialog({ open, onOpenChange, defaultValues }: AddPros
         estimated_amount: 0,
         probability: 0.5,
         need_summary: '',
-        offer_tag: '',
+        offer_tags: [],
         next_action: '',
         next_action_at: '',
         notes: '',
@@ -270,14 +312,45 @@ export function AddProspectDialog({ open, onOpenChange, defaultValues }: AddPros
             />
           </div>
 
+          {/* Expertises multi-select */}
           <div className="space-y-2">
-            <Label htmlFor="offer_tag">Tag offre</Label>
-            <Input
-              id="offer_tag"
-              value={formData.offer_tag}
-              onChange={(e) => setFormData(prev => ({ ...prev, offer_tag: e.target.value }))}
-              placeholder="Ex: Formation, Conseil, Audit..."
-            />
+            <Label>Expertises</Label>
+            {availableExpertises.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic">
+                Aucune expertise disponible. Ajoutez des tags sur vos fiches agences.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 border rounded-md bg-muted/30">
+                {availableExpertises.map((tag) => {
+                  const isSelected = formData.offer_tags.includes(tag);
+                  const tagColor = generateColorFromString(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer hover:scale-105`}
+                      style={isSelected ? {
+                        backgroundColor: tagColor,
+                        borderColor: tagColor,
+                        color: 'white',
+                      } : {
+                        borderColor: tagColor,
+                        color: tagColor,
+                        backgroundColor: 'transparent',
+                      }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleExpertise(tag);
+                      }}
+                    >
+                      {isSelected && <Check className="h-3 w-3" />}
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">

@@ -12,16 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Prospect, Interaction, useInteractions, useUpdateProspect, PROSPECT_STATUSES, PROSPECT_CHANNELS, PROSPECT_PRIORITIES, ProspectStatus, ProspectChannel, ProspectPriority } from '@/hooks/useProspects';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Building2, User, Phone, Mail, Linkedin, Calendar, Euro, MessageSquare, Edit2, Save, X, Plus } from 'lucide-react';
+import { Building2, User, Phone, Mail, Linkedin, Calendar, Euro, MessageSquare, Edit2, Save, X, Plus, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { AddInteractionDialog } from './AddInteractionDialog';
 import { supabase } from '@/integrations/supabase/client';
-
-interface AgencyTag {
-  id: string;
-  name: string;
-  color: string;
-}
+import { generateColorFromString } from '@/lib/utils';
 
 interface ProspectDetailDialogProps {
   open: boolean;
@@ -36,17 +31,30 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<Prospect>>({});
   const [addInteractionOpen, setAddInteractionOpen] = useState(false);
-  const [availableTags, setAvailableTags] = useState<AgencyTag[]>([]);
+  const [availableExpertises, setAvailableExpertises] = useState<string[]>([]);
 
   useEffect(() => {
-    const loadTags = async () => {
-      const { data } = await supabase
-        .from('agency_tags')
-        .select('*')
-        .order('name');
-      setAvailableTags(data || []);
+    const loadExpertises = async () => {
+      const { data: agencies } = await supabase
+        .from('agencies')
+        .select('tags');
+      
+      // Extract and deduplicate tags from agencies
+      const allTags = new Set<string>();
+      agencies?.forEach(a => {
+        if (Array.isArray(a.tags)) {
+          a.tags.forEach((t: string) => allTags.add(t));
+        }
+      });
+      
+      // Sort alphabetically
+      const sortedTags = Array.from(allTags).sort((a, b) => 
+        a.localeCompare(b, 'fr')
+      );
+      
+      setAvailableExpertises(sortedTags);
     };
-    loadTags();
+    loadExpertises();
   }, []);
 
   if (!prospect) return null;
@@ -64,7 +72,7 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
       estimated_amount: prospect.estimated_amount,
       probability: prospect.probability,
       need_summary: prospect.need_summary || '',
-      offer_tag: prospect.offer_tag || '',
+      offer_tags: prospect.offer_tags || [],
       next_action: prospect.next_action || '',
       next_action_at: prospect.next_action_at || '',
       notes: prospect.notes || '',
@@ -89,6 +97,17 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
       console.error('Error updating prospect:', error);
       toast.error('Erreur lors de la mise à jour');
     }
+  };
+
+  const toggleExpertise = (tag: string) => {
+    setEditData(prev => {
+      const current = prev.offer_tags || [];
+      if (current.includes(tag)) {
+        return { ...prev, offer_tags: current.filter(t => t !== tag) };
+      } else {
+        return { ...prev, offer_tags: [...current, tag] };
+      }
+    });
   };
 
   const statusConfig = PROSPECT_STATUSES.find(s => s.value === prospect.status);
@@ -367,47 +386,52 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
                     </CardContent>
                   </Card>
 
-                  {/* Need summary */}
+                  {/* Need summary & Expertises */}
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Besoin / Offre</CardTitle>
+                      <CardTitle className="text-sm">Besoin / Expertises</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {isEditing ? (
                         <>
                           <div className="space-y-2">
-                            <Label className="text-xs">Tag offre (expertise)</Label>
-                            <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 border rounded-md bg-muted/30">
-                              {availableTags.map((tag) => {
-                                const isSelected = editData.offer_tag === tag.name;
-                                return (
-                                  <button
-                                    key={tag.id}
-                                    type="button"
-                                    className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer hover:scale-105 ${isSelected ? 'text-white' : ''}`}
-                                    style={isSelected ? {
-                                      backgroundColor: tag.color,
-                                      borderColor: tag.color,
-                                      color: 'white',
-                                    } : {
-                                      borderColor: tag.color,
-                                      color: tag.color,
-                                      backgroundColor: 'transparent',
-                                    }}
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      setEditData(prev => ({ 
-                                        ...prev, 
-                                        offer_tag: isSelected ? '' : tag.name 
-                                      }));
-                                    }}
-                                  >
-                                    {tag.name}
-                                  </button>
-                                );
-                              })}
-                            </div>
+                            <Label className="text-xs">Expertises (cliquez pour sélectionner)</Label>
+                            {availableExpertises.length === 0 ? (
+                              <p className="text-xs text-muted-foreground italic">
+                                Aucune expertise disponible. Ajoutez des tags sur vos fiches agences.
+                              </p>
+                            ) : (
+                              <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-2 border rounded-md bg-muted/30">
+                                {availableExpertises.map((tag) => {
+                                  const isSelected = (editData.offer_tags || []).includes(tag);
+                                  const tagColor = generateColorFromString(tag);
+                                  return (
+                                    <button
+                                      key={tag}
+                                      type="button"
+                                      className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer hover:scale-105`}
+                                      style={isSelected ? {
+                                        backgroundColor: tagColor,
+                                        borderColor: tagColor,
+                                        color: 'white',
+                                      } : {
+                                        borderColor: tagColor,
+                                        color: tagColor,
+                                        backgroundColor: 'transparent',
+                                      }}
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        toggleExpertise(tag);
+                                      }}
+                                    >
+                                      {isSelected && <Check className="h-3 w-3" />}
+                                      {tag}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs">Résumé du besoin</Label>
@@ -420,25 +444,32 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
                         </>
                       ) : (
                         <>
-                          {prospect.offer_tag && (() => {
-                            const tagConfig = availableTags.find(t => t.name === prospect.offer_tag);
-                            return (
-                              <Badge 
-                                variant="outline"
-                                style={tagConfig ? {
-                                  borderColor: tagConfig.color,
-                                  color: tagConfig.color,
-                                  backgroundColor: `${tagConfig.color}15`,
-                                } : {}}
-                              >
-                                {prospect.offer_tag}
-                              </Badge>
-                            );
-                          })()}
+                          {prospect.offer_tags && prospect.offer_tags.length > 0 ? (
+                            <div className="flex flex-wrap gap-1.5">
+                              {prospect.offer_tags.map((tag) => {
+                                const tagColor = generateColorFromString(tag);
+                                return (
+                                  <Badge 
+                                    key={tag}
+                                    variant="outline"
+                                    style={{
+                                      borderColor: tagColor,
+                                      color: tagColor,
+                                      backgroundColor: `${tagColor}15`.replace('hsl', 'hsla').replace(')', ', 0.15)'),
+                                    }}
+                                  >
+                                    {tag}
+                                  </Badge>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground italic">Aucune expertise sélectionnée</p>
+                          )}
                           {prospect.need_summary ? (
                             <p className="text-sm">{prospect.need_summary}</p>
                           ) : (
-                            <p className="text-sm text-muted-foreground italic">Non renseigné</p>
+                            <p className="text-sm text-muted-foreground italic">Besoin non renseigné</p>
                           )}
                         </>
                       )}

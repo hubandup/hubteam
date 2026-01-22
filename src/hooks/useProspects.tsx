@@ -25,7 +25,7 @@ export interface Prospect {
   next_action: string | null;
   next_action_at: string | null;
   need_summary: string | null;
-  offer_tag: string | null;
+  offer_tags: string[];
   estimated_amount: number;
   probability: number;
   notes: string | null;
@@ -74,7 +74,11 @@ async function fetchProspects() {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data as Prospect[];
+  // Ensure offer_tags is always an array
+  return (data || []).map(p => ({
+    ...p,
+    offer_tags: p.offer_tags || [],
+  })) as Prospect[];
 }
 
 async function fetchInteractions(prospectId?: string) {
@@ -177,7 +181,7 @@ export function useCreateProspect() {
         next_action: prospect.next_action,
         next_action_at: prospect.next_action_at,
         need_summary: prospect.need_summary,
-        offer_tag: prospect.offer_tag,
+        offer_tags: prospect.offer_tags || [],
         estimated_amount: prospect.estimated_amount,
         probability: prospect.probability,
         notes: prospect.notes,
@@ -286,7 +290,10 @@ export async function findOrCreateProspectByEmail(
     .single();
 
   if (existing) {
-    return existing as Prospect;
+    return {
+      ...existing,
+      offer_tags: existing.offer_tags || [],
+    } as Prospect;
   }
 
   // Create new prospect
@@ -297,11 +304,15 @@ export async function findOrCreateProspectByEmail(
       company_name: defaults.company_name || 'N/A',
       contact_name: defaults.contact_name || 'N/A',
       owner_id: userId,
+      offer_tags: defaults.offer_tags || [],
       ...defaults,
     })
     .select()
     .single();
 
   if (error) throw error;
-  return created as Prospect;
+  return {
+    ...created,
+    offer_tags: created.offer_tags || [],
+  } as Prospect;
 }
