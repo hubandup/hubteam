@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Trash2, Mail, UserPlus, UserCheck, Star, Phone } from 'lucide-react';
+import { Plus, Trash2, Mail, UserPlus, UserCheck, Star, Phone, MessageSquare } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -22,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface Contact {
   id: string;
@@ -38,6 +40,9 @@ interface AgencyContactsManagerProps {
 }
 
 export function AgencyContactsManager({ agencyId, mainContactId }: AgencyContactsManagerProps) {
+  const navigate = useNavigate();
+  const { role } = useUserRole();
+  const isClient = role === 'client';
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -263,6 +268,51 @@ export function AgencyContactsManager({ agencyId, mainContactId }: AgencyContact
     }
   };
 
+  // Simplified view for clients
+  if (isClient) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Contacts</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <p className="text-sm text-muted-foreground">Chargement...</p>
+          ) : contacts.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucun contact pour le moment</p>
+          ) : (
+            <div className="space-y-3">
+              {contacts.map((contact) => (
+                <div
+                  key={contact.id}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    {mainContactId === contact.id && (
+                      <Star className="h-5 w-5 fill-yellow-500 text-yellow-500" />
+                    )}
+                    <p className="font-medium">
+                      {contact.first_name} {contact.last_name}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/messages')}
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Envoyer un message
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Full view for admin/team/agency
   return (
     <Card>
       <CardHeader>
