@@ -946,6 +946,59 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_quote_actions: {
+        Row: {
+          actioned_at: string | null
+          actioned_by: string | null
+          amount: number | null
+          created_at: string
+          customer_id: number
+          customer_name: string | null
+          id: string
+          linked_project_id: string | null
+          quote_id: number
+          quote_ref: string
+          quote_title: string
+          status: string
+        }
+        Insert: {
+          actioned_at?: string | null
+          actioned_by?: string | null
+          amount?: number | null
+          created_at?: string
+          customer_id: number
+          customer_name?: string | null
+          id?: string
+          linked_project_id?: string | null
+          quote_id: number
+          quote_ref: string
+          quote_title: string
+          status?: string
+        }
+        Update: {
+          actioned_at?: string | null
+          actioned_by?: string | null
+          amount?: number | null
+          created_at?: string
+          customer_id?: number
+          customer_name?: string | null
+          id?: string
+          linked_project_id?: string | null
+          quote_id?: number
+          quote_ref?: string
+          quote_title?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_quote_actions_linked_project_id_fkey"
+            columns: ["linked_project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
