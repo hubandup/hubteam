@@ -359,7 +359,7 @@ export default function Prospection() {
           </TabsTrigger>
           <TabsTrigger value="contacts">
             <Mail className="h-4 w-4 mr-2" />
-            Contacts & Campagnes
+            Contacts
           </TabsTrigger>
           <TabsTrigger value="stats">
             <BarChart3 className="h-4 w-4 mr-2" />
