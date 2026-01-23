@@ -128,10 +128,10 @@ export function ProspectDetailDialog({
           {/* Boutons d'action positionnés en absolu, alignés avec la croix */}
           <div className="absolute right-12 top-4 z-10 flex items-start justify-center gap-0">
             {isEditing ? <>
-                <Button variant="ghost" size="icon" onClick={cancelEditing} className="h-8 w-8 text-muted-foreground hover:text-destructive" title="Annuler">
+                <Button variant="ghost" size="icon" onClick={cancelEditing} className="h-8 w-8 text-muted-foreground hover:text-destructive mr-[9px] mt-[5px] px-[10px] border my-0 bg-primary-foreground py-0" title="Annuler">
                   <X className="h-4 w-4" />
                 </Button>
-                <Button size="icon" onClick={saveChanges} disabled={updateProspect.isPending} className="h-8 w-8" title="Enregistrer">
+                <Button size="icon" onClick={saveChanges} disabled={updateProspect.isPending} className="h-8 w-8 bg-accent text-primary" title="Enregistrer">
                   <Check className="h-4 w-4" />
                 </Button>
               </> : <Button variant="ghost" size="icon" onClick={startEditing} className="h-8 w-8 mt-0 pt-0 border" title="Modifier">
