@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Prospect, Interaction, useInteractions, useUpdateProspect, PROSPECT_STATUSES, PROSPECT_CHANNELS, PROSPECT_PRIORITIES, ProspectStatus, ProspectChannel, ProspectPriority } from '@/hooks/useProspects';
+import { Prospect, Interaction, useInteractions, useUpdateProspect, PROSPECT_STATUSES, PROSPECT_CHANNELS, PROSPECT_PRIORITIES, ProspectStatus, ProspectChannel, ProspectPriority, InteractionActionType, getActionCategory, getActionBadgeVariant } from '@/hooks/useProspects';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Building2, User, Phone, Mail, Linkedin, Calendar, Euro, MessageSquare, Pencil, Plus, Search, Check, X } from 'lucide-react';
@@ -420,32 +420,47 @@ export function ProspectDetailDialog({
                   {interactions.length === 0 ? <div className="text-center py-8 text-muted-foreground">
                       <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p>Aucune interaction enregistrée</p>
-                    </div> : interactions.map(interaction => <Card key={interaction.id}>
-                        <CardContent className="p-3">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline">{interaction.action_type}</Badge>
-                              <Badge variant="secondary">{interaction.channel}</Badge>
+                    </div> : interactions.map(interaction => {
+                      const actionType = interaction.action_type as InteractionActionType;
+                      const category = getActionCategory(actionType);
+                      const badgeVariant = getActionBadgeVariant(actionType);
+                      
+                      return (
+                        <Card key={interaction.id}>
+                          <CardContent className="p-3">
+                            <div className="flex items-start justify-between mb-2">
+                              <Badge variant={badgeVariant} className="text-xs">
+                                {interaction.action_type}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {format(parseISO(interaction.happened_at), 'dd/MM/yyyy HH:mm', { locale: fr })}
+                              </span>
                             </div>
-                            <span className="text-xs text-muted-foreground">
-                              {format(parseISO(interaction.happened_at), 'dd/MM/yyyy HH:mm', {
-                          locale: fr
-                        })}
-                            </span>
-                          </div>
-                          {interaction.subject && <div className="font-medium text-sm mb-1">{interaction.subject}</div>}
-                          {interaction.content && <p className="text-sm text-muted-foreground mb-2">{interaction.content}</p>}
-                          {interaction.outcome && <div className="text-sm">
-                              <span className="font-medium">Résultat:</span> {interaction.outcome}
-                            </div>}
-                          {interaction.next_step && <div className="text-sm text-primary mt-1">
-                              <span className="font-medium">Suite:</span> {interaction.next_step}
-                              {interaction.next_action_at && <span className="text-muted-foreground">
-                                  {' '}(le {format(parseISO(interaction.next_action_at), 'dd/MM/yyyy')})
-                                </span>}
-                            </div>}
-                        </CardContent>
-                      </Card>)}
+                            {interaction.subject && (
+                              <div className="font-medium text-sm mb-1">{interaction.subject}</div>
+                            )}
+                            {interaction.content && (
+                              <p className="text-sm text-muted-foreground mb-2">{interaction.content}</p>
+                            )}
+                            {interaction.outcome && (
+                              <div className="text-sm">
+                                <span className="font-medium">Résultat:</span> {interaction.outcome}
+                              </div>
+                            )}
+                            {interaction.next_step && (
+                              <div className="text-sm text-primary mt-1">
+                                <span className="font-medium">Suite:</span> {interaction.next_step}
+                                {interaction.next_action_at && (
+                                  <span className="text-muted-foreground">
+                                    {' '}(le {format(parseISO(interaction.next_action_at), 'dd/MM/yyyy')})
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                 </div>
               </ScrollArea>
             </TabsContent>

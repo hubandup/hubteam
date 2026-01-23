@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCreateInteraction, INTERACTION_ACTION_TYPES, InteractionActionType } from '@/hooks/useProspects';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useCreateInteraction, INTERACTION_ACTION_GROUPS, InteractionActionType } from '@/hooks/useProspects';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -100,8 +100,15 @@ export function AddInteractionDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {INTERACTION_ACTION_TYPES.map(type => (
-                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                {INTERACTION_ACTION_GROUPS.map(group => (
+                  <SelectGroup key={group.label}>
+                    <SelectLabel className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">
+                      {group.label}
+                    </SelectLabel>
+                    {group.types.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectGroup>
                 ))}
               </SelectContent>
             </Select>
