@@ -70,25 +70,45 @@ export const PROSPECT_STATUSES: { value: ProspectStatus; label: string; color: s
 
 export const PROSPECT_CHANNELS: ProspectChannel[] = ['Email', 'Téléphone', 'LinkedIn', 'Bouche-à-oreille'];
 export const PROSPECT_PRIORITIES: ProspectPriority[] = ['A', 'B', 'C'];
-export const INTERACTION_ACTION_TYPES: InteractionActionType[] = [
-  'Contact entrant Appel',
-  '1er Appel',
-  'Relance Téléphonique 1',
-  'Relance Téléphonique 2',
-  'Relance Téléphonique 3',
-  'Contact entrant Email',
-  '1er Email',
-  'Relance Email 1',
-  'Relance Email 2',
-  'Relance Email 3',
-  'Contact entrant Linkedin',
-  '1er Message Linkedin',
-  'Relance Linkedin 1',
-  'Relance Linkedin 2',
-  'Relance Linkedin 3',
-  'Bouche à Oreille',
-  'Autre (Précisez)',
+// Grouped action types by category
+export const INTERACTION_ACTION_GROUPS: { label: string; types: InteractionActionType[] }[] = [
+  {
+    label: 'Appel',
+    types: ['Contact entrant Appel', '1er Appel', 'Relance Téléphonique 1', 'Relance Téléphonique 2', 'Relance Téléphonique 3'],
+  },
+  {
+    label: 'Email',
+    types: ['Contact entrant Email', '1er Email', 'Relance Email 1', 'Relance Email 2', 'Relance Email 3'],
+  },
+  {
+    label: 'LinkedIn',
+    types: ['Contact entrant Linkedin', '1er Message Linkedin', 'Relance Linkedin 1', 'Relance Linkedin 2', 'Relance Linkedin 3'],
+  },
+  {
+    label: 'Autre',
+    types: ['Bouche à Oreille', 'Autre (Précisez)'],
+  },
 ];
+
+// Flat list for validation
+export const INTERACTION_ACTION_TYPES: InteractionActionType[] = INTERACTION_ACTION_GROUPS.flatMap(g => g.types);
+
+// Helper to get category from action type
+export function getActionCategory(actionType: InteractionActionType): string {
+  const group = INTERACTION_ACTION_GROUPS.find(g => g.types.includes(actionType));
+  return group?.label || 'Autre';
+}
+
+// Helper to get badge variant based on category
+export function getActionBadgeVariant(actionType: InteractionActionType): 'default' | 'secondary' | 'outline' | 'destructive' {
+  const category = getActionCategory(actionType);
+  switch (category) {
+    case 'Appel': return 'default';
+    case 'Email': return 'secondary';
+    case 'LinkedIn': return 'outline';
+    default: return 'outline';
+  }
+}
 
 async function fetchProspects() {
   const { data, error } = await supabase
