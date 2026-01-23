@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Prospect, Interaction, useInteractions, useUpdateProspect, PROSPECT_STATUSES, PROSPECT_CHANNELS, PROSPECT_PRIORITIES, ProspectStatus, ProspectChannel, ProspectPriority, InteractionActionType, getActionCategory, getActionBadgeVariant } from '@/hooks/useProspects';
+import { Prospect, Interaction, useInteractions, useUpdateProspect, PROSPECT_STATUSES, PROSPECT_CHANNELS, PROSPECT_PRIORITIES, ProspectStatus, ProspectChannel, ProspectPriority, InteractionActionType, getActionCategory, getActionBadgeVariant, getActionIconName } from '@/hooks/useProspects';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Building2, User, Phone, Mail, Linkedin, Calendar, Euro, MessageSquare, Pencil, Plus, Search, Check, X } from 'lucide-react';
@@ -424,10 +424,13 @@ export function ProspectDetailDialog({
                   const actionType = interaction.action_type as InteractionActionType;
                   const category = getActionCategory(actionType);
                   const badgeVariant = getActionBadgeVariant(actionType);
+                  const iconName = getActionIconName(actionType);
+                  const IconComponent = iconName === 'phone' ? Phone : iconName === 'mail' ? Mail : iconName === 'linkedin' ? Linkedin : MessageSquare;
                   return <Card key={interaction.id}>
                           <CardContent className="p-3">
                             <div className="flex items-start justify-between mb-2">
-                              <Badge variant={badgeVariant} className="text-xs">
+                              <Badge variant={badgeVariant} className="text-xs flex items-center gap-1.5">
+                                <IconComponent className="h-3 w-3" />
                                 {interaction.action_type}
                               </Badge>
                               <span className="text-xs text-muted-foreground">
