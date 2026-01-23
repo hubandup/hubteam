@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Prospect, Interaction, useInteractions, useUpdateProspect, PROSPECT_STATUSES, PROSPECT_CHANNELS, PROSPECT_PRIORITIES, ProspectStatus, ProspectChannel, ProspectPriority } from '@/hooks/useProspects';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Building2, User, Phone, Mail, Linkedin, Calendar, Euro, MessageSquare, Edit2, Save, X, Plus, Check, Search } from 'lucide-react';
+import { Building2, User, Phone, Mail, Linkedin, Calendar, Euro, MessageSquare, Pencil, Plus, Search, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { AddInteractionDialog } from './AddInteractionDialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -130,25 +130,26 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col">
-          <DialogHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <DialogTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent className="sm:max-w-[600px] w-full flex flex-col p-0 gap-0">
+          {/* Header avec actions */}
+          <SheetHeader className="px-6 py-4 border-b bg-muted/30">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <SheetTitle className="flex items-center gap-2 text-lg">
+                  <Building2 className="h-5 w-5 shrink-0 text-primary" />
                   {isEditing ? (
                     <Input
                       value={editData.company_name || ''}
                       onChange={(e) => setEditData(prev => ({ ...prev, company_name: e.target.value }))}
-                      className="h-8"
+                      className="h-8 text-lg font-semibold"
                     />
                   ) : (
-                    prospect.company_name
+                    <span className="truncate">{prospect.company_name}</span>
                   )}
-                </DialogTitle>
+                </SheetTitle>
                 <div className="flex items-center gap-2 mt-1 text-muted-foreground">
-                  <User className="h-4 w-4" />
+                  <User className="h-4 w-4 shrink-0" />
                   {isEditing ? (
                     <Input
                       value={editData.contact_name || ''}
@@ -156,40 +157,59 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
                       className="h-7 text-sm"
                     />
                   ) : (
-                    prospect.contact_name
+                    <span className="truncate">{prospect.contact_name}</span>
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              
+              {/* Boutons d'action modernisés */}
+              <div className="flex items-center gap-1 shrink-0">
                 {isEditing ? (
                   <>
-                    <Button variant="ghost" size="icon" onClick={cancelEditing}>
-                      <X className="h-4 w-4" />
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={cancelEditing}
+                      className="h-9 px-3 text-muted-foreground hover:text-foreground"
+                    >
+                      Annuler
                     </Button>
-                    <Button size="icon" onClick={saveChanges} disabled={updateProspect.isPending}>
-                      <Save className="h-4 w-4" />
+                    <Button 
+                      size="sm" 
+                      onClick={saveChanges} 
+                      disabled={updateProspect.isPending}
+                      className="h-9 px-4 gap-2"
+                    >
+                      <Check className="h-4 w-4" />
+                      Enregistrer
                     </Button>
                   </>
                 ) : (
-                  <Button variant="ghost" size="icon" onClick={startEditing}>
-                    <Edit2 className="h-4 w-4" />
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={startEditing}
+                    className="h-9 px-3 gap-2"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Modifier
                   </Button>
                 )}
               </div>
             </div>
-          </DialogHeader>
+          </SheetHeader>
 
-          <Tabs defaultValue="info" className="flex-1 min-h-0">
-            <TabsList>
+          <Tabs defaultValue="info" className="flex-1 min-h-0 flex flex-col">
+            <TabsList className="mx-6 mt-4 w-fit">
               <TabsTrigger value="info">Informations</TabsTrigger>
               <TabsTrigger value="interactions">
                 Interactions ({interactions.length})
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="info" className="flex-1 overflow-auto">
-              <ScrollArea className="h-[400px] pr-4">
-                <div className="space-y-4">
+            <TabsContent value="info" className="flex-1 overflow-auto mt-0 px-6 pb-6">
+              <ScrollArea className="h-[calc(100vh-200px)]">
+                <div className="space-y-4 pr-4 py-4">
                   {/* Status badges */}
                   <div className="flex flex-wrap gap-2">
                     {isEditing ? (
@@ -524,14 +544,14 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="interactions" className="flex-1 overflow-auto">
-              <div className="flex justify-end mb-4">
+            <TabsContent value="interactions" className="flex-1 overflow-auto mt-0 px-6 pb-6">
+              <div className="flex justify-end mb-4 pt-4">
                 <Button size="sm" onClick={() => setAddInteractionOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Ajouter
                 </Button>
               </div>
-              <ScrollArea className="h-[350px] pr-4">
+              <ScrollArea className="h-[calc(100vh-280px)]">
                 <div className="space-y-3">
                   {interactions.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
@@ -580,8 +600,8 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
               </ScrollArea>
             </TabsContent>
           </Tabs>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       <AddInteractionDialog
         open={addInteractionOpen}
