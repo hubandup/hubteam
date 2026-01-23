@@ -162,37 +162,38 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
                 </div>
               </div>
               
-              {/* Boutons d'action modernisés */}
-              <div className="flex items-center gap-1 shrink-0">
+              {/* Boutons d'action - icônes uniquement */}
+              <div className="flex items-center gap-1 shrink-0 mr-8">
                 {isEditing ? (
                   <>
                     <Button 
                       variant="ghost" 
-                      size="sm" 
+                      size="icon" 
                       onClick={cancelEditing}
-                      className="h-9 px-3 text-muted-foreground hover:text-foreground"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      title="Annuler"
                     >
-                      Annuler
+                      <X className="h-4 w-4" />
                     </Button>
                     <Button 
-                      size="sm" 
+                      size="icon" 
                       onClick={saveChanges} 
                       disabled={updateProspect.isPending}
-                      className="h-9 px-4 gap-2"
+                      className="h-8 w-8"
+                      title="Enregistrer"
                     >
                       <Check className="h-4 w-4" />
-                      Enregistrer
                     </Button>
                   </>
                 ) : (
                   <Button 
-                    variant="outline" 
-                    size="sm" 
+                    variant="ghost" 
+                    size="icon" 
                     onClick={startEditing}
-                    className="h-9 px-3 gap-2"
+                    className="h-8 w-8"
+                    title="Modifier"
                   >
                     <Pencil className="h-4 w-4" />
-                    Modifier
                   </Button>
                 )}
               </div>
