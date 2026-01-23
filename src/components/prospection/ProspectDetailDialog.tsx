@@ -133,8 +133,8 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="sm:max-w-[600px] w-full flex flex-col p-0 gap-0">
           {/* Header avec actions */}
-          <SheetHeader className="px-6 py-4 border-b bg-muted/30">
-            <div className="flex items-start justify-between gap-4">
+          <SheetHeader className="px-6 pt-3 pb-4 border-b bg-muted/30">
+            <div className="flex items-center justify-between gap-4">
               <div className="flex-1 min-w-0">
                 <SheetTitle className="flex items-center gap-2 text-lg">
                   <Building2 className="h-5 w-5 shrink-0 text-primary" />
