@@ -17,29 +17,31 @@ import { toast } from 'sonner';
 import { AddInteractionDialog } from './AddInteractionDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { generateColorFromString } from '@/lib/utils';
-
 interface ProspectDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   prospect: Prospect | null;
 }
-
-export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectDetailDialogProps) {
-  const { data: interactions = [] } = useInteractions(prospect?.id);
+export function ProspectDetailDialog({
+  open,
+  onOpenChange,
+  prospect
+}: ProspectDetailDialogProps) {
+  const {
+    data: interactions = []
+  } = useInteractions(prospect?.id);
   const updateProspect = useUpdateProspect();
-
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<Prospect>>({});
   const [addInteractionOpen, setAddInteractionOpen] = useState(false);
   const [availableExpertises, setAvailableExpertises] = useState<string[]>([]);
   const [expertiseSearch, setExpertiseSearch] = useState('');
-
   useEffect(() => {
     const loadExpertises = async () => {
-      const { data: agencies } = await supabase
-        .from('agencies')
-        .select('tags');
-      
+      const {
+        data: agencies
+      } = await supabase.from('agencies').select('tags');
+
       // Extract and deduplicate tags from agencies
       const allTags = new Set<string>();
       agencies?.forEach(a => {
@@ -47,27 +49,19 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
           a.tags.forEach((t: string) => allTags.add(t));
         }
       });
-      
+
       // Sort alphabetically
-      const sortedTags = Array.from(allTags).sort((a, b) => 
-        a.localeCompare(b, 'fr')
-      );
-      
+      const sortedTags = Array.from(allTags).sort((a, b) => a.localeCompare(b, 'fr'));
       setAvailableExpertises(sortedTags);
     };
     loadExpertises();
   }, []);
-
   const filteredExpertises = useMemo(() => {
     if (!expertiseSearch.trim()) return availableExpertises;
     const search = expertiseSearch.toLowerCase().trim();
-    return availableExpertises.filter(tag => 
-      tag.toLowerCase().includes(search)
-    );
+    return availableExpertises.filter(tag => tag.toLowerCase().includes(search));
   }, [availableExpertises, expertiseSearch]);
-
   if (!prospect) return null;
-
   const startEditing = () => {
     setEditData({
       company_name: prospect.company_name,
@@ -84,21 +78,19 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
       offer_tags: prospect.offer_tags || [],
       next_action: prospect.next_action || '',
       next_action_at: prospect.next_action_at || '',
-      notes: prospect.notes || '',
+      notes: prospect.notes || ''
     });
     setIsEditing(true);
   };
-
   const cancelEditing = () => {
     setIsEditing(false);
     setEditData({});
   };
-
   const saveChanges = async () => {
     try {
       await updateProspect.mutateAsync({
         id: prospect.id,
-        ...editData,
+        ...editData
       });
       toast.success('Prospect mis à jour');
       setIsEditing(false);
@@ -107,65 +99,44 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
       toast.error('Erreur lors de la mise à jour');
     }
   };
-
   const toggleExpertise = (tag: string) => {
     setEditData(prev => {
       const current = prev.offer_tags || [];
       if (current.includes(tag)) {
-        return { ...prev, offer_tags: current.filter(t => t !== tag) };
+        return {
+          ...prev,
+          offer_tags: current.filter(t => t !== tag)
+        };
       } else {
-        return { ...prev, offer_tags: [...current, tag] };
+        return {
+          ...prev,
+          offer_tags: [...current, tag]
+        };
       }
     });
   };
-
   const statusConfig = PROSPECT_STATUSES.find(s => s.value === prospect.status);
   const weightedRevenue = prospect.estimated_amount * prospect.probability;
-
   const priorityColors = {
     A: 'bg-red-500 text-white',
     B: 'bg-yellow-500 text-white',
-    C: 'bg-green-500 text-white',
+    C: 'bg-green-500 text-white'
   };
-
-  return (
-    <>
+  return <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="sm:max-w-[600px] w-full flex flex-col p-0 gap-0">
           {/* Boutons d'action positionnés en absolu, alignés avec la croix */}
-          <div className="absolute right-12 top-4 z-10 flex items-center gap-1">
-            {isEditing ? (
-              <>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={cancelEditing}
-                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                  title="Annuler"
-                >
+          <div className="absolute right-12 top-4 z-10 flex items-start justify-center gap-0">
+            {isEditing ? <>
+                <Button variant="ghost" size="icon" onClick={cancelEditing} className="h-8 w-8 text-muted-foreground hover:text-destructive" title="Annuler">
                   <X className="h-4 w-4" />
                 </Button>
-                <Button 
-                  size="icon" 
-                  onClick={saveChanges} 
-                  disabled={updateProspect.isPending}
-                  className="h-8 w-8"
-                  title="Enregistrer"
-                >
+                <Button size="icon" onClick={saveChanges} disabled={updateProspect.isPending} className="h-8 w-8" title="Enregistrer">
                   <Check className="h-4 w-4" />
                 </Button>
-              </>
-            ) : (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={startEditing}
-                className="h-8 w-8"
-                title="Modifier"
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-            )}
+              </> : <Button variant="ghost" size="icon" onClick={startEditing} className="h-8 w-8 mt-0 pt-0 border" title="Modifier">
+                <Pencil className="w-4 h-[16px] mx-[2px]" />
+              </Button>}
           </div>
 
           {/* Header */}
@@ -173,27 +144,17 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
             <div className="pr-20">
               <SheetTitle className="flex items-center gap-2 text-lg">
                 <Building2 className="h-5 w-5 shrink-0 text-primary" />
-                {isEditing ? (
-                  <Input
-                    value={editData.company_name || ''}
-                    onChange={(e) => setEditData(prev => ({ ...prev, company_name: e.target.value }))}
-                    className="h-8 text-lg font-semibold"
-                  />
-                ) : (
-                  <span className="truncate">{prospect.company_name}</span>
-                )}
+                {isEditing ? <Input value={editData.company_name || ''} onChange={e => setEditData(prev => ({
+                ...prev,
+                company_name: e.target.value
+              }))} className="h-8 text-lg font-semibold" /> : <span className="truncate">{prospect.company_name}</span>}
               </SheetTitle>
               <div className="flex items-center gap-2 mt-1 text-muted-foreground">
                 <User className="h-4 w-4 shrink-0" />
-                {isEditing ? (
-                  <Input
-                    value={editData.contact_name || ''}
-                    onChange={(e) => setEditData(prev => ({ ...prev, contact_name: e.target.value }))}
-                    className="h-7 text-sm"
-                  />
-                ) : (
-                  <span className="truncate">{prospect.contact_name}</span>
-                )}
+                {isEditing ? <Input value={editData.contact_name || ''} onChange={e => setEditData(prev => ({
+                ...prev,
+                contact_name: e.target.value
+              }))} className="h-7 text-sm" /> : <span className="truncate">{prospect.contact_name}</span>}
               </div>
             </div>
           </SheetHeader>
@@ -211,50 +172,41 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
                 <div className="space-y-4 pr-4 py-4">
                   {/* Status badges */}
                   <div className="flex flex-wrap gap-2">
-                    {isEditing ? (
-                      <>
-                        <Select
-                          value={editData.status}
-                          onValueChange={(value: ProspectStatus) => setEditData(prev => ({ ...prev, status: value }))}
-                        >
+                    {isEditing ? <>
+                        <Select value={editData.status} onValueChange={(value: ProspectStatus) => setEditData(prev => ({
+                      ...prev,
+                      status: value
+                    }))}>
                           <SelectTrigger className="w-[180px]">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {PROSPECT_STATUSES.map(s => (
-                              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                            ))}
+                            {PROSPECT_STATUSES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
                           </SelectContent>
                         </Select>
-                        <Select
-                          value={editData.priority}
-                          onValueChange={(value: ProspectPriority) => setEditData(prev => ({ ...prev, priority: value }))}
-                        >
+                        <Select value={editData.priority} onValueChange={(value: ProspectPriority) => setEditData(prev => ({
+                      ...prev,
+                      priority: value
+                    }))}>
                           <SelectTrigger className="w-[120px]">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {PROSPECT_PRIORITIES.map(p => (
-                              <SelectItem key={p} value={p}>Priorité {p}</SelectItem>
-                            ))}
+                            {PROSPECT_PRIORITIES.map(p => <SelectItem key={p} value={p}>Priorité {p}</SelectItem>)}
                           </SelectContent>
                         </Select>
-                        <Select
-                          value={editData.channel}
-                          onValueChange={(value: ProspectChannel) => setEditData(prev => ({ ...prev, channel: value }))}
-                        >
+                        <Select value={editData.channel} onValueChange={(value: ProspectChannel) => setEditData(prev => ({
+                      ...prev,
+                      channel: value
+                    }))}>
                           <SelectTrigger className="w-[140px]">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {PROSPECT_CHANNELS.map(c => (
-                              <SelectItem key={c} value={c}>{c}</SelectItem>
-                            ))}
+                            {PROSPECT_CHANNELS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                           </SelectContent>
                         </Select>
-                      </>
-                    ) : (
-                      <>
+                      </> : <>
                         <Badge variant="outline" className={statusConfig?.color}>
                           {prospect.status}
                         </Badge>
@@ -262,8 +214,7 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
                           Priorité {prospect.priority}
                         </Badge>
                         <Badge variant="secondary">{prospect.channel}</Badge>
-                      </>
-                    )}
+                      </>}
                   </div>
 
                   {/* Contact info */}
@@ -274,46 +225,28 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
                     <CardContent className="space-y-2">
                       <div className="flex items-center gap-2 text-sm">
                         <Mail className="h-4 w-4 text-muted-foreground" />
-                        {isEditing ? (
-                          <Input
-                            value={editData.email || ''}
-                            onChange={(e) => setEditData(prev => ({ ...prev, email: e.target.value }))}
-                            className="h-7"
-                          />
-                        ) : (
-                          <a href={`mailto:${prospect.email}`} className="text-primary hover:underline">
+                        {isEditing ? <Input value={editData.email || ''} onChange={e => setEditData(prev => ({
+                        ...prev,
+                        email: e.target.value
+                      }))} className="h-7" /> : <a href={`mailto:${prospect.email}`} className="text-primary hover:underline">
                             {prospect.email}
-                          </a>
-                        )}
+                          </a>}
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Phone className="h-4 w-4 text-muted-foreground" />
-                        {isEditing ? (
-                          <Input
-                            value={editData.phone || ''}
-                            onChange={(e) => setEditData(prev => ({ ...prev, phone: e.target.value }))}
-                            className="h-7"
-                          />
-                        ) : (
-                          prospect.phone || <span className="text-muted-foreground">Non renseigné</span>
-                        )}
+                        {isEditing ? <Input value={editData.phone || ''} onChange={e => setEditData(prev => ({
+                        ...prev,
+                        phone: e.target.value
+                      }))} className="h-7" /> : prospect.phone || <span className="text-muted-foreground">Non renseigné</span>}
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Linkedin className="h-4 w-4 text-muted-foreground" />
-                        {isEditing ? (
-                          <Input
-                            value={editData.linkedin_url || ''}
-                            onChange={(e) => setEditData(prev => ({ ...prev, linkedin_url: e.target.value }))}
-                            className="h-7"
-                            placeholder="https://linkedin.com/in/..."
-                          />
-                        ) : prospect.linkedin_url ? (
-                          <a href={prospect.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                        {isEditing ? <Input value={editData.linkedin_url || ''} onChange={e => setEditData(prev => ({
+                        ...prev,
+                        linkedin_url: e.target.value
+                      }))} className="h-7" placeholder="https://linkedin.com/in/..." /> : prospect.linkedin_url ? <a href={prospect.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                             Voir le profil
-                          </a>
-                        ) : (
-                          <span className="text-muted-foreground">Non renseigné</span>
-                        )}
+                          </a> : <span className="text-muted-foreground">Non renseigné</span>}
                       </div>
                     </CardContent>
                   </Card>
@@ -327,31 +260,22 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {isEditing ? (
-                        <div className="grid grid-cols-2 gap-4">
+                      {isEditing ? <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-1">
                             <Label className="text-xs">Montant estimé (€)</Label>
-                            <Input
-                              type="number"
-                              value={editData.estimated_amount || 0}
-                              onChange={(e) => setEditData(prev => ({ ...prev, estimated_amount: Number(e.target.value) }))}
-                              className="h-8"
-                            />
+                            <Input type="number" value={editData.estimated_amount || 0} onChange={e => setEditData(prev => ({
+                          ...prev,
+                          estimated_amount: Number(e.target.value)
+                        }))} className="h-8" />
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs">Probabilité (%)</Label>
-                            <Input
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={Math.round((editData.probability || 0) * 100)}
-                              onChange={(e) => setEditData(prev => ({ ...prev, probability: Number(e.target.value) / 100 }))}
-                              className="h-8"
-                            />
+                            <Input type="number" min="0" max="100" value={Math.round((editData.probability || 0) * 100)} onChange={e => setEditData(prev => ({
+                          ...prev,
+                          probability: Number(e.target.value) / 100
+                        }))} className="h-8" />
                           </div>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-3 gap-4 text-center">
+                        </div> : <div className="grid grid-cols-3 gap-4 text-center">
                           <div>
                             <div className="text-2xl font-bold">{prospect.estimated_amount.toLocaleString('fr-FR')} €</div>
                             <div className="text-xs text-muted-foreground">Montant</div>
@@ -364,8 +288,7 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
                             <div className="text-2xl font-bold text-primary">{weightedRevenue.toLocaleString('fr-FR')} €</div>
                             <div className="text-xs text-muted-foreground">Pondéré</div>
                           </div>
-                        </div>
-                      )}
+                        </div>}
                     </CardContent>
                   </Card>
 
@@ -378,39 +301,29 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {isEditing ? (
-                        <div className="grid grid-cols-2 gap-4">
+                      {isEditing ? <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-1">
                             <Label className="text-xs">Action</Label>
-                            <Input
-                              value={editData.next_action || ''}
-                              onChange={(e) => setEditData(prev => ({ ...prev, next_action: e.target.value }))}
-                              className="h-8"
-                              placeholder="Appeler, Envoyer devis..."
-                            />
+                            <Input value={editData.next_action || ''} onChange={e => setEditData(prev => ({
+                          ...prev,
+                          next_action: e.target.value
+                        }))} className="h-8" placeholder="Appeler, Envoyer devis..." />
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs">Date</Label>
-                            <Input
-                              type="date"
-                              value={editData.next_action_at || ''}
-                              onChange={(e) => setEditData(prev => ({ ...prev, next_action_at: e.target.value }))}
-                              className="h-8"
-                            />
+                            <Input type="date" value={editData.next_action_at || ''} onChange={e => setEditData(prev => ({
+                          ...prev,
+                          next_action_at: e.target.value
+                        }))} className="h-8" />
                           </div>
-                        </div>
-                      ) : prospect.next_action ? (
-                        <div>
+                        </div> : prospect.next_action ? <div>
                           <div className="font-medium">{prospect.next_action}</div>
-                          {prospect.next_action_at && (
-                            <div className="text-sm text-muted-foreground">
-                              {format(parseISO(prospect.next_action_at), 'EEEE d MMMM yyyy', { locale: fr })}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="text-muted-foreground italic">Aucune action planifiée</div>
-                      )}
+                          {prospect.next_action_at && <div className="text-sm text-muted-foreground">
+                              {format(parseISO(prospect.next_action_at), 'EEEE d MMMM yyyy', {
+                          locale: fr
+                        })}
+                            </div>}
+                        </div> : <div className="text-muted-foreground italic">Aucune action planifiée</div>}
                     </CardContent>
                   </Card>
 
@@ -420,103 +333,62 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
                       <CardTitle className="text-sm">Besoin / Expertises</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      {isEditing ? (
-                        <>
+                      {isEditing ? <>
                           <div className="space-y-2">
                             <Label className="text-xs">Expertises {(editData.offer_tags || []).length > 0 && <span className="text-muted-foreground">({(editData.offer_tags || []).length} sélectionnée{(editData.offer_tags || []).length > 1 ? 's' : ''})</span>}</Label>
-                            {availableExpertises.length === 0 ? (
-                              <p className="text-xs text-muted-foreground italic">
+                            {availableExpertises.length === 0 ? <p className="text-xs text-muted-foreground italic">
                                 Aucune expertise disponible. Ajoutez des tags sur vos fiches agences.
-                              </p>
-                            ) : (
-                              <div className="space-y-2">
+                              </p> : <div className="space-y-2">
                                 <div className="relative">
                                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                  <Input
-                                    type="text"
-                                    placeholder="Rechercher une expertise..."
-                                    value={expertiseSearch}
-                                    onChange={(e) => setExpertiseSearch(e.target.value)}
-                                    className="pl-8 h-8"
-                                  />
+                                  <Input type="text" placeholder="Rechercher une expertise..." value={expertiseSearch} onChange={e => setExpertiseSearch(e.target.value)} className="pl-8 h-8" />
                                 </div>
                                 <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-2 border rounded-md bg-muted/30">
-                                  {filteredExpertises.length === 0 ? (
-                                    <p className="text-xs text-muted-foreground italic py-2">Aucune expertise trouvée</p>
-                                  ) : (
-                                    filteredExpertises.map((tag) => {
-                                      const isSelected = (editData.offer_tags || []).includes(tag);
-                                      const tagColor = generateColorFromString(tag);
-                                      return (
-                                        <button
-                                          key={tag}
-                                          type="button"
-                                          className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer hover:scale-105`}
-                                          style={isSelected ? {
-                                            backgroundColor: tagColor,
-                                            borderColor: tagColor,
-                                            color: 'white',
-                                          } : {
-                                            borderColor: tagColor,
-                                            color: tagColor,
-                                            backgroundColor: 'transparent',
-                                          }}
-                                          onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            toggleExpertise(tag);
-                                          }}
-                                        >
+                                  {filteredExpertises.length === 0 ? <p className="text-xs text-muted-foreground italic py-2">Aucune expertise trouvée</p> : filteredExpertises.map(tag => {
+                              const isSelected = (editData.offer_tags || []).includes(tag);
+                              const tagColor = generateColorFromString(tag);
+                              return <button key={tag} type="button" className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer hover:scale-105`} style={isSelected ? {
+                                backgroundColor: tagColor,
+                                borderColor: tagColor,
+                                color: 'white'
+                              } : {
+                                borderColor: tagColor,
+                                color: tagColor,
+                                backgroundColor: 'transparent'
+                              }} onClick={e => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                toggleExpertise(tag);
+                              }}>
                                           {isSelected && <Check className="h-3 w-3" />}
                                           {tag}
-                                        </button>
-                                      );
-                                    })
-                                  )}
+                                        </button>;
+                            })}
                                 </div>
-                              </div>
-                            )}
+                              </div>}
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs">Résumé du besoin</Label>
-                            <Textarea
-                              value={editData.need_summary || ''}
-                              onChange={(e) => setEditData(prev => ({ ...prev, need_summary: e.target.value }))}
-                              rows={2}
-                            />
+                            <Textarea value={editData.need_summary || ''} onChange={e => setEditData(prev => ({
+                          ...prev,
+                          need_summary: e.target.value
+                        }))} rows={2} />
                           </div>
-                        </>
-                      ) : (
-                        <>
-                          {prospect.offer_tags && prospect.offer_tags.length > 0 ? (
-                            <div className="flex flex-wrap gap-1.5">
-                              {prospect.offer_tags.map((tag) => {
-                                const tagColor = generateColorFromString(tag);
-                                return (
-                                  <Badge 
-                                    key={tag}
-                                    variant="outline"
-                                    style={{
-                                      borderColor: tagColor,
-                                      color: tagColor,
-                                      backgroundColor: `${tagColor}15`.replace('hsl', 'hsla').replace(')', ', 0.15)'),
-                                    }}
-                                  >
+                        </> : <>
+                          {prospect.offer_tags && prospect.offer_tags.length > 0 ? <div className="flex flex-wrap gap-1.5">
+                              {prospect.offer_tags.map(tag => {
+                          const tagColor = generateColorFromString(tag);
+                          return <Badge key={tag} variant="outline" style={{
+                            borderColor: tagColor,
+                            color: tagColor,
+                            backgroundColor: `${tagColor}15`.replace('hsl', 'hsla').replace(')', ', 0.15)')
+                          }}>
                                     {tag}
-                                  </Badge>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-muted-foreground italic">Aucune expertise sélectionnée</p>
-                          )}
-                          {prospect.need_summary ? (
-                            <p className="text-sm">{prospect.need_summary}</p>
-                          ) : (
-                            <p className="text-sm text-muted-foreground italic">Besoin non renseigné</p>
-                          )}
-                        </>
-                      )}
+                                  </Badge>;
+                        })}
+                            </div> : <p className="text-sm text-muted-foreground italic">Aucune expertise sélectionnée</p>}
+                          {prospect.need_summary ? <p className="text-sm">{prospect.need_summary}</p> : <p className="text-sm text-muted-foreground italic">Besoin non renseigné</p>}
+                        </>}
                     </CardContent>
                   </Card>
 
@@ -526,17 +398,10 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
                       <CardTitle className="text-sm">Notes</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {isEditing ? (
-                        <Textarea
-                          value={editData.notes || ''}
-                          onChange={(e) => setEditData(prev => ({ ...prev, notes: e.target.value }))}
-                          rows={3}
-                        />
-                      ) : prospect.notes ? (
-                        <p className="text-sm whitespace-pre-wrap">{prospect.notes}</p>
-                      ) : (
-                        <p className="text-sm text-muted-foreground italic">Aucune note</p>
-                      )}
+                      {isEditing ? <Textarea value={editData.notes || ''} onChange={e => setEditData(prev => ({
+                      ...prev,
+                      notes: e.target.value
+                    }))} rows={3} /> : prospect.notes ? <p className="text-sm whitespace-pre-wrap">{prospect.notes}</p> : <p className="text-sm text-muted-foreground italic">Aucune note</p>}
                     </CardContent>
                   </Card>
                 </div>
@@ -552,14 +417,10 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
               </div>
               <ScrollArea className="h-[calc(100vh-280px)]">
                 <div className="space-y-3">
-                  {interactions.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
+                  {interactions.length === 0 ? <div className="text-center py-8 text-muted-foreground">
                       <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p>Aucune interaction enregistrée</p>
-                    </div>
-                  ) : (
-                    interactions.map((interaction) => (
-                      <Card key={interaction.id}>
+                    </div> : interactions.map(interaction => <Card key={interaction.id}>
                         <CardContent className="p-3">
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center gap-2">
@@ -567,34 +428,24 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
                               <Badge variant="secondary">{interaction.channel}</Badge>
                             </div>
                             <span className="text-xs text-muted-foreground">
-                              {format(parseISO(interaction.happened_at), 'dd/MM/yyyy HH:mm', { locale: fr })}
+                              {format(parseISO(interaction.happened_at), 'dd/MM/yyyy HH:mm', {
+                          locale: fr
+                        })}
                             </span>
                           </div>
-                          {interaction.subject && (
-                            <div className="font-medium text-sm mb-1">{interaction.subject}</div>
-                          )}
-                          {interaction.content && (
-                            <p className="text-sm text-muted-foreground mb-2">{interaction.content}</p>
-                          )}
-                          {interaction.outcome && (
-                            <div className="text-sm">
+                          {interaction.subject && <div className="font-medium text-sm mb-1">{interaction.subject}</div>}
+                          {interaction.content && <p className="text-sm text-muted-foreground mb-2">{interaction.content}</p>}
+                          {interaction.outcome && <div className="text-sm">
                               <span className="font-medium">Résultat:</span> {interaction.outcome}
-                            </div>
-                          )}
-                          {interaction.next_step && (
-                            <div className="text-sm text-primary mt-1">
+                            </div>}
+                          {interaction.next_step && <div className="text-sm text-primary mt-1">
                               <span className="font-medium">Suite:</span> {interaction.next_step}
-                              {interaction.next_action_at && (
-                                <span className="text-muted-foreground">
+                              {interaction.next_action_at && <span className="text-muted-foreground">
                                   {' '}(le {format(parseISO(interaction.next_action_at), 'dd/MM/yyyy')})
-                                </span>
-                              )}
-                            </div>
-                          )}
+                                </span>}
+                            </div>}
                         </CardContent>
-                      </Card>
-                    ))
-                  )}
+                      </Card>)}
                 </div>
               </ScrollArea>
             </TabsContent>
@@ -602,12 +453,6 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
         </SheetContent>
       </Sheet>
 
-      <AddInteractionDialog
-        open={addInteractionOpen}
-        onOpenChange={setAddInteractionOpen}
-        prospectId={prospect.id}
-        prospectName={prospect.company_name}
-      />
-    </>
-  );
+      <AddInteractionDialog open={addInteractionOpen} onOpenChange={setAddInteractionOpen} prospectId={prospect.id} prospectName={prospect.company_name} />
+    </>;
 }
