@@ -128,7 +128,7 @@ export function ProspectDetailDialog({
           {/* Boutons d'action positionnés en absolu, alignés avec la croix */}
           <div className="absolute right-12 top-4 z-10 flex items-start justify-center gap-0">
             {isEditing ? <>
-                <Button variant="ghost" size="icon" onClick={cancelEditing} className="h-8 w-8 text-muted-foreground hover:text-destructive mr-[9px] mt-[5px] px-[10px] border my-0 bg-primary-foreground py-0" title="Annuler">
+                <Button variant="ghost" size="icon" onClick={cancelEditing} className="h-8 w-8 text-muted-foreground hover:text-destructive mr-[9px] px-[10px] border my-0 bg-primary-foreground py-0 mt-[10px]" title="Annuler">
                   <X className="h-4 w-4" />
                 </Button>
                 <Button size="icon" onClick={saveChanges} disabled={updateProspect.isPending} className="h-8 w-8 bg-status-active text-primary-foreground my-[5px]" title="Enregistrer">
@@ -421,46 +421,35 @@ export function ProspectDetailDialog({
                       <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p>Aucune interaction enregistrée</p>
                     </div> : interactions.map(interaction => {
-                      const actionType = interaction.action_type as InteractionActionType;
-                      const category = getActionCategory(actionType);
-                      const badgeVariant = getActionBadgeVariant(actionType);
-                      
-                      return (
-                        <Card key={interaction.id}>
+                  const actionType = interaction.action_type as InteractionActionType;
+                  const category = getActionCategory(actionType);
+                  const badgeVariant = getActionBadgeVariant(actionType);
+                  return <Card key={interaction.id}>
                           <CardContent className="p-3">
                             <div className="flex items-start justify-between mb-2">
                               <Badge variant={badgeVariant} className="text-xs">
                                 {interaction.action_type}
                               </Badge>
                               <span className="text-xs text-muted-foreground">
-                                {format(parseISO(interaction.happened_at), 'dd/MM/yyyy HH:mm', { locale: fr })}
+                                {format(parseISO(interaction.happened_at), 'dd/MM/yyyy HH:mm', {
+                            locale: fr
+                          })}
                               </span>
                             </div>
-                            {interaction.subject && (
-                              <div className="font-medium text-sm mb-1">{interaction.subject}</div>
-                            )}
-                            {interaction.content && (
-                              <p className="text-sm text-muted-foreground mb-2">{interaction.content}</p>
-                            )}
-                            {interaction.outcome && (
-                              <div className="text-sm">
+                            {interaction.subject && <div className="font-medium text-sm mb-1">{interaction.subject}</div>}
+                            {interaction.content && <p className="text-sm text-muted-foreground mb-2">{interaction.content}</p>}
+                            {interaction.outcome && <div className="text-sm">
                                 <span className="font-medium">Résultat:</span> {interaction.outcome}
-                              </div>
-                            )}
-                            {interaction.next_step && (
-                              <div className="text-sm text-primary mt-1">
+                              </div>}
+                            {interaction.next_step && <div className="text-sm text-primary mt-1">
                                 <span className="font-medium">Suite:</span> {interaction.next_step}
-                                {interaction.next_action_at && (
-                                  <span className="text-muted-foreground">
+                                {interaction.next_action_at && <span className="text-muted-foreground">
                                     {' '}(le {format(parseISO(interaction.next_action_at), 'dd/MM/yyyy')})
-                                  </span>
-                                )}
-                              </div>
-                            )}
+                                  </span>}
+                              </div>}
                           </CardContent>
-                        </Card>
-                      );
-                    })}
+                        </Card>;
+                })}
                 </div>
               </ScrollArea>
             </TabsContent>
