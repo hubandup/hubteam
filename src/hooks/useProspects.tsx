@@ -110,6 +110,17 @@ export function getActionBadgeVariant(actionType: InteractionActionType): 'defau
   }
 }
 
+// Helper to get icon name based on category
+export function getActionIconName(actionType: InteractionActionType): 'phone' | 'mail' | 'linkedin' | 'message-square' {
+  const category = getActionCategory(actionType);
+  switch (category) {
+    case 'Appel': return 'phone';
+    case 'Email': return 'mail';
+    case 'LinkedIn': return 'linkedin';
+    default: return 'message-square';
+  }
+}
+
 async function fetchProspects() {
   const { data, error } = await supabase
     .from('prospects')
