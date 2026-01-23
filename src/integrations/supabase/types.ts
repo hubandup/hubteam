@@ -2202,6 +2202,23 @@ export type Database = {
         | "Message LinkedIn"
         | "RDV"
         | "Autre"
+        | "Contact entrant Appel"
+        | "1er Appel"
+        | "Relance Téléphonique 1"
+        | "Relance Téléphonique 2"
+        | "Relance Téléphonique 3"
+        | "Contact entrant Email"
+        | "1er Email"
+        | "Relance Email 1"
+        | "Relance Email 2"
+        | "Relance Email 3"
+        | "Contact entrant Linkedin"
+        | "1er Message Linkedin"
+        | "Relance Linkedin 1"
+        | "Relance Linkedin 2"
+        | "Relance Linkedin 3"
+        | "Bouche à Oreille"
+        | "Autre (Précisez)"
       permission_action: "read" | "create" | "update" | "delete"
       permission_scope: "all" | "limited" | "own"
       prospect_channel: "Email" | "Téléphone" | "LinkedIn" | "Bouche-à-oreille"
@@ -2378,6 +2395,23 @@ export const Constants = {
         "Message LinkedIn",
         "RDV",
         "Autre",
+        "Contact entrant Appel",
+        "1er Appel",
+        "Relance Téléphonique 1",
+        "Relance Téléphonique 2",
+        "Relance Téléphonique 3",
+        "Contact entrant Email",
+        "1er Email",
+        "Relance Email 1",
+        "Relance Email 2",
+        "Relance Email 3",
+        "Contact entrant Linkedin",
+        "1er Message Linkedin",
+        "Relance Linkedin 1",
+        "Relance Linkedin 2",
+        "Relance Linkedin 3",
+        "Bouche à Oreille",
+        "Autre (Précisez)",
       ],
       permission_action: ["read", "create", "update", "delete"],
       permission_scope: ["all", "limited", "own"],

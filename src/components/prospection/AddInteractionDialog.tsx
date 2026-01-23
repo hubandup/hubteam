@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCreateInteraction, PROSPECT_CHANNELS, INTERACTION_ACTION_TYPES, ProspectChannel, InteractionActionType } from '@/hooks/useProspects';
+import { useCreateInteraction, INTERACTION_ACTION_TYPES, InteractionActionType } from '@/hooks/useProspects';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -22,19 +22,19 @@ export function AddInteractionDialog({
   onOpenChange, 
   prospectId, 
   prospectName,
-  defaultActionType = 'Autre'
+  defaultActionType = '1er Appel'
 }: AddInteractionDialogProps) {
   const createInteraction = useCreateInteraction();
 
   const [formData, setFormData] = useState({
     action_type: defaultActionType,
-    channel: 'Email' as ProspectChannel,
     subject: '',
     content: '',
     outcome: '',
     next_step: '',
     next_action_at: '',
     happened_at: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+    custom_action_type: '',
   });
 
   const handleSubmit = async () => {
@@ -43,12 +43,18 @@ export function AddInteractionDialog({
       return;
     }
 
+    if (formData.action_type === 'Autre (Précisez)' && !formData.custom_action_type.trim()) {
+      toast.error('Veuillez préciser le type d\'action');
+      return;
+    }
+
     try {
       await createInteraction.mutateAsync({
         prospect_id: prospectId,
         action_type: formData.action_type as InteractionActionType,
-        channel: formData.channel,
-        subject: formData.subject || null,
+        subject: formData.action_type === 'Autre (Précisez)' 
+          ? formData.custom_action_type 
+          : (formData.subject || null),
         content: formData.content || null,
         outcome: formData.outcome || null,
         next_step: formData.next_step || null,
@@ -58,14 +64,14 @@ export function AddInteractionDialog({
       toast.success('Interaction ajoutée');
       onOpenChange(false);
       setFormData({
-        action_type: 'Autre',
-        channel: 'Email',
+        action_type: '1er Appel',
         subject: '',
         content: '',
         outcome: '',
         next_step: '',
         next_action_at: '',
         happened_at: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+        custom_action_type: '',
       });
     } catch (error) {
       console.error('Error creating interaction:', error);
@@ -84,40 +90,34 @@ export function AddInteractionDialog({
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Type d'action</Label>
-              <Select
-                value={formData.action_type}
-                onValueChange={(value: InteractionActionType) => setFormData(prev => ({ ...prev, action_type: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {INTERACTION_ACTION_TYPES.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Canal</Label>
-              <Select
-                value={formData.channel}
-                onValueChange={(value: ProspectChannel) => setFormData(prev => ({ ...prev, channel: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PROSPECT_CHANNELS.map(channel => (
-                    <SelectItem key={channel} value={channel}>{channel}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label>Type d'action</Label>
+            <Select
+              value={formData.action_type}
+              onValueChange={(value: InteractionActionType) => setFormData(prev => ({ ...prev, action_type: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {INTERACTION_ACTION_TYPES.map(type => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+
+          {formData.action_type === 'Autre (Précisez)' && (
+            <div className="space-y-2">
+              <Label htmlFor="custom_action_type">Précisez</Label>
+              <Input
+                id="custom_action_type"
+                value={formData.custom_action_type}
+                onChange={(e) => setFormData(prev => ({ ...prev, custom_action_type: e.target.value }))}
+                placeholder="Précisez le type d'action..."
+              />
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="happened_at">Date/Heure</Label>
@@ -129,15 +129,17 @@ export function AddInteractionDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="subject">Sujet</Label>
-            <Input
-              id="subject"
-              value={formData.subject}
-              onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
-              placeholder="Ex: Appel de découverte, Présentation offre..."
-            />
-          </div>
+          {formData.action_type !== 'Autre (Précisez)' && (
+            <div className="space-y-2">
+              <Label htmlFor="subject">Sujet</Label>
+              <Input
+                id="subject"
+                value={formData.subject}
+                onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
+                placeholder="Ex: Appel de découverte, Présentation offre..."
+              />
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="content">Résumé</Label>

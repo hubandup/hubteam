@@ -6,7 +6,12 @@ import { useAuth } from './useAuth';
 export type ProspectChannel = 'Email' | 'Téléphone' | 'LinkedIn' | 'Bouche-à-oreille';
 export type ProspectStatus = 'À contacter' | 'Contacté' | 'Relance 1' | 'Relance 2' | 'RDV planifié' | 'Besoin qualifié' | 'Proposition envoyée' | 'Négociation' | 'Gagné' | 'Perdu' | 'En veille';
 export type ProspectPriority = 'A' | 'B' | 'C';
-export type InteractionActionType = 'Email' | 'Appel' | 'Message LinkedIn' | 'RDV' | 'Autre';
+export type InteractionActionType = 
+  | 'Email' | 'Appel' | 'Message LinkedIn' | 'RDV' | 'Autre'
+  | 'Contact entrant Appel' | '1er Appel' | 'Relance Téléphonique 1' | 'Relance Téléphonique 2' | 'Relance Téléphonique 3'
+  | 'Contact entrant Email' | '1er Email' | 'Relance Email 1' | 'Relance Email 2' | 'Relance Email 3'
+  | 'Contact entrant Linkedin' | '1er Message Linkedin' | 'Relance Linkedin 1' | 'Relance Linkedin 2' | 'Relance Linkedin 3'
+  | 'Bouche à Oreille' | 'Autre (Précisez)';
 
 export interface Prospect {
   id: string;
@@ -65,7 +70,25 @@ export const PROSPECT_STATUSES: { value: ProspectStatus; label: string; color: s
 
 export const PROSPECT_CHANNELS: ProspectChannel[] = ['Email', 'Téléphone', 'LinkedIn', 'Bouche-à-oreille'];
 export const PROSPECT_PRIORITIES: ProspectPriority[] = ['A', 'B', 'C'];
-export const INTERACTION_ACTION_TYPES: InteractionActionType[] = ['Email', 'Appel', 'Message LinkedIn', 'RDV', 'Autre'];
+export const INTERACTION_ACTION_TYPES: InteractionActionType[] = [
+  'Contact entrant Appel',
+  '1er Appel',
+  'Relance Téléphonique 1',
+  'Relance Téléphonique 2',
+  'Relance Téléphonique 3',
+  'Contact entrant Email',
+  '1er Email',
+  'Relance Email 1',
+  'Relance Email 2',
+  'Relance Email 3',
+  'Contact entrant Linkedin',
+  '1er Message Linkedin',
+  'Relance Linkedin 1',
+  'Relance Linkedin 2',
+  'Relance Linkedin 3',
+  'Bouche à Oreille',
+  'Autre (Précisez)',
+];
 
 async function fetchProspects() {
   const { data, error } = await supabase
