@@ -132,69 +132,67 @@ export function ProspectDetailDialog({ open, onOpenChange, prospect }: ProspectD
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="sm:max-w-[600px] w-full flex flex-col p-0 gap-0">
-          {/* Header avec actions */}
-          <SheetHeader className="px-6 pt-3 pb-4 border-b bg-muted/30">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <SheetTitle className="flex items-center gap-2 text-lg">
-                  <Building2 className="h-5 w-5 shrink-0 text-primary" />
-                  {isEditing ? (
-                    <Input
-                      value={editData.company_name || ''}
-                      onChange={(e) => setEditData(prev => ({ ...prev, company_name: e.target.value }))}
-                      className="h-8 text-lg font-semibold"
-                    />
-                  ) : (
-                    <span className="truncate">{prospect.company_name}</span>
-                  )}
-                </SheetTitle>
-                <div className="flex items-center gap-2 mt-1 text-muted-foreground">
-                  <User className="h-4 w-4 shrink-0" />
-                  {isEditing ? (
-                    <Input
-                      value={editData.contact_name || ''}
-                      onChange={(e) => setEditData(prev => ({ ...prev, contact_name: e.target.value }))}
-                      className="h-7 text-sm"
-                    />
-                  ) : (
-                    <span className="truncate">{prospect.contact_name}</span>
-                  )}
-                </div>
-              </div>
-              
-              {/* Boutons d'action - icônes uniquement */}
-              <div className="flex items-center gap-1 shrink-0 mr-8">
+          {/* Boutons d'action positionnés en absolu, alignés avec la croix */}
+          <div className="absolute right-12 top-4 z-10 flex items-center gap-1">
+            {isEditing ? (
+              <>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={cancelEditing}
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                  title="Annuler"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+                <Button 
+                  size="icon" 
+                  onClick={saveChanges} 
+                  disabled={updateProspect.isPending}
+                  className="h-8 w-8"
+                  title="Enregistrer"
+                >
+                  <Check className="h-4 w-4" />
+                </Button>
+              </>
+            ) : (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={startEditing}
+                className="h-8 w-8"
+                title="Modifier"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+
+          {/* Header */}
+          <SheetHeader className="px-6 pt-4 pb-4 border-b bg-muted/30">
+            <div className="pr-20">
+              <SheetTitle className="flex items-center gap-2 text-lg">
+                <Building2 className="h-5 w-5 shrink-0 text-primary" />
                 {isEditing ? (
-                  <>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={cancelEditing}
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      title="Annuler"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      size="icon" 
-                      onClick={saveChanges} 
-                      disabled={updateProspect.isPending}
-                      className="h-8 w-8"
-                      title="Enregistrer"
-                    >
-                      <Check className="h-4 w-4" />
-                    </Button>
-                  </>
+                  <Input
+                    value={editData.company_name || ''}
+                    onChange={(e) => setEditData(prev => ({ ...prev, company_name: e.target.value }))}
+                    className="h-8 text-lg font-semibold"
+                  />
                 ) : (
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={startEditing}
-                    className="h-8 w-8"
-                    title="Modifier"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
+                  <span className="truncate">{prospect.company_name}</span>
+                )}
+              </SheetTitle>
+              <div className="flex items-center gap-2 mt-1 text-muted-foreground">
+                <User className="h-4 w-4 shrink-0" />
+                {isEditing ? (
+                  <Input
+                    value={editData.contact_name || ''}
+                    onChange={(e) => setEditData(prev => ({ ...prev, contact_name: e.target.value }))}
+                    className="h-7 text-sm"
+                  />
+                ) : (
+                  <span className="truncate">{prospect.contact_name}</span>
                 )}
               </div>
             </div>
