@@ -227,6 +227,43 @@ export function AddTeamMemberDialog({
         return;
       }
 
+      // If adding a client contact, also grant access to the matching user account (profile) if it exists.
+      // This is what makes the project appear in the contact's Hub Team space.
+      if (memberType === 'client_contact') {
+        const selectedContact = members.find((c) => c.id === memberId);
+        const selectedContactEmail = selectedContact?.email;
+
+        if (!selectedContactEmail) {
+          toast.error("Impossible de retrouver l'email du contact");
+          return;
+        }
+
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', selectedContactEmail)
+          .maybeSingle();
+
+        if (profileError) throw profileError;
+
+        if (profile?.id) {
+          const { error: teamInsertError } = await supabase
+            .from('project_team_members')
+            .insert({
+              project_id: projectId,
+              member_id: profile.id,
+              member_type: 'profile',
+            });
+
+          if (teamInsertError && (teamInsertError as any).code !== '23505') {
+            throw teamInsertError;
+          }
+        } else {
+          // We still allow adding the contact entry for tracking, but inform that it won't grant login access.
+          toast.info("Ce contact n'a pas de compte utilisateur");
+        }
+      }
+
       // If adding an agency contact, also add the agency to project_agencies if not already added
       if (memberType === 'agency_contact') {
         const { data: contactData } = await supabase
