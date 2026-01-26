@@ -154,8 +154,25 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
 
       if (error) throw error;
 
+      // Helper to remove profile access by email
+      const removeProfileAccessByEmail = async (email: string) => {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', email)
+          .maybeSingle();
+
+        if (!profileError && profile?.id) {
+          await supabase
+            .from('project_team_members')
+            .delete()
+            .eq('project_id', projectId)
+            .eq('member_type', 'profile')
+            .eq('member_id', profile.id);
+        }
+      };
+
       // If it was a client contact, also remove the linked user access (profile) if any.
-      // This keeps the rule consistent: removing the contact removes the project from their space.
       if (memberToDelete?.member_type === 'client_contact') {
         const { data: contactData, error: contactError } = await supabase
           .from('client_contacts')
@@ -163,23 +180,21 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
           .eq('id', memberToDelete.member_id)
           .maybeSingle();
 
-        const contactEmail = (contactData as any)?.email as string | undefined;
+        if (!contactError && contactData?.email) {
+          await removeProfileAccessByEmail(contactData.email);
+        }
+      }
 
-        if (!contactError && contactEmail) {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('email', contactEmail)
-            .maybeSingle();
+      // If it was an agency contact, also remove the linked user access (profile) if any.
+      if (memberToDelete?.member_type === 'agency_contact') {
+        const { data: contactData, error: contactError } = await supabase
+          .from('agency_contacts')
+          .select('email')
+          .eq('id', memberToDelete.member_id)
+          .maybeSingle();
 
-          if (!profileError && profile?.id) {
-            await supabase
-              .from('project_team_members')
-              .delete()
-              .eq('project_id', projectId)
-              .eq('member_type', 'profile')
-              .eq('member_id', profile.id);
-          }
+        if (!contactError && contactData?.email) {
+          await removeProfileAccessByEmail(contactData.email);
         }
       }
 
