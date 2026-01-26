@@ -154,6 +154,35 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
 
       if (error) throw error;
 
+      // If it was a client contact, also remove the linked user access (profile) if any.
+      // This keeps the rule consistent: removing the contact removes the project from their space.
+      if (memberToDelete?.member_type === 'client_contact') {
+        const { data: contactData, error: contactError } = await supabase
+          .from('client_contacts')
+          .select('email')
+          .eq('id', memberToDelete.member_id)
+          .maybeSingle();
+
+        const contactEmail = (contactData as any)?.email as string | undefined;
+
+        if (!contactError && contactEmail) {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', contactEmail)
+            .maybeSingle();
+
+          if (!profileError && profile?.id) {
+            await supabase
+              .from('project_team_members')
+              .delete()
+              .eq('project_id', projectId)
+              .eq('member_type', 'profile')
+              .eq('member_id', profile.id);
+          }
+        }
+      }
+
       // If it was an agency contact, check if we should remove the agency
       if (memberToDelete?.member_type === 'agency_contact') {
         // Get the agency_id of this contact
