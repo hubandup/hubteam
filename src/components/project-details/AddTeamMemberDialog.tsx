@@ -30,7 +30,9 @@ export function AddTeamMemberDialog({
   projectId,
   onSuccess,
 }: AddTeamMemberDialogProps) {
-  const [memberType, setMemberType] = useState<'profile' | 'agency_contact' | 'client'>('profile');
+  const [memberType, setMemberType] = useState<'profile' | 'agency_contact' | 'client_user' | 'client_contact'>(
+    'profile'
+  );
   const [memberId, setMemberId] = useState('');
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -44,9 +46,11 @@ export function AddTeamMemberDialog({
 
   useEffect(() => {
     if (!open) return;
-    // For "client" we fetch either:
-    // - the list of clients (if no client is linked yet)
-    // - the contacts of the linked client (if already linked)
+    // For "client_user" we fetch:
+    // - the linked client (if already linked)
+    // - otherwise the list of active clients
+    // For "client_contact" we fetch:
+    // - contacts of the linked client
     fetchMembers();
   }, [open, memberType, projectClientId]);
 
@@ -87,8 +91,25 @@ export function AddTeamMemberDialog({
           `)
           .order('first_name');
         data = contacts || [];
-      } else if (memberType === 'client') {
-        if (!projectClientId) {
+      } else if (memberType === 'client_user') {
+        if (projectClientId) {
+          // Client already linked → allow selecting the linked client to (re)grant access
+          const { data: client, error } = await supabase
+            .from('clients')
+            .select('id, company, first_name, last_name, email')
+            .eq('id', projectClientId)
+            .maybeSingle();
+
+          if (error) {
+            console.error('Error fetching linked client:', error);
+            toast.error('Erreur lors du chargement du client');
+          } else {
+            data = client ? [client] : [];
+            if (!client) {
+              toast.info('Aucun client associé à ce projet');
+            }
+          }
+        } else {
           // No client linked yet → allow selecting a client to associate
           const { data: clients, error } = await supabase
             .from('clients')
@@ -105,14 +126,18 @@ export function AddTeamMemberDialog({
               toast.info('Aucun client disponible');
             }
           }
+        }
+      } else if (memberType === 'client_contact') {
+        if (!projectClientId) {
+          data = [];
+          toast.info("Associez d'abord un client au projet");
         } else {
-          // Client already linked → allow selecting a client contact
           const { data: clientContacts, error } = await supabase
             .from('client_contacts')
             .select('id, first_name, last_name, email, title')
             .eq('client_id', projectClientId)
             .order('first_name');
-          
+
           if (error) {
             console.error('Error fetching client contacts:', error);
             toast.error('Erreur lors du chargement des contacts clients');
@@ -141,48 +166,61 @@ export function AddTeamMemberDialog({
 
     setLoading(true);
     try {
-      // Special case: from "Équipe > Ajouter > Clients" when the project has no linked client yet,
-      // we associate the selected client to the project.
-      if (memberType === 'client' && !projectClientId) {
-        const { error } = await supabase
-          .from('project_clients')
-          .insert({
-            project_id: projectId,
-            client_id: memberId,
-          });
+      // Client account access (visibility for the client user)
+      if (memberType === 'client_user') {
+        const selectedClient = members.find((c) => c.id === memberId);
+        const selectedClientEmail = selectedClient?.email;
 
-        if (error) {
-          // Unique constraint (if any) / already linked
-          if ((error as any).code === '23505') {
-            toast.error('Ce client est déjà associé à ce projet');
-          } else {
-            throw error;
-          }
+        if (projectClientId && projectClientId !== memberId) {
+          toast.error('Ce projet est déjà associé à un autre client');
           return;
         }
 
-        // Auto-add client profile to team if exists
-        const selectedClient = members.find(c => c.id === memberId);
-        if (selectedClient?.email) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('email', selectedClient.email)
-            .maybeSingle();
+        // Ensure project-client association exists
+        if (!projectClientId) {
+          const { error: linkError } = await supabase
+            .from('project_clients')
+            .insert({
+              project_id: projectId,
+              client_id: memberId,
+            });
 
-          if (profile) {
-            await supabase
-              .from('project_team_members')
-              .insert({
-                project_id: projectId,
-                member_id: profile.id,
-                member_type: 'profile',
-              });
+          if (linkError && (linkError as any).code !== '23505') {
+            throw linkError;
           }
+          setProjectClientId(memberId);
         }
 
-        toast.success('Client associé au projet');
-        setProjectClientId(memberId);
+        if (!selectedClientEmail) {
+          toast.error("Impossible de retrouver l'email du client");
+          return;
+        }
+
+        // Map client email to a user profile (client account)
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', selectedClientEmail)
+          .maybeSingle();
+
+        if (profileError) throw profileError;
+
+        if (!profile?.id) {
+          toast.info("Ce client n'a pas encore de compte utilisateur");
+          return;
+        }
+
+        const { error: teamInsertError } = await supabase.from('project_team_members').insert({
+          project_id: projectId,
+          member_id: profile.id,
+          member_type: 'profile',
+        });
+
+        if (teamInsertError && (teamInsertError as any).code !== '23505') {
+          throw teamInsertError;
+        }
+
+        toast.success('Accès client ajouté au projet');
         onSuccess();
         onOpenChange(false);
         setMemberId('');
@@ -222,7 +260,7 @@ export function AddTeamMemberDialog({
         .from('project_team_members' as any)
         .insert({
           project_id: projectId,
-          member_type: memberType === 'client' ? 'client_contact' : memberType,
+          member_type: memberType,
           member_id: memberId,
         });
 
@@ -252,11 +290,10 @@ export function AddTeamMemberDialog({
     if (memberType === 'agency_contact' && member.agencies) {
       return `${name} (${member.agencies.name})`;
     }
-    if (memberType === 'client') {
-      // If no client is linked yet, we're selecting a client company; otherwise a client contact
-      if (!projectClientId) {
-        return `${(member.company || '').toUpperCase()} - ${name}${member.email ? ` (${member.email})` : ''}`;
-      }
+    if (memberType === 'client_user') {
+      return `${(member.company || '').toUpperCase()} - ${name}${member.email ? ` (${member.email})` : ''}`;
+    }
+    if (memberType === 'client_contact') {
       return `${name}${member.title ? ` - ${member.title}` : ''}`;
     }
     return `${name} (${member.email})`;
@@ -284,7 +321,8 @@ export function AddTeamMemberDialog({
               <SelectContent>
                 <SelectItem value="profile">Équipe</SelectItem>
                 <SelectItem value="agency_contact">Agences</SelectItem>
-              <SelectItem value="client">Clients</SelectItem>
+                <SelectItem value="client_user">Compte client</SelectItem>
+                <SelectItem value="client_contact">Contacts clients</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -294,8 +332,14 @@ export function AddTeamMemberDialog({
             <Select value={memberId} onValueChange={setMemberId}>
               <SelectTrigger>
                 <SelectValue placeholder={
-                  memberType === 'client' && !projectClientId
-                    ? "Sélectionner un client à associer"
+                  memberType === 'client_user' && !projectClientId
+                    ? "Sélectionner un client à associer (compte)"
+                    : memberType === 'client_user' && projectClientId
+                    ? "Sélectionner le compte client à (ré)ajouter"
+                    : memberType === 'client_contact' && !projectClientId
+                    ? "Associez d'abord un client au projet"
+                    : memberType === 'client_contact'
+                    ? 'Sélectionner un contact client'
                     : members.length === 0
                     ? "Aucun membre disponible"
                     : "Sélectionner un membre"
@@ -304,9 +348,9 @@ export function AddTeamMemberDialog({
               <SelectContent>
                 {members.length === 0 ? (
                   <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                    {memberType === 'client' && !projectClientId
-                      ? "Aucun client disponible"
-                      : "Aucun membre disponible"}
+                    {memberType === 'client_user' && !projectClientId
+                      ? 'Aucun client disponible'
+                      : 'Aucun membre disponible'}
                   </div>
                 ) : (
                   members.map((member) => (
