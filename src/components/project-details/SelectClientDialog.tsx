@@ -79,6 +79,26 @@ export function SelectClientDialog({
 
       if (error) throw error;
 
+      // Auto-add client profile to team if exists
+      const selectedClient = clients.find(c => c.id === clientId);
+      if (selectedClient?.email) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', selectedClient.email)
+          .maybeSingle();
+
+        if (profile) {
+          await supabase
+            .from('project_team_members')
+            .insert({
+              project_id: projectId,
+              member_id: profile.id,
+              member_type: 'profile',
+            });
+        }
+      }
+
       toast.success('Client associé au projet avec succès');
       onClientSelected();
       onOpenChange(false);

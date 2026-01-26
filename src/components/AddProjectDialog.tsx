@@ -88,8 +88,27 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
 
         if (clientError) throw clientError;
 
-        // Create KDrive folder automatically if client has KDrive configured
+        // Auto-add client profile to team if exists
         const selectedClient = clients.find(c => c.id === formData.client_id);
+        if (selectedClient) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', selectedClient.email)
+            .maybeSingle();
+
+          if (profile) {
+            await supabase
+              .from('project_team_members')
+              .insert({
+                project_id: project.id,
+                member_id: profile.id,
+                member_type: 'profile',
+              });
+          }
+        }
+
+        // Create KDrive folder automatically if client has KDrive configured
         if (selectedClient?.kdrive_drive_id && selectedClient?.kdrive_folder_id) {
           try {
             const { data: folderData, error: folderError } = await supabase.functions.invoke('kdrive-api', {
