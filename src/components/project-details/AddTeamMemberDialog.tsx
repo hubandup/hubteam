@@ -43,9 +43,11 @@ export function AddTeamMemberDialog({
   }, [open]);
 
   useEffect(() => {
-    if (open && (memberType !== 'client' || projectClientId)) {
-      fetchMembers();
-    }
+    if (!open) return;
+    // For "client" we fetch either:
+    // - the list of clients (if no client is linked yet)
+    // - the contacts of the linked client (if already linked)
+    fetchMembers();
   }, [open, memberType, projectClientId]);
 
   const fetchProjectClient = async () => {
@@ -86,7 +88,25 @@ export function AddTeamMemberDialog({
           .order('first_name');
         data = contacts || [];
       } else if (memberType === 'client') {
-        if (projectClientId) {
+        if (!projectClientId) {
+          // No client linked yet → allow selecting a client to associate
+          const { data: clients, error } = await supabase
+            .from('clients')
+            .select('id, company, first_name, last_name, email')
+            .eq('active', true)
+            .order('company');
+
+          if (error) {
+            console.error('Error fetching clients:', error);
+            toast.error('Erreur lors du chargement des clients');
+          } else {
+            data = clients || [];
+            if (data.length === 0) {
+              toast.info('Aucun client disponible');
+            }
+          }
+        } else {
+          // Client already linked → allow selecting a client contact
           const { data: clientContacts, error } = await supabase
             .from('client_contacts')
             .select('id, first_name, last_name, email, title')
@@ -102,8 +122,6 @@ export function AddTeamMemberDialog({
               toast.info('Aucun contact trouvé pour ce client');
             }
           }
-        } else {
-          toast.error('Ce projet n\'a pas de client associé');
         }
       }
 
@@ -123,6 +141,34 @@ export function AddTeamMemberDialog({
 
     setLoading(true);
     try {
+      // Special case: from "Équipe > Ajouter > Clients" when the project has no linked client yet,
+      // we associate the selected client to the project.
+      if (memberType === 'client' && !projectClientId) {
+        const { error } = await supabase
+          .from('project_clients')
+          .insert({
+            project_id: projectId,
+            client_id: memberId,
+          });
+
+        if (error) {
+          // Unique constraint (if any) / already linked
+          if ((error as any).code === '23505') {
+            toast.error('Ce client est déjà associé à ce projet');
+          } else {
+            throw error;
+          }
+          return;
+        }
+
+        toast.success('Client associé au projet');
+        setProjectClientId(memberId);
+        onSuccess();
+        onOpenChange(false);
+        setMemberId('');
+        return;
+      }
+
       // If adding an agency contact, also add the agency to project_agencies if not already added
       if (memberType === 'agency_contact') {
         const { data: contactData } = await supabase
@@ -187,6 +233,10 @@ export function AddTeamMemberDialog({
       return `${name} (${member.agencies.name})`;
     }
     if (memberType === 'client') {
+      // If no client is linked yet, we're selecting a client company; otherwise a client contact
+      if (!projectClientId) {
+        return `${(member.company || '').toUpperCase()} - ${name}${member.email ? ` (${member.email})` : ''}`;
+      }
       return `${name}${member.title ? ` - ${member.title}` : ''}`;
     }
     return `${name} (${member.email})`;
@@ -214,7 +264,7 @@ export function AddTeamMemberDialog({
               <SelectContent>
                 <SelectItem value="profile">Équipe</SelectItem>
                 <SelectItem value="agency_contact">Agences</SelectItem>
-                <SelectItem value="client">Clients</SelectItem>
+              <SelectItem value="client">Clients</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -225,7 +275,7 @@ export function AddTeamMemberDialog({
               <SelectTrigger>
                 <SelectValue placeholder={
                   memberType === 'client' && !projectClientId
-                    ? "Aucun client associé au projet"
+                    ? "Sélectionner un client à associer"
                     : members.length === 0
                     ? "Aucun membre disponible"
                     : "Sélectionner un membre"
@@ -235,7 +285,7 @@ export function AddTeamMemberDialog({
                 {members.length === 0 ? (
                   <div className="px-2 py-1.5 text-sm text-muted-foreground">
                     {memberType === 'client' && !projectClientId
-                      ? "Ce projet n'a pas de client associé"
+                      ? "Aucun client disponible"
                       : "Aucun membre disponible"}
                   </div>
                 ) : (
