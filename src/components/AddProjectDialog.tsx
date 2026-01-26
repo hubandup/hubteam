@@ -78,6 +78,15 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
 
       if (projectError) throw projectError;
 
+      // Auto-add the project creator to the team
+      if (project && userData.user?.id) {
+        await supabase.from('project_team_members').insert({
+          project_id: project.id,
+          member_id: userData.user.id,
+          member_type: 'profile',
+        });
+      }
+
       if (formData.client_id && project) {
         const { error: clientError } = await supabase
           .from('project_clients')

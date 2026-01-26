@@ -2,7 +2,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
 import { useAuth } from './useAuth';
-import { useUserRole } from './useUserRole';
 
 interface Project {
   id: string;
@@ -74,37 +73,14 @@ async function addTaskCounts(projects: Project[]): Promise<Project[]> {
   }));
 }
 
-async function fetchProjects(isClient: boolean, userId: string | null) {
-  if (isClient && userId) {
-    // For clients, visibility is based ONLY on project_team_members (Équipe tab)
-    const { data: teamRows, error: teamError } = await supabase
-      .from('project_team_members')
-      .select(`
-        projects!inner (
-          *,
-          project_clients (
-            clients (
-              company,
-              logo_url
-            )
-          )
-        )
-      `)
-      .eq('member_type', 'profile')
-      .eq('member_id', userId)
-      .eq('projects.archived', false);
+async function fetchProjects(userId: string | null) {
+  if (!userId) return [];
 
-    if (teamError) throw teamError;
-
-    const projects = (teamRows?.map((r: any) => r.projects).filter(Boolean) || []) as Project[];
-    projects.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-    return await addTaskCounts(projects);
-  } else {
-    // For admin/team, show all projects
-    const { data, error } = await supabase
-      .from('projects')
-      .select(`
+  // All users see only projects where they are a member (profile) in project_team_members
+  const { data: teamRows, error: teamError } = await supabase
+    .from('project_team_members')
+    .select(`
+      projects!inner (
         *,
         project_clients (
           clients (
@@ -112,47 +88,28 @@ async function fetchProjects(isClient: boolean, userId: string | null) {
             logo_url
           )
         )
-      `)
-      .eq('archived', false)
-      .order('created_at', { ascending: false });
+      )
+    `)
+    .eq('member_type', 'profile')
+    .eq('member_id', userId)
+    .eq('projects.archived', false);
 
-    if (error) throw error;
-    const projects = (data || []) as Project[];
-    return await addTaskCounts(projects);
-  }
+  if (teamError) throw teamError;
+
+  const projects = (teamRows?.map((r: any) => r.projects).filter(Boolean) || []) as Project[];
+  projects.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  return await addTaskCounts(projects);
 }
 
-async function fetchArchivedProjects(isClient: boolean, userId: string | null) {
-  if (isClient && userId) {
-    // For clients, visibility is based ONLY on project_team_members (Équipe tab)
-    const { data: teamRows, error: teamError } = await supabase
-      .from('project_team_members')
-      .select(`
-        projects!inner (
-          *,
-          project_clients (
-            clients (
-              company,
-              logo_url
-            )
-          )
-        )
-      `)
-      .eq('member_type', 'profile')
-      .eq('member_id', userId)
-      .eq('projects.archived', true);
+async function fetchArchivedProjects(userId: string | null) {
+  if (!userId) return [];
 
-    if (teamError) throw teamError;
-
-    const projects = (teamRows?.map((r: any) => r.projects).filter(Boolean) || []) as Project[];
-    projects.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-    return await addTaskCounts(projects);
-  } else {
-    // For admin/team, show all archived projects
-    const { data, error } = await supabase
-      .from('projects')
-      .select(`
+  // All users see only archived projects where they are a member (profile)
+  const { data: teamRows, error: teamError } = await supabase
+    .from('project_team_members')
+    .select(`
+      projects!inner (
         *,
         project_clients (
           clients (
@@ -160,24 +117,27 @@ async function fetchArchivedProjects(isClient: boolean, userId: string | null) {
             logo_url
           )
         )
-      `)
-      .eq('archived', true)
-      .order('created_at', { ascending: false });
+      )
+    `)
+    .eq('member_type', 'profile')
+    .eq('member_id', userId)
+    .eq('projects.archived', true);
 
-    if (error) throw error;
-    const projects = (data || []) as Project[];
-    return await addTaskCounts(projects);
-  }
+  if (teamError) throw teamError;
+
+  const projects = (teamRows?.map((r: any) => r.projects).filter(Boolean) || []) as Project[];
+  projects.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  return await addTaskCounts(projects);
 }
 
 export function useProjects() {
   const { user } = useAuth();
-  const { isClient } = useUserRole();
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: ['projects', isClient, user?.id],
-    queryFn: () => fetchProjects(isClient, user?.id || null),
+    queryKey: ['projects', user?.id],
+    queryFn: () => fetchProjects(user?.id || null),
     enabled: !!user,
   });
 
@@ -234,12 +194,11 @@ export function useProjects() {
 
 export function useArchivedProjects() {
   const { user } = useAuth();
-  const { isClient } = useUserRole();
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: ['archived-projects', isClient, user?.id],
-    queryFn: () => fetchArchivedProjects(isClient, user?.id || null),
+    queryKey: ['archived-projects', user?.id],
+    queryFn: () => fetchArchivedProjects(user?.id || null),
     enabled: !!user,
   });
 
