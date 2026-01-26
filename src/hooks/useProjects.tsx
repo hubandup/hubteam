@@ -29,6 +29,15 @@ interface Project {
   tasks_completed?: number;
 }
 
+function mergeProjectsById(projects: Project[]): Project[] {
+  const map = new Map<string, Project>();
+  for (const p of projects) {
+    if (!p?.id) continue;
+    if (!map.has(p.id)) map.set(p.id, p);
+  }
+  return Array.from(map.values());
+}
+
 async function addTaskCounts(projects: Project[]): Promise<Project[]> {
   if (projects.length === 0) return projects;
 
@@ -67,29 +76,12 @@ async function addTaskCounts(projects: Project[]): Promise<Project[]> {
 
 async function fetchProjects(isClient: boolean, userId: string | null) {
   if (isClient && userId) {
-    // For clients, only show their own projects
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('id', userId)
-      .single();
+    // For clients, show projects from two sources:
+    // 1) explicit membership via Project > Équipe (project_team_members.member_type='profile')
+    // 2) company association via project_clients (legacy / when client table email matches)
 
-    if (!profileData) {
-      return [];
-    }
-
-    const { data: clientData } = await supabase
-      .from('clients')
-      .select('id')
-      .eq('email', profileData.email)
-      .single();
-
-    if (!clientData) {
-      return [];
-    }
-
-    const { data, error } = await supabase
-      .from('project_clients')
+    const teamProjectsPromise = supabase
+      .from('project_team_members')
       .select(`
         projects!inner (
           *,
@@ -101,14 +93,64 @@ async function fetchProjects(isClient: boolean, userId: string | null) {
           )
         )
       `)
-      .eq('client_id', clientData.id)
-      .eq('projects.archived', false)
-      .order('projects(created_at)', { ascending: false });
+      .eq('member_type', 'profile')
+      .eq('member_id', userId)
+      .eq('projects.archived', false);
 
-    if (error) throw error;
-    
-    const projects = (data?.map(pc => pc.projects).filter(Boolean) || []) as Project[];
-    return await addTaskCounts(projects);
+    // Legacy lookup based on email ↔ client record
+    const companyProjectsPromise = (async () => {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', userId)
+        .single();
+
+      if (!profileData?.email) return [] as Project[];
+
+      const { data: clientData } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('email', profileData.email)
+        .single();
+
+      if (!clientData?.id) return [] as Project[];
+
+      const { data, error } = await supabase
+        .from('project_clients')
+        .select(`
+          projects!inner (
+            *,
+            project_clients (
+              clients (
+                company,
+                logo_url
+              )
+            )
+          )
+        `)
+        .eq('client_id', clientData.id)
+        .eq('projects.archived', false)
+        .order('projects(created_at)', { ascending: false });
+
+      if (error) throw error;
+      return (data?.map(pc => pc.projects).filter(Boolean) || []) as Project[];
+    })();
+
+    const [{ data: teamRows, error: teamError }, companyProjects] = await Promise.all([
+      teamProjectsPromise,
+      companyProjectsPromise,
+    ]);
+
+    if (teamError) throw teamError;
+
+    const teamProjects = (teamRows?.map((r: any) => r.projects).filter(Boolean) || []) as Project[];
+
+    const merged = mergeProjectsById([
+      ...teamProjects,
+      ...companyProjects,
+    ]).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    return await addTaskCounts(merged);
   } else {
     // For admin/team, show all projects
     const { data, error } = await supabase
@@ -133,29 +175,12 @@ async function fetchProjects(isClient: boolean, userId: string | null) {
 
 async function fetchArchivedProjects(isClient: boolean, userId: string | null) {
   if (isClient && userId) {
-    // For clients, only show their own archived projects
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('id', userId)
-      .single();
+    // For clients, archived projects from:
+    // 1) explicit membership via project_team_members
+    // 2) company association via project_clients (legacy)
 
-    if (!profileData) {
-      return [];
-    }
-
-    const { data: clientData } = await supabase
-      .from('clients')
-      .select('id')
-      .eq('email', profileData.email)
-      .single();
-
-    if (!clientData) {
-      return [];
-    }
-
-    const { data, error } = await supabase
-      .from('project_clients')
+    const teamProjectsPromise = supabase
+      .from('project_team_members')
       .select(`
         projects!inner (
           *,
@@ -167,14 +192,62 @@ async function fetchArchivedProjects(isClient: boolean, userId: string | null) {
           )
         )
       `)
-      .eq('client_id', clientData.id)
-      .eq('projects.archived', true)
-      .order('projects(created_at)', { ascending: false });
+      .eq('member_type', 'profile')
+      .eq('member_id', userId)
+      .eq('projects.archived', true);
 
-    if (error) throw error;
-    
-    const projects = (data?.map(pc => pc.projects).filter(Boolean) || []) as Project[];
-    return await addTaskCounts(projects);
+    const companyProjectsPromise = (async () => {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', userId)
+        .single();
+
+      if (!profileData?.email) return [] as Project[];
+
+      const { data: clientData } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('email', profileData.email)
+        .single();
+
+      if (!clientData?.id) return [] as Project[];
+
+      const { data, error } = await supabase
+        .from('project_clients')
+        .select(`
+          projects!inner (
+            *,
+            project_clients (
+              clients (
+                company,
+                logo_url
+              )
+            )
+          )
+        `)
+        .eq('client_id', clientData.id)
+        .eq('projects.archived', true)
+        .order('projects(created_at)', { ascending: false });
+
+      if (error) throw error;
+      return (data?.map(pc => pc.projects).filter(Boolean) || []) as Project[];
+    })();
+
+    const [{ data: teamRows, error: teamError }, companyProjects] = await Promise.all([
+      teamProjectsPromise,
+      companyProjectsPromise,
+    ]);
+
+    if (teamError) throw teamError;
+    const teamProjects = (teamRows?.map((r: any) => r.projects).filter(Boolean) || []) as Project[];
+
+    const merged = mergeProjectsById([
+      ...teamProjects,
+      ...companyProjects,
+    ]).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    return await addTaskCounts(merged);
   } else {
     // For admin/team, show all archived projects
     const { data, error } = await supabase
@@ -230,6 +303,18 @@ export function useProjects() {
         {
           event: '*',
           schema: 'public',
+          table: 'project_team_members',
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['projects'] });
+          queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
           table: 'project_clients',
         },
         () => {
@@ -269,6 +354,18 @@ export function useArchivedProjects() {
           event: '*',
           schema: 'public',
           table: 'projects',
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['projects'] });
+          queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'project_team_members',
         },
         () => {
           queryClient.invalidateQueries({ queryKey: ['projects'] });
