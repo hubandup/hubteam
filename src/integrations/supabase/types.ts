@@ -2153,6 +2153,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      client_id_for_user: { Args: { _user_id: string }; Returns: string }
       has_permission: {
         Args: {
           _action: Database["public"]["Enums"]["permission_action"]
