@@ -76,11 +76,8 @@ async function addTaskCounts(projects: Project[]): Promise<Project[]> {
 
 async function fetchProjects(isClient: boolean, userId: string | null) {
   if (isClient && userId) {
-    // For clients, show projects from two sources:
-    // 1) explicit membership via Project > Équipe (project_team_members.member_type='profile')
-    // 2) company association via project_clients (legacy / when client table email matches)
-
-    const teamProjectsPromise = supabase
+    // For clients, visibility is based ONLY on project_team_members (Équipe tab)
+    const { data: teamRows, error: teamError } = await supabase
       .from('project_team_members')
       .select(`
         projects!inner (
@@ -97,60 +94,12 @@ async function fetchProjects(isClient: boolean, userId: string | null) {
       .eq('member_id', userId)
       .eq('projects.archived', false);
 
-    // Legacy lookup based on email ↔ client record
-    const companyProjectsPromise = (async () => {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('id', userId)
-        .single();
-
-      if (!profileData?.email) return [] as Project[];
-
-      const { data: clientData } = await supabase
-        .from('clients')
-        .select('id')
-        .eq('email', profileData.email)
-        .single();
-
-      if (!clientData?.id) return [] as Project[];
-
-      const { data, error } = await supabase
-        .from('project_clients')
-        .select(`
-          projects!inner (
-            *,
-            project_clients (
-              clients (
-                company,
-                logo_url
-              )
-            )
-          )
-        `)
-        .eq('client_id', clientData.id)
-        .eq('projects.archived', false)
-        .order('projects(created_at)', { ascending: false });
-
-      if (error) throw error;
-      return (data?.map(pc => pc.projects).filter(Boolean) || []) as Project[];
-    })();
-
-    const [{ data: teamRows, error: teamError }, companyProjects] = await Promise.all([
-      teamProjectsPromise,
-      companyProjectsPromise,
-    ]);
-
     if (teamError) throw teamError;
 
-    const teamProjects = (teamRows?.map((r: any) => r.projects).filter(Boolean) || []) as Project[];
+    const projects = (teamRows?.map((r: any) => r.projects).filter(Boolean) || []) as Project[];
+    projects.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-    const merged = mergeProjectsById([
-      ...teamProjects,
-      ...companyProjects,
-    ]).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-    return await addTaskCounts(merged);
+    return await addTaskCounts(projects);
   } else {
     // For admin/team, show all projects
     const { data, error } = await supabase
@@ -175,11 +124,8 @@ async function fetchProjects(isClient: boolean, userId: string | null) {
 
 async function fetchArchivedProjects(isClient: boolean, userId: string | null) {
   if (isClient && userId) {
-    // For clients, archived projects from:
-    // 1) explicit membership via project_team_members
-    // 2) company association via project_clients (legacy)
-
-    const teamProjectsPromise = supabase
+    // For clients, visibility is based ONLY on project_team_members (Équipe tab)
+    const { data: teamRows, error: teamError } = await supabase
       .from('project_team_members')
       .select(`
         projects!inner (
@@ -196,58 +142,12 @@ async function fetchArchivedProjects(isClient: boolean, userId: string | null) {
       .eq('member_id', userId)
       .eq('projects.archived', true);
 
-    const companyProjectsPromise = (async () => {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('id', userId)
-        .single();
-
-      if (!profileData?.email) return [] as Project[];
-
-      const { data: clientData } = await supabase
-        .from('clients')
-        .select('id')
-        .eq('email', profileData.email)
-        .single();
-
-      if (!clientData?.id) return [] as Project[];
-
-      const { data, error } = await supabase
-        .from('project_clients')
-        .select(`
-          projects!inner (
-            *,
-            project_clients (
-              clients (
-                company,
-                logo_url
-              )
-            )
-          )
-        `)
-        .eq('client_id', clientData.id)
-        .eq('projects.archived', true)
-        .order('projects(created_at)', { ascending: false });
-
-      if (error) throw error;
-      return (data?.map(pc => pc.projects).filter(Boolean) || []) as Project[];
-    })();
-
-    const [{ data: teamRows, error: teamError }, companyProjects] = await Promise.all([
-      teamProjectsPromise,
-      companyProjectsPromise,
-    ]);
-
     if (teamError) throw teamError;
-    const teamProjects = (teamRows?.map((r: any) => r.projects).filter(Boolean) || []) as Project[];
 
-    const merged = mergeProjectsById([
-      ...teamProjects,
-      ...companyProjects,
-    ]).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const projects = (teamRows?.map((r: any) => r.projects).filter(Boolean) || []) as Project[];
+    projects.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-    return await addTaskCounts(merged);
+    return await addTaskCounts(projects);
   } else {
     // For admin/team, show all archived projects
     const { data, error } = await supabase
