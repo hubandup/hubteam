@@ -1053,41 +1053,115 @@ export type Database = {
         Row: {
           created_at: string
           deadline_approaching: boolean
+          deadline_approaching_email: boolean
+          deadline_approaching_push: boolean
           id: string
           mention: boolean
+          mention_email: boolean
+          mention_push: boolean
+          message_email: boolean
+          message_push: boolean
+          project_assigned_email: boolean
+          project_assigned_push: boolean
           reaction: boolean
+          reaction_email: boolean
+          reaction_push: boolean
           task_assigned: boolean
+          task_assigned_email: boolean
+          task_assigned_push: boolean
           task_comment: boolean
+          task_comment_email: boolean
+          task_comment_push: boolean
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
           deadline_approaching?: boolean
+          deadline_approaching_email?: boolean
+          deadline_approaching_push?: boolean
           id?: string
           mention?: boolean
+          mention_email?: boolean
+          mention_push?: boolean
+          message_email?: boolean
+          message_push?: boolean
+          project_assigned_email?: boolean
+          project_assigned_push?: boolean
           reaction?: boolean
+          reaction_email?: boolean
+          reaction_push?: boolean
           task_assigned?: boolean
+          task_assigned_email?: boolean
+          task_assigned_push?: boolean
           task_comment?: boolean
+          task_comment_email?: boolean
+          task_comment_push?: boolean
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
           deadline_approaching?: boolean
+          deadline_approaching_email?: boolean
+          deadline_approaching_push?: boolean
           id?: string
           mention?: boolean
+          mention_email?: boolean
+          mention_push?: boolean
+          message_email?: boolean
+          message_push?: boolean
+          project_assigned_email?: boolean
+          project_assigned_push?: boolean
           reaction?: boolean
+          reaction_email?: boolean
+          reaction_push?: boolean
           task_assigned?: boolean
+          task_assigned_email?: boolean
+          task_assigned_push?: boolean
           task_comment?: boolean
+          task_comment_email?: boolean
+          task_comment_push?: boolean
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      notification_preferences_global: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          force_email: boolean
+          id: string
+          notification_type: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          force_email?: boolean
+          id?: string
+          notification_type: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          force_email?: boolean
+          id?: string
+          notification_type?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
         }
         Relationships: []
       }
       notifications: {
         Row: {
           created_at: string
+          entity_id: string | null
+          entity_type: string | null
           id: string
           link: string | null
           message: string
@@ -1098,6 +1172,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
           id?: string
           link?: string | null
           message: string
@@ -1108,6 +1184,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
           id?: string
           link?: string | null
           message?: string
@@ -2154,6 +2232,10 @@ export type Database = {
     }
     Functions: {
       client_id_for_user: { Args: { _user_id: string }; Returns: string }
+      get_user_role: {
+        Args: { p_user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       has_permission: {
         Args: {
           _action: Database["public"]["Enums"]["permission_action"]
@@ -2174,6 +2256,14 @@ export type Database = {
         Returns: boolean
       }
       notify_upcoming_deadlines: { Args: never; Returns: undefined }
+      should_send_notification: {
+        Args: {
+          p_channel: string
+          p_notification_type: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_module:
@@ -2220,6 +2310,14 @@ export type Database = {
         | "Relance Linkedin 3"
         | "Bouche à Oreille"
         | "Autre (Précisez)"
+      notification_type:
+        | "project_assigned"
+        | "task_assigned"
+        | "task_comment"
+        | "mention"
+        | "message"
+        | "deadline_approaching"
+        | "reaction"
       permission_action: "read" | "create" | "update" | "delete"
       permission_scope: "all" | "limited" | "own"
       prospect_channel: "Email" | "Téléphone" | "LinkedIn" | "Bouche-à-oreille"
@@ -2413,6 +2511,15 @@ export const Constants = {
         "Relance Linkedin 3",
         "Bouche à Oreille",
         "Autre (Précisez)",
+      ],
+      notification_type: [
+        "project_assigned",
+        "task_assigned",
+        "task_comment",
+        "mention",
+        "message",
+        "deadline_approaching",
+        "reaction",
       ],
       permission_action: ["read", "create", "update", "delete"],
       permission_scope: ["all", "limited", "own"],

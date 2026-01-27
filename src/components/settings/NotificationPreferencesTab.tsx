@@ -6,26 +6,15 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useNotificationSettings, NOTIFICATION_TYPES, NotificationType } from '@/hooks/useNotificationSettings';
 import { toast } from 'sonner';
-import { Loader2, Bell, MessageSquare, Calendar, CheckCircle, Smartphone, BellRing } from 'lucide-react';
-
-interface NotificationPreferences {
-  task_assigned: boolean;
-  task_comment: boolean;
-  mention: boolean;
-  deadline_approaching: boolean;
-}
+import { Loader2, Bell, Smartphone, BellRing, Mail, Lock, AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { AdminNotificationSettings } from './AdminNotificationSettings';
 
 export function NotificationPreferencesTab() {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [preferences, setPreferences] = useState<NotificationPreferences>({
-    task_assigned: true,
-    task_comment: true,
-    mention: true,
-    deadline_approaching: true,
-  });
+  const [testingSending, setTestingSending] = useState(false);
 
   const { 
     isSupported, 
@@ -36,83 +25,16 @@ export function NotificationPreferencesTab() {
     isPWAMode 
   } = usePushNotifications();
 
-  useEffect(() => {
-    if (user) {
-      fetchPreferences();
-    }
-  }, [user]);
-
-  const fetchPreferences = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('notification_preferences')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error) {
-        // If no preferences exist yet, create them
-        if (error.code === 'PGRST116') {
-          await createDefaultPreferences();
-        } else {
-          throw error;
-        }
-      } else if (data) {
-        setPreferences({
-          task_assigned: data.task_assigned,
-          task_comment: data.task_comment,
-          mention: data.mention,
-          deadline_approaching: data.deadline_approaching,
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching notification preferences:', error);
-      toast.error('Erreur lors du chargement des préférences');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createDefaultPreferences = async () => {
-    if (!user) return;
-
-    try {
-      const { error } = await supabase
-        .from('notification_preferences')
-        .insert({ user_id: user.id });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error creating default preferences:', error);
-    }
-  };
-
-  const updatePreference = async (key: keyof NotificationPreferences, value: boolean) => {
-    if (!user) return;
-
-    setSaving(true);
-    setPreferences(prev => ({ ...prev, [key]: value }));
-
-    try {
-      const { error } = await supabase
-        .from('notification_preferences')
-        .update({ [key]: value })
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      toast.success('Préférences mises à jour');
-    } catch (error) {
-      console.error('Error updating preferences:', error);
-      toast.error('Erreur lors de la mise à jour');
-      // Revert on error
-      setPreferences(prev => ({ ...prev, [key]: !value }));
-    } finally {
-      setSaving(false);
-    }
-  };
+  const {
+    userPreferences,
+    loading,
+    saving,
+    updateUserPreference,
+    isNotificationEnabled,
+    isForceEmail,
+    isAdmin,
+    userRole,
+  } = useNotificationSettings();
 
   const handlePushToggle = async () => {
     if (subscription) {
@@ -123,6 +45,7 @@ export function NotificationPreferencesTab() {
   };
 
   const testPushNotification = async () => {
+    setTestingSending(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -141,6 +64,8 @@ export function NotificationPreferencesTab() {
     } catch (error) {
       console.error('Error testing push:', error);
       toast.error('Erreur lors du test');
+    } finally {
+      setTestingSending(false);
     }
   };
 
@@ -154,8 +79,14 @@ export function NotificationPreferencesTab() {
     );
   }
 
+  // Check if user is a client (limited notifications)
+  const isClient = userRole === 'client';
+
   return (
     <div className="space-y-6">
+      {/* Admin Governance Section */}
+      {isAdmin && <AdminNotificationSettings />}
+
       {/* Push Notifications Card */}
       <Card>
         <CardHeader>
@@ -210,9 +141,14 @@ export function NotificationPreferencesTab() {
                   variant="outline" 
                   size="sm" 
                   onClick={testPushNotification}
+                  disabled={testingSending}
                   className="w-full"
                 >
-                  <Bell className="h-4 w-4 mr-2" />
+                  {testingSending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Bell className="h-4 w-4 mr-2" />
+                  )}
                   Envoyer une notification de test
                 </Button>
               )}
@@ -221,7 +157,24 @@ export function NotificationPreferencesTab() {
         </CardContent>
       </Card>
 
-      {/* Email Notification Preferences Card */}
+      {/* Client Role Notice */}
+      {isClient && (
+        <Card className="border-amber-500/50 bg-amber-500/5">
+          <CardContent className="flex items-start gap-3 pt-6">
+            <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0" />
+            <div>
+              <p className="font-medium text-amber-700 dark:text-amber-400">
+                Notifications limitées
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                En tant que client, vous recevez uniquement les notifications pour les projets qui vous sont attribués et les messages directs.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* User Notification Preferences Card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -229,89 +182,75 @@ export function NotificationPreferencesTab() {
             Préférences de notifications
           </CardTitle>
           <CardDescription>
-            Choisissez les types de notifications que vous souhaitez recevoir par email
+            Personnalisez vos notifications par type et par canal (push/email)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between space-x-4 p-4 rounded-lg border bg-card">
-            <div className="flex items-start gap-3 flex-1">
-              <CheckCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div className="space-y-1">
-                <Label htmlFor="task_assigned" className="text-base cursor-pointer">
-                  Tâches assignées
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Recevoir une notification lorsqu'une tâche vous est assignée
-                </p>
+          {NOTIFICATION_TYPES.map(({ type, label, description }) => {
+            const enabled = isNotificationEnabled(type);
+            const forceEmail = isForceEmail(type);
+            const prefs = userPreferences[type] || { push: true, email: false };
+            const isMessage = type === 'message';
+            
+            // Don't show disabled notifications for clients
+            if (isClient && !enabled) return null;
+            
+            return (
+              <div 
+                key={type}
+                className={`p-4 rounded-lg border bg-card ${!enabled ? 'opacity-50' : ''}`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-base font-medium">{label}</Label>
+                      {!enabled && (
+                        <Badge variant="secondary" className="text-xs">
+                          <Lock className="h-3 w-3 mr-1" />
+                          Désactivé
+                        </Badge>
+                      )}
+                      {forceEmail && (
+                        <Badge variant="default" className="text-xs">
+                          <Mail className="h-3 w-3 mr-1" />
+                          Email obligatoire
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">{description}</p>
+                  </div>
+                  
+                  {enabled && (
+                    <div className="flex items-center gap-4">
+                      {/* Push toggle */}
+                      <div className="flex flex-col items-center gap-1">
+                        <Switch
+                          checked={prefs.push}
+                          onCheckedChange={(checked) => 
+                            updateUserPreference(type as NotificationType, 'push', checked)
+                          }
+                          disabled={saving || isMessage}
+                        />
+                        <span className="text-xs text-muted-foreground">Push</span>
+                      </div>
+                      
+                      {/* Email toggle */}
+                      <div className="flex flex-col items-center gap-1">
+                        <Switch
+                          checked={prefs.email || forceEmail}
+                          onCheckedChange={(checked) => 
+                            updateUserPreference(type as NotificationType, 'email', checked)
+                          }
+                          disabled={saving || forceEmail}
+                        />
+                        <span className="text-xs text-muted-foreground">Email</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-            <Switch
-              id="task_assigned"
-              checked={preferences.task_assigned}
-              onCheckedChange={(checked) => updatePreference('task_assigned', checked)}
-              disabled={saving}
-            />
-          </div>
-
-          <div className="flex items-center justify-between space-x-4 p-4 rounded-lg border bg-card">
-            <div className="flex items-start gap-3 flex-1">
-              <MessageSquare className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div className="space-y-1">
-                <Label htmlFor="task_comment" className="text-base cursor-pointer">
-                  Commentaires sur les tâches
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Recevoir une notification lors d'un nouveau commentaire sur vos tâches
-                </p>
-              </div>
-            </div>
-            <Switch
-              id="task_comment"
-              checked={preferences.task_comment}
-              onCheckedChange={(checked) => updatePreference('task_comment', checked)}
-              disabled={saving}
-            />
-          </div>
-
-          <div className="flex items-center justify-between space-x-4 p-4 rounded-lg border bg-card">
-            <div className="flex items-start gap-3 flex-1">
-              <Bell className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div className="space-y-1">
-                <Label htmlFor="mention" className="text-base cursor-pointer">
-                  Mentions
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Recevoir une notification lorsque quelqu'un vous mentionne dans un message
-                </p>
-              </div>
-            </div>
-            <Switch
-              id="mention"
-              checked={preferences.mention}
-              onCheckedChange={(checked) => updatePreference('mention', checked)}
-              disabled={saving}
-            />
-          </div>
-
-          <div className="flex items-center justify-between space-x-4 p-4 rounded-lg border bg-card">
-            <div className="flex items-start gap-3 flex-1">
-              <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div className="space-y-1">
-                <Label htmlFor="deadline_approaching" className="text-base cursor-pointer">
-                  Deadlines approchantes
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Recevoir une notification 24h avant une deadline
-                </p>
-              </div>
-            </div>
-            <Switch
-              id="deadline_approaching"
-              checked={preferences.deadline_approaching}
-              onCheckedChange={(checked) => updatePreference('deadline_approaching', checked)}
-              disabled={saving}
-            />
-          </div>
+            );
+          })}
         </CardContent>
       </Card>
     </div>
