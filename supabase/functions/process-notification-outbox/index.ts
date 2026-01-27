@@ -6,11 +6,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Notification types must match public.notification_type enum
+type NotificationType = 
+  | 'project_assigned'
+  | 'task_assigned'
+  | 'task_comment'
+  | 'mention'
+  | 'message'
+  | 'deadline_approaching'
+  | 'reaction';
+
 interface OutboxItem {
   id: string;
   notification_id: string;
   user_id: string;
-  notification_type: string;
+  notification_type: NotificationType;
   payload: {
     title: string;
     message: string;
@@ -140,9 +150,28 @@ serve(async (req) => {
           email_enabled: userPrefData?.email_enabled ?? false,
         };
 
+        // =====================================================
+        // MESSAGE NOTIFICATION RULES (DOCUMENTED):
+        // - Push: ALWAYS enabled for 'message' type (cannot be disabled by user)
+        // - Email: Respects user preference UNLESS client role (forced)
+        //
+        // CLIENT ROLE:
+        // - Only receives project_assigned + message
+        // - Email is ALWAYS forced for these types
+        //
+        // OTHER ROLES (admin/team/agency):
+        // - Push: respects user preference (except message = always on)
+        // - Email: respects user preference OR global force_email
+        // =====================================================
+
         // Determine what to send
         let shouldSendPush = userPref.push_enabled;
         let shouldSendEmail = userPref.email_enabled || globalPref.force_email;
+
+        // MESSAGE RULE: push cannot be disabled for messages (safety net for real-time comms)
+        if (item.notification_type === 'message') {
+          shouldSendPush = true;
+        }
 
         // Client role always gets email for project_assigned and message
         if (userRole === 'client' && ['project_assigned', 'message'].includes(item.notification_type)) {
