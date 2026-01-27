@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -306,6 +306,42 @@ export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTas
     }
   };
 
+  const handleUpdateTitle = async (taskId: string, newTitle: string) => {
+    const trimmedTitle = newTitle.trim();
+    if (!trimmedTitle) {
+      toast.error('Le titre ne peut pas être vide');
+      return false;
+    }
+
+    const originalTask = tasks.find(t => t.id === taskId);
+    if (!originalTask || originalTask.title === trimmedTitle) return true;
+
+    // Mise à jour optimiste
+    setTasks(prev => prev.map(t => 
+      t.id === taskId ? { ...t, title: trimmedTitle } : t
+    ));
+
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ title: trimmedTitle })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      onTasksChange?.();
+      return true;
+    } catch (error) {
+      console.error('Error updating task title:', error);
+      // Rollback
+      setTasks(prev => prev.map(t => 
+        t.id === taskId ? { ...t, title: originalTask.title } : t
+      ));
+      toast.error('Erreur lors de la mise à jour du titre');
+      return false;
+    }
+  };
+
   const handleAssignUser = async (taskId: string, userId: string) => {
     try {
       const { error } = await supabase
@@ -533,6 +569,7 @@ export function ProjectTasksNotebookTab({ projectId, onTasksChange }: ProjectTas
                     onCommentChange={(taskId, value) => setNewComment(prev => ({ ...prev, [taskId]: value }))}
                     onAssignPopoverChange={(taskId, open) => setAssignPopoverOpen(prev => ({ ...prev, [taskId]: open }))}
                     onDatePopoverChange={(taskId, open) => setDatePopoverOpen(prev => ({ ...prev, [taskId]: open }))}
+                    onUpdateTitle={handleUpdateTitle}
                   />
                 ))}
               </div>
@@ -581,6 +618,7 @@ interface SortableTaskItemProps {
   onCommentChange: (taskId: string, value: string) => void;
   onAssignPopoverChange: (taskId: string, open: boolean) => void;
   onDatePopoverChange: (taskId: string, open: boolean) => void;
+  onUpdateTitle: (taskId: string, newTitle: string) => Promise<boolean>;
 }
 
 function SortableTaskItem({
@@ -601,7 +639,12 @@ function SortableTaskItem({
   onCommentChange,
   onAssignPopoverChange,
   onDatePopoverChange,
+  onUpdateTitle,
 }: SortableTaskItemProps) {
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(task.title);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
   const {
     attributes,
     listeners,
@@ -615,6 +658,56 @@ function SortableTaskItem({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+  };
+
+  // Focus input when entering edit mode
+  useEffect(() => {
+    if (isEditingTitle && titleInputRef.current) {
+      titleInputRef.current.focus();
+      titleInputRef.current.select();
+    }
+  }, [isEditingTitle]);
+
+  // Sync editedTitle when task.title changes externally
+  useEffect(() => {
+    if (!isEditingTitle) {
+      setEditedTitle(task.title);
+    }
+  }, [task.title, isEditingTitle]);
+
+  const handleTitleClick = () => {
+    if (task.status !== 'done') {
+      setIsEditingTitle(true);
+    }
+  };
+
+  const handleTitleSave = async () => {
+    const success = await onUpdateTitle(task.id, editedTitle);
+    if (success) {
+      setIsEditingTitle(false);
+    } else {
+      // Reset to original title on failure
+      setEditedTitle(task.title);
+    }
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleTitleSave();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setEditedTitle(task.title);
+      setIsEditingTitle(false);
+    }
+  };
+
+  const handleTitleBlur = () => {
+    if (editedTitle.trim() !== task.title) {
+      handleTitleSave();
+    } else {
+      setIsEditingTitle(false);
+    }
   };
 
   return (
@@ -635,12 +728,26 @@ function SortableTaskItem({
           onCheckedChange={() => onToggleTask(task.id, task.status)}
         />
         
-        <p className={cn(
-          "flex-1 text-sm",
-          task.status === 'done' && "line-through text-muted-foreground"
-        )}>
-          {task.title}
-        </p>
+        {isEditingTitle ? (
+          <Input
+            ref={titleInputRef}
+            value={editedTitle}
+            onChange={(e) => setEditedTitle(e.target.value)}
+            onKeyDown={handleTitleKeyDown}
+            onBlur={handleTitleBlur}
+            className="flex-1 h-auto py-0 px-1 text-sm border-0 border-b border-primary bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none"
+          />
+        ) : (
+          <p 
+            onClick={handleTitleClick}
+            className={cn(
+              "flex-1 text-sm cursor-text hover:bg-muted/50 rounded px-1 -mx-1",
+              task.status === 'done' && "line-through text-muted-foreground cursor-default hover:bg-transparent"
+            )}
+          >
+            {task.title}
+          </p>
+        )}
 
         {/* Assign User */}
         <Popover 
