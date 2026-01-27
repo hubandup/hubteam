@@ -97,3 +97,22 @@ verify_jwt = false
 # Unsubscribe handler - public for email links
 [functions.handle-unsubscribe]
 verify_jwt = false
+
+# Notification outbox processor - cron only
+[functions.process-notification-outbox]
+verify_jwt = false
+
+# Project milestones checker - cron only  
+[functions.check-project-milestones]
+verify_jwt = false
+
+# Add cron jobs for notification processing
+[[edge_runtime.cron.jobs]]
+name = "process-notification-outbox"
+schedule = "*/2 * * * *"  # Every 2 minutes
+function = "process-notification-outbox"
+
+[[edge_runtime.cron.jobs]]
+name = "check-project-milestones"
+schedule = "0 8 * * *"  # Daily at 8am
+function = "check-project-milestones"

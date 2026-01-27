@@ -2,9 +2,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Settings2, Lock, Mail } from 'lucide-react';
-import { useNotificationSettings, NOTIFICATION_TYPES, ROLES, AppRole, NotificationType } from '@/hooks/useNotificationSettings';
+import { Loader2, Settings2, Lock, Mail, ShieldCheck } from 'lucide-react';
+import { useNotificationSettings, NOTIFICATION_TYPES, ROLES, AppRole, NotificationType, CLIENT_ALLOWED_TYPES } from '@/hooks/useNotificationSettings';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export function AdminNotificationSettings() {
   const {
@@ -36,7 +37,15 @@ export function AdminNotificationSettings() {
           Configurez les notifications par type et par rôle. Les règles définies ici s'appliquent à tous les utilisateurs.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        <Alert className="border-success/50 bg-success/5">
+          <ShieldCheck className="h-4 w-4 text-success" />
+          <AlertDescription>
+            <strong>Architecture sécurisée :</strong> Les notifications sont traitées via une file d'attente asynchrone. 
+            Aucun secret n'est stocké en base de données.
+          </AlertDescription>
+        </Alert>
+        
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -66,8 +75,8 @@ export function AdminNotificationSettings() {
                   {ROLES.map(({ role }) => {
                     const pref = getGlobalPreference(role, type);
                     const isMessage = type === 'message';
-                    const isClientRestricted = role === 'client' && 
-                      !['project_assigned', 'message'].includes(type);
+                    const isClientRestricted = role === 'client' && !CLIENT_ALLOWED_TYPES.includes(type);
+                    const isClientForced = role === 'client' && CLIENT_ALLOWED_TYPES.includes(type);
                     
                     return (
                       <TableCell key={role} className="text-center">
@@ -77,7 +86,7 @@ export function AdminNotificationSettings() {
                               <TooltipTrigger asChild>
                                 <div className="flex items-center gap-2">
                                   <Switch
-                                    checked={pref?.enabled ?? true}
+                                    checked={isClientRestricted ? false : (pref?.enabled ?? true)}
                                     onCheckedChange={(checked) =>
                                       updateGlobalPreference(role, type, 'enabled', checked)
                                     }
@@ -98,32 +107,40 @@ export function AdminNotificationSettings() {
                             </Tooltip>
                           </TooltipProvider>
                           
-                          {pref?.enabled && !isClientRestricted && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button
-                                    onClick={() =>
-                                      updateGlobalPreference(role, type, 'force_email', !pref.force_email)
-                                    }
-                                    disabled={saving}
-                                    className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs transition-colors ${
-                                      pref.force_email
-                                        ? 'bg-primary/10 text-primary'
-                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                    }`}
-                                  >
-                                    <Mail className="h-3 w-3" />
-                                    Email
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  {pref.force_email
-                                    ? 'Email obligatoire pour ce rôle'
-                                    : 'Cliquez pour forcer l\'email'}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                          {(pref?.enabled ?? true) && !isClientRestricted && (
+                            isClientForced ? (
+                              <div className="flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-primary/10 text-primary">
+                                <Mail className="h-3 w-3" />
+                                <Lock className="h-3 w-3" />
+                                Forcé
+                              </div>
+                            ) : (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      onClick={() =>
+                                        updateGlobalPreference(role, type, 'force_email', !(pref?.force_email ?? false))
+                                      }
+                                      disabled={saving}
+                                      className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs transition-colors ${
+                                        pref?.force_email
+                                          ? 'bg-primary/10 text-primary'
+                                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                      }`}
+                                    >
+                                      <Mail className="h-3 w-3" />
+                                      Email
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {pref?.force_email
+                                      ? 'Email obligatoire pour ce rôle'
+                                      : 'Cliquez pour forcer l\'email'}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )
                           )}
                         </div>
                       </TableCell>
