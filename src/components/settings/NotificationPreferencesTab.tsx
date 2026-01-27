@@ -191,6 +191,8 @@ export function NotificationPreferencesTab() {
             const forceEmail = isForceEmail(type);
             const prefs = userPreferences[type] || { push: true, email: false };
             const isMessage = type === 'message';
+            // Push cannot be disabled for messages (real-time communication safety)
+            const pushLocked = isMessage;
             
             // Don't show disabled notifications for clients
             if (isClient && !CLIENT_ALLOWED_TYPES.includes(type)) return null;
@@ -216,8 +218,19 @@ export function NotificationPreferencesTab() {
                           Email obligatoire
                         </Badge>
                       )}
+                      {pushLocked && (
+                        <Badge variant="outline" className="text-xs">
+                          <Lock className="h-3 w-3 mr-1" />
+                          Push obligatoire
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground">{description}</p>
+                    {isMessage && (
+                      <p className="text-xs text-muted-foreground italic mt-1">
+                        Les notifications push de messages ne peuvent pas être désactivées pour garantir la communication en temps réel.
+                      </p>
+                    )}
                   </div>
                   
                   {enabled && (
@@ -225,11 +238,11 @@ export function NotificationPreferencesTab() {
                       {/* Push toggle */}
                       <div className="flex flex-col items-center gap-1">
                         <Switch
-                          checked={prefs.push}
+                          checked={pushLocked ? true : prefs.push}
                           onCheckedChange={(checked) => 
                             updateUserPreference(type as NotificationType, 'push', checked)
                           }
-                          disabled={saving || isMessage}
+                          disabled={saving || pushLocked}
                         />
                         <span className="text-xs text-muted-foreground">Push</span>
                       </div>
