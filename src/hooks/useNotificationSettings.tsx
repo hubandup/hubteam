@@ -18,13 +18,13 @@ export type AppRole = 'admin' | 'team' | 'agency' | 'client';
 export interface GlobalNotificationPreference {
   id: string;
   role: AppRole;
-  notification_type: NotificationType;
+  notification_type: string;
   enabled: boolean;
   force_email: boolean;
 }
 
 export interface UserNotificationPreference {
-  notification_type: NotificationType;
+  notification_type: string;
   push_enabled: boolean;
   email_enabled: boolean;
 }
@@ -45,6 +45,9 @@ export const ROLES: { role: AppRole; label: string }[] = [
   { role: 'agency', label: 'Agence' },
   { role: 'client', label: 'Client' },
 ];
+
+// Client role can only receive these notification types
+export const CLIENT_ALLOWED_TYPES: NotificationType[] = ['project_assigned', 'message'];
 
 export function useNotificationSettings() {
   const { user } = useAuth();
@@ -72,24 +75,29 @@ export function useNotificationSettings() {
       if (globalError) throw globalError;
       setGlobalPreferences((globalData || []) as GlobalNotificationPreference[]);
 
-      // Fetch user preferences
+      // Fetch user preferences from normalized table
       const { data: userData, error: userError } = await supabase
-        .from('notification_preferences')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+        .from('notification_user_preferences')
+        .select('notification_type, push_enabled, email_enabled')
+        .eq('user_id', user.id);
 
-      if (userError && userError.code !== 'PGRST116') {
+      if (userError) {
         throw userError;
       }
 
-      if (userData) {
+      if (userData && userData.length > 0) {
         const prefs: Record<string, { push: boolean; email: boolean }> = {};
-        NOTIFICATION_TYPES.forEach(({ type }) => {
-          prefs[type] = {
-            push: userData[`${type}_push` as keyof typeof userData] as boolean ?? true,
-            email: userData[`${type}_email` as keyof typeof userData] as boolean ?? false,
+        userData.forEach((pref) => {
+          prefs[pref.notification_type] = {
+            push: pref.push_enabled ?? true,
+            email: pref.email_enabled ?? false,
           };
+        });
+        // Fill in defaults for any missing types
+        NOTIFICATION_TYPES.forEach(({ type, defaultEmail }) => {
+          if (!prefs[type]) {
+            prefs[type] = { push: true, email: defaultEmail };
+          }
         });
         setUserPreferences(prefs);
       } else {
@@ -163,23 +171,35 @@ export function useNotificationSettings() {
       return;
     }
 
-    // Messages cannot be fully disabled
+    // Client role restrictions
+    if (userRole === 'client' && !CLIENT_ALLOWED_TYPES.includes(notificationType)) {
+      toast.error('Ce type de notification n\'est pas disponible');
+      return;
+    }
+
+    // Messages push cannot be fully disabled (safety net)
     if (notificationType === 'message' && channel === 'push' && !value) {
-      toast.error('Les notifications de messages ne peuvent pas être entièrement désactivées');
+      toast.error('Les notifications push de messages ne peuvent pas être entièrement désactivées');
       return;
     }
 
     setSaving(true);
     try {
-      const columnName = `${notificationType}_${channel}`;
-      
+      const currentPrefs = userPreferences[notificationType] || { push: true, email: false };
+      const newPushEnabled = channel === 'push' ? value : currentPrefs.push;
+      const newEmailEnabled = channel === 'email' ? value : currentPrefs.email;
+
+      // Upsert into normalized table
       const { error } = await supabase
-        .from('notification_preferences')
+        .from('notification_user_preferences')
         .upsert({
           user_id: user.id,
-          [columnName]: value,
+          notification_type: notificationType,
+          push_enabled: newPushEnabled,
+          email_enabled: newEmailEnabled,
+          updated_at: new Date().toISOString(),
         }, {
-          onConflict: 'user_id'
+          onConflict: 'user_id,notification_type'
         });
 
       if (error) throw error;
@@ -187,8 +207,8 @@ export function useNotificationSettings() {
       setUserPreferences(prev => ({
         ...prev,
         [notificationType]: {
-          ...prev[notificationType],
-          [channel]: value,
+          push: newPushEnabled,
+          email: newEmailEnabled,
         },
       }));
 
@@ -209,12 +229,24 @@ export function useNotificationSettings() {
 
   const isNotificationEnabled = (notificationType: NotificationType): boolean => {
     if (!userRole) return true;
+    
+    // Client role restrictions
+    if (userRole === 'client' && !CLIENT_ALLOWED_TYPES.includes(notificationType)) {
+      return false;
+    }
+    
     const globalPref = getGlobalPreference(userRole as AppRole, notificationType);
     return globalPref?.enabled ?? true;
   };
 
   const isForceEmail = (notificationType: NotificationType): boolean => {
     if (!userRole) return false;
+    
+    // Client role always gets forced email for allowed types
+    if (userRole === 'client' && CLIENT_ALLOWED_TYPES.includes(notificationType)) {
+      return true;
+    }
+    
     const globalPref = getGlobalPreference(userRole as AppRole, notificationType);
     return globalPref?.force_email ?? false;
   };

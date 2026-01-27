@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { useNotificationSettings, NOTIFICATION_TYPES, NotificationType } from '@/hooks/useNotificationSettings';
+import { useNotificationSettings, NOTIFICATION_TYPES, NotificationType, CLIENT_ALLOWED_TYPES } from '@/hooks/useNotificationSettings';
 import { toast } from 'sonner';
 import { Loader2, Bell, Smartphone, BellRing, Mail, Lock, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -193,7 +193,7 @@ export function NotificationPreferencesTab() {
             const isMessage = type === 'message';
             
             // Don't show disabled notifications for clients
-            if (isClient && !enabled) return null;
+            if (isClient && !CLIENT_ALLOWED_TYPES.includes(type)) return null;
             
             return (
               <div 
