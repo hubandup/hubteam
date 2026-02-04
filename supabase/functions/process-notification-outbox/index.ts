@@ -32,6 +32,14 @@ interface OutboxItem {
   attempts: number;
 }
 
+interface PushSubscription {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+}
+
 interface UserRole {
   role: 'admin' | 'team' | 'agency' | 'client';
 }
@@ -44,6 +52,22 @@ interface GlobalPref {
 interface UserPref {
   push_enabled: boolean;
   email_enabled: boolean;
+}
+
+// Helper function to send push notification using Web Push Protocol
+async function sendWebPush(
+  subscription: PushSubscription,
+  payload: string,
+  vapidPublicKey: string,
+  vapidPrivateKey: string
+): Promise<{ success: boolean; statusCode?: number; error?: string }> {
+  try {
+    // For now, use the send-push-notification function which has web-push configured
+    // This is a temporary solution until we can get web-push working in edge functions
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 }
 
 serve(async (req) => {
@@ -83,6 +107,8 @@ serve(async (req) => {
 
     let processed = 0;
     let errors = 0;
+    let pushSent = 0;
+    let emailSent = 0;
 
     for (const item of pendingItems as OutboxItem[]) {
       try {
@@ -100,7 +126,7 @@ serve(async (req) => {
           .single();
 
         const userRole = (userRoleData as UserRole)?.role || 'team';
-        console.log(`Processing notification for user ${item.user_id} with role ${userRole}`);
+        console.log(`Processing notification ${item.id} for user ${item.user_id} with role ${userRole}`);
 
         // Get global preferences for this role and type
         const { data: globalPrefData } = await supabase
@@ -151,24 +177,19 @@ serve(async (req) => {
         };
 
         // =====================================================
-        // MESSAGE NOTIFICATION RULES (DOCUMENTED):
-        // - Push: ALWAYS enabled for 'message' type (cannot be disabled by user)
+        // NOTIFICATION RULES:
+        // - Push: ALWAYS enabled for 'message' type (cannot be disabled)
         // - Email: Respects user preference UNLESS client role (forced)
         //
         // CLIENT ROLE:
         // - Only receives project_assigned + message
         // - Email is ALWAYS forced for these types
-        //
-        // OTHER ROLES (admin/team/agency):
-        // - Push: respects user preference (except message = always on)
-        // - Email: respects user preference OR global force_email
         // =====================================================
 
-        // Determine what to send
         let shouldSendPush = userPref.push_enabled;
         let shouldSendEmail = userPref.email_enabled || globalPref.force_email;
 
-        // MESSAGE RULE: push cannot be disabled for messages (safety net for real-time comms)
+        // MESSAGE RULE: push cannot be disabled for messages
         if (item.notification_type === 'message') {
           shouldSendPush = true;
         }
@@ -180,7 +201,7 @@ serve(async (req) => {
 
         console.log(`Will send: push=${shouldSendPush}, email=${shouldSendEmail}`);
 
-        // Get push subscriptions if needed
+        // Send push notifications via dedicated function
         if (shouldSendPush) {
           const { data: subscriptions } = await supabase
             .from('push_subscriptions')
@@ -188,11 +209,33 @@ serve(async (req) => {
             .eq('user_id', item.user_id);
 
           if (subscriptions && subscriptions.length > 0 && vapidPublicKey && vapidPrivateKey) {
-            // Web push sending would happen here
-            // For now, we log and mark as sent
-            console.log(`Would send push to ${subscriptions.length} subscription(s)`);
+            console.log(`Found ${subscriptions.length} push subscription(s) for user`);
+            
+            // Call the dedicated push function
+            try {
+              const { error: pushError } = await supabase.functions.invoke(
+                'send-push-notification',
+                {
+                  body: {
+                    userId: item.user_id,
+                    title: item.payload.title,
+                    body: item.payload.message,
+                    url: item.payload.link || '/',
+                  },
+                }
+              );
+              
+              if (pushError) {
+                console.error('Push function error:', pushError);
+              } else {
+                console.log('Push notification sent via dedicated function');
+                pushSent++;
+              }
+            } catch (pushErr) {
+              console.error('Failed to invoke push function:', pushErr);
+            }
           } else if (!subscriptions || subscriptions.length === 0) {
-            console.log('No push subscriptions, falling back to email if not already sending');
+            console.log('No push subscriptions found, will fallback to email if not already sending');
             if (!shouldSendEmail && !globalPref.force_email) {
               shouldSendEmail = true;
             }
@@ -219,6 +262,7 @@ serve(async (req) => {
               console.error('Email sending error:', emailError);
             } else {
               console.log('Email sent successfully');
+              emailSent++;
             }
           } catch (emailErr) {
             console.error('Failed to invoke email function:', emailErr);
@@ -250,13 +294,15 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Processed ${processed} notifications, ${errors} errors`);
+    console.log(`Processed ${processed} notifications, ${errors} errors, ${pushSent} push sent, ${emailSent} email sent`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         processed, 
         errors,
+        pushSent,
+        emailSent,
         total: pendingItems.length 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
