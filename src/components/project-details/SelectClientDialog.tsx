@@ -79,23 +79,28 @@ export function SelectClientDialog({
 
       if (error) throw error;
 
-      // Auto-add client profile to team if exists
+      // Auto-add client profile to team if exists (case-insensitive email lookup)
       const selectedClient = clients.find(c => c.id === clientId);
       if (selectedClient?.email) {
         const { data: profile } = await supabase
           .from('profiles')
           .select('id')
-          .eq('email', selectedClient.email)
+          .ilike('email', selectedClient.email)
           .maybeSingle();
 
         if (profile) {
-          await supabase
+          const { error: teamError } = await supabase
             .from('project_team_members')
             .insert({
               project_id: projectId,
               member_id: profile.id,
               member_type: 'profile',
             });
+
+          // Ignore duplicate key error (already a team member)
+          if (teamError && teamError.code !== '23505') {
+            console.error('Error adding client profile to team:', teamError);
+          }
         }
       }
 

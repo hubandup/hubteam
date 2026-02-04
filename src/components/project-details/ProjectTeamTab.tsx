@@ -154,12 +154,12 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
 
       if (error) throw error;
 
-      // Helper to remove profile access by email
+      // Helper to remove profile access by email (case-insensitive)
       const removeProfileAccessByEmail = async (email: string) => {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('id')
-          .eq('email', email)
+          .ilike('email', email)
           .maybeSingle();
 
         if (!profileError && profile?.id) {
