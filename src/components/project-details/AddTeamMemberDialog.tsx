@@ -130,12 +130,12 @@ export function AddTeamMemberDialog({
 
     setLoading(true);
     try {
-      // Helper function to grant project access to a user profile by email
+      // Helper function to grant project access to a user profile by email (case-insensitive)
       const grantProfileAccess = async (email: string) => {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('id')
-          .eq('email', email)
+          .ilike('email', email)
           .maybeSingle();
 
         if (profileError) throw profileError;
