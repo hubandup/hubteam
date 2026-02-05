@@ -1,74 +1,68 @@
 
 
-## Objectif
+# Integration SwissTransfer dans le menu lateral
 
-Permettre la modification de l'intitulé d'une tâche en cliquant simplement dessus dans la vue Projets > ID > Tâches.
+## Contexte
 
-## Analyse de l'existant
+SwissTransfer d'Infomaniak ne dispose pas d'API REST publique pour creer des transferts programmatiquement. L'approche retenue est d'integrer le site SwissTransfer.com dans un popup (Dialog) au sein de l'application, accessible depuis le menu lateral.
 
-Le composant `ProjectTasksNotebookTab.tsx` utilise un sous-composant `SortableTaskItem` pour afficher chaque tâche. Actuellement, le titre est affiché comme un simple paragraphe (`<p>`) non interactif :
+## Approche technique
 
-```text
-<p className={cn("flex-1 text-sm", ...)}>
-  {task.title}
-</p>
-```
+L'integration se fera via un **iframe** embarquant `https://www.swisstransfer.com` dans un composant Dialog plein ecran. Un bouton sera ajoute dans la Sidebar (desktop) et un acces dans le header mobile.
 
-## Solution proposée
+### Fichiers a creer
 
-Transformer l'affichage du titre en un champ éditable inline qui :
-1. S'affiche normalement comme du texte par défaut
-2. Se transforme en `<Input>` au clic
-3. Sauvegarde automatiquement lorsque l'utilisateur appuie sur Entrée ou quitte le champ (blur)
-4. Annule les modifications avec Échap
+1. **`src/components/SwissTransferDialog.tsx`** - Nouveau composant contenant :
+   - Un composant `Dialog` (plein ecran ou quasi plein ecran) avec un iframe pointant vers `https://www.swisstransfer.com`
+   - L'iframe occupera toute la zone disponible du dialog
+   - Un bouton de fermeture en haut a droite
+   - Le dialog sera controle par un state `open` / `onOpenChange`
 
-## Modifications techniques
+### Fichiers a modifier
 
-### Fichier : `src/components/project-details/ProjectTasksNotebookTab.tsx`
+2. **`src/components/Sidebar.tsx`** - Ajouter un bouton SwissTransfer :
+   - Ajouter une icone `ArrowUpFromLine` (ou `Upload`) de lucide-react pour representer le transfert
+   - Placer le bouton dans le `SidebarMenu`, entre les items de navigation existants et le bouton "Settings"
+   - Au clic, il ouvre le `SwissTransferDialog` au lieu de naviguer vers une route
+   - Le bouton sera visible pour tous les roles (admin, team, agency, client)
 
-1. **Ajouter une nouvelle prop au composant `SortableTaskItem`** :
-   - `onUpdateTitle: (taskId: string, newTitle: string) => void`
+3. **`src/components/MobileBottomNav.tsx`** ou **`src/components/Layout.tsx`** - Acces mobile :
+   - Ajouter un bouton SwissTransfer dans le header mobile (a cote des icones ThemeToggle et NotificationBell)
+   - Meme comportement : ouvre le dialog avec l'iframe
 
-2. **Ajouter un état local dans `SortableTaskItem`** :
-   - `isEditingTitle` : booléen pour savoir si on est en mode édition
-   - `editedTitle` : valeur temporaire du titre en cours d'édition
+## Details d'implementation
 
-3. **Remplacer le paragraphe par un composant conditionnel** :
-   - En mode normal : `<p>` cliquable avec curseur texte
-   - En mode édition : `<Input>` avec gestion des événements clavier
-
-4. **Ajouter la fonction `handleUpdateTitle` dans le composant parent** :
-   - Mise à jour optimiste du titre dans l'état local
-   - Appel Supabase pour persister la modification
-   - Gestion d'erreur avec rollback
-
-### Comportement utilisateur
-
-| Action | Résultat |
-|--------|----------|
-| Clic sur le titre | Passage en mode édition, focus automatique |
-| Touche Entrée | Sauvegarde et sortie du mode édition |
-| Touche Échap | Annulation des modifications |
-| Clic ailleurs (blur) | Sauvegarde si le titre a changé |
-
-## Rendu visuel
+### Composant SwissTransferDialog
 
 ```text
-Mode normal :
-┌────────────────────────────────────────────────────────────┐
-│ ≡  ☐  Titre de la tâche                     👤  📅  💬  🗑 │
-└────────────────────────────────────────────────────────────┘
-
-Mode édition (après clic sur le titre) :
-┌────────────────────────────────────────────────────────────┐
-│ ≡  ☐  [Titre de la tâche_____________]      👤  📅  💬  🗑 │
-└────────────────────────────────────────────────────────────┘
++--------------------------------------------------+
+|  [X]                SwissTransfer                 |
++--------------------------------------------------+
+|                                                   |
+|          (iframe: swisstransfer.com)              |
+|                                                   |
+|      Zone de drop / ajout de fichiers             |
+|      + formulaire email / lien                    |
+|                                                   |
++--------------------------------------------------+
 ```
 
-## Avantages
+- Le Dialog utilisera `max-w-[90vw] max-h-[90vh]` pour occuper la majorite de l'ecran
+- L'iframe aura `width: 100%` et `height: 80vh` minimum
+- Attributs iframe : `allow="clipboard-write"` pour permettre la copie de liens
 
-- Expérience utilisateur fluide et intuitive
-- Pas de dialog/popup : édition directe en place
-- Mise à jour optimiste pour une réactivité immédiate
-- Cohérent avec le style "notebook" déjà en place (ajout de tâche avec Entrée)
+### Integration Sidebar
+
+- Le bouton sera un `SidebarMenuItem` stylise de la meme facon que les autres items
+- Il utilisera un `button` au lieu d'un `NavLink` car il ne navigue pas vers une route
+- Position : juste avant le bouton "Settings" ou en dernier dans la liste principale
+
+### Consideration importante
+
+L'iframe fonctionnera car SwissTransfer.com autorise l'embarquement (pas de header `X-Frame-Options: DENY`). Si toutefois SwissTransfer bloque l'iframe, un fallback ouvrira automatiquement le site dans un nouvel onglet avec `window.open('https://www.swisstransfer.com', '_blank')`.
+
+## Risques et fallback
+
+- **Blocage iframe (X-Frame-Options)** : Si SwissTransfer bloque l'iframe, le composant detectera l'erreur et proposera d'ouvrir dans un nouvel onglet
+- **CSP (Content Security Policy)** : Il faudra peut-etre ajuster les headers si le projet a des restrictions strictes
 
