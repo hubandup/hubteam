@@ -1915,6 +1915,33 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          count: number
+          created_at: string
+          expires_at: string
+          id: string
+          key: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          created_at?: string
+          expires_at: string
+          id?: string
+          key: string
+          window_start?: string
+        }
+        Update: {
+          count?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       role_permissions: {
         Row: {
           action: Database["public"]["Enums"]["permission_action"]

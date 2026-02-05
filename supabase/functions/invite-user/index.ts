@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -138,6 +139,17 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log("✓ User is admin, proceeding with invitation");
+
+    // Rate limiting: 10 invitations per hour per admin
+    const rateLimit = await checkRateLimit(`invite-user:${userId}`, {
+      max: 10,
+      windowSeconds: 3600, // 1 hour
+    });
+
+    if (rateLimit.exceeded) {
+      console.log("Rate limit exceeded for user:", userId);
+      return rateLimitResponse(rateLimit.retryAfterSeconds, corsHeaders);
+    }
 
     // Parse request body
     const { email, role }: InviteUserRequest = await req.json();
@@ -317,15 +329,11 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
   } catch (error: any) {
-    console.error("=== CRITICAL ERROR in invite-user function ===");
-    console.error("Error type:", error?.constructor?.name);
-    console.error("Error message:", error?.message);
-    console.error("Error stack:", error?.stack);
+    console.error("Error in invite-user function:", error?.message);
     return new Response(
       JSON.stringify({ 
         error: "Erreur interne du serveur",
-        details: error.message || "Une erreur inattendue s'est produite",
-        type: error?.constructor?.name || "Unknown"
+        details: "Une erreur inattendue s'est produite"
       }),
       {
         status: 500,

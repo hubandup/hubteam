@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -72,6 +73,16 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Rate limiting: 20 deletions per hour per admin
+    const rateLimit = await checkRateLimit(`delete-users:${user.id}`, {
+      max: 20,
+      windowSeconds: 3600, // 1 hour
+    });
+
+    if (rateLimit.exceeded) {
+      return rateLimitResponse(rateLimit.retryAfterSeconds, corsHeaders);
+    }
+
     // Parse request body
     const { userIds }: DeleteUsersRequest = await req.json();
 
@@ -118,9 +129,9 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
   } catch (error: any) {
-    console.error("Error in delete-users function:", error);
+    console.error("Error in delete-users function:", error?.message);
     return new Response(
-      JSON.stringify({ error: error.message || "Erreur interne du serveur" }),
+      JSON.stringify({ error: "Erreur interne du serveur" }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
