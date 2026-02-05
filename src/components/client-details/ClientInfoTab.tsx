@@ -239,32 +239,35 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
         setNextTask(tasksData[0]);
       }
 
-      // Fetch team member (first profile type member)
-      const { data: teamData } = await supabase
-        .from('project_team_members')
-        .select('member_id, member_type')
-        .eq('project_id', project.id)
-        .eq('member_type', 'profile')
-        .limit(1);
+      // Only fetch team member from project if no main_contact_id is set on the client
+      // main_contact_id is the authoritative "Interlocuteur Hub & Up" set in CRM
+      if (!client.main_contact_id) {
+        const { data: teamData } = await supabase
+          .from('project_team_members')
+          .select('member_id, member_type')
+          .eq('project_id', project.id)
+          .eq('member_type', 'profile')
+          .limit(1);
 
-      if (teamData && teamData.length > 0) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('id, first_name, last_name, email, avatar_url')
-          .eq('id', teamData[0].member_id)
-          .single();
-
-        if (profileData) {
-          const { data: roleData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', profileData.id)
+        if (teamData && teamData.length > 0) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name, email, avatar_url')
+            .eq('id', teamData[0].member_id)
             .single();
 
-          setTeamMember({
-            ...profileData,
-            role: roleData?.role || 'team'
-          });
+          if (profileData) {
+            const { data: roleData } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', profileData.id)
+              .single();
+
+            setTeamMember({
+              ...profileData,
+              role: roleData?.role || 'team'
+            });
+          }
         }
       }
     }
