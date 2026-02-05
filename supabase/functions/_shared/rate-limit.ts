@@ -1,5 +1,3 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-
 interface RateLimitOptions {
   /** Maximum number of requests allowed in the window */
   max: number;
@@ -15,23 +13,13 @@ interface RateLimitResult {
 
 /**
  * Check and enforce rate limiting for a given key.
- * Uses the rate_limits table with service_role access.
+ * Uses the rate_limits table with a pre-created Supabase admin client.
  */
 export async function checkRateLimit(
+  supabaseAdmin: any,
   key: string,
   options: RateLimitOptions
 ): Promise<RateLimitResult> {
-  const supabaseAdmin = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
-
   const now = new Date();
   const windowStart = new Date(now.getTime() - options.windowSeconds * 1000);
   const expiresAt = new Date(now.getTime() + options.windowSeconds * 1000);
