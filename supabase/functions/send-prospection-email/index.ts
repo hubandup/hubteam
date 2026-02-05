@@ -1,6 +1,42 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { checkRateLimit, rateLimitResponse } from "../_shared/rate-limit.ts";
+
+// Inline rate limiting to avoid cross-function bundling overhead
+async function checkRateLimit(
+  supabaseAdmin: any,
+  key: string,
+  options: { max: number; windowSeconds: number }
+): Promise<{ exceeded: boolean; remaining: number; retryAfterSeconds: number }> {
+  const now = new Date();
+  const windowStart = new Date(now.getTime() - options.windowSeconds * 1000);
+  const expiresAt = new Date(now.getTime() + options.windowSeconds * 1000);
+  if (Math.random() < 0.01) {
+    await supabaseAdmin.from("rate_limits").delete().lt("expires_at", now.toISOString());
+  }
+  const { data: existing } = await supabaseAdmin
+    .from("rate_limits").select("count, window_start, expires_at").eq("key", key).single();
+  if (existing) {
+    const ws = new Date(existing.window_start);
+    if (ws < windowStart) {
+      await supabaseAdmin.from("rate_limits").update({ count: 1, window_start: now.toISOString(), expires_at: expiresAt.toISOString() }).eq("key", key);
+      return { exceeded: false, remaining: options.max - 1, retryAfterSeconds: 0 };
+    }
+    if (existing.count >= options.max) {
+      const retry = Math.max(Math.ceil((ws.getTime() + options.windowSeconds * 1000 - now.getTime()) / 1000), 1);
+      return { exceeded: true, remaining: 0, retryAfterSeconds: retry };
+    }
+    await supabaseAdmin.from("rate_limits").update({ count: existing.count + 1 }).eq("key", key);
+    return { exceeded: false, remaining: options.max - existing.count - 1, retryAfterSeconds: 0 };
+  }
+  await supabaseAdmin.from("rate_limits").insert({ key, count: 1, window_start: now.toISOString(), expires_at: expiresAt.toISOString() });
+  return { exceeded: false, remaining: options.max - 1, retryAfterSeconds: 0 };
+}
+
+function rateLimitResponse(retryAfterSeconds: number, corsHeaders: Record<string, string>): Response {
+  return new Response(JSON.stringify({ error: "Trop de requêtes. Veuillez réessayer plus tard.", retry_after: retryAfterSeconds }), {
+    status: 429, headers: { "Content-Type": "application/json", "Retry-After": String(retryAfterSeconds), ...corsHeaders },
+  });
+}
 
 const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
