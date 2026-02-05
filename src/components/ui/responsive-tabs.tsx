@@ -178,8 +178,6 @@ export function ResponsiveTabs({
           key={tab.value} 
           value={tab.value}
           className="mt-0"
-          forceMount={true}
-          hidden={tab.value !== currentValue}
         >
           {tab.content}
         </TabsContent>

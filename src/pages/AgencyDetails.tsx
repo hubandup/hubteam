@@ -111,13 +111,12 @@ export default function AgencyDetails() {
       icon: <FolderKanban className="h-4 w-4" />,
       content: <AgencyProjectsTab agencyId={agency.id} />
     },
-    // Hide KDrive tab for client users
-    ...(role !== 'client' ? [{
+    {
       value: 'kdrive',
       label: 'KDrive',
       icon: <FileText className="h-4 w-4" />,
       content: <AgencyKDriveTab agencyId={agency.id} agencyName={agency.name} />
-    }] : [])
+    }
   ];
 
   return (
