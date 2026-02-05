@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rate-limit.ts";
 
 const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -156,6 +157,51 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Authenticate the user - require valid auth token
+    const authHeader = req.headers.get("Authorization") || req.headers.get("authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Autorisation manquante" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Non autorisé" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const userId = user.id;
+
+    // Check if user is admin or team
+    const { data: userRole, error: roleError } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .single();
+
+    if (roleError || !userRole || !['admin', 'team'].includes(userRole.role)) {
+      return new Response(
+        JSON.stringify({ error: "Accès interdit - Réservé aux administrateurs et à l'équipe" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Rate limiting: 50 calls per day per user
+    const rateLimit = await checkRateLimit(`send-prospection-email:${userId}`, {
+      max: 50,
+      windowSeconds: 86400, // 24 hours
+    });
+
+    if (rateLimit.exceeded) {
+      return rateLimitResponse(rateLimit.retryAfterSeconds, corsHeaders);
+    }
+
     const { recipients, subject, message }: ProspectionEmailRequest = await req.json();
 
     // Validate input
@@ -167,15 +213,6 @@ const handler = async (req: Request): Promise<Response> => {
     }
     if (!Array.isArray(recipients) || recipients.length === 0 || recipients.length > 100) {
       throw new Error("Invalid recipients: must be an array with 1-100 recipients");
-    }
-
-    // Get user ID from authorization header
-    const authHeader = req.headers.get("Authorization");
-    let userId: string | null = null;
-    if (authHeader) {
-      const token = authHeader.replace("Bearer ", "");
-      const { data: { user } } = await supabaseAdmin.auth.getUser(token);
-      userId = user?.id || null;
     }
 
     console.log(`Processing ${recipients.length} recipients (user: ${userId})`);
@@ -327,9 +364,9 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
   } catch (error: any) {
-    console.error("Error in send-prospection-email function:", error);
+    console.error("Error in send-prospection-email function:", error?.message);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Erreur lors de l'envoi des emails" }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
