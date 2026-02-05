@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Sidebar } from './Sidebar';
 import { Breadcrumbs } from './Breadcrumbs';
@@ -9,6 +9,9 @@ import { useCapacitor } from '@/hooks/useCapacitor';
 import { HeaderUserProfile } from './HeaderUserProfile';
 import { NotificationBell } from './notifications/NotificationBell';
 import { ThemeToggle } from './ThemeToggle';
+import { SwissTransferDialog } from './SwissTransferDialog';
+import { ArrowUpFromLine } from 'lucide-react';
+import { Button } from './ui/button';
 import logo from '@/assets/logo-hubandup.svg';
 
 interface LayoutProps {
@@ -18,6 +21,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const isMobile = useIsMobile();
   const { isNative } = useCapacitor();
+  const [swissTransferOpen, setSwissTransferOpen] = useState(false);
 
   // Sur mobile/PWA, layout simplifié sans sidebar
   if (isMobile || isNative) {
@@ -27,6 +31,15 @@ export function Layout({ children }: LayoutProps) {
         <header className="sticky top-0 z-50 bg-sidebar px-4 pt-[env(safe-area-inset-top)] pb-3 flex items-center justify-between">
           <img src={logo} alt="Hub & Up" className="h-8 [filter:brightness(0)_invert(1)]" />
           <div className="flex items-center gap-1 [&_button]:text-white [&_svg]:text-white">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSwissTransferOpen(true)}
+              className="h-9 w-9"
+              aria-label="SwissTransfer"
+            >
+              <ArrowUpFromLine className="h-5 w-5" />
+            </Button>
             <ThemeToggle />
             <NotificationBell />
           </div>
@@ -44,6 +57,9 @@ export function Layout({ children }: LayoutProps) {
         
         {/* Bannière d'installation PWA */}
         <PWAInstallBanner />
+
+        {/* SwissTransfer Dialog */}
+        <SwissTransferDialog open={swissTransferOpen} onOpenChange={setSwissTransferOpen} />
       </div>
     );
   }
