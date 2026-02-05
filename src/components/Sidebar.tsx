@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, HelpCircle, Rss, Euro, MessageSquare, ArrowUpFromLine } from 'lucide-react';
+import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, HelpCircle, Rss, Euro, MessageSquare } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -19,14 +19,13 @@ import { Button } from './ui/button';
 import logo from '@/assets/logo-hubandup.svg';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { SwissTransferDialog } from './SwissTransferDialog';
 
 export function Sidebar() {
   const { signOut, user } = useAuth();
   const { role } = useUserRole();
   const { canRead } = usePermissions();
   const [clientId, setClientId] = useState<string | null>(null);
-  const [swissTransferOpen, setSwissTransferOpen] = useState(false);
+  
 
   useEffect(() => {
     const fetchClientId = async () => {
@@ -121,17 +120,6 @@ export function Sidebar() {
                     </SidebarMenuItem>
                   ) : null
                 )}
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <button
-                    onClick={() => setSwissTransferOpen(true)}
-                    className="flex items-center w-full text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground transition-all duration-200 rounded-lg cursor-pointer"
-                  >
-                    <ArrowUpFromLine className="mr-2 h-4 w-4" />
-                    <span>SwissTransfer</span>
-                  </button>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
               {showSettings && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
@@ -156,7 +144,7 @@ export function Sidebar() {
           Déconnexion
         </Button>
       </SidebarFooter>
-      <SwissTransferDialog open={swissTransferOpen} onOpenChange={setSwissTransferOpen} />
+      
     </ShadcnSidebar>
   );
 }
