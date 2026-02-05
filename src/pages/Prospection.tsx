@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Mail, Linkedin, ArrowDownUp, BarChart3, Kanban, List, Plus, TrendingUp, Users, AlertTriangle, Calendar } from 'lucide-react';
+import { Search, Mail, Linkedin, ArrowDownUp, BarChart3, Kanban, List, Plus, TrendingUp, Users, AlertTriangle, Calendar, Upload } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -32,6 +32,7 @@ import { CloseProspectDialog } from '@/components/prospection/CloseProspectDialo
 import { ProspectDetailDialog } from '@/components/prospection/ProspectDetailDialog';
 import { EmailTemplateManager } from '@/components/prospection/EmailTemplateManager';
 import { EmailImageUploader } from '@/components/prospection/EmailImageUploader';
+import { ImportProspectsDialog } from '@/components/prospection/ImportProspectsDialog';
 
 export default function Prospection() {
   const navigate = useNavigate();
@@ -70,6 +71,7 @@ export default function Prospection() {
   const [emailSubject, setEmailSubject] = useState('');
   const [emailMessage, setEmailMessage] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [importProspectsOpen, setImportProspectsOpen] = useState(false);
 
   // Fetch email stats
   const { data: emailStats } = useQuery({
@@ -470,6 +472,11 @@ export default function Prospection() {
                       <Kanban className="h-4 w-4" />
                     </Button>
                   </div>
+
+                  <Button variant="outline" onClick={() => setImportProspectsOpen(true)}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Importer
+                  </Button>
 
                   <Button onClick={() => setAddProspectOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
@@ -936,6 +943,11 @@ export default function Prospection() {
       <AddProspectDialog
         open={addProspectOpen}
         onOpenChange={setAddProspectOpen}
+      />
+
+      <ImportProspectsDialog
+        open={importProspectsOpen}
+        onOpenChange={setImportProspectsOpen}
       />
 
       {selectedProspectId && (

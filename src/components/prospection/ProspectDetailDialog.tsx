@@ -15,6 +15,7 @@ import { fr } from 'date-fns/locale';
 import { Building2, User, Phone, Mail, Linkedin, Calendar, Euro, MessageSquare, Pencil, Plus, Search, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { AddInteractionDialog } from './AddInteractionDialog';
+import { AddToCrmButton } from './AddToCrmButton';
 import { supabase } from '@/integrations/supabase/client';
 import { generateColorFromString } from '@/lib/utils';
 interface ProspectDetailDialogProps {
@@ -126,7 +127,8 @@ export function ProspectDetailDialog({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="sm:max-w-[600px] w-full flex flex-col p-0 gap-0">
           {/* Boutons d'action positionnés en absolu, alignés avec la croix */}
-          <div className="absolute right-12 top-4 z-10 flex items-start justify-center gap-0">
+          <div className="absolute right-12 top-4 z-10 flex items-start justify-center gap-1.5">
+            {!isEditing && <AddToCrmButton prospect={prospect} />}
             {isEditing ? <>
                 <Button variant="ghost" size="icon" onClick={cancelEditing} className="h-8 w-8 text-muted-foreground hover:text-destructive mr-[9px] px-[10px] border my-0 bg-primary-foreground py-0 mt-[10px]" title="Annuler">
                   <X className="h-4 w-4" />
