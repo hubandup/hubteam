@@ -44,7 +44,7 @@ interface AgencyInfoTabProps {
 export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { role } = useUserRole();
+  const { role, loading: roleLoading } = useUserRole();
   const [projectStats, setProjectStats] = useState({
     total: 0,
     active: 0,
@@ -163,7 +163,7 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
         )}
       </div>
       
-      <div className={`grid gap-6 ${role === 'client' ? 'md:grid-cols-1' : 'md:grid-cols-2'}`}>
+      <div className={`grid gap-6 ${(roleLoading || role === 'client') ? 'md:grid-cols-1' : 'md:grid-cols-2'}`}>
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Informations générales</CardTitle>
@@ -235,7 +235,7 @@ export function AgencyInfoTab({ agency, onUpdate }: AgencyInfoTabProps) {
           </CardContent>
         </Card>
 
-        {role !== 'client' && (
+        {!roleLoading && role !== 'client' && (
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Statistiques</CardTitle>

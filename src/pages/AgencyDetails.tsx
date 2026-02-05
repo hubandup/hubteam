@@ -9,10 +9,12 @@ import { ResponsiveTabs, type TabItem } from '@/components/ui/responsive-tabs';
 import { AgencyInfoTab } from '@/components/agency-details/AgencyInfoTab';
 import { AgencyProjectsTab } from '@/components/agency-details/AgencyProjectsTab';
 import { AgencyKDriveTab } from '@/components/agency-details/AgencyKDriveTab';
+import { useUserRole } from '@/hooks/useUserRole';
 
 export default function AgencyDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { role, loading: roleLoading } = useUserRole();
   const [agency, setAgency] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [projectsCount, setProjectsCount] = useState(0);
@@ -84,7 +86,7 @@ export default function AgencyDetails() {
     };
   }, [id]);
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -109,12 +111,13 @@ export default function AgencyDetails() {
       icon: <FolderKanban className="h-4 w-4" />,
       content: <AgencyProjectsTab agencyId={agency.id} />
     },
-    {
+    // Hide KDrive tab for client users
+    ...(role !== 'client' ? [{
       value: 'kdrive',
       label: 'KDrive',
       icon: <FileText className="h-4 w-4" />,
       content: <AgencyKDriveTab agencyId={agency.id} agencyName={agency.name} />
-    }
+    }] : [])
   ];
 
   return (
