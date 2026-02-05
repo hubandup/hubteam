@@ -74,7 +74,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Rate limiting: 20 deletions per hour per admin
-    const rateLimit = await checkRateLimit(`delete-users:${user.id}`, {
+    const rateLimit = await checkRateLimit(supabaseAdmin, `delete-users:${user.id}`, {
       max: 20,
       windowSeconds: 3600, // 1 hour
     });

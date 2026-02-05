@@ -193,7 +193,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Rate limiting: 50 calls per day per user
-    const rateLimit = await checkRateLimit(`send-prospection-email:${userId}`, {
+    const rateLimit = await checkRateLimit(supabaseAdmin, `send-prospection-email:${userId}`, {
       max: 50,
       windowSeconds: 86400, // 24 hours
     });

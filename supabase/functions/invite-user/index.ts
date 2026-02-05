@@ -141,7 +141,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("✓ User is admin, proceeding with invitation");
 
     // Rate limiting: 10 invitations per hour per admin
-    const rateLimit = await checkRateLimit(`invite-user:${userId}`, {
+    const rateLimit = await checkRateLimit(supabaseAdmin, `invite-user:${userId}`, {
       max: 10,
       windowSeconds: 3600, // 1 hour
     });
