@@ -73,7 +73,7 @@ interface TeamMember {
 
 export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
   const isMobile = useIsMobile();
-  const { isAgency, isClient } = useUserRole();
+  const { isAgency, isClient, loading: roleLoading } = useUserRole();
   const { getRoleLabel } = useRoleConfig();
   const [activitySector, setActivitySector] = useState<any>(null);
   const [clientStatus, setClientStatus] = useState<any>(null);
@@ -413,7 +413,7 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
         </CardContent>
       </Card>
 
-      {!isMobile && (
+      {!isMobile && !roleLoading && (
           isClient ? (
             <Card>
               <CardHeader>
