@@ -76,7 +76,7 @@ async function addTaskCounts(projects: Project[]): Promise<Project[]> {
 async function fetchProjects(userId: string | null) {
   if (!userId) return [];
 
-  // All users see only projects where they are a member (profile) in project_team_members
+  // Path 1: Projects where user is a profile member in project_team_members
   const { data: teamRows, error: teamError } = await supabase
     .from('project_team_members')
     .select(`
@@ -96,16 +96,50 @@ async function fetchProjects(userId: string | null) {
 
   if (teamError) throw teamError;
 
-  const projects = (teamRows?.map((r: any) => r.projects).filter(Boolean) || []) as Project[];
-  projects.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const teamProjects = (teamRows?.map((r: any) => r.projects).filter(Boolean) || []) as Project[];
 
-  return await addTaskCounts(projects);
+  // Path 2: Projects where user's agency is linked via project_agencies
+  let agencyProjects: Project[] = [];
+  const { data: agencyMemberships } = await supabase
+    .from('agency_members')
+    .select('agency_id')
+    .eq('user_id', userId);
+
+  if (agencyMemberships && agencyMemberships.length > 0) {
+    const agencyIds = agencyMemberships.map(am => am.agency_id);
+
+    const { data: agencyProjectRows, error: agencyError } = await supabase
+      .from('project_agencies')
+      .select(`
+        projects!inner (
+          *,
+          project_clients (
+            clients (
+              company,
+              logo_url
+            )
+          )
+        )
+      `)
+      .in('agency_id', agencyIds)
+      .eq('projects.archived', false);
+
+    if (!agencyError) {
+      agencyProjects = (agencyProjectRows?.map((r: any) => r.projects).filter(Boolean) || []) as Project[];
+    }
+  }
+
+  // Merge and deduplicate
+  const allProjects = mergeProjectsById([...teamProjects, ...agencyProjects]);
+  allProjects.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  return await addTaskCounts(allProjects);
 }
 
 async function fetchArchivedProjects(userId: string | null) {
   if (!userId) return [];
 
-  // All users see only archived projects where they are a member (profile)
+  // Path 1: Archived projects where user is a profile member
   const { data: teamRows, error: teamError } = await supabase
     .from('project_team_members')
     .select(`
@@ -125,10 +159,44 @@ async function fetchArchivedProjects(userId: string | null) {
 
   if (teamError) throw teamError;
 
-  const projects = (teamRows?.map((r: any) => r.projects).filter(Boolean) || []) as Project[];
-  projects.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const teamProjects = (teamRows?.map((r: any) => r.projects).filter(Boolean) || []) as Project[];
 
-  return await addTaskCounts(projects);
+  // Path 2: Archived projects where user's agency is linked
+  let agencyProjects: Project[] = [];
+  const { data: agencyMemberships } = await supabase
+    .from('agency_members')
+    .select('agency_id')
+    .eq('user_id', userId);
+
+  if (agencyMemberships && agencyMemberships.length > 0) {
+    const agencyIds = agencyMemberships.map(am => am.agency_id);
+
+    const { data: agencyProjectRows, error: agencyError } = await supabase
+      .from('project_agencies')
+      .select(`
+        projects!inner (
+          *,
+          project_clients (
+            clients (
+              company,
+              logo_url
+            )
+          )
+        )
+      `)
+      .in('agency_id', agencyIds)
+      .eq('projects.archived', true);
+
+    if (!agencyError) {
+      agencyProjects = (agencyProjectRows?.map((r: any) => r.projects).filter(Boolean) || []) as Project[];
+    }
+  }
+
+  // Merge and deduplicate
+  const allProjects = mergeProjectsById([...teamProjects, ...agencyProjects]);
+  allProjects.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  return await addTaskCounts(allProjects);
 }
 
 export function useProjects() {
@@ -182,6 +250,18 @@ export function useProjects() {
           queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'project_agencies',
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['projects'] });
+          queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
+        }
+      )
       .subscribe();
 
     return () => {
@@ -225,6 +305,18 @@ export function useArchivedProjects() {
           event: '*',
           schema: 'public',
           table: 'project_team_members',
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['projects'] });
+          queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'project_agencies',
         },
         () => {
           queryClient.invalidateQueries({ queryKey: ['projects'] });
