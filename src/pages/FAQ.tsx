@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createSafeHtml } from '@/lib/sanitize';
 import { HelpCircle, Plus, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -153,13 +154,9 @@ export default function FAQ() {
   const [editingItem, setEditingItem] = useState<FaqItem | null>(null);
   const { role } = useUserRole();
   const { canRead, loading } = usePermissions();
+  const { t } = useTranslation();
   const isAdmin = role === 'admin';
   const isMobile = useIsMobile();
-
-  // Check permission
-  if (!loading && !canRead('faq')) {
-    return <Navigate to="/" replace />;
-  }
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -172,6 +169,11 @@ export default function FAQ() {
     loadCategories();
     loadFaqItems();
   }, []);
+
+  // Check permission
+  if (!loading && !canRead('faq')) {
+    return <Navigate to="/" replace />;
+  }
 
   const loadCategories = async () => {
     const { data } = await supabase
@@ -189,7 +191,7 @@ export default function FAQ() {
       .order('display_order', { ascending: true });
 
     if (error) {
-      toast.error('Erreur lors du chargement de la FAQ');
+      toast.error(t('faq.loadError'));
       return;
     }
 
@@ -206,16 +208,16 @@ export default function FAQ() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) return;
+    if (!confirm(t('faq.confirmDelete'))) return;
 
     const { error } = await supabase.from('faq_items').delete().eq('id', id);
 
     if (error) {
-      toast.error('Erreur lors de la suppression');
+      toast.error(t('faq.deleteError'));
       return;
     }
 
-    toast.success('Élément supprimé');
+    toast.success(t('faq.deleted'));
     loadFaqItems();
   };
 
@@ -259,10 +261,10 @@ export default function FAQ() {
           .eq('id', update.id);
       }
 
-      toast.success('Ordre mis à jour');
+      toast.success(t('faq.orderUpdated'));
     } catch (error) {
       console.error('Error updating order:', error);
-      toast.error('Erreur lors de la mise à jour de l\'ordre');
+      toast.error(t('faq.orderError'));
       loadFaqItems();
     }
   };
@@ -274,16 +276,16 @@ export default function FAQ() {
           <div className="flex items-center gap-3">
             <HelpCircle className="h-6 w-6 text-primary flex-shrink-0" />
             <div>
-              <h1 className="text-2xl font-bold text-foreground">FAQ</h1>
+              <h1 className="text-2xl font-bold text-foreground">{t('faq.title')}</h1>
               <p className="text-sm text-muted-foreground">
-                Foire aux questions
+                {t('faq.subtitle')}
               </p>
             </div>
           </div>
           {isAdmin && (
             <Button onClick={() => setIsDialogOpen(true)} className="flex-shrink-0">
               <Plus className="h-4 w-4 mr-2" />
-              Ajouter une question
+              {t('faq.addQuestion')}
             </Button>
           )}
         </div>
@@ -295,7 +297,7 @@ export default function FAQ() {
             <TabsList className="mb-6 w-full justify-start flex-wrap h-auto p-1">
               <TabsTrigger value="all" className="gap-2 px-3 py-2">
                 <HelpCircle className="h-4 w-4 flex-shrink-0" />
-                <span>Toutes</span>
+                <span>{t('faq.all')}</span>
               </TabsTrigger>
               {categories.map((category) => {
                 const count = faqItems.filter(item => item.category_id === category.id).length;
@@ -316,7 +318,7 @@ export default function FAQ() {
               {filteredItems.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <HelpCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Aucune question dans cette catégorie</p>
+                  <p>{t('faq.noQuestions')}</p>
                 </div>
               ) : (
                 <DndContext
