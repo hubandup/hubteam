@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Prospect, Interaction, useInteractions, useUpdateProspect, PROSPECT_STATUSES, PROSPECT_CHANNELS, PROSPECT_PRIORITIES, ProspectStatus, ProspectChannel, ProspectPriority, InteractionActionType, getActionCategory, getActionBadgeVariant, getActionIconName } from '@/hooks/useProspects';
+import { useProspectCategories } from '@/hooks/useProspectCategories';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Building2, User, Phone, Mail, Linkedin, Calendar, Euro, MessageSquare, Pencil, Plus, Search, Check, X } from 'lucide-react';
@@ -32,6 +33,7 @@ export function ProspectDetailDialog({
     data: interactions = []
   } = useInteractions(prospect?.id);
   const updateProspect = useUpdateProspect();
+  const { data: prospectCategories = [] } = useProspectCategories();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<Prospect>>({});
   const [addInteractionOpen, setAddInteractionOpen] = useState(false);
@@ -79,7 +81,8 @@ export function ProspectDetailDialog({
       offer_tags: prospect.offer_tags || [],
       next_action: prospect.next_action || '',
       next_action_at: prospect.next_action_at || '',
-      notes: prospect.notes || ''
+      notes: prospect.notes || '',
+      category_id: prospect.category_id || null,
     });
     setIsEditing(true);
   };
@@ -208,6 +211,23 @@ export function ProspectDetailDialog({
                             {PROSPECT_CHANNELS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                           </SelectContent>
                         </Select>
+                        <Select value={editData.category_id || '_none'} onValueChange={(value) => setEditData(prev => ({
+                      ...prev,
+                      category_id: value === '_none' ? null : value
+                    }))}>
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Catégorie" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="_none">— Aucune catégorie —</SelectItem>
+                            {prospectCategories.map(cat => <SelectItem key={cat.id} value={cat.id}>
+                              <span className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                                {cat.name}
+                              </span>
+                            </SelectItem>)}
+                          </SelectContent>
+                        </Select>
                       </> : <>
                         <Badge variant="outline" className={statusConfig?.color}>
                           {prospect.status}
@@ -216,6 +236,22 @@ export function ProspectDetailDialog({
                           Priorité {prospect.priority}
                         </Badge>
                         <Badge variant="secondary">{prospect.channel}</Badge>
+                        {(() => {
+                          const cat = prospectCategories.find(c => c.id === prospect.category_id);
+                          return cat ? (
+                            <Badge
+                              variant="outline"
+                              className="text-xs"
+                              style={{
+                                backgroundColor: `${cat.color}15`,
+                                color: cat.color,
+                                borderColor: `${cat.color}40`,
+                              }}
+                            >
+                              {cat.name}
+                            </Badge>
+                          ) : null;
+                        })()}
                       </>}
                   </div>
 

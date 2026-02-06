@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Mail, Linkedin, ArrowDownUp, BarChart3, Kanban, List, Plus, TrendingUp, Users, AlertTriangle, Calendar, Upload } from 'lucide-react';
+import { Search, Mail, Linkedin, ArrowDownUp, BarChart3, Kanban, List, Plus, TrendingUp, Users, AlertTriangle, Calendar, Upload, Settings2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -33,6 +33,8 @@ import { ProspectDetailDialog } from '@/components/prospection/ProspectDetailDia
 import { EmailTemplateManager } from '@/components/prospection/EmailTemplateManager';
 import { EmailImageUploader } from '@/components/prospection/EmailImageUploader';
 import { ImportProspectsDialog } from '@/components/prospection/ImportProspectsDialog';
+import { ManageCategoriesDialog } from '@/components/prospection/ManageCategoriesDialog';
+import { useProspectCategories } from '@/hooks/useProspectCategories';
 
 export default function Prospection() {
   const navigate = useNavigate();
@@ -41,6 +43,7 @@ export default function Prospection() {
   const { data: prospects = [], isLoading: prospectsLoading } = useProspects();
   const updateProspect = useUpdateProspect();
   const createInteraction = useCreateInteraction();
+  const { data: prospectCategories = [] } = useProspectCategories();
 
   // Pipeline state
   const [pipelineView, setPipelineView] = useState<'table' | 'kanban'>('table');
@@ -72,6 +75,7 @@ export default function Prospection() {
   const [emailMessage, setEmailMessage] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
   const [importProspectsOpen, setImportProspectsOpen] = useState(false);
+  const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
 
   // Fetch email stats
   const { data: emailStats } = useQuery({
@@ -651,6 +655,13 @@ export default function Prospection() {
                   </DialogContent>
                 </Dialog>
               </div>
+
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setManageCategoriesOpen(true)}>
+                  <Settings2 className="h-4 w-4 mr-2" />
+                  Catégories
+                </Button>
+              </div>
             </div>
 
             {/* Table */}
@@ -716,6 +727,7 @@ export default function Prospection() {
                       <TableHead>Prénom</TableHead>
                       <TableHead>Nom</TableHead>
                       <TableHead>Société</TableHead>
+                      <TableHead>Catégorie</TableHead>
                       <TableHead>Téléphone</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead className="w-[100px]">LinkedIn</TableHead>
@@ -725,6 +737,9 @@ export default function Prospection() {
                   <TableBody>
                     {filteredClients.map((client) => {
                       const linkedProspect = getLinkedProspect(client.email);
+                      const category = linkedProspect?.category_id 
+                        ? prospectCategories.find(c => c.id === linkedProspect.category_id) 
+                        : null;
                       return (
                         <TableRow 
                           key={client.id} 
@@ -742,6 +757,23 @@ export default function Prospection() {
                           <TableCell className="font-medium">{client.first_name}</TableCell>
                           <TableCell>{client.last_name}</TableCell>
                           <TableCell>{client.company}</TableCell>
+                          <TableCell>
+                            {category ? (
+                              <Badge
+                                variant="outline"
+                                className="text-xs font-medium whitespace-nowrap"
+                                style={{
+                                  backgroundColor: `${category.color}15`,
+                                  color: category.color,
+                                  borderColor: `${category.color}40`,
+                                }}
+                              >
+                                {category.name}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </TableCell>
                           <TableCell>{client.phone || '-'}</TableCell>
                           <TableCell className="text-muted-foreground">{client.email}</TableCell>
                           <TableCell>
@@ -948,6 +980,11 @@ export default function Prospection() {
       <ImportProspectsDialog
         open={importProspectsOpen}
         onOpenChange={setImportProspectsOpen}
+      />
+
+      <ManageCategoriesDialog
+        open={manageCategoriesOpen}
+        onOpenChange={setManageCategoriesOpen}
       />
 
       {selectedProspectId && (

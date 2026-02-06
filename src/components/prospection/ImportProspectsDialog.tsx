@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Upload, FileSpreadsheet, ArrowRight, Check, AlertTriangle, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCreateProspect } from '@/hooks/useProspects';
+import { useProspectCategories } from '@/hooks/useProspectCategories';
 import * as XLSX from 'xlsx';
 
 const PROSPECT_FIELDS = [
@@ -19,6 +20,7 @@ const PROSPECT_FIELDS = [
   { key: 'phone', label: 'Téléphone', required: false },
   { key: 'linkedin_url', label: 'LinkedIn URL', required: false },
   { key: 'channel', label: 'Canal', required: false },
+  { key: 'category', label: 'Catégorie', required: false },
   { key: 'status', label: 'Statut', required: false },
   { key: 'priority', label: 'Priorité', required: false },
   { key: 'estimated_amount', label: 'Montant estimé', required: false },
@@ -38,6 +40,7 @@ type Step = 'upload' | 'mapping' | 'preview';
 
 export function ImportProspectsDialog({ open, onOpenChange }: ImportProspectsDialogProps) {
   const createProspect = useCreateProspect();
+  const { data: categories = [] } = useProspectCategories();
   const [step, setStep] = useState<Step>('upload');
   const [fileName, setFileName] = useState('');
   const [headers, setHeaders] = useState<string[]>([]);
@@ -108,6 +111,7 @@ export function ImportProspectsDialog({ open, onOpenChange }: ImportProspectsDia
               (f.key === 'email' && (normalized.includes('email') || normalized.includes('e-mail') || normalized.includes('mail'))) ||
               (f.key === 'phone' && (normalized.includes('téléphone') || normalized.includes('tel') || normalized.includes('phone'))) ||
               (f.key === 'linkedin_url' && (normalized.includes('linkedin'))) ||
+              (f.key === 'category' && (normalized.includes('catégorie') || normalized.includes('categorie') || normalized.includes('category') || normalized.includes('secteur'))) ||
               (f.key === 'notes' && (normalized.includes('note') || normalized.includes('commentaire'))) ||
               (f.key === 'estimated_amount' && (normalized.includes('montant') || normalized.includes('budget') || normalized.includes('amount')));
           });
@@ -148,16 +152,29 @@ export function ImportProspectsDialog({ open, onOpenChange }: ImportProspectsDia
     for (const row of rows) {
       try {
         const prospectData: Record<string, any> = {};
+        let categoryValue = '';
         Object.entries(mapping).forEach(([header, field]) => {
           if (field) {
             const value = String(row[header] || '').trim();
             if (field === 'estimated_amount') {
               prospectData[field] = parseFloat(value.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+            } else if (field === 'category') {
+              categoryValue = value;
             } else {
               prospectData[field] = value;
             }
           }
         });
+
+        // Resolve category name to ID
+        if (categoryValue) {
+          const matchedCat = categories.find(c => 
+            c.name.toLowerCase() === categoryValue.toLowerCase()
+          );
+          if (matchedCat) {
+            prospectData.category_id = matchedCat.id;
+          }
+        }
 
         // Skip rows with empty required fields
         if (!prospectData.company_name || !prospectData.contact_name || !prospectData.email) {
