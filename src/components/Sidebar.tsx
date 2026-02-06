@@ -20,6 +20,7 @@ import logo from '@/assets/logo-hubandup.svg';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { SmashDialog } from './SmashDialog';
+import { useTranslation } from 'react-i18next';
 
 export function Sidebar() {
   const { signOut, user } = useAuth();
@@ -27,6 +28,7 @@ export function Sidebar() {
   const { canRead } = usePermissions();
   const [clientId, setClientId] = useState<string | null>(null);
   const [smashOpen, setSmashOpen] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchClientId = async () => {
@@ -65,17 +67,17 @@ export function Sidebar() {
   }, [role, user]);
 
   const mainItems = [
-    { title: 'Accueil', url: '/', icon: Home, module: 'dashboard' as const },
-    ...(role === 'client' && clientId ? [{ title: 'Ma fiche client', url: `/client/${clientId}`, icon: Users, module: 'crm' as const, matchParent: true, isClientItem: true }] : []),
-    { title: 'Feed', url: '/feed', icon: Rss, module: 'dashboard' as const, hideForClient: true },
-    { title: 'Activité', url: '/dashboard', icon: LayoutDashboard, module: 'dashboard' as const },
-    { title: 'Finances', url: '/finances', icon: Euro, module: 'dashboard' as const, adminOnly: true },
-    { title: 'CRM', url: '/crm', icon: Users, module: 'crm' as const, matchParent: true },
-    { title: 'Prospection', url: '/prospection', icon: ListTodo, module: 'crm' as const, hideForAgency: true, hideForClient: true },
-    { title: 'Agences', url: '/agencies', icon: Building2, module: 'agencies' as const, matchParent: true },
-    { title: 'Projets', url: '/projects', icon: FolderKanban, module: 'projects' as const, matchParent: true },
-    { title: 'Messages', url: '/messages', icon: MessageSquare, module: 'dashboard' as const },
-    { title: 'FAQ', url: '/faq', icon: HelpCircle, module: 'faq' as const },
+    { title: t('nav.home'), url: '/', icon: Home, module: 'dashboard' as const },
+    ...(role === 'client' && clientId ? [{ title: t('nav.myClientFile'), url: `/client/${clientId}`, icon: Users, module: 'crm' as const, matchParent: true, isClientItem: true }] : []),
+    { title: t('nav.feed'), url: '/feed', icon: Rss, module: 'dashboard' as const, hideForClient: true },
+    { title: t('nav.activity'), url: '/dashboard', icon: LayoutDashboard, module: 'dashboard' as const },
+    { title: t('nav.finances'), url: '/finances', icon: Euro, module: 'dashboard' as const, adminOnly: true },
+    { title: t('nav.crm'), url: '/crm', icon: Users, module: 'crm' as const, matchParent: true },
+    { title: t('nav.prospection'), url: '/prospection', icon: ListTodo, module: 'crm' as const, hideForAgency: true, hideForClient: true },
+    { title: t('nav.agencies'), url: '/agencies', icon: Building2, module: 'agencies' as const, matchParent: true },
+    { title: t('nav.projects'), url: '/projects', icon: FolderKanban, module: 'projects' as const, matchParent: true },
+    { title: t('nav.messages'), url: '/messages', icon: MessageSquare, module: 'dashboard' as const },
+    { title: t('nav.faq'), url: '/faq', icon: HelpCircle, module: 'faq' as const },
   ];
 
   const showSettings = role === 'admin' || role === 'team' || role === 'agency';
@@ -92,20 +94,20 @@ export function Sidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems
-                .filter(item => item.title !== 'Activité' || role === 'admin')
+                .filter(item => item.title !== t('nav.activity') || role === 'admin')
                 .filter(item => !(item as any).adminOnly || role === 'admin')
-                .filter(item => item.title !== 'CRM' || role !== 'client')
+                .filter(item => item.title !== t('nav.crm') || role !== 'client')
                 .filter(item => !(item as any).hideForAgency || role !== 'agency')
                 .filter(item => !(item as any).hideForClient || role !== 'client')
                 .map((item) =>
                   canRead(item.module) ? (
-                    <SidebarMenuItem key={item.title}>
+                    <SidebarMenuItem key={item.url}>
                       <SidebarMenuButton asChild>
                         <NavLink 
                           to={item.url} 
                           end={item.url === '/' || item.url === '/dashboard'} 
                           matchParent={item.matchParent}
-                          activePatterns={item.title === 'CRM' ? ['/client'] : item.title === 'Projets' ? ['/project'] : item.title === 'Agences' ? ['/agency'] : []}
+                          activePatterns={item.url === '/crm' ? ['/client'] : item.url === '/projects' ? ['/project'] : item.url === '/agencies' ? ['/agency'] : []}
                           className="text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground transition-all duration-200 rounded-lg group" 
                           activeClassName="bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-[0_2px_8px_-2px_rgba(232,255,76,0.3)]"
                         >
@@ -128,7 +130,7 @@ export function Sidebar() {
                     className="flex items-center w-full text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground transition-all duration-200 rounded-lg cursor-pointer"
                   >
                     <ArrowUpFromLine className="mr-2 h-4 w-4" />
-                    <span>Smash</span>
+                    <span>{t('nav.smash')}</span>
                   </button>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -141,7 +143,7 @@ export function Sidebar() {
                       activeClassName="bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-[0_2px_8px_-2px_rgba(232,255,76,0.3)]"
                     >
                       <Settings className="mr-2 h-4 w-4" />
-                      <span>Settings</span>
+                      <span>{t('nav.settings')}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -153,7 +155,7 @@ export function Sidebar() {
       <SidebarFooter className="bg-gradient-to-t from-sidebar-accent/20 to-sidebar-background border-t border-sidebar-border/50">
         <Button variant="ghost" onClick={signOut} className="w-full justify-start text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all duration-200">
           <LogOut className="mr-2 h-4 w-4" />
-          Déconnexion
+          {t('nav.signOut')}
         </Button>
       </SidebarFooter>
       <SmashDialog open={smashOpen} onOpenChange={setSmashOpen} />

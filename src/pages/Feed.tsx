@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useFeedActivities } from '@/hooks/useFeedActivities';
 import { usePosts } from '@/hooks/usePosts';
 import { PageLoader } from '@/components/PageLoader';
+import { useTranslation } from 'react-i18next';
 
 
 interface ActivityLog {
@@ -48,6 +49,7 @@ export default function Feed() {
   const { user } = useAuth();
   const { data: activities = [], isLoading: activitiesLoading } = useFeedActivities();
   const { data: posts = [], isLoading: postsLoading } = usePosts();
+  const { t } = useTranslation();
   
   const loading = activitiesLoading || postsLoading;
 
@@ -58,9 +60,9 @@ export default function Feed() {
   return (
     <div className="w-full md:container md:mx-auto md:p-4 md:max-w-2xl">
       <div className="mb-3 md:mb-6">
-        <h1 className="text-xl md:text-3xl font-bold mb-0.5">Fil d'actualité</h1>
+        <h1 className="text-xl md:text-3xl font-bold mb-0.5">{t('feed.title')}</h1>
         <p className="text-muted-foreground text-xs md:text-base">
-          Partagez et découvrez les actualités de l'équipe
+          {t('feed.subtitle')}
         </p>
       </div>
 
@@ -76,7 +78,7 @@ export default function Feed() {
         <div className="space-y-3 md:space-y-4 pr-2">
           {posts.length === 0 && activities.length === 0 ? (
             <div className="p-6 md:p-8 text-center border rounded-xl bg-card/50">
-              <p className="text-muted-foreground text-sm md:text-base">Aucune activité pour le moment. Soyez le premier à partager !</p>
+              <p className="text-muted-foreground text-sm md:text-base">{t('feed.noActivity')}</p>
             </div>
           ) : (
             <>

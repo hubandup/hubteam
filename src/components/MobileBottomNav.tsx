@@ -9,6 +9,7 @@ import { useClients } from '@/hooks/useClients';
 import { useAuth } from '@/hooks/useAuth';
 import { useTabVisits } from '@/hooks/useTabVisits';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from 'react-i18next';
 
 export function MobileBottomNav() {
   const isNative = useIsNative();
@@ -18,42 +19,34 @@ export function MobileBottomNav() {
   const { data: tasks } = useTasks();
   const { data: clients } = useClients();
   const lastVisits = useTabVisits();
+  const { t } = useTranslation();
 
-  // Count new activities/posts in Feed since last visit
   const feedCount = useMemo(() => {
     const lastVisit = lastVisits.feed;
-    
     const newActivities = activities?.filter(
       a => new Date(a.created_at).getTime() > lastVisit
     ).length || 0;
-    
     const newPosts = posts?.filter(
       p => new Date(p.created_at).getTime() > lastVisit
     ).length || 0;
-    
     return newActivities + newPosts;
   }, [activities, posts, lastVisits.feed]);
 
-  // Count clients with deadlines today or overdue (updated/created since last visit)
   const crmCount = useMemo(() => {
     if (!clients) return 0;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const lastVisit = lastVisits.crm;
-    
     return clients.filter(c => {
       if (!c.follow_up_date) return false;
       const deadline = new Date(c.follow_up_date);
       deadline.setHours(0, 0, 0, 0);
-      if (deadline > today) return false; // Only today or overdue
-      
-      // Count only if client was updated/created after last visit
+      if (deadline > today) return false;
       const updatedAt = new Date(c.updated_at).getTime();
       return updatedAt > lastVisit;
     }).length;
   }, [clients, lastVisits.crm]);
 
-  // Count my incomplete tasks in Projects since last visit
   const projectsCount = useMemo(() => {
     if (!user || !tasks) return 0;
     return tasks.filter(
@@ -63,7 +56,6 @@ export function MobileBottomNav() {
     ).length;
   }, [tasks, user, lastVisits.projects]);
 
-  // Check if running as PWA or native app
   const isMobileApp = useMemo(() => 
     isNative ||
     window.matchMedia('(display-mode: standalone)').matches || 
@@ -72,26 +64,10 @@ export function MobileBottomNav() {
   );
 
   const navItems = useMemo(() => [
-    {
-      to: '/feed',
-      icon: Rss,
-      label: 'Feed',
-    },
-    {
-      to: '/notes',
-      icon: StickyNote,
-      label: 'Notes',
-    },
-    {
-      to: '/crm',
-      icon: Users,
-      label: 'CRM',
-    },
-    {
-      to: '/projects',
-      icon: Briefcase,
-      label: 'Projets',
-    },
+    { to: '/feed', icon: Rss, labelKey: 'nav.feed' },
+    { to: '/notes', icon: StickyNote, labelKey: 'nav.notes' },
+    { to: '/crm', icon: Users, labelKey: 'nav.crm' },
+    { to: '/projects', icon: Briefcase, labelKey: 'nav.projects' },
   ], []);
 
   return (
@@ -99,12 +75,10 @@ export function MobileBottomNav() {
       <div className="flex justify-around items-center h-16 px-2">
         {navItems.map((item) => {
           const Icon = item.icon;
-          
           let badgeCount = 0;
           if (item.to === '/feed') badgeCount = feedCount;
           if (item.to === '/crm') badgeCount = crmCount;
           if (item.to === '/projects') badgeCount = projectsCount;
-          
           const showBadge = badgeCount > 0;
           
           return (
@@ -125,7 +99,7 @@ export function MobileBottomNav() {
                   </Badge>
                 )}
               </div>
-              <span className="text-[10px] leading-tight">{item.label}</span>
+              <span className="text-[10px] leading-tight">{t(item.labelKey)}</span>
             </NavLink>
           );
         })}

@@ -6,12 +6,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search, Calendar, User } from 'lucide-react';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, enUS } from 'date-fns/locale';
 import { EditTaskDialog } from '@/components/project-details/EditTaskDialog';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useTasks } from '@/hooks/useTasks';
 import { PageLoader } from '@/components/PageLoader';
+import { useTranslation } from 'react-i18next';
 
 export default function Tasks() {
   const navigate = useNavigate();
@@ -22,6 +23,8 @@ export default function Tasks() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === 'en' ? enUS : fr;
 
   const filteredTasks = useMemo(() => {
     if (!searchQuery.trim()) return tasks;
@@ -35,15 +38,15 @@ export default function Tasks() {
   }, [tasks, searchQuery]);
 
   const statusConfig = {
-    todo: { label: 'À faire', variant: 'secondary' as const },
-    in_progress: { label: 'En cours', variant: 'default' as const },
-    done: { label: 'Terminé', variant: 'outline' as const },
+    todo: { label: t('tasks.statuses.todo'), variant: 'secondary' as const },
+    in_progress: { label: t('tasks.statuses.in_progress'), variant: 'default' as const },
+    done: { label: t('tasks.statuses.done'), variant: 'outline' as const },
   };
 
   const priorityConfig = {
-    low: { label: 'Basse', variant: 'secondary' as const },
-    medium: { label: 'Moyenne', variant: 'default' as const },
-    high: { label: 'Haute', variant: 'destructive' as const },
+    low: { label: t('tasks.priorities.low'), variant: 'secondary' as const },
+    medium: { label: t('tasks.priorities.medium'), variant: 'default' as const },
+    high: { label: t('tasks.priorities.high'), variant: 'destructive' as const },
   };
 
   const handleTaskClick = (task: any) => {
@@ -60,8 +63,8 @@ export default function Tasks() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <p className="text-lg font-semibold text-foreground">Accès refusé</p>
-          <p className="text-muted-foreground">Vous n'avez pas les permissions pour accéder aux tâches</p>
+          <p className="text-lg font-semibold text-foreground">{t('common.accessDenied')}</p>
+          <p className="text-muted-foreground">{t('tasks.noPermission')}</p>
         </div>
       </div>
     );
@@ -70,15 +73,15 @@ export default function Tasks() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Tâches</h1>
-        <p className="text-muted-foreground">Suivez toutes vos tâches</p>
+        <h1 className="text-3xl font-bold text-foreground">{t('tasks.title')}</h1>
+        <p className="text-muted-foreground">{t('tasks.subtitle')}</p>
       </div>
 
       {tasks.length > 0 && (
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher une tâche..."
+            placeholder={t('tasks.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -89,10 +92,10 @@ export default function Tasks() {
       {filteredTasks.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-muted-foreground">
-            {tasks.length === 0 ? 'Aucune tâche pour le moment' : 'Aucune tâche trouvée'}
+            {tasks.length === 0 ? t('tasks.noTasks') : t('tasks.noTaskFound')}
           </p>
           {searchQuery && (
-            <p className="text-sm text-muted-foreground mt-2">Essayez une autre recherche</p>
+            <p className="text-sm text-muted-foreground mt-2">{t('common.tryAnotherSearch')}</p>
           )}
         </div>
       ) : (
@@ -145,7 +148,7 @@ export default function Tasks() {
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
                           <span>
-                            {format(new Date(task.end_date), 'dd MMM yyyy', { locale: fr })}
+                            {format(new Date(task.end_date), 'dd MMM yyyy', { locale: dateLocale })}
                           </span>
                         </div>
                       )}
