@@ -11,26 +11,28 @@ import { DesignTab } from '@/components/settings/DesignTab';
 import { FaqCategoriesTab } from '@/components/settings/FaqCategoriesTab';
 import { AgencyTagsTab } from '@/components/settings/AgencyTagsTab';
 import { TestInvitationEmail } from '@/components/settings/TestInvitationEmail';
+import { useTranslation } from 'react-i18next';
 
 export default function Settings() {
   const { isAdmin } = useUserRole();
+  const { t } = useTranslation();
 
   const baseTabs: TabItem[] = [
     {
       value: 'profile',
-      label: 'Mon profil',
+      label: t('settings.tabs.profile'),
       icon: <User className="h-4 w-4" />,
       content: <ProfileTab />
     },
     {
       value: 'security',
-      label: 'Sécurité',
+      label: t('settings.tabs.security'),
       icon: <Lock className="h-4 w-4" />,
       content: <SecurityTab />
     },
     {
       value: 'notifications',
-      label: 'Notifications',
+      label: t('settings.tabs.notifications'),
       icon: <Bell className="h-4 w-4" />,
       content: <NotificationPreferencesTab />
     }
@@ -39,43 +41,43 @@ export default function Settings() {
   const adminTabs: TabItem[] = isAdmin ? [
     {
       value: 'users',
-      label: 'Utilisateurs',
+      label: t('settings.tabs.users'),
       icon: <Users className="h-4 w-4" />,
       content: <UsersTab />
     },
     {
       value: 'permissions',
-      label: 'Permissions',
+      label: t('settings.tabs.permissions'),
       icon: <Shield className="h-4 w-4" />,
       content: <PermissionsTab />
     },
     {
       value: 'data',
-      label: 'Données',
+      label: t('settings.tabs.data'),
       icon: <Database className="h-4 w-4" />,
       content: <DataManagementTab />
     },
     {
       value: 'design',
-      label: 'Design',
+      label: t('settings.tabs.design'),
       icon: <Palette className="h-4 w-4" />,
       content: <DesignTab />
     },
     {
       value: 'faq',
-      label: 'FAQ',
+      label: t('settings.tabs.faq'),
       icon: <HelpCircle className="h-4 w-4" />,
       content: <FaqCategoriesTab />
     },
     {
       value: 'agency-tags',
-      label: 'Tags agences',
+      label: t('settings.tabs.agencyTags'),
       icon: <Tag className="h-4 w-4" />,
       content: <AgencyTagsTab />
     },
     {
       value: 'test-email',
-      label: 'Test Email',
+      label: t('settings.tabs.testEmail'),
       icon: <Mail className="h-4 w-4" />,
       content: <TestInvitationEmail />
     }
@@ -86,9 +88,9 @@ export default function Settings() {
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Paramètres</h1>
+        <h1 className="text-3xl font-bold text-foreground">{t('settings.title')}</h1>
         <p className="text-muted-foreground">
-          {isAdmin ? 'Gérez les utilisateurs et vos informations personnelles' : 'Gérez vos informations personnelles'}
+          {isAdmin ? t('settings.subtitleAdmin') : t('settings.subtitleUser')}
         </p>
       </div>
 

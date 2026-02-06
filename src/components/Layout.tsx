@@ -9,6 +9,7 @@ import { useCapacitor } from '@/hooks/useCapacitor';
 import { HeaderUserProfile } from './HeaderUserProfile';
 import { NotificationBell } from './notifications/NotificationBell';
 import { ThemeToggle } from './ThemeToggle';
+import { LanguageSelector } from './LanguageSelector';
 import { SmashDialog } from './SmashDialog';
 import { ArrowUpFromLine } from 'lucide-react';
 import { Button } from './ui/button';
@@ -40,6 +41,7 @@ export function Layout({ children }: LayoutProps) {
             >
               <ArrowUpFromLine className="h-5 w-5" />
             </Button>
+            <LanguageSelector />
             <ThemeToggle />
             <NotificationBell />
           </div>
@@ -72,6 +74,7 @@ export function Layout({ children }: LayoutProps) {
           <header className="h-14 border-b border-border/50 bg-background/95 backdrop-blur-sm flex items-center justify-between px-4 sticky top-0 z-10">
             <SidebarTrigger />
             <div className="flex items-center gap-1">
+              <LanguageSelector />
               <ThemeToggle />
               <NotificationBell />
               <HeaderUserProfile />

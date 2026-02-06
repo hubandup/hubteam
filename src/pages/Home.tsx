@@ -4,10 +4,12 @@ import { QuickNotes } from '@/components/home/QuickNotes';
 import { TodayTasks } from '@/components/home/TodayTasks';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, enUS } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 
 export default function Home() {
   const [userName, setUserName] = useState('');
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     fetchUserProfile();
@@ -35,12 +37,13 @@ export default function Home() {
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour >= 18 || hour < 6) {
-      return 'Bonsoir';
+      return t('home.goodEvening');
     }
-    return 'Bonjour';
+    return t('home.goodMorning');
   };
 
-  const today = format(new Date(), "EEEE d MMMM yyyy", { locale: fr });
+  const dateLocale = i18n.language === 'en' ? enUS : fr;
+  const today = format(new Date(), "EEEE d MMMM yyyy", { locale: dateLocale });
 
   return (
     <div className="space-y-6">
