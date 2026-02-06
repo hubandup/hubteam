@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { ProjectCard } from '@/components/ProjectCard';
 import { ProjectKanbanView } from '@/components/ProjectKanbanView';
@@ -27,6 +28,7 @@ import { PendingQuoteActionsBanner } from '@/components/PendingQuoteActionsBanne
 export default function Projects() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { t } = useTranslation();
   const { canRead, loading: permissionsLoading } = usePermissions();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
@@ -89,11 +91,11 @@ export default function Projects() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
-      toast.success('Projet désarchivé avec succès');
+      toast.success(t('projects.unarchived'));
     },
     onError: (error) => {
       console.error('Error unarchiving project:', error);
-      toast.error('Erreur lors de la désarchivage du projet');
+      toast.error(t('projects.unarchiveError'));
     },
   });
 
@@ -109,12 +111,12 @@ export default function Projects() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
-      toast.success('Projet supprimé définitivement');
+      toast.success(t('projects.deleted'));
       setProjectToDelete(null);
     },
     onError: (error) => {
       console.error('Error deleting project:', error);
-      toast.error('Erreur lors de la suppression du projet');
+      toast.error(t('projects.deleteError'));
       setProjectToDelete(null);
     },
   });
@@ -131,10 +133,10 @@ export default function Projects() {
       // Invalidate cache to refresh data
       queryClient.invalidateQueries({ queryKey: ['projects'] });
 
-      toast.success('Statut du projet mis à jour');
+      toast.success(t('projects.statusUpdated'));
     } catch (error) {
       console.error('Error updating project status:', error);
-      toast.error('Erreur lors de la mise à jour du statut');
+      toast.error(t('projects.statusUpdateError'));
     }
   };
 
@@ -167,8 +169,8 @@ export default function Projects() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <p className="text-lg font-semibold text-foreground">Accès refusé</p>
-          <p className="text-muted-foreground">Vous n'avez pas les permissions pour accéder aux projets</p>
+          <p className="text-lg font-semibold text-foreground">{t('common.accessDenied')}</p>
+          <p className="text-muted-foreground">{t('projects.noPermission')}</p>
         </div>
       </div>
     );
@@ -179,8 +181,8 @@ export default function Projects() {
       <PendingQuoteActionsBanner />
       
       <div>
-        <h1 className="text-xl md:text-3xl font-bold text-foreground mb-0.5">Projets</h1>
-        <p className="text-muted-foreground text-xs md:text-base">Gérez tous vos projets</p>
+        <h1 className="text-xl md:text-3xl font-bold text-foreground mb-0.5">{t('projects.title')}</h1>
+        <p className="text-muted-foreground text-xs md:text-base">{t('projects.subtitle')}</p>
         {isMobile && !isClient && (
           <div className="mt-3">
             <ProtectedAction module="projects" action="create">
@@ -202,7 +204,7 @@ export default function Projects() {
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher..."
+              placeholder={t('common.search')}
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-8 bg-white dark:bg-background h-10 text-sm"
@@ -242,16 +244,16 @@ export default function Projects() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-background z-50">
-            <SelectItem value="all">Tous ({projects.length})</SelectItem>
-            <SelectItem value="planning">À faire ({projects.filter(p => p.status === 'planning').length})</SelectItem>
-            <SelectItem value="reco_in_progress">Reco en cours ({projects.filter(p => p.status === 'reco_in_progress').length})</SelectItem>
-            <SelectItem value="active">En cours ({projects.filter(p => p.status === 'active').length})</SelectItem>
-            <SelectItem value="completed">Terminés ({projects.filter(p => p.status === 'completed').length})</SelectItem>
-            <SelectItem value="lost">Perdu ({projects.filter(p => p.status === 'lost').length})</SelectItem>
+             <SelectItem value="all">{t('projects.statuses.all')} ({projects.length})</SelectItem>
+            <SelectItem value="planning">{t('projects.statuses.planning')} ({projects.filter(p => p.status === 'planning').length})</SelectItem>
+            <SelectItem value="reco_in_progress">{t('projects.statuses.reco_in_progress')} ({projects.filter(p => p.status === 'reco_in_progress').length})</SelectItem>
+            <SelectItem value="active">{t('projects.statuses.active')} ({projects.filter(p => p.status === 'active').length})</SelectItem>
+            <SelectItem value="completed">{t('projects.statuses.completed')} ({projects.filter(p => p.status === 'completed').length})</SelectItem>
+            <SelectItem value="lost">{t('projects.statuses.lost')} ({projects.filter(p => p.status === 'lost').length})</SelectItem>
             <SelectItem value="archived">
               <div className="flex items-center gap-2">
                 <Archive className="h-4 w-4" />
-                Archivés ({archivedProjects.length})
+                {t('projects.statuses.archived')} ({archivedProjects.length})
               </div>
             </SelectItem>
           </SelectContent>
@@ -259,15 +261,15 @@ export default function Projects() {
       ) : (
         <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList>
-            <TabsTrigger value="all">Tous ({projects.length})</TabsTrigger>
-            <TabsTrigger value="planning">À faire ({projects.filter(p => p.status === 'planning').length})</TabsTrigger>
-            <TabsTrigger value="reco_in_progress">Reco en cours ({projects.filter(p => p.status === 'reco_in_progress').length})</TabsTrigger>
-            <TabsTrigger value="active">En cours ({projects.filter(p => p.status === 'active').length})</TabsTrigger>
-            <TabsTrigger value="completed">Terminés ({projects.filter(p => p.status === 'completed').length})</TabsTrigger>
-            <TabsTrigger value="lost">Perdu ({projects.filter(p => p.status === 'lost').length})</TabsTrigger>
+            <TabsTrigger value="all">{t('projects.statuses.all')} ({projects.length})</TabsTrigger>
+            <TabsTrigger value="planning">{t('projects.statuses.planning')} ({projects.filter(p => p.status === 'planning').length})</TabsTrigger>
+            <TabsTrigger value="reco_in_progress">{t('projects.statuses.reco_in_progress')} ({projects.filter(p => p.status === 'reco_in_progress').length})</TabsTrigger>
+            <TabsTrigger value="active">{t('projects.statuses.active')} ({projects.filter(p => p.status === 'active').length})</TabsTrigger>
+            <TabsTrigger value="completed">{t('projects.statuses.completed')} ({projects.filter(p => p.status === 'completed').length})</TabsTrigger>
+            <TabsTrigger value="lost">{t('projects.statuses.lost')} ({projects.filter(p => p.status === 'lost').length})</TabsTrigger>
             <TabsTrigger value="archived">
               <Archive className="h-4 w-4 mr-1" />
-              Archivés ({archivedProjects.length})
+              {t('projects.statuses.archived')} ({archivedProjects.length})
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -278,9 +280,9 @@ export default function Projects() {
           archivedProjects.length === 0 ? (
             <div className="text-center py-12">
               <Archive className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Aucun projet archivé</p>
+              <p className="text-muted-foreground">{t('projects.noArchivedProjects')}</p>
               <p className="text-sm text-muted-foreground mt-2">
-                Les projets soldés de l'année fiscale précédente seront automatiquement archivés
+                {t('projects.archivedAutoDescription')}
               </p>
             </div>
           ) : (
@@ -306,7 +308,7 @@ export default function Projects() {
                       </div>
                       <Badge variant="secondary">
                         <Archive className="h-3 w-3 mr-1" />
-                        Archivé
+                         Archivé
                       </Badge>
                     </div>
                   </CardHeader>
@@ -323,8 +325,8 @@ export default function Projects() {
                           size="sm"
                           onClick={() => navigate(`/project/${project.id}`)}
                         >
-                          <Edit className="h-4 w-4 mr-1" />
-                          Modifier
+                           <Edit className="h-4 w-4 mr-1" />
+                           {t('common.edit')}
                         </Button>
                       </ProtectedAction>
                       <ProtectedAction module="projects" action="update">
@@ -334,8 +336,8 @@ export default function Projects() {
                           onClick={() => unarchiveMutation.mutate(project.id)}
                           disabled={unarchiveMutation.isPending}
                         >
-                          <ArchiveRestore className="h-4 w-4 mr-1" />
-                          Désarchiver
+                           <ArchiveRestore className="h-4 w-4 mr-1" />
+                           {t('common.unarchive')}
                         </Button>
                       </ProtectedAction>
                       <ProtectedAction module="projects" action="delete">
@@ -344,8 +346,8 @@ export default function Projects() {
                           size="sm"
                           onClick={() => setProjectToDelete(project.id)}
                         >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Supprimer
+                           <Trash2 className="h-4 w-4 mr-1" />
+                           {t('common.delete')}
                         </Button>
                       </ProtectedAction>
                     </div>
@@ -359,18 +361,12 @@ export default function Projects() {
             <div className="text-center py-12">
               <p className="text-muted-foreground">
                 {activeTab === 'all' 
-                  ? 'Aucun projet pour le moment' 
-                  : `Aucun projet ${
-                      activeTab === 'planning' ? 'à faire' : 
-                      activeTab === 'reco_in_progress' ? 'en reco' :
-                      activeTab === 'active' ? 'en cours' : 
-                      activeTab === 'lost' ? 'perdu' :
-                      'terminé'
-                    }`
+                  ? t('projects.noProjects')
+                  : `${t('projects.noProjects')} ${t(`projects.noProjectStatus.${activeTab}`, '')}`
                 }
               </p>
               <p className="text-sm text-muted-foreground mt-2">
-                Commencez par créer un nouveau projet
+                {t('projects.startCreateProject')}
               </p>
             </div>
           ) : isMobile || viewMode === 'grid' ? (
@@ -401,18 +397,18 @@ export default function Projects() {
       <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogTitle>{t('projects.confirmDelete')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer définitivement ce projet ? Cette action est irréversible.
+              {t('projects.confirmDeleteDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => projectToDelete && deleteMutation.mutate(projectToDelete)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Supprimer définitivement
+              {t('common.deleteForever')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

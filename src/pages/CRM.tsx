@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { ClientCard } from '@/components/ClientCard';
 import { ClientKanbanView } from '@/components/ClientKanbanView';
@@ -21,6 +22,7 @@ import { PageLoader } from '@/components/PageLoader';
 
 export default function CRM() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { canRead, loading: permissionsLoading } = usePermissions();
   const { isAgency, loading: roleLoading } = useUserRole();
   const showRevenue = !roleLoading && !isAgency;
@@ -94,10 +96,10 @@ export default function CRM() {
       // Invalidate cache to refresh data
       queryClient.invalidateQueries({ queryKey: ['clients'] });
 
-      toast.success('Statut client mis à jour');
+      toast.success(t('crm.statusUpdated'));
     } catch (error) {
       console.error('Error updating client stage:', error);
-      toast.error('Erreur lors de la mise à jour du statut');
+      toast.error(t('crm.statusUpdateError'));
     }
   };
 
@@ -109,8 +111,8 @@ export default function CRM() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <p className="text-lg font-semibold text-foreground">Accès refusé</p>
-          <p className="text-muted-foreground">Vous n'avez pas les permissions pour accéder au CRM</p>
+          <p className="text-lg font-semibold text-foreground">{t('common.accessDenied')}</p>
+          <p className="text-muted-foreground">{t('crm.noPermission')}</p>
         </div>
       </div>
     );
@@ -123,10 +125,10 @@ export default function CRM() {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-xl md:text-3xl font-bold text-foreground mb-0.5">
-              {showArchived ? 'Archives CRM' : 'CRM'}
+              {showArchived ? t('crm.archivesTitle') : t('crm.title')}
             </h1>
             <p className="text-muted-foreground text-xs md:text-base">
-              {showArchived ? 'Clients inactifs archivés' : 'Gérez vos clients et leurs projets'}
+              {showArchived ? t('crm.archivesSubtitle') : t('crm.subtitle')}
             </p>
             {isMobile && (
               <div className="mt-3">
@@ -144,7 +146,7 @@ export default function CRM() {
           >
             <Archive className="h-4 w-4" />
             {!isMobile && (
-              <span>Archives {archivedCount > 0 && `(${archivedCount})`}</span>
+              <span>{t('crm.archives')} {archivedCount > 0 && `(${archivedCount})`}</span>
             )}
           </Button>
         </div>
@@ -190,7 +192,7 @@ export default function CRM() {
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher..."
+              placeholder={t('common.search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-8 bg-white dark:bg-background h-10 text-sm"
@@ -203,10 +205,10 @@ export default function CRM() {
                   <SelectValue placeholder="Trier par..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="created_at">Date de création</SelectItem>
-                  <SelectItem value="alphabetical">Ordre alphabétique</SelectItem>
+                  <SelectItem value="created_at">{t('common.creationDate')}</SelectItem>
+                  <SelectItem value="alphabetical">{t('common.alphabetical')}</SelectItem>
                   {showRevenue && (
-                    <SelectItem value="revenue_current_year">CA année fiscale ↓</SelectItem>
+                    <SelectItem value="revenue_current_year">{t('crm.revenueCurrentYear')}</SelectItem>
                   )}
                 </SelectContent>
               </Select>
@@ -219,7 +221,7 @@ export default function CRM() {
                 size="sm"
                 onClick={() => setFilterWithProjects(!filterWithProjects)}
               >
-                Projets en cours
+                {t('common.ongoingProjects')}
               </Button>
             </div>
           )}
@@ -230,13 +232,13 @@ export default function CRM() {
       <div className="flex-1 min-w-0 overflow-hidden">
         {filteredClients.length === 0 && clients.length === 0 ? (
           <div className="text-center py-12 px-4 md:px-6">
-            <p className="text-muted-foreground">Aucun client pour le moment</p>
-            <p className="text-sm text-muted-foreground mt-2">Commencez par ajouter un nouveau client</p>
+            <p className="text-muted-foreground">{t('crm.noClients')}</p>
+            <p className="text-sm text-muted-foreground mt-2">{t('crm.startAddClient')}</p>
           </div>
         ) : filteredClients.length === 0 ? (
           <div className="text-center py-12 px-4 md:px-6">
-            <p className="text-muted-foreground">Aucun client trouvé</p>
-            <p className="text-sm text-muted-foreground mt-2">Essayez une autre recherche</p>
+            <p className="text-muted-foreground">{t('crm.noClientFound')}</p>
+            <p className="text-sm text-muted-foreground mt-2">{t('common.tryAnotherSearch')}</p>
           </div>
         ) : isMobile ? (
           <div className="overflow-y-auto h-full">

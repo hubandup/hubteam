@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { AgencyCard } from '@/components/AgencyCard';
 import { AddAgencyDialog } from '@/components/AddAgencyDialog';
@@ -16,6 +17,7 @@ import { PageLoader } from '@/components/PageLoader';
 
 export default function Agencies() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { canRead, loading: permissionsLoading } = usePermissions();
   const [agencies, setAgencies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -167,8 +169,8 @@ export default function Agencies() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <p className="text-lg font-semibold text-foreground">Accès refusé</p>
-          <p className="text-muted-foreground">Vous n'avez pas les permissions pour accéder aux agences</p>
+          <p className="text-lg font-semibold text-foreground">{t('common.accessDenied')}</p>
+          <p className="text-muted-foreground">{t('agencies.noPermission')}</p>
         </div>
       </div>
     );
@@ -178,8 +180,8 @@ export default function Agencies() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Agences</h1>
-          <p className="text-muted-foreground">Gérez vos agences partenaires</p>
+          <h1 className="text-3xl font-bold text-foreground">{t('agencies.title')}</h1>
+          <p className="text-muted-foreground">{t('agencies.subtitle')}</p>
         </div>
         <ProtectedAction module="agencies" action="create">
           <AddAgencyDialog onAgencyAdded={fetchAgencies} />
@@ -187,26 +189,26 @@ export default function Agencies() {
       </div>
 
       <div className="space-y-3">
-        <p className="text-sm font-medium text-muted-foreground">Rechercher :</p>
+        <p className="text-sm font-medium text-muted-foreground">{t('agencies.searchLabel')}</p>
         <Popover open={tagSearchOpen} onOpenChange={setTagSearchOpen}>
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-full justify-start">
               <Search className="mr-2 h-4 w-4" />
-              Rechercher...
+              {t('common.search')}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-[calc(100vw-3rem)] md:w-[600px] lg:w-[800px] p-0" align="start" side="bottom">
             <Command>
               <CommandInput 
-                placeholder="Rechercher..." 
+                placeholder={t('common.search')} 
                 value={searchQuery}
                 onValueChange={setSearchQuery}
               />
               <CommandList>
-                <CommandEmpty>Aucun résultat trouvé.</CommandEmpty>
+                <CommandEmpty>{t('agencies.noResults')}</CommandEmpty>
                 
                 {searchResults.agencies.length > 0 && (
-                  <CommandGroup heading="Agences">
+                  <CommandGroup heading={t('agencies.title')}>
                     {searchResults.agencies.map((agency: any) => (
                       <CommandItem
                         key={agency.id}
@@ -265,7 +267,7 @@ export default function Agencies() {
                 )}
                 
                 {searchResults.tags.length > 0 && (
-                  <CommandGroup heading="Expertises">
+                  <CommandGroup heading={t('agencies.expertises')}>
                     {searchResults.tags.map((tag) => (
                       <CommandItem
                         key={tag}
@@ -317,12 +319,12 @@ export default function Agencies() {
 
       {agencies.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">Aucune agence pour le moment</p>
-          <p className="text-sm text-muted-foreground mt-2">Commencez par ajouter une nouvelle agence</p>
-        </div>
-      ) : filteredAgencies.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Aucune agence ne correspond aux tags sélectionnés</p>
+            <p className="text-muted-foreground">{t('agencies.noAgencies')}</p>
+            <p className="text-sm text-muted-foreground mt-2">{t('agencies.startAddAgency')}</p>
+          </div>
+        ) : filteredAgencies.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">{t('agencies.noMatchingTags')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

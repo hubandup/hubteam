@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +25,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const { canRead, loading: permissionsLoading } = usePermissions();
   const [stats, setStats] = useState({
@@ -47,7 +49,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
       navigate('/');
-      toast.error('Accès refusé : page réservée aux administrateurs');
+      toast.error(t('dashboard.adminOnly'));
       return;
     }
     
@@ -142,7 +144,7 @@ export default function Dashboard() {
           const totalTasks = counts.total;
           const completedTasks = counts.done;
           const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-          const clientName = project.project_clients?.[0]?.clients?.company || 'Client inconnu';
+          const clientName = project.project_clients?.[0]?.clients?.company || t('dashboard.unknownClient');
 
           return {
             ...project,
@@ -475,7 +477,7 @@ export default function Dashboard() {
       setTaskCompletionByUser(taskCompletionByUserData);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      toast.error('Erreur lors du chargement du tableau de bord');
+      toast.error(t('dashboard.loadError'));
     } finally {
       setLoading(false);
     }
@@ -564,8 +566,8 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <p className="text-lg font-semibold text-foreground">Accès refusé</p>
-          <p className="text-muted-foreground">Vous n'avez pas les permissions pour accéder au tableau de bord</p>
+          <p className="text-lg font-semibold text-foreground">{t('common.accessDenied')}</p>
+          <p className="text-muted-foreground">{t('dashboard.adminOnly')}</p>
         </div>
       </div>
     );
@@ -574,8 +576,8 @@ export default function Dashboard() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Activité</h1>
-        <p className="text-muted-foreground">Vue d'ensemble de votre activité</p>
+        <h1 className="text-3xl font-bold text-foreground">{t('dashboard.title')}</h1>
+        <p className="text-muted-foreground">{t('dashboard.subtitle')}</p>
       </div>
 
       {/* Role & Permissions Indicator */}
@@ -585,45 +587,45 @@ export default function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Leads</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.leads')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.leads}</div>
-            <p className="text-xs text-muted-foreground">Clients inactifs</p>
+            <p className="text-xs text-muted-foreground">{t('dashboard.leadsDesc')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Clients</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.clients')}</CardTitle>
             <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.clients}</div>
-            <p className="text-xs text-muted-foreground">Clients actifs</p>
+            <p className="text-xs text-muted-foreground">{t('dashboard.clientsDesc')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Projets ouverts</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.openProjects')}</CardTitle>
             <FolderKanban className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.openProjects}</div>
-            <p className="text-xs text-muted-foreground">En cours</p>
+            <p className="text-xs text-muted-foreground">{t('dashboard.openProjectsDesc')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tâches en cours</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.tasksInProgress')}</CardTitle>
             <CheckSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.tasksInProgress}</div>
-            <p className="text-xs text-muted-foreground">À réaliser</p>
+            <p className="text-xs text-muted-foreground">{t('dashboard.tasksInProgressDesc')}</p>
           </CardContent>
         </Card>
       </div>
@@ -636,7 +638,7 @@ export default function Dashboard() {
         {/* Project Status Distribution */}
         <Card>
           <CardHeader>
-            <CardTitle>Répartition des projets</CardTitle>
+            <CardTitle>{t('dashboard.projectStatus')}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
@@ -673,7 +675,7 @@ export default function Dashboard() {
         {/* Monthly Performance */}
         <Card>
           <CardHeader>
-            <CardTitle>Performance mensuelle</CardTitle>
+            <CardTitle>{t('dashboard.monthlyPerformance')}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
@@ -689,8 +691,8 @@ export default function Dashboard() {
                   }}
                 />
                 <Legend />
-                <Bar dataKey="projets" fill="hsl(var(--primary))" name="Projets" />
-                <Bar dataKey="taches" fill="hsl(var(--secondary))" name="Tâches" />
+                <Bar dataKey="projets" fill="hsl(var(--primary))" name={t('dashboard.projectsChart')} />
+                <Bar dataKey="taches" fill="hsl(var(--secondary))" name={t('dashboard.tasksChart')} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -699,7 +701,7 @@ export default function Dashboard() {
         {/* Projects by User */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Projets par utilisateur</CardTitle>
+            <CardTitle className="text-base">{t('dashboard.projectsByUser')}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -744,7 +746,7 @@ export default function Dashboard() {
         {/* Tasks by User */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Tâches par utilisateur</CardTitle>
+            <CardTitle className="text-base">{t('dashboard.tasksByUser')}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -789,7 +791,7 @@ export default function Dashboard() {
         {/* Task Completion Rate by User */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Taux de complétion des tâches</CardTitle>
+            <CardTitle className="text-base">{t('dashboard.taskCompletionByUser')}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -825,7 +827,7 @@ export default function Dashboard() {
                   formatter={(value: any, name: any, props: any) => {
                     const item = taskCompletionByUser.find(d => d.name === props.payload.originalName);
                     if (item) {
-                      return [`${value.toFixed(0)}% (${item.terminees}/${item.total})`, 'Taux de complétion'];
+                      return [`${value.toFixed(0)}% (${item.terminees}/${item.total})`, t('dashboard.completionRate')];
                     }
                     return [value, name];
                   }}
@@ -844,12 +846,12 @@ export default function Dashboard() {
         {/* Projects Progress */}
         <Card>
           <CardHeader>
-            <CardTitle>Projets en cours</CardTitle>
+            <CardTitle>{t('dashboard.progressByProject')}</CardTitle>
           </CardHeader>
           <CardContent>
             {projectsWithProgress.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
-                Aucun projet en cours
+                {t('dashboard.noOngoingProjects')}
               </p>
             ) : (
               <div className="space-y-4">
@@ -863,12 +865,12 @@ export default function Dashboard() {
                           {project.clientName} - {project.name}
                         </p>
                         <span className="text-xs text-muted-foreground">
-                          {project.completedTasks}/{project.totalTasks} tâches
+                          {project.completedTasks}/{project.totalTasks} {t('dashboard.tasks')}
                         </span>
                       </div>
                       <Progress value={project.progress} className="h-2" />
                       <p className="text-xs text-muted-foreground">
-                        {project.progress.toFixed(1)}% complété
+                        {project.progress.toFixed(1)}% {t('dashboard.completed')}
                       </p>
                     </div>
                   );
@@ -881,12 +883,12 @@ export default function Dashboard() {
         {/* Top Clients */}
         <Card>
           <CardHeader>
-            <CardTitle>Top 5 Clients</CardTitle>
+            <CardTitle>{t('dashboard.topClients')}</CardTitle>
           </CardHeader>
           <CardContent>
             {topClients.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
-                Aucun client actif
+                {t('dashboard.noActiveClients')}
               </p>
             ) : (
               <div className="space-y-4">
@@ -912,12 +914,12 @@ export default function Dashboard() {
       {/* Recent Comments */}
       <Card>
         <CardHeader>
-          <CardTitle>Derniers commentaires</CardTitle>
+          <CardTitle>{t('dashboard.recentComments')}</CardTitle>
         </CardHeader>
         <CardContent>
           {recentComments.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              Aucun commentaire récent
+              <p className="text-sm text-muted-foreground text-center py-4">
+                {t('dashboard.noRecentComments')}
             </p>
           ) : (
             <div className="space-y-4">
