@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateProspect, PROSPECT_CHANNELS, PROSPECT_PRIORITIES, PROSPECT_STATUSES, ProspectChannel, ProspectPriority, ProspectStatus } from '@/hooks/useProspects';
+import { useProspectCategories } from '@/hooks/useProspectCategories';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { generateColorFromString } from '@/lib/utils';
@@ -25,6 +26,7 @@ interface AddProspectDialogProps {
 
 export function AddProspectDialog({ open, onOpenChange, defaultValues }: AddProspectDialogProps) {
   const createProspect = useCreateProspect();
+  const { data: prospectCategories = [] } = useProspectCategories();
   const [availableExpertises, setAvailableExpertises] = useState<string[]>([]);
   const [expertiseSearch, setExpertiseSearch] = useState('');
 
@@ -46,6 +48,7 @@ export function AddProspectDialog({ open, onOpenChange, defaultValues }: AddPros
     next_action_at: '',
     notes: '',
     contact_id: defaultValues?.contact_id || null,
+    category_id: null as string | null,
   });
 
   useEffect(() => {
@@ -106,6 +109,7 @@ export function AddProspectDialog({ open, onOpenChange, defaultValues }: AddPros
         estimated_amount: Number(formData.estimated_amount) || 0,
         probability: Number(formData.probability) || 0.5,
         next_action_at: formData.next_action_at || null,
+        category_id: formData.category_id,
       });
       toast.success('Prospect créé avec succès');
       onOpenChange(false);
@@ -127,6 +131,7 @@ export function AddProspectDialog({ open, onOpenChange, defaultValues }: AddPros
         next_action_at: '',
         notes: '',
         contact_id: null,
+        category_id: null,
       });
     } catch (error) {
       console.error('Error creating prospect:', error);
@@ -260,6 +265,30 @@ export function AddProspectDialog({ open, onOpenChange, defaultValues }: AddPros
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Category */}
+          <div className="space-y-2">
+            <Label>Catégorie</Label>
+            <Select
+              value={formData.category_id || '_none'}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, category_id: value === '_none' ? null : value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner une catégorie" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_none">— Aucune —</SelectItem>
+                {prospectCategories.map(cat => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                      {cat.name}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Financial */}

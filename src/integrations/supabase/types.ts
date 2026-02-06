@@ -1645,6 +1645,27 @@ export type Database = {
         }
         Relationships: []
       }
+      prospect_categories: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       prospection_email_logs: {
         Row: {
           created_at: string | null
@@ -1680,6 +1701,7 @@ export type Database = {
       }
       prospects: {
         Row: {
+          category_id: string | null
           channel: Database["public"]["Enums"]["prospect_channel"] | null
           company_name: string
           contact_id: string | null
@@ -1707,6 +1729,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category_id?: string | null
           channel?: Database["public"]["Enums"]["prospect_channel"] | null
           company_name: string
           contact_id?: string | null
@@ -1734,6 +1757,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category_id?: string | null
           channel?: Database["public"]["Enums"]["prospect_channel"] | null
           company_name?: string
           contact_id?: string | null
@@ -1761,6 +1785,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "prospects_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "prospects_contact_id_fkey"
             columns: ["contact_id"]

@@ -35,6 +35,7 @@ export interface Prospect {
   probability: number;
   notes: string | null;
   owner_id: string | null;
+  category_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -240,6 +241,7 @@ export function useCreateProspect() {
         probability: prospect.probability,
         notes: prospect.notes,
         contact_id: prospect.contact_id,
+        category_id: prospect.category_id,
         owner_id: prospect.owner_id || user?.id,
       };
       const { data, error } = await supabase
