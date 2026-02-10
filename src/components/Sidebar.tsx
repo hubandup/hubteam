@@ -77,8 +77,8 @@ export function Sidebar() {
   const showSettings = role === 'admin' || role === 'team' || role === 'agency';
 
   return (
-    <ShadcnSidebar className="border-r border-sidebar-border/30">
-      <SidebarHeader className="border-b border-sidebar-border/30 p-4">
+    <ShadcnSidebar className="border-r border-sidebar-border/20">
+      <SidebarHeader className="border-b border-sidebar-border/20 p-5">
         <div className="flex items-center justify-center">
           <img src={logo} alt="HubandUp" className="h-7 min-h-7 min-w-[2.6rem] w-auto object-contain flex-shrink-0 [filter:brightness(0)_invert(1)]" />
         </div>
@@ -102,14 +102,14 @@ export function Sidebar() {
                           end={item.url === '/' || item.url === '/dashboard'} 
                           matchParent={item.matchParent}
                           activePatterns={item.url === '/crm' ? ['/client'] : item.url === '/projects' ? ['/project'] : item.url === '/agencies' ? ['/agency'] : []}
-                         className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors duration-150 rounded-md" 
+                         className="text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground transition-all duration-150 rounded-lg text-[13px]" 
                           activeClassName="bg-sidebar-primary text-sidebar-primary-foreground font-medium"
                         >
-                          <item.icon className="mr-2 h-4 w-4" />
+                          <item.icon className="mr-2.5 h-4 w-4" />
                           <span>{item.title}</span>
                           {(item as any).isClientItem && (
                             <span className="ml-auto">
-                              <span className="inline-flex items-center justify-center w-2 h-2 rounded-full bg-sidebar-primary" />
+                              <span className="inline-flex items-center justify-center w-1.5 h-1.5 rounded-full bg-sidebar-primary" />
                             </span>
                           )}
                         </NavLink>
@@ -121,9 +121,9 @@ export function Sidebar() {
                 <SidebarMenuButton asChild>
                   <button
                     onClick={() => setSmashOpen(true)}
-                    className="flex items-center w-full text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors duration-150 rounded-md cursor-pointer"
+                    className="flex items-center w-full text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground transition-all duration-150 rounded-lg cursor-pointer text-[13px]"
                   >
-                    <ArrowUpFromLine className="mr-2 h-4 w-4" />
+                    <ArrowUpFromLine className="mr-2.5 h-4 w-4" />
                     <span>{t('nav.smash')}</span>
                   </button>
                 </SidebarMenuButton>
@@ -133,10 +133,10 @@ export function Sidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink 
                       to="/settings" 
-                      className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors duration-150 rounded-md" 
+                      className="text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground transition-all duration-150 rounded-lg text-[13px]" 
                       activeClassName="bg-sidebar-primary text-sidebar-primary-foreground font-medium"
                     >
-                      <Settings className="mr-2 h-4 w-4" />
+                      <Settings className="mr-2.5 h-4 w-4" />
                       <span>{t('nav.settings')}</span>
                     </NavLink>
                   </SidebarMenuButton>
@@ -146,9 +146,9 @@ export function Sidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t border-sidebar-border/30">
-        <Button variant="ghost" onClick={signOut} className="w-full justify-start text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors duration-150">
-          <LogOut className="mr-2 h-4 w-4" />
+      <SidebarFooter className="border-t border-sidebar-border/20 p-3">
+        <Button variant="ghost" onClick={signOut} className="w-full justify-start text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all duration-150 rounded-lg text-[13px]">
+          <LogOut className="mr-2.5 h-4 w-4" />
           {t('nav.signOut')}
         </Button>
       </SidebarFooter>
