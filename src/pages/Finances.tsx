@@ -18,9 +18,11 @@ import { format, subMonths, startOfMonth, endOfMonth, addMonths } from 'date-fns
 import { fr } from 'date-fns/locale';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
+import { MonthlyComparisonTable } from '@/components/finances/MonthlyComparisonTable';
 
 
 export default function Finances() {
@@ -45,6 +47,8 @@ export default function Finances() {
   const [monthlyForecasts, setMonthlyForecasts] = useState<{ month: number; encaisser: number; recurrent: number; devisAFacturer?: number; total: number }[]>([]);
   const [isLoadingForecast, setIsLoadingForecast] = useState(false);
   
+  const [revenuePeriod, setRevenuePeriod] = useState<string>('6');
+
   // Refs for charts to capture in PDF
   const revenueChartRef = useRef<HTMLDivElement>(null);
   const treasuryChartRef = useRef<HTMLDivElement>(null);
@@ -63,7 +67,7 @@ export default function Finances() {
       fetchTreasuryData();
       fetchForecastRevenue();
     }
-  }, [isAdmin, roleLoading, navigate]);
+  }, [isAdmin, roleLoading, navigate, revenuePeriod]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -86,9 +90,11 @@ export default function Finances() {
 
   // Update forecast in revenueData when monthlyForecasts changes
   useEffect(() => {
-    if (monthlyForecasts.length !== 3 || revenueData.length !== 9) return;
+    const periodMonths = parseInt(revenuePeriod) || 6;
+    if (monthlyForecasts.length !== 3 || revenueData.length !== periodMonths + 3) return;
 
-    const lastActualRevenue = revenueData[5]?.revenue || 0;
+    const lastActualIdx = periodMonths - 1;
+    const lastActualRevenue = revenueData[lastActualIdx]?.revenue || 0;
     const nextForecast = [
       monthlyForecasts[0].total,
       monthlyForecasts[1].total,
@@ -96,22 +102,18 @@ export default function Finances() {
     ];
 
     const alreadyUpToDate =
-      revenueData[5]?.forecast === lastActualRevenue &&
-      revenueData[6]?.forecast === nextForecast[0] &&
-      revenueData[7]?.forecast === nextForecast[1] &&
-      revenueData[8]?.forecast === nextForecast[2];
+      revenueData[lastActualIdx]?.forecast === lastActualRevenue &&
+      revenueData[lastActualIdx + 1]?.forecast === nextForecast[0] &&
+      revenueData[lastActualIdx + 2]?.forecast === nextForecast[1] &&
+      revenueData[lastActualIdx + 3]?.forecast === nextForecast[2];
 
     if (alreadyUpToDate) return;
 
     const updatedData = revenueData.map((item, index) => {
-      // Last 3 months are forecast months (indices 6, 7, 8)
-      if (index === 6) return { ...item, forecast: nextForecast[0] };
-      if (index === 7) return { ...item, forecast: nextForecast[1] };
-      if (index === 8) return { ...item, forecast: nextForecast[2] };
-
-      // For the current month (index 5), add connection point for forecast line
-      if (index === 5) return { ...item, forecast: lastActualRevenue };
-
+      if (index === lastActualIdx + 1) return { ...item, forecast: nextForecast[0] };
+      if (index === lastActualIdx + 2) return { ...item, forecast: nextForecast[1] };
+      if (index === lastActualIdx + 3) return { ...item, forecast: nextForecast[2] };
+      if (index === lastActualIdx) return { ...item, forecast: lastActualRevenue };
       return item;
     });
 
@@ -137,11 +139,12 @@ export default function Finances() {
       // Top 5 clients
       setTopClients(clients?.slice(0, 5) || []);
 
-      // Revenue evolution (last 6 months + 3 future months for forecast)
+      // Revenue evolution (last N months + 3 future months for forecast)
+      const periodMonths = parseInt(revenuePeriod) || 6;
       const revenueByMonth: any[] = [];
       
-      // Past 6 months (actual data)
-      for (let i = 5; i >= 0; i--) {
+      // Past N months (actual data)
+      for (let i = periodMonths - 1; i >= 0; i--) {
         const monthDate = subMonths(new Date(), i);
         const monthStart = startOfMonth(monthDate);
         const monthEnd = endOfMonth(monthDate);
@@ -612,9 +615,18 @@ export default function Finances() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="flex items-center gap-4">
           <h1 className="text-3xl font-bold text-foreground">Finances</h1>
-          <p className="text-muted-foreground">Vue d'ensemble financière</p>
+          <Select value={revenuePeriod} onValueChange={setRevenuePeriod}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="3">3 derniers mois</SelectItem>
+              <SelectItem value="6">6 derniers mois</SelectItem>
+              <SelectItem value="12">12 derniers mois</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex flex-col items-end gap-2">
           <div className="flex gap-2">
@@ -799,6 +811,9 @@ export default function Finances() {
           </ResponsiveContainer>
         </CardContent>
       </Card>
+
+      {/* Monthly Comparison Table */}
+      <MonthlyComparisonTable data={revenueData} />
 
       {/* Treasury Evolution Chart */}
       <Card ref={treasuryChartRef}>

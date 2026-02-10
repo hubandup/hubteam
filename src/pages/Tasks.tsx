@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search, Calendar, User } from 'lucide-react';
+import { ExportButton } from '@/components/exports/ExportButton';
 import { format } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 import { EditTaskDialog } from '@/components/project-details/EditTaskDialog';
@@ -72,9 +73,23 @@ export default function Tasks() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">{t('tasks.title')}</h1>
-        <p className="text-muted-foreground">{t('tasks.subtitle')}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">{t('tasks.title')}</h1>
+          <p className="text-muted-foreground">{t('tasks.subtitle')}</p>
+        </div>
+        <ExportButton
+          data={filteredTasks}
+          columns={[
+            { key: 'title', label: 'Tâche' },
+            { key: 'status', label: 'Statut' },
+            { key: 'priority', label: 'Priorité' },
+            { key: 'projects.name', label: 'Projet' },
+            { key: 'end_date', label: 'Échéance' },
+            { key: 'profiles', label: 'Assigné à', formatter: (v: any) => v ? `${v.first_name} ${v.last_name}` : '' },
+          ]}
+          filename="taches"
+        />
       </div>
 
       {tasks.length > 0 && (
