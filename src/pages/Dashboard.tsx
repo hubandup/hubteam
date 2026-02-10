@@ -328,15 +328,35 @@ export default function Dashboard() {
         { name: 'Terminé', value: statusCounts['completed'] || 0 },
       ].filter(item => item.value > 0);
 
-      // Mock monthly performance data
-      const performance = [
-        { month: 'Juil', projets: 8, taches: 45, revenue: 45000 },
-        { month: 'Août', projets: 10, taches: 52, revenue: 52000 },
-        { month: 'Sept', projets: 9, taches: 48, revenue: 48000 },
-        { month: 'Oct', projets: 12, taches: 61, revenue: 61000 },
-        { month: 'Nov', projets: 11, taches: 58, revenue: 58000 },
-        { month: 'Déc', projets: projects?.length || 0, taches: tasksInProgressCount, revenue: totalRevenue },
-      ];
+      // Real monthly performance data from DB (last 6 months)
+      const performance = [];
+      for (let i = 5; i >= 0; i--) {
+        const monthDate = subMonths(now, i);
+        const monthStart = format(startOfMonth(monthDate), 'yyyy-MM-dd');
+        const monthEnd = format(endOfMonth(monthDate), 'yyyy-MM-dd');
+        const monthName = format(monthDate, 'MMM', { locale: fr });
+        const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+        // Count projects created this month
+        const { count: projectCount } = await supabase
+          .from('projects')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', monthStart)
+          .lte('created_at', monthEnd);
+
+        // Count tasks created this month
+        const { count: taskCount } = await supabase
+          .from('tasks')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', monthStart)
+          .lte('created_at', monthEnd);
+
+        performance.push({
+          month: capitalizedMonth,
+          projets: projectCount || 0,
+          taches: taskCount || 0,
+        });
+      }
 
       // Fetch projects by user (team + admin)
       const { data: teamAdminUsers, error: usersError } = await supabase

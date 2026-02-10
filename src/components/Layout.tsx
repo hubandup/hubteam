@@ -11,7 +11,8 @@ import { NotificationBell } from './notifications/NotificationBell';
 import { ThemeToggle } from './ThemeToggle';
 import { LanguageSelector } from './LanguageSelector';
 import { SmashDialog } from './SmashDialog';
-import { ArrowUpFromLine } from 'lucide-react';
+import { GlobalSearch } from './GlobalSearch';
+import { ArrowUpFromLine, Search } from 'lucide-react';
 import { Button } from './ui/button';
 import logo from '@/assets/logo-hubandup.svg';
 
@@ -61,6 +62,7 @@ export function Layout({ children }: LayoutProps) {
         <PWAInstallBanner />
 
         <SmashDialog open={smashOpen} onOpenChange={setSmashOpen} />
+        <GlobalSearch />
       </div>
     );
   }
@@ -74,6 +76,18 @@ export function Layout({ children }: LayoutProps) {
           <header className="h-14 border-b border-border/50 bg-background/95 backdrop-blur-sm flex items-center justify-between px-4 sticky top-0 z-10">
             <SidebarTrigger />
             <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => {
+                  // Trigger Cmd+K
+                  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
+                }}
+                aria-label="Rechercher"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
               <LanguageSelector />
               <ThemeToggle />
               <NotificationBell />
@@ -89,6 +103,7 @@ export function Layout({ children }: LayoutProps) {
             </div>
           </main>
         </div>
+        <GlobalSearch />
       </div>
     </SidebarProvider>
   );
