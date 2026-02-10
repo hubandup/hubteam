@@ -1002,6 +1002,39 @@ export type Database = {
           },
         ]
       }
+      linkedin_posts: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          link: string | null
+          linkedin_id: string
+          published_at: string
+          title: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          link?: string | null
+          linkedin_id: string
+          published_at: string
+          title?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          link?: string | null
+          linkedin_id?: string
+          published_at?: string
+          title?: string | null
+        }
+        Relationships: []
+      }
       meeting_notes: {
         Row: {
           attachment_url: string | null
