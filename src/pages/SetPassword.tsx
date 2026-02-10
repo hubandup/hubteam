@@ -12,8 +12,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import logo from '@/assets/logo-hubandup.svg';
 
 const passwordSchema = z.object({
-  firstName: z.string().min(1, 'Le prénom est requis'),
-  lastName: z.string().min(1, 'Le nom est requis'),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
   password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
   confirmPassword: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -27,6 +27,7 @@ export default function SetPassword() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isValidToken, setIsValidToken] = useState(false);
+  const [isRecovery, setIsRecovery] = useState(false);
 
   const form = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
@@ -39,12 +40,23 @@ export default function SetPassword() {
   });
 
   useEffect(() => {
+    // Détecter si c'est un flow de récupération depuis le hash
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const tokenType = hashParams.get('type');
+    if (tokenType === 'recovery') {
+      setIsRecovery(true);
+    }
+
     // Écouter les changements d'état d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth event:', event, 'Session:', !!session);
         
-        if (event === 'SIGNED_IN' && session) {
+        if (event === 'PASSWORD_RECOVERY' && session) {
+          setIsRecovery(true);
+          setIsValidToken(true);
+          setIsLoading(false);
+        } else if (event === 'SIGNED_IN' && session) {
           setIsValidToken(true);
           setIsLoading(false);
         } else if (event === 'TOKEN_REFRESHED' && session) {
@@ -173,48 +185,48 @@ export default function SetPassword() {
           <div className="flex justify-center mb-2">
             <img src={logo} alt="HubandUp" className="h-16 w-auto" />
           </div>
-          <CardTitle className="text-2xl text-center">Finaliser votre inscription</CardTitle>
+          <CardTitle className="text-2xl text-center">
+            {isRecovery ? 'Réinitialiser votre mot de passe' : 'Finaliser votre inscription'}
+          </CardTitle>
           <CardDescription className="text-center">
-            Renseignez vos informations et choisissez un mot de passe sécurisé
+            {isRecovery
+              ? 'Choisissez un nouveau mot de passe sécurisé'
+              : 'Renseignez vos informations et choisissez un mot de passe sécurisé'}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSetPassword)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Prénom</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="text"
-                        placeholder="Votre prénom"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nom</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="text"
-                        placeholder="Votre nom"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {!isRecovery && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Prénom</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="text" placeholder="Votre prénom" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nom</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="text" placeholder="Votre nom" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
               <FormField
                 control={form.control}
                 name="password"
@@ -254,7 +266,7 @@ export default function SetPassword() {
                 className="w-full"
                 disabled={form.formState.isSubmitting}
               >
-                {form.formState.isSubmitting ? 'Configuration en cours...' : 'Finaliser mon inscription'}
+                {form.formState.isSubmitting ? 'Configuration en cours...' : (isRecovery ? 'Réinitialiser le mot de passe' : 'Finaliser mon inscription')}
               </Button>
             </form>
           </Form>
