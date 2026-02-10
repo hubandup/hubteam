@@ -77,13 +77,13 @@ export function Sidebar() {
   const showSettings = role === 'admin' || role === 'team' || role === 'agency';
 
   return (
-    <ShadcnSidebar className="border-r-0 shadow-[4px_0_24px_-8px_rgba(0,0,0,0.15)]">
-      <SidebarHeader className="border-b border-sidebar-border/50 p-4 bg-gradient-to-b from-sidebar-background to-sidebar-accent/20">
+    <ShadcnSidebar className="border-r border-sidebar-border/30">
+      <SidebarHeader className="border-b border-sidebar-border/30 p-4">
         <div className="flex items-center justify-center">
-          <img src={logo} alt="HubandUp" className="h-7 min-h-7 min-w-[2.6rem] w-auto object-contain flex-shrink-0 [filter:brightness(0)_invert(1)] drop-shadow-sm" />
+          <img src={logo} alt="HubandUp" className="h-7 min-h-7 min-w-[2.6rem] w-auto object-contain flex-shrink-0 [filter:brightness(0)_invert(1)]" />
         </div>
       </SidebarHeader>
-      <SidebarContent className="bg-gradient-to-b from-sidebar-background via-sidebar-background to-sidebar-accent/10">
+      <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -102,8 +102,8 @@ export function Sidebar() {
                           end={item.url === '/' || item.url === '/dashboard'} 
                           matchParent={item.matchParent}
                           activePatterns={item.url === '/crm' ? ['/client'] : item.url === '/projects' ? ['/project'] : item.url === '/agencies' ? ['/agency'] : []}
-                          className="text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground transition-all duration-200 rounded-lg group" 
-                          activeClassName="bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-[0_2px_8px_-2px_rgba(232,255,76,0.3)]"
+                         className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors duration-150 rounded-md" 
+                          activeClassName="bg-sidebar-primary text-sidebar-primary-foreground font-medium"
                         >
                           <item.icon className="mr-2 h-4 w-4" />
                           <span>{item.title}</span>
@@ -121,7 +121,7 @@ export function Sidebar() {
                 <SidebarMenuButton asChild>
                   <button
                     onClick={() => setSmashOpen(true)}
-                    className="flex items-center w-full text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground transition-all duration-200 rounded-lg cursor-pointer"
+                    className="flex items-center w-full text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors duration-150 rounded-md cursor-pointer"
                   >
                     <ArrowUpFromLine className="mr-2 h-4 w-4" />
                     <span>{t('nav.smash')}</span>
@@ -133,8 +133,8 @@ export function Sidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink 
                       to="/settings" 
-                      className="text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground transition-all duration-200 rounded-lg" 
-                      activeClassName="bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-[0_2px_8px_-2px_rgba(232,255,76,0.3)]"
+                      className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors duration-150 rounded-md" 
+                      activeClassName="bg-sidebar-primary text-sidebar-primary-foreground font-medium"
                     >
                       <Settings className="mr-2 h-4 w-4" />
                       <span>{t('nav.settings')}</span>
@@ -146,8 +146,8 @@ export function Sidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="bg-gradient-to-t from-sidebar-accent/20 to-sidebar-background border-t border-sidebar-border/50">
-        <Button variant="ghost" onClick={signOut} className="w-full justify-start text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all duration-200">
+      <SidebarFooter className="border-t border-sidebar-border/30">
+        <Button variant="ghost" onClick={signOut} className="w-full justify-start text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors duration-150">
           <LogOut className="mr-2 h-4 w-4" />
           {t('nav.signOut')}
         </Button>
