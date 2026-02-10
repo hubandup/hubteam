@@ -61,8 +61,23 @@ function DraggableClientCard({ client, onClick }: { client: any; onClick: () => 
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-2 md:mb-3">
-      <div className="relative" onClick={handleClick}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="mb-2 md:mb-3"
+      tabIndex={0}
+      role="button"
+      aria-label={`Client: ${client.company || ''}`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+    >
+      <div className="relative focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-lg" onClick={handleClick}>
         <ClientCard client={client} onClick={() => {}} />
       </div>
     </div>

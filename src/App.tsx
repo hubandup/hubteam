@@ -1,7 +1,8 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./lib/queryClient";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -32,8 +33,6 @@ import Install from "./pages/Install";
 import Unsubscribe from "./pages/Unsubscribe";
 import NotFound from "./pages/NotFound";
 import { useEffect, useState } from "react";
-
-const queryClient = new QueryClient();
 
 // Component to redirect PWA/Native users to Feed
 const PWARedirect = ({ children }: { children: React.ReactNode }) => {

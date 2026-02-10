@@ -48,8 +48,23 @@ function DraggableProspectCard({ prospect, onClick }: { prospect: Prospect; onCl
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-2">
-      <div className="relative" onClick={handleClick}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="mb-2"
+      tabIndex={0}
+      role="button"
+      aria-label={`Prospect: ${prospect.company_name}`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+    >
+      <div className="relative focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-lg" onClick={handleClick}>
         <ProspectCard prospect={prospect} compact />
       </div>
     </div>

@@ -48,8 +48,17 @@ function DraggableProjectCard({
       style={style} 
       {...attributes} 
       {...listeners}
+      tabIndex={0}
+      role="button"
+      aria-label={`Projet: ${project.name}`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
       className={cn(
-        "transition-all duration-200",
+        "transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-lg",
         isDraggingOver && "mb-4"
       )}
     >
