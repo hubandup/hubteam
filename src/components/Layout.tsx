@@ -12,6 +12,8 @@ import { ThemeToggle } from './ThemeToggle';
 import { LanguageSelector } from './LanguageSelector';
 import { SmashDialog } from './SmashDialog';
 import { GlobalSearch } from './GlobalSearch';
+import { OfflineBanner } from './common/OfflineBanner';
+import { SkipToContent } from './common/SkipToContent';
 import { ArrowUpFromLine, Search } from 'lucide-react';
 import { Button } from './ui/button';
 import logo from '@/assets/logo-hubandup.svg';
@@ -29,6 +31,8 @@ export function Layout({ children }: LayoutProps) {
   if (isMobile || isNative) {
     return (
       <div className="min-h-screen flex flex-col w-full bg-sidebar">
+        <SkipToContent />
+        <OfflineBanner />
         {/* Header mobile simplifié - fond continu avec la status bar */}
         <header className="sticky top-0 z-50 bg-sidebar px-4 pt-[env(safe-area-inset-top)] pb-3 flex items-center justify-between">
           <img src={logo} alt="Hub & Up" className="h-8 [filter:brightness(0)_invert(1)]" />
@@ -49,7 +53,7 @@ export function Layout({ children }: LayoutProps) {
         </header>
         
         {/* Contenu principal */}
-        <main className="flex-1 overflow-auto bg-background rounded-t-2xl">
+        <main id="main-content" className="flex-1 overflow-auto bg-background rounded-t-2xl">
           <div className="px-4 py-4 pb-24">
             {children}
           </div>
@@ -70,9 +74,11 @@ export function Layout({ children }: LayoutProps) {
   // Version desktop avec Sidebar
   return (
     <SidebarProvider>
+      <SkipToContent />
       <div className="min-h-screen flex w-full">
         <Sidebar />
         <div className="flex-1 min-w-0 flex flex-col">
+          <OfflineBanner />
           <header className="h-14 border-b border-border/50 bg-background/95 backdrop-blur-sm flex items-center justify-between px-4 sticky top-0 z-10">
             <SidebarTrigger />
             <div className="flex items-center gap-1">
@@ -81,7 +87,6 @@ export function Layout({ children }: LayoutProps) {
                 size="icon"
                 className="h-9 w-9"
                 onClick={() => {
-                  // Trigger Cmd+K
                   document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
                 }}
                 aria-label="Rechercher"
@@ -94,7 +99,7 @@ export function Layout({ children }: LayoutProps) {
               <HeaderUserProfile />
             </div>
           </header>
-          <main className="flex-1 min-h-0 min-w-0 overflow-hidden bg-background">
+          <main id="main-content" className="flex-1 min-h-0 min-w-0 overflow-hidden bg-background">
             <div className="px-4 md:px-6 py-4">
               <Breadcrumbs />
             </div>

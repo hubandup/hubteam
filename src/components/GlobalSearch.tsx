@@ -11,7 +11,7 @@ import {
   CommandItem,
   CommandSeparator,
 } from '@/components/ui/command';
-import { Users, FolderKanban, CheckSquare, Building2, Contact } from 'lucide-react';
+import { Users, FolderKanban, CheckSquare, Building2, Contact, Plus, FileText, Search as SearchIcon } from 'lucide-react';
 
 interface SearchResult {
   id: string;
@@ -20,6 +20,20 @@ interface SearchResult {
   type: 'client' | 'project' | 'task' | 'agency' | 'contact';
   path: string;
 }
+
+interface QuickAction {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  path: string;
+}
+
+const quickActions: QuickAction[] = [
+  { id: 'new-project', label: 'Nouveau projet', icon: <Plus className="h-4 w-4 text-muted-foreground" />, path: '/projects?action=new' },
+  { id: 'new-client', label: 'Nouveau client', icon: <Plus className="h-4 w-4 text-muted-foreground" />, path: '/crm?action=new' },
+  { id: 'my-tasks', label: 'Mes tâches', icon: <CheckSquare className="h-4 w-4 text-muted-foreground" />, path: '/tasks' },
+  { id: 'notes', label: 'Mes notes', icon: <FileText className="h-4 w-4 text-muted-foreground" />, path: '/notes' },
+];
 
 export function GlobalSearch() {
   const [open, setOpen] = useState(false);
@@ -84,10 +98,10 @@ export function GlobalSearch() {
     return () => clearTimeout(timer);
   }, [query, search]);
 
-  const handleSelect = (result: SearchResult) => {
+  const handleSelect = (path: string) => {
     setOpen(false);
     setQuery('');
-    navigate(result.path);
+    navigate(path);
   };
 
   const iconMap = {
@@ -112,6 +126,8 @@ export function GlobalSearch() {
     return acc;
   }, {});
 
+  const showQuickActions = query.length < 2 && results.length === 0;
+
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput
@@ -123,12 +139,22 @@ export function GlobalSearch() {
         <CommandEmpty>
           {loading ? 'Recherche...' : query.length < 2 ? 'Tapez au moins 2 caractères' : 'Aucun résultat'}
         </CommandEmpty>
+        {showQuickActions && (
+          <CommandGroup heading="Actions rapides">
+            {quickActions.map((action) => (
+              <CommandItem key={action.id} onSelect={() => handleSelect(action.path)} className="cursor-pointer">
+                {action.icon}
+                <span className="ml-2">{action.label}</span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
         {Object.entries(grouped).map(([type, items], gi) => (
           <div key={type}>
             {gi > 0 && <CommandSeparator />}
             <CommandGroup heading={groupLabels[type]}>
               {items.map((r) => (
-                <CommandItem key={`${r.type}-${r.id}`} onSelect={() => handleSelect(r)} className="cursor-pointer">
+                <CommandItem key={`${r.type}-${r.id}`} onSelect={() => handleSelect(r.path)} className="cursor-pointer">
                   {iconMap[r.type]}
                   <div className="ml-2 flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{r.label}</p>

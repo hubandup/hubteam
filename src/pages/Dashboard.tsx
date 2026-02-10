@@ -380,103 +380,74 @@ export default function Dashboard() {
         userProfiles?.map(p => [p.id, `${p.first_name} ${p.last_name}`]) || []
       );
 
-      // Count projects by user
       const projectCountsByUser: Record<string, { name: string; count: number }> = {};
 
-      if (teamAdminUsers) {
-        for (const userRole of teamAdminUsers) {
-          const userId = userRole.user_id;
-          const userName = profilesMap.get(userId) || 'Utilisateur inconnu';
+      // Batch: Count projects created by each user, tasks assigned, tasks completed in ONE query each
+      if (teamAdminUsers && userIds.length > 0) {
+        // Fetch all projects created by these users
+        const { data: allUserProjects } = await supabase
+          .from('projects')
+          .select('created_by')
+          .in('created_by', userIds);
 
-          // Count projects created by this user
-          const { count, error: projectsError } = await supabase
-            .from('projects')
-            .select('*', { count: 'exact', head: true })
-            .eq('created_by', userId);
+        // Fetch all tasks assigned to these users
+        const { data: allUserTasks } = await supabase
+          .from('tasks')
+          .select('assigned_to, status')
+          .in('assigned_to', userIds);
 
-          if (!projectsError) {
-            projectCountsByUser[userId] = {
-              name: userName,
-              count: count || 0,
+        // Aggregate projects by user
+        const projectCountsByUser: Record<string, number> = {};
+        (allUserProjects || []).forEach((p: any) => {
+          projectCountsByUser[p.created_by] = (projectCountsByUser[p.created_by] || 0) + 1;
+        });
+
+        // Aggregate tasks by user (total + completed)
+        const taskCountsByUser: Record<string, number> = {};
+        const taskCompletedByUser: Record<string, number> = {};
+        (allUserTasks || []).forEach((t: any) => {
+          taskCountsByUser[t.assigned_to] = (taskCountsByUser[t.assigned_to] || 0) + 1;
+          if (t.status === 'done') {
+            taskCompletedByUser[t.assigned_to] = (taskCompletedByUser[t.assigned_to] || 0) + 1;
+          }
+        });
+
+        // Build chart data
+        const projectsByUserData = userIds
+          .map(uid => ({
+            name: profilesMap.get(uid) || 'Utilisateur inconnu',
+            projets: projectCountsByUser[uid] || 0,
+          }))
+          .filter(u => u.projets > 0)
+          .sort((a, b) => b.projets - a.projets);
+
+        const tasksByUserData = userIds
+          .map(uid => ({
+            name: profilesMap.get(uid) || 'Utilisateur inconnu',
+            taches: taskCountsByUser[uid] || 0,
+          }))
+          .filter(u => u.taches > 0)
+          .sort((a, b) => b.taches - a.taches);
+
+        const taskCompletionByUserData = userIds
+          .map(uid => {
+            const total = taskCountsByUser[uid] || 0;
+            const completed = taskCompletedByUser[uid] || 0;
+            if (total === 0) return null;
+            return {
+              name: profilesMap.get(uid) || 'Utilisateur inconnu',
+              taux: Math.round((completed / total) * 100),
+              terminees: completed,
+              total,
             };
-          }
-        }
+          })
+          .filter(Boolean)
+          .sort((a: any, b: any) => b.taux - a.taux);
+
+        setProjectsByUser(projectsByUserData);
+        setTasksByUser(tasksByUserData);
+        setTaskCompletionByUser(taskCompletionByUserData);
       }
-
-      // Transform to array for chart
-      const projectsByUserData = Object.values(projectCountsByUser)
-        .sort((a, b) => b.count - a.count)
-        .map(user => ({
-          name: user.name,
-          projets: user.count,
-        }));
-
-      // Count tasks by user (team + admin)
-      const taskCountsByUser: Record<string, { name: string; count: number }> = {};
-
-      if (teamAdminUsers) {
-        for (const userRole of teamAdminUsers) {
-          const userId = userRole.user_id;
-          const userName = profilesMap.get(userId) || 'Utilisateur inconnu';
-
-          // Count tasks assigned to this user
-          const { count: taskCount, error: tasksError } = await supabase
-            .from('tasks')
-            .select('*', { count: 'exact', head: true })
-            .eq('assigned_to', userId);
-
-          if (!tasksError) {
-            taskCountsByUser[userId] = {
-              name: userName,
-              count: taskCount || 0,
-            };
-          }
-        }
-      }
-
-      // Transform to array for chart
-      const tasksByUserData = Object.values(taskCountsByUser)
-        .sort((a, b) => b.count - a.count)
-        .map(user => ({
-          name: user.name,
-          taches: user.count,
-        }));
-
-      // Calculate task completion rate by user
-      const taskCompletionByUserData: any[] = [];
-
-      if (teamAdminUsers) {
-        for (const userRole of teamAdminUsers) {
-          const userId = userRole.user_id;
-          const userName = profilesMap.get(userId) || 'Utilisateur inconnu';
-
-          // Count total tasks assigned to this user
-          const { count: totalTasks } = await supabase
-            .from('tasks')
-            .select('*', { count: 'exact', head: true })
-            .eq('assigned_to', userId);
-
-          // Count completed tasks
-          const { count: completedTasks } = await supabase
-            .from('tasks')
-            .select('*', { count: 'exact', head: true })
-            .eq('assigned_to', userId)
-            .eq('status', 'done');
-
-          if (totalTasks && totalTasks > 0) {
-            const completionRate = Math.round(((completedTasks || 0) / totalTasks) * 100);
-            taskCompletionByUserData.push({
-              name: userName,
-              taux: completionRate,
-              terminees: completedTasks || 0,
-              total: totalTasks,
-            });
-          }
-        }
-      }
-
-      // Sort by completion rate descending
-      taskCompletionByUserData.sort((a, b) => b.taux - a.taux);
 
       setStats({
         leads,
@@ -492,9 +463,6 @@ export default function Dashboard() {
       setRevenueData(revenueEvolution);
       setProjectStatusData(projectsStatus);
       setMonthlyPerformance(performance);
-      setProjectsByUser(projectsByUserData);
-      setTasksByUser(tasksByUserData);
-      setTaskCompletionByUser(taskCompletionByUserData);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast.error(t('dashboard.loadError'));

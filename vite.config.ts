@@ -41,26 +41,56 @@ export default defineConfig(({ mode }) => ({
           }
         ]
       },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
+    workbox: {
+      globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+      maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
+      navigateFallbackDenylist: [/^\/~oauth/],
+      runtimeCaching: [
+        {
+          urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
+          handler: 'StaleWhileRevalidate',
+          options: {
+            cacheName: 'supabase-rest-cache',
+            expiration: {
+              maxEntries: 100,
+              maxAgeSeconds: 60 * 60 // 1 hour
+            },
+            cacheableResponse: {
+              statuses: [0, 200]
             }
           }
-        ]
-      },
+        },
+        {
+          urlPattern: /^https:\/\/.*\.supabase\.co\/auth\/.*/i,
+          handler: 'NetworkOnly',
+        },
+        {
+          urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'supabase-cache',
+            expiration: {
+              maxEntries: 50,
+              maxAgeSeconds: 60 * 60 * 24 // 24 hours
+            },
+            cacheableResponse: {
+              statuses: [0, 200]
+            }
+          }
+        },
+        {
+          urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'image-cache',
+            expiration: {
+              maxEntries: 100,
+              maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+            }
+          }
+        }
+      ]
+    },
       devOptions: {
         enabled: true
       }
