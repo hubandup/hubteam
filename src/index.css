@@ -44,7 +44,7 @@
     --input: 220 20% 90%;
     --ring: 217 91% 30%;
     
-    --radius: 0.625rem;
+    --radius: 0.5rem;
     
     /* Custom tokens */
     --primary-light: 217 91% 95%;
@@ -530,65 +530,7 @@
   
   /* Dark mode spacing improvements */
   .dark .card {
-    @apply p-6;
-  }
-  
-  .dark h1, .dark h2, .dark h3 {
-    @apply mb-4;
-  }
-  
-  .dark h4, .dark h5, .dark h6 {
-    @apply mb-3;
-  }
-  
-  .dark p {
-    @apply mb-3 leading-relaxed;
-  }
-  
-  .dark section {
-    @apply space-y-4;
-  }
-  
-  /* Dark mode button and link hover improvements */
-  .dark button, .dark a {
-    @apply transition-all duration-300 ease-in-out;
-  }
-  
-  .dark button:hover:not(:disabled) {
-    @apply transform scale-[1.02] shadow-lg;
-  }
-  
-  .dark a:hover {
-    @apply text-primary brightness-110;
-  }
-  
-  .dark .btn-primary:hover:not(:disabled) {
-    background-color: hsl(var(--primary-hover));
-    @apply shadow-[0_0_20px_rgba(236,254,109,0.3)] transform scale-[1.02];
-  }
-  
-  .dark .btn-primary:active:not(:disabled) {
-    background-color: hsl(var(--primary-active));
-    @apply transform scale-[0.98];
-  }
-  
-  /* Smooth link underline animation in dark mode */
-  .dark a:not(.no-underline) {
-    @apply relative;
-  }
-  
-  .dark a:not(.no-underline)::after {
-    content: '';
-    @apply absolute w-full h-0.5 bg-primary left-0 -bottom-0.5 scale-x-0 origin-bottom-right transition-transform duration-300 ease-out;
-  }
-  
-  .dark a:not(.no-underline):hover::after {
-    @apply scale-x-100 origin-bottom-left;
-  }
-  
-  /* Card hover effect in dark mode */
-  .dark .card:hover {
-    @apply shadow-[0_8px_30px_rgba(0,0,0,0.5)] transform scale-[1.01] transition-all duration-300;
+    @apply p-5;
   }
   
   /* Dark mode collapsible improvements */
