@@ -188,34 +188,6 @@ export function ProjectNotesTab({ projectId }: ProjectNotesTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Add Note Section */}
-      <Card>
-        <CardContent className="pt-6 space-y-4">
-          <h3 className="font-semibold">Ajouter une note</h3>
-          <RichTextEditor
-            value={newNote}
-            onChange={setNewNote}
-          />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="is-private"
-                checked={isPrivate}
-                onCheckedChange={(checked) => setIsPrivate(checked as boolean)}
-              />
-              <label htmlFor="is-private" className="text-sm text-muted-foreground flex items-center gap-1 cursor-pointer">
-                {isPrivate ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
-                Note privée (visible uniquement par vous et les admins)
-              </label>
-            </div>
-            <Button onClick={handleAddNote} disabled={!newNote.trim() || saving}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Publier
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Notes List */}
       {notes.length === 0 ? (
         <p className="text-center text-muted-foreground py-8">Aucune note pour ce projet</p>
@@ -313,6 +285,34 @@ export function ProjectNotesTab({ projectId }: ProjectNotesTabProps) {
           ))}
         </div>
       )}
+
+      {/* Add Note Section */}
+      <Card>
+        <CardContent className="pt-6 space-y-4">
+          <h3 className="font-semibold">Ajouter une note</h3>
+          <RichTextEditor
+            value={newNote}
+            onChange={setNewNote}
+          />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="is-private"
+                checked={isPrivate}
+                onCheckedChange={(checked) => setIsPrivate(checked as boolean)}
+              />
+              <label htmlFor="is-private" className="text-sm text-muted-foreground flex items-center gap-1 cursor-pointer">
+                {isPrivate ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+                Note privée (visible uniquement par vous et les admins)
+              </label>
+            </div>
+            <Button onClick={handleAddNote} disabled={!newNote.trim() || saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Publier
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
