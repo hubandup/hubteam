@@ -53,7 +53,7 @@ export function Layout({ children }: LayoutProps) {
         </header>
         
         {/* Contenu principal */}
-        <main id="main-content" className="flex-1 overflow-auto bg-background rounded-t-2xl">
+        <main id="main-content" className="flex-1 overflow-auto bg-background rounded-t-2xl transition-opacity duration-150">
           <div className="px-4 py-4 pb-24">
             {children}
           </div>
@@ -99,7 +99,7 @@ export function Layout({ children }: LayoutProps) {
               <HeaderUserProfile />
             </div>
           </header>
-          <main id="main-content" className="flex-1 min-h-0 min-w-0 overflow-hidden bg-background">
+          <main id="main-content" className="flex-1 min-h-0 min-w-0 overflow-auto bg-background transition-opacity duration-150">
             <div className="px-5 md:px-8 py-4">
               <Breadcrumbs />
             </div>

@@ -9,37 +9,52 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useDesignSettings } from "./hooks/useDesignSettings";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Layout } from "./components/Layout";
-import Home from "./pages/Home";
-import Dashboard from "./pages/Dashboard";
-import Finances from "./pages/Finances";
-import Feed from "./pages/Feed";
-import Notes from "./pages/Notes";
-import CRM from "./pages/CRM";
-import Prospection from "./pages/Prospection";
-import ClientDetails from "./pages/ClientDetails";
-import Agencies from "./pages/Agencies";
-import AgencyDetails from "./pages/AgencyDetails";
-import Projects from "./pages/Projects";
-import ProjectDetails from "./pages/ProjectDetails";
-import ArchivedProjects from "./pages/ArchivedProjects";
-import Tasks from "./pages/Tasks";
-import Messages from "./pages/Messages";
-import FAQ from "./pages/FAQ";
-import Settings from "./pages/Settings";
-import Auth from "./pages/Auth";
-import SetPassword from "./pages/SetPassword";
-import ResetPassword from "./pages/ResetPassword";
-import Install from "./pages/Install";
-import Unsubscribe from "./pages/Unsubscribe";
-import NotFound from "./pages/NotFound";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { AppSkeleton } from "./components/AppSkeleton";
+
+// Lazy-loaded pages for code splitting
+const Home = lazy(() => import("./pages/Home"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Finances = lazy(() => import("./pages/Finances"));
+const Feed = lazy(() => import("./pages/Feed"));
+const Notes = lazy(() => import("./pages/Notes"));
+const CRM = lazy(() => import("./pages/CRM"));
+const Prospection = lazy(() => import("./pages/Prospection"));
+const ClientDetails = lazy(() => import("./pages/ClientDetails"));
+const Agencies = lazy(() => import("./pages/Agencies"));
+const AgencyDetails = lazy(() => import("./pages/AgencyDetails"));
+const Projects = lazy(() => import("./pages/Projects"));
+const ProjectDetails = lazy(() => import("./pages/ProjectDetails"));
+const ArchivedProjects = lazy(() => import("./pages/ArchivedProjects"));
+const Tasks = lazy(() => import("./pages/Tasks"));
+const Messages = lazy(() => import("./pages/Messages"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Auth = lazy(() => import("./pages/Auth"));
+const SetPassword = lazy(() => import("./pages/SetPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Install = lazy(() => import("./pages/Install"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+// Minimal page-level loading skeleton
+function PageSuspense({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      {children}
+    </Suspense>
+  );
+}
 
 // Component to redirect PWA/Native users to Feed
 const PWARedirect = ({ children }: { children: React.ReactNode }) => {
   const [isPWA, setIsPWA] = useState(false);
 
   useEffect(() => {
-    // Check if app is running as PWA or native app
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     const isInWebAppiOS = (window.navigator as any).standalone === true;
     const isNative = typeof (window as any).Capacitor !== 'undefined';
@@ -65,30 +80,30 @@ const App = () => {
           <BrowserRouter>
             <AuthProvider>
             <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/auth/set-password" element={<SetPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/" element={<ProtectedRoute><Layout><PWARedirect><Home /></PWARedirect></Layout></ProtectedRoute>} />
-            <Route path="/home" element={<ProtectedRoute><Layout><PWARedirect><Home /></PWARedirect></Layout></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Layout><PWARedirect><Dashboard /></PWARedirect></Layout></ProtectedRoute>} />
-            <Route path="/finances" element={<ProtectedRoute><Layout><PWARedirect><Finances /></PWARedirect></Layout></ProtectedRoute>} />
-            <Route path="/feed" element={<ProtectedRoute><Layout><Feed /></Layout></ProtectedRoute>} />
-            <Route path="/notes" element={<ProtectedRoute><Layout><Notes /></Layout></ProtectedRoute>} />
-            <Route path="/crm" element={<ProtectedRoute><Layout><CRM /></Layout></ProtectedRoute>} />
-            <Route path="/prospection" element={<ProtectedRoute><Layout><Prospection /></Layout></ProtectedRoute>} />
-            <Route path="/client/:id" element={<ProtectedRoute><Layout><ClientDetails /></Layout></ProtectedRoute>} />
-            <Route path="/agencies" element={<ProtectedRoute><Layout><Agencies /></Layout></ProtectedRoute>} />
-            <Route path="/agency/:id" element={<ProtectedRoute><Layout><AgencyDetails /></Layout></ProtectedRoute>} />
-            <Route path="/projects" element={<ProtectedRoute><Layout><Projects /></Layout></ProtectedRoute>} />
-            <Route path="/project/:id" element={<ProtectedRoute><Layout><ProjectDetails /></Layout></ProtectedRoute>} />
-            <Route path="/archived-projects" element={<ProtectedRoute><Layout><ArchivedProjects /></Layout></ProtectedRoute>} />
-            <Route path="/tasks" element={<ProtectedRoute><Layout><Tasks /></Layout></ProtectedRoute>} />
-            <Route path="/messages" element={<ProtectedRoute><Layout><Messages /></Layout></ProtectedRoute>} />
-            <Route path="/faq" element={<ProtectedRoute><Layout><FAQ /></Layout></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
-            <Route path="/install" element={<Install />} />
-            <Route path="/unsubscribe" element={<Unsubscribe />} />
-            <Route path="*" element={<NotFound />} />
+            <Route path="/auth" element={<Suspense fallback={<AppSkeleton />}><Auth /></Suspense>} />
+            <Route path="/auth/set-password" element={<Suspense fallback={<AppSkeleton />}><SetPassword /></Suspense>} />
+            <Route path="/reset-password" element={<Suspense fallback={<AppSkeleton />}><ResetPassword /></Suspense>} />
+            <Route path="/" element={<ProtectedRoute><Layout><PageSuspense><PWARedirect><Home /></PWARedirect></PageSuspense></Layout></ProtectedRoute>} />
+            <Route path="/home" element={<ProtectedRoute><Layout><PageSuspense><PWARedirect><Home /></PWARedirect></PageSuspense></Layout></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Layout><PageSuspense><PWARedirect><Dashboard /></PWARedirect></PageSuspense></Layout></ProtectedRoute>} />
+            <Route path="/finances" element={<ProtectedRoute><Layout><PageSuspense><PWARedirect><Finances /></PWARedirect></PageSuspense></Layout></ProtectedRoute>} />
+            <Route path="/feed" element={<ProtectedRoute><Layout><PageSuspense><Feed /></PageSuspense></Layout></ProtectedRoute>} />
+            <Route path="/notes" element={<ProtectedRoute><Layout><PageSuspense><Notes /></PageSuspense></Layout></ProtectedRoute>} />
+            <Route path="/crm" element={<ProtectedRoute><Layout><PageSuspense><CRM /></PageSuspense></Layout></ProtectedRoute>} />
+            <Route path="/prospection" element={<ProtectedRoute><Layout><PageSuspense><Prospection /></PageSuspense></Layout></ProtectedRoute>} />
+            <Route path="/client/:id" element={<ProtectedRoute><Layout><PageSuspense><ClientDetails /></PageSuspense></Layout></ProtectedRoute>} />
+            <Route path="/agencies" element={<ProtectedRoute><Layout><PageSuspense><Agencies /></PageSuspense></Layout></ProtectedRoute>} />
+            <Route path="/agency/:id" element={<ProtectedRoute><Layout><PageSuspense><AgencyDetails /></PageSuspense></Layout></ProtectedRoute>} />
+            <Route path="/projects" element={<ProtectedRoute><Layout><PageSuspense><Projects /></PageSuspense></Layout></ProtectedRoute>} />
+            <Route path="/project/:id" element={<ProtectedRoute><Layout><PageSuspense><ProjectDetails /></PageSuspense></Layout></ProtectedRoute>} />
+            <Route path="/archived-projects" element={<ProtectedRoute><Layout><PageSuspense><ArchivedProjects /></PageSuspense></Layout></ProtectedRoute>} />
+            <Route path="/tasks" element={<ProtectedRoute><Layout><PageSuspense><Tasks /></PageSuspense></Layout></ProtectedRoute>} />
+            <Route path="/messages" element={<ProtectedRoute><Layout><PageSuspense><Messages /></PageSuspense></Layout></ProtectedRoute>} />
+            <Route path="/faq" element={<ProtectedRoute><Layout><PageSuspense><FAQ /></PageSuspense></Layout></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Layout><PageSuspense><Settings /></PageSuspense></Layout></ProtectedRoute>} />
+            <Route path="/install" element={<Suspense fallback={<AppSkeleton />}><Install /></Suspense>} />
+            <Route path="/unsubscribe" element={<Suspense fallback={<AppSkeleton />}><Unsubscribe /></Suspense>} />
+            <Route path="*" element={<Suspense fallback={null}><NotFound /></Suspense>} />
             </Routes>
           </AuthProvider>
         </BrowserRouter>
