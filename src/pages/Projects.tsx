@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, LayoutGrid, List, Kanban, Archive, ArchiveRestore, Edit, Trash2 } from 'lucide-react';
+import { ExportButton } from '@/components/exports/ExportButton';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -192,7 +193,18 @@ export default function Projects() {
         )}
       </div>
       {!isMobile && !isClient && (
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+          <ExportButton
+            data={filteredProjects}
+            columns={[
+              { key: 'name', label: 'Projet' },
+              { key: 'status', label: 'Statut' },
+              { key: 'description', label: 'Description' },
+              { key: 'start_date', label: 'Date début' },
+              { key: 'end_date', label: 'Date fin' },
+            ]}
+            filename="projets"
+          />
           <ProtectedAction module="projects" action="create">
               <AddProjectDialog onProjectAdded={() => queryClient.invalidateQueries({ queryKey: ['projects'] })} />
           </ProtectedAction>

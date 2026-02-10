@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClients } from '@/hooks/useClients';
-import { useProspects, useUpdateProspect, useCreateInteraction, PROSPECT_STATUSES } from '@/hooks/useProspects';
+import { useProspects, useUpdateProspect, useCreateInteraction, useInteractions, PROSPECT_STATUSES } from '@/hooks/useProspects';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -20,6 +20,7 @@ import { PageLoader } from '@/components/PageLoader';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { isToday, isPast, parseISO, addDays, format } from 'date-fns';
+import { ExportButton } from '@/components/exports/ExportButton';
 
 // CRM Components
 import { PipelineStats } from '@/components/prospection/PipelineStats';
@@ -35,6 +36,7 @@ import { EmailImageUploader } from '@/components/prospection/EmailImageUploader'
 import { ImportProspectsDialog } from '@/components/prospection/ImportProspectsDialog';
 import { ManageCategoriesDialog } from '@/components/prospection/ManageCategoriesDialog';
 import { useProspectCategories } from '@/hooks/useProspectCategories';
+import { ProspectionDashboard } from '@/components/prospection/ProspectionDashboard';
 
 export default function Prospection() {
   const navigate = useNavigate();
@@ -44,6 +46,7 @@ export default function Prospection() {
   const updateProspect = useUpdateProspect();
   const createInteraction = useCreateInteraction();
   const { data: prospectCategories = [] } = useProspectCategories();
+  const { data: allInteractions = [] } = useInteractions();
 
   // Pipeline state
   const [pipelineView, setPipelineView] = useState<'table' | 'kanban'>('table');
@@ -482,6 +485,23 @@ export default function Prospection() {
                     Importer
                   </Button>
 
+                  <ExportButton
+                    data={filteredProspects}
+                    columns={[
+                      { key: 'company_name', label: 'Société' },
+                      { key: 'contact_name', label: 'Contact' },
+                      { key: 'email', label: 'Email' },
+                      { key: 'phone', label: 'Téléphone' },
+                      { key: 'status', label: 'Statut' },
+                      { key: 'priority', label: 'Priorité' },
+                      { key: 'channel', label: 'Canal' },
+                      { key: 'estimated_amount', label: 'Montant estimé', formatter: (v: any) => v ?? 0 },
+                      { key: 'probability', label: 'Probabilité', formatter: (v: any) => v ?? 0 },
+                      { key: 'next_action_at', label: 'Prochaine action' },
+                    ]}
+                    filename="prospects"
+                  />
+
                   <Button onClick={() => setAddProspectOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Nouveau prospect
@@ -808,6 +828,9 @@ export default function Prospection() {
         {/* STATISTICS TAB */}
         <TabsContent value="stats" className="flex-1 overflow-auto mt-0">
           <div className="space-y-6">
+            {/* Pipeline Dashboard - Funnel, Avg Time, Overdue Alerts */}
+            <ProspectionDashboard prospects={prospects} interactions={allInteractions} />
+
             {/* Pipeline Stats Section */}
             <div>
               <h3 className="text-lg font-semibold mb-4">Statistiques Pipeline</h3>

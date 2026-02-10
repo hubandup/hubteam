@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, LayoutGrid, Columns3, ArrowDownUp, List, Archive } from 'lucide-react';
+import { ExportButton } from '@/components/exports/ExportButton';
 import { toast } from 'sonner';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -152,6 +153,19 @@ export default function CRM() {
         </div>
         {!isMobile && (
           <div className="flex gap-2 mt-4 justify-end">
+            <ExportButton
+              data={filteredClients}
+              columns={[
+                { key: 'company', label: 'Société' },
+                { key: 'first_name', label: 'Prénom' },
+                { key: 'last_name', label: 'Nom' },
+                { key: 'email', label: 'Email' },
+                { key: 'phone', label: 'Téléphone' },
+                { key: 'kanban_stage', label: 'Étape' },
+                ...(showRevenue ? [{ key: 'revenue_current_year', label: 'CA Année Fiscale', formatter: (v: any) => v ?? 0 }] : []),
+              ]}
+              filename="clients"
+            />
             <div className="flex gap-1 border rounded-md">
               <Button
                 variant={viewMode === 'list' ? 'default' : 'ghost'}
