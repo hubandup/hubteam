@@ -17,11 +17,11 @@ export default defineConfig(({ mode }) => ({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icon-192.png', 'icon-512.png'],
       manifest: {
-        name: 'Hub & Up - Gestion de projets',
+        name: 'Hub & Up',
         short_name: 'Hub & Up',
         description: 'Plateforme complète de gestion de projets, CRM et collaboration d\'équipe',
-        theme_color: '#0EA5E9',
-        background_color: '#ffffff',
+        theme_color: '#0a1628',
+        background_color: '#f0f2f6',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
@@ -86,6 +86,20 @@ export default defineConfig(({ mode }) => ({
             expiration: {
               maxEntries: 100,
               maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+            }
+          }
+        },
+        {
+          urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'google-fonts-cache',
+            expiration: {
+              maxEntries: 10,
+              maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+            },
+            cacheableResponse: {
+              statuses: [0, 200]
             }
           }
         }
