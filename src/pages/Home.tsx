@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { TodoList } from '@/components/home/TodoList';
 import { QuickNotes } from '@/components/home/QuickNotes';
 import { TodayTasks } from '@/components/home/TodayTasks';
+import { MyWeeklySchedule } from '@/components/home/MyWeeklySchedule';
 import { supabase } from '@/integrations/supabase/client';
 import { format, isPast, isFuture, addDays } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { useNotifications } from '@/hooks/useNotifications';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +53,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
+  const { role, isAgency, isClient } = useUserRole();
   const { unreadCount } = useNotifications();
   const navigate = useNavigate();
 
@@ -211,8 +214,8 @@ export default function Home() {
 
       {/* Alerts row */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {/* Overdue projects */}
-        <Card>
+        {/* Overdue projects - hidden for agency role */}
+        {!isAgency && <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-destructive" />
@@ -242,7 +245,7 @@ export default function Home() {
               </div>
             )}
           </CardContent>
-        </Card>
+        </Card>}
 
         {/* Upcoming deadlines */}
         <Card>
@@ -273,8 +276,8 @@ export default function Home() {
           </CardContent>
         </Card>
 
-        {/* Client follow-ups */}
-        <Card>
+        {/* Client follow-ups - hidden for agency/client roles */}
+        {!isAgency && !isClient && <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Users className="h-4 w-4 text-primary" />
@@ -304,11 +307,11 @@ export default function Home() {
               </div>
             )}
           </CardContent>
-        </Card>
+        </Card>}
       </div>
 
-      {/* Recent activity */}
-      {recentActivities.length > 0 && (
+      {/* Recent activity - hidden for client/agency */}
+      {!isAgency && !isClient && recentActivities.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -337,10 +340,11 @@ export default function Home() {
       )}
 
       {/* Existing widgets */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
         <TodoList />
         <QuickNotes />
         <TodayTasks />
+        <MyWeeklySchedule />
       </div>
     </div>
   );
