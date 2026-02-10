@@ -23,7 +23,7 @@ export function useCapacitor() {
 
         // Listen for app state changes
         App.addListener('appStateChange', ({ isActive }) => {
-          console.log('App state changed. Is active?', isActive);
+          // App state changed
         });
 
         // Listen for back button on Android
@@ -34,8 +34,6 @@ export function useCapacitor() {
             window.history.back();
           }
         });
-
-        console.log('Capacitor initialized successfully');
       } catch (error) {
         console.error('Error initializing Capacitor:', error);
       }

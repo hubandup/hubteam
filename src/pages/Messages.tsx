@@ -335,6 +335,7 @@ export default function Messages() {
     if (!user) return;
 
     try {
+      // Step 1: Get all room IDs for this user
       const { data: memberRooms, error: memberError } = await supabase
         .from('chat_room_members')
         .select('room_id')
@@ -350,97 +351,94 @@ export default function Messages() {
 
       const roomIds = memberRooms.map((m) => m.room_id);
 
-      const { data: roomsData, error: roomsError } = await supabase
-        .from('chat_rooms')
-        .select('*')
-        .in('id', roomIds)
-        .order('created_at', { ascending: false });
+      // Step 2: Fetch rooms, read statuses, all members, and all last messages in parallel
+      const [roomsRes, readStatusRes, allMembersRes] = await Promise.all([
+        supabase.from('chat_rooms').select('*').in('id', roomIds).order('created_at', { ascending: false }),
+        supabase.from('chat_message_reads').select('room_id, last_read_at').eq('user_id', user.id).in('room_id', roomIds),
+        supabase.from('chat_room_members').select('room_id, user_id').in('room_id', roomIds),
+      ]);
 
-      if (roomsError) throw roomsError;
-
-      // Fetch read status for all rooms
-      const { data: readStatuses } = await supabase
-        .from('chat_message_reads')
-        .select('room_id, last_read_at')
-        .eq('user_id', user.id)
-        .in('room_id', roomIds);
+      if (roomsRes.error) throw roomsRes.error;
 
       const readStatusMap = new Map(
-        readStatuses?.map(r => [r.room_id, r.last_read_at]) || []
+        readStatusRes.data?.map(r => [r.room_id, r.last_read_at]) || []
       );
 
-      const roomsWithDetails = await Promise.all(
-        (roomsData || []).map(async (room) => {
-          const { data: lastMessage } = await supabase
+      // Step 3: Collect all unique user IDs from members
+      const allMemberUserIds = [...new Set((allMembersRes.data || []).map(m => m.user_id))];
+
+      // Step 4: Batch fetch all profiles at once
+      const { data: allProfiles } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, avatar_url')
+        .in('id', allMemberUserIds);
+
+      const profilesMap = new Map(
+        (allProfiles || []).map(p => [p.id, p])
+      );
+
+      // Step 5: Fetch last message per room using a single query with ordering
+      // We get the latest messages for all rooms, then pick the last one per room
+      const { data: recentMessages } = await supabase
+        .from('chat_messages')
+        .select('room_id, content, created_at, user_id, attachment_type')
+        .in('room_id', roomIds)
+        .order('created_at', { ascending: false })
+        .limit(roomIds.length * 2); // Get enough to cover all rooms
+
+      // Group by room_id, keep first (latest) per room
+      const lastMessageByRoom = new Map<string, typeof recentMessages extends (infer T)[] | null ? T : never>();
+      (recentMessages || []).forEach(msg => {
+        if (!lastMessageByRoom.has(msg.room_id)) {
+          lastMessageByRoom.set(msg.room_id, msg);
+        }
+      });
+
+      // Step 6: Calculate unread counts in batch
+      // For rooms with read status, count messages after last_read_at
+      // For rooms without, count all messages from others
+      const unreadCounts = new Map<string, number>();
+      
+      await Promise.all(
+        roomIds.map(async (roomId) => {
+          const lastReadAt = readStatusMap.get(roomId);
+          let query = supabase
             .from('chat_messages')
-            .select('content, created_at, user_id, attachment_type')
-            .eq('room_id', room.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
-
-          let lastMessageWithUser = undefined;
-          if (lastMessage) {
-            const { data: msgUser } = await supabase
-              .from('profiles')
-              .select('first_name, last_name')
-              .eq('id', lastMessage.user_id)
-              .single();
-
-            lastMessageWithUser = {
-              content: lastMessage.content,
-              created_at: lastMessage.created_at,
-              user_name: msgUser ? `${msgUser.first_name} ${msgUser.last_name}` : 'Utilisateur',
-              attachment_type: lastMessage.attachment_type,
-            };
-          }
-
-          const { data: members } = await supabase
-            .from('chat_room_members')
-            .select('user_id')
-            .eq('room_id', room.id);
-
-          const memberProfiles = await Promise.all(
-            (members || []).map(async (m) => {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('id, first_name, last_name, avatar_url')
-                .eq('id', m.user_id)
-                .single();
-              return profile;
-            })
-          );
-
-          // Calculate unread count
-          const lastReadAt = readStatusMap.get(room.id);
-          let unreadCount = 0;
+            .select('*', { count: 'exact', head: true })
+            .eq('room_id', roomId)
+            .neq('user_id', user.id);
           
           if (lastReadAt) {
-            const { count } = await supabase
-              .from('chat_messages')
-              .select('*', { count: 'exact', head: true })
-              .eq('room_id', room.id)
-              .gt('created_at', lastReadAt)
-              .neq('user_id', user.id);
-            unreadCount = count || 0;
-          } else {
-            // If never read, count all messages from others
-            const { count } = await supabase
-              .from('chat_messages')
-              .select('*', { count: 'exact', head: true })
-              .eq('room_id', room.id)
-              .neq('user_id', user.id);
-            unreadCount = count || 0;
+            query = query.gt('created_at', lastReadAt);
           }
-
-          return {
-            ...room,
-            last_message: lastMessageWithUser,
-            members: memberProfiles.filter(Boolean),
-            unread_count: unreadCount,
-          };
+          
+          const { count } = await query;
+          unreadCounts.set(roomId, count || 0);
         })
       );
+
+      // Step 7: Assemble rooms with details
+      const roomsWithDetails = (roomsRes.data || []).map((room) => {
+        const lastMsg = lastMessageByRoom.get(room.id);
+        const msgProfile = lastMsg ? profilesMap.get(lastMsg.user_id) : null;
+        
+        const roomMembers = (allMembersRes.data || [])
+          .filter(m => m.room_id === room.id)
+          .map(m => profilesMap.get(m.user_id))
+          .filter(Boolean);
+
+        return {
+          ...room,
+          last_message: lastMsg ? {
+            content: lastMsg.content,
+            created_at: lastMsg.created_at,
+            user_name: msgProfile ? `${msgProfile.first_name} ${msgProfile.last_name}` : 'Utilisateur',
+            attachment_type: lastMsg.attachment_type,
+          } : undefined,
+          members: roomMembers,
+          unread_count: unreadCounts.get(room.id) || 0,
+        };
+      });
 
       // Sort by last message date
       roomsWithDetails.sort((a, b) => {
@@ -468,44 +466,48 @@ export default function Messages() {
 
       if (error) throw error;
 
-      const messagesWithUsers = await Promise.all(
-        (data || []).map(async (msg) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('first_name, last_name, avatar_url')
-            .eq('id', msg.user_id)
-            .single();
+      // Collect all user IDs (message authors + reply authors)
+      const allMessages = data || [];
+      const replyIds = allMessages.map(m => m.reply_to_id).filter(Boolean);
+      
+      // Fetch reply messages in batch
+      let replyMsgMap = new Map<string, any>();
+      if (replyIds.length > 0) {
+        const { data: replyMsgs } = await supabase
+          .from('chat_messages')
+          .select('id, content, user_id, attachment_type')
+          .in('id', replyIds);
+        (replyMsgs || []).forEach(rm => replyMsgMap.set(rm.id, rm));
+      }
 
-          // Fetch reply_to message if exists
-          let replyTo = null;
-          if (msg.reply_to_id) {
-            const { data: replyMsg } = await supabase
-              .from('chat_messages')
-              .select('id, content, user_id, attachment_type')
-              .eq('id', msg.reply_to_id)
-              .single();
-            
-            if (replyMsg) {
-              const { data: replyProfile } = await supabase
-                .from('profiles')
-                .select('first_name, last_name')
-                .eq('id', replyMsg.user_id)
-                .single();
-              
-              replyTo = {
-                ...replyMsg,
-                user: replyProfile,
-              };
-            }
-          }
+      // Collect all user IDs
+      const allUserIds = [...new Set([
+        ...allMessages.map(m => m.user_id),
+        ...[...replyMsgMap.values()].map(rm => rm.user_id),
+      ])];
 
-          return {
-            ...msg,
-            user: profile,
-            reply_to: replyTo,
-          };
-        })
+      // Batch fetch profiles
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, avatar_url')
+        .in('id', allUserIds);
+
+      const profilesMap = new Map(
+        (profiles || []).map(p => [p.id, { first_name: p.first_name, last_name: p.last_name, avatar_url: p.avatar_url }])
       );
+
+      const messagesWithUsers = allMessages.map(msg => {
+        let replyTo = null;
+        if (msg.reply_to_id && replyMsgMap.has(msg.reply_to_id)) {
+          const rm = replyMsgMap.get(msg.reply_to_id);
+          replyTo = { ...rm, user: profilesMap.get(rm.user_id) || null };
+        }
+        return {
+          ...msg,
+          user: profilesMap.get(msg.user_id) || null,
+          reply_to: replyTo,
+        };
+      });
 
       setMessages(messagesWithUsers);
     } catch (error) {

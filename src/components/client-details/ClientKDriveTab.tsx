@@ -755,7 +755,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
             size="icon"
             disabled={uploading || !currentFolder}
             onClick={() => {
-              console.log('Upload button clicked, showDropZone:', showDropZone);
+              
               setShowDropZone(!showDropZone);
             }}
             title="Téléverser des fichiers"
@@ -796,7 +796,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
           className="rounded-lg border-2 border-dashed border-primary bg-primary/5 p-8 text-center cursor-pointer transition-all"
           onClick={(e) => {
             e.stopPropagation();
-            console.log('Drop zone clicked');
+            
             fileInputRef.current?.click();
           }}
         >

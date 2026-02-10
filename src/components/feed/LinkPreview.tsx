@@ -35,7 +35,6 @@ export function LinkPreview({ url, title: propTitle, description: propDescriptio
   useEffect(() => {
     // If we have pre-fetched metadata from DB, use it directly
     if (propTitle || propDescription || propImage || propSiteName) {
-      console.log('[LinkPreview] Using pre-fetched metadata from DB');
       setPreview({
         success: true,
         url,
@@ -56,11 +55,8 @@ export function LinkPreview({ url, title: propTitle, description: propDescriptio
         
         if (attemptNumber > 0) {
           setIsRetrying(true);
-          console.log(`[LinkPreview] Retry attempt ${attemptNumber}/${MAX_RETRIES} for:`, url);
           // Wait before retrying (exponential backoff)
           await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attemptNumber - 1), 3000)));
-        } else {
-          console.log('[LinkPreview] Fetching preview for:', url);
         }
 
         // Use POST method explicitly for better compatibility
@@ -69,7 +65,7 @@ export function LinkPreview({ url, title: propTitle, description: propDescriptio
           body: { url },
         });
 
-        console.log('[LinkPreview] Response:', { data, error, attempt: attemptNumber });
+        
 
         if (error) {
           console.error('[LinkPreview] Edge function error:', error);
@@ -77,12 +73,6 @@ export function LinkPreview({ url, title: propTitle, description: propDescriptio
         }
         
         if (data) {
-          console.log('[LinkPreview] Preview data received:', {
-            success: data.success,
-            hasTitle: !!data.title,
-            hasImage: !!data.image,
-            reason: data.reason
-          });
           
           // Store the response regardless of success
           setPreview(data);
@@ -93,7 +83,6 @@ export function LinkPreview({ url, title: propTitle, description: propDescriptio
           }
           setIsRetrying(false);
         } else {
-          console.log('[LinkPreview] No data received');
           throw new Error('No data received');
         }
       } catch (err) {
@@ -141,7 +130,7 @@ export function LinkPreview({ url, title: propTitle, description: propDescriptio
     const domain = preview?.domain || new URL(url).hostname.replace('www.', '');
     const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
     
-    console.log('[LinkPreview] Rendering fallback for domain:', domain, 'reason:', preview?.reason);
+    
     
     return (
       <a
@@ -181,7 +170,7 @@ export function LinkPreview({ url, title: propTitle, description: propDescriptio
   }
 
   // Render rich preview for successful fetches
-  console.log('[LinkPreview] Rendering rich preview');
+  
   
   return (
     <a
