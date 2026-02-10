@@ -116,3 +116,15 @@ function = "process-notification-outbox"
 name = "check-project-milestones"
 schedule = "0 8 * * *"  # Daily at 8am
 function = "check-project-milestones"
+
+# LinkedIn posts fetch - every hour
+[functions.fetch-linkedin-posts]
+verify_jwt = false
+
+[functions.linkedin-oauth-callback]
+verify_jwt = false
+
+[[edge_runtime.cron.jobs]]
+name = "fetch-linkedin-posts"
+schedule = "0 * * * *"  # Every hour
+function = "fetch-linkedin-posts"

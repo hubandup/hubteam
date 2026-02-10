@@ -3,9 +3,11 @@ import { ActivityFeedItem } from '@/components/feed/ActivityFeedItem';
 import { OnlineUsersIndicator } from '@/components/feed/OnlineUsersIndicator';
 import { CreatePostInput } from '@/components/feed/CreatePostInput';
 import { UserPostItem } from '@/components/feed/UserPostItem';
+import { LinkedInPostItem } from '@/components/feed/LinkedInPostItem';
 import { useAuth } from '@/hooks/useAuth';
 import { useFeedActivities } from '@/hooks/useFeedActivities';
 import { usePosts } from '@/hooks/usePosts';
+import { useLinkedInPosts } from '@/hooks/useLinkedInPosts';
 import { PageLoader } from '@/components/PageLoader';
 import { useTranslation } from 'react-i18next';
 
@@ -49,9 +51,10 @@ export default function Feed() {
   const { user } = useAuth();
   const { data: activities = [], isLoading: activitiesLoading } = useFeedActivities();
   const { data: posts = [], isLoading: postsLoading } = usePosts();
+  const { data: linkedinPosts = [], isLoading: linkedinLoading } = useLinkedInPosts();
   const { t } = useTranslation();
   
-  const loading = activitiesLoading || postsLoading;
+  const loading = activitiesLoading || postsLoading || linkedinLoading;
 
   if (loading) {
     return <PageLoader />;
@@ -76,19 +79,25 @@ export default function Feed() {
 
       <ScrollArea className="h-[calc(100vh-16rem)] md:h-[calc(100vh-16rem)]">
         <div className="space-y-3 md:space-y-4 pr-2">
-          {posts.length === 0 && activities.length === 0 ? (
+          {posts.length === 0 && activities.length === 0 && linkedinPosts.length === 0 ? (
             <div className="p-6 md:p-8 text-center border rounded-xl bg-card/50">
               <p className="text-muted-foreground text-sm md:text-base">{t('feed.noActivity')}</p>
             </div>
           ) : (
             <>
-              {[...posts.map(p => ({ ...p, type: 'post' as const })), ...activities.map(a => ({ ...a, type: 'activity' as const }))]
-                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+              {[
+                ...posts.map(p => ({ ...p, type: 'post' as const, sortDate: p.created_at })),
+                ...activities.map(a => ({ ...a, type: 'activity' as const, sortDate: a.created_at })),
+                ...linkedinPosts.map(lp => ({ ...lp, type: 'linkedin' as const, sortDate: lp.published_at })),
+              ]
+                .sort((a, b) => new Date(b.sortDate).getTime() - new Date(a.sortDate).getTime())
                 .map((item) => (
                   item.type === 'post' ? (
-                    <UserPostItem key={`post-${item.id}`} post={item} />
+                    <UserPostItem key={`post-${item.id}`} post={item as any} />
+                  ) : item.type === 'linkedin' ? (
+                    <LinkedInPostItem key={`linkedin-${item.id}`} post={item as any} />
                   ) : (
-                    <ActivityFeedItem key={`activity-${item.id}`} activity={item} />
+                    <ActivityFeedItem key={`activity-${item.id}`} activity={item as any} />
                   )
                 ))}
             </>

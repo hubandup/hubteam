@@ -1035,6 +1035,30 @@ export type Database = {
         }
         Relationships: []
       }
+      linkedin_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          expires_at: string
+          id: string
+          refresh_token: string | null
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          refresh_token?: string | null
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          refresh_token?: string | null
+        }
+        Relationships: []
+      }
       meeting_notes: {
         Row: {
           attachment_url: string | null
