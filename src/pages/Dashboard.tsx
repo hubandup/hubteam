@@ -11,7 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Users, UserCheck, FolderKanban, CheckSquare, Loader2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Users, UserCheck, FolderKanban, CheckSquare, Loader2, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -19,7 +20,7 @@ import { WeeklySchedule } from '@/components/dashboard/WeeklySchedule';
 import { usePermissions } from '@/hooks/usePermissions';
 import { RolePermissionsIndicator } from '@/components/dashboard/RolePermissionsIndicator';
 import { useNavigate } from 'react-router-dom';
-import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { format, subMonths, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useUserRole } from '@/hooks/useUserRole';
 
@@ -45,6 +46,10 @@ export default function Dashboard() {
   const [tasksByUser, setTasksByUser] = useState<any[]>([]);
   const [taskCompletionByUser, setTaskCompletionByUser] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [periodFilter, setPeriodFilter] = useState('180'); // days
+  const [conversionRate, setConversionRate] = useState({ rate: 0, converted: 0, total: 0 });
+  const [monthlyRevenue, setMonthlyRevenue] = useState({ current: 0, previous: 0, variation: 0 });
+  const [teamWorkload, setTeamWorkload] = useState<any[]>([]);
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -56,7 +61,7 @@ export default function Dashboard() {
     if (isAdmin) {
       fetchDashboardData();
     }
-  }, [isAdmin, roleLoading, navigate]);
+  }, [isAdmin, roleLoading, navigate, periodFilter]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -463,6 +468,52 @@ export default function Dashboard() {
       setRevenueData(revenueEvolution);
       setProjectStatusData(projectsStatus);
       setMonthlyPerformance(performance);
+
+      // === NEW KPIs ===
+
+      // 1. Conversion rate
+      const allClients = clients || [];
+      const convertedCount = allClients.filter(c => ['projet_valide', 'a_fideliser'].includes(c.kanban_stage)).length;
+      const totalClientsCount = allClients.length;
+      const rate = totalClientsCount > 0 ? Math.round((convertedCount / totalClientsCount) * 100) : 0;
+      setConversionRate({ rate, converted: convertedCount, total: totalClientsCount });
+
+      // 2. Monthly revenue (current vs previous month)
+      const currentMonthKey = format(now, 'yyyy-MM');
+      const prevMonthKey = format(subMonths(now, 1), 'yyyy-MM');
+      const currentMonthRevenue = revenueByMonth[currentMonthKey] || 0;
+      const prevMonthRevenue = revenueByMonth[prevMonthKey] || 0;
+      const revenueVariation = prevMonthRevenue > 0 
+        ? Math.round(((currentMonthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100) 
+        : 0;
+      setMonthlyRevenue({ current: currentMonthRevenue, previous: prevMonthRevenue, variation: revenueVariation });
+
+      // 3. Team workload (tasks in_progress + todo per user)
+      if (userIds.length > 0) {
+        const { data: workloadTasks } = await supabase
+          .from('tasks')
+          .select('assigned_to, status')
+          .in('assigned_to', userIds)
+          .in('status', ['in_progress', 'todo']);
+
+        const workloadByUser: Record<string, { todo: number; in_progress: number }> = {};
+        (workloadTasks || []).forEach((t: any) => {
+          if (!workloadByUser[t.assigned_to]) workloadByUser[t.assigned_to] = { todo: 0, in_progress: 0 };
+          if (t.status === 'todo') workloadByUser[t.assigned_to].todo++;
+          else workloadByUser[t.assigned_to].in_progress++;
+        });
+
+        const workloadData = userIds
+          .map(uid => ({
+            name: formatUserName(profilesMap.get(uid) || 'Inconnu'),
+            todo: workloadByUser[uid]?.todo || 0,
+            en_cours: workloadByUser[uid]?.in_progress || 0,
+          }))
+          .filter(u => u.todo > 0 || u.en_cours > 0)
+          .sort((a, b) => (b.todo + b.en_cours) - (a.todo + a.en_cours));
+
+        setTeamWorkload(workloadData);
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast.error(t('dashboard.loadError'));
@@ -563,13 +614,79 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">{t('dashboard.title')}</h1>
-        <p className="text-muted-foreground">{t('dashboard.subtitle')}</p>
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">{t('dashboard.title')}</h1>
+          <p className="text-muted-foreground">{t('dashboard.subtitle')}</p>
+        </div>
+        <Select value={periodFilter} onValueChange={setPeriodFilter}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="30">30 jours</SelectItem>
+            <SelectItem value="90">90 jours</SelectItem>
+            <SelectItem value="180">6 mois</SelectItem>
+            <SelectItem value="365">1 an</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Role & Permissions Indicator */}
       <RolePermissionsIndicator />
+
+      {/* New KPIs Row */}
+      <div className="grid gap-4 md:grid-cols-3">
+        {/* Conversion Rate */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Taux de conversion</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{conversionRate.rate}%</div>
+            <p className="text-xs text-muted-foreground">
+              {conversionRate.converted} convertis sur {conversionRate.total} clients
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Monthly Revenue */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">CA mensuel</CardTitle>
+            {monthlyRevenue.variation >= 0 ? (
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            ) : (
+              <TrendingDown className="h-4 w-4 text-destructive" />
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(monthlyRevenue.current)}
+            </div>
+            <p className={`text-xs ${monthlyRevenue.variation >= 0 ? 'text-green-600' : 'text-destructive'}`}>
+              {monthlyRevenue.variation >= 0 ? '+' : ''}{monthlyRevenue.variation}% vs mois précédent
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Team Workload Summary */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Charge équipe</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {teamWorkload.reduce((sum, u) => sum + u.todo + u.en_cours, 0)} tâches
+            </div>
+            <p className="text-xs text-muted-foreground">
+              réparties sur {teamWorkload.length} membres
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -829,6 +946,37 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Team Workload Bar Chart */}
+      {teamWorkload.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Charge de travail par membre
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={Math.max(200, teamWorkload.length * 45)}>
+              <BarChart data={teamWorkload} layout="vertical" margin={{ left: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis type="number" className="text-xs" />
+                <YAxis dataKey="name" type="category" width={120} className="text-xs" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px',
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="en_cours" stackId="a" fill="hsl(var(--primary))" name="En cours" />
+                <Bar dataKey="todo" stackId="a" fill="hsl(var(--secondary))" name="À faire" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Projects Progress */}
