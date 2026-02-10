@@ -50,7 +50,7 @@ export default function SetPassword() {
     // Écouter les changements d'état d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth event:', event, 'Session:', !!session);
+        
         
         if (event === 'PASSWORD_RECOVERY' && session) {
           setIsRecovery(true);
@@ -75,7 +75,7 @@ export default function SetPassword() {
         const refreshToken = hashParams.get('refresh_token');
         
         if (accessToken && refreshToken) {
-          console.log('Found tokens in URL hash, setting session...');
+          
           const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,

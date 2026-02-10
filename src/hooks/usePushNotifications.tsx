@@ -28,7 +28,6 @@ export function usePushNotifications() {
         const existingSubscription = await registration.pushManager.getSubscription();
         if (existingSubscription) {
           setSubscription(existingSubscription);
-          console.log('Found existing push subscription');
         }
       });
     }
@@ -68,7 +67,6 @@ export function usePushNotifications() {
     try {
       // Wait for service worker to be ready
       const registration = await navigator.serviceWorker.ready;
-      console.log('Service Worker is ready:', registration);
       
       let vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
       if (!vapidPublicKey) {
@@ -89,9 +87,6 @@ export function usePushNotifications() {
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
         });
-        console.log('New push subscription created');
-      } else {
-        console.log('Already subscribed to push notifications');
       }
 
       setSubscription(subscription);
@@ -120,8 +115,6 @@ export function usePushNotifications() {
           console.error('Error saving subscription:', error);
           throw error;
         }
-        
-        console.log('Subscription saved via API');
       }
 
       return subscription;

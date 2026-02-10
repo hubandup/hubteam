@@ -29,7 +29,7 @@ export function TestInvitationEmail() {
       if (error) throw error;
 
       toast.success('Email de test envoyé avec succès!');
-      console.log('Test email sent:', data);
+      
     } catch (error: any) {
       console.error('Error sending test email:', error);
       toast.error('Erreur lors de l\'envoi de l\'email de test');
@@ -58,7 +58,7 @@ export function TestInvitationEmail() {
       if (error) throw error;
 
       toast.success('Notification de test envoyée! Vérifiez votre boîte email.');
-      console.log('Test notification sent:', data);
+      
     } catch (error: any) {
       console.error('Error sending test notification:', error);
       toast.error('Erreur lors de l\'envoi de la notification de test');

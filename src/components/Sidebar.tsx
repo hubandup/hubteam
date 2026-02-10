@@ -32,7 +32,6 @@ export function Sidebar() {
 
   useEffect(() => {
     const fetchClientId = async () => {
-      console.log('Sidebar - Role:', role, 'User:', user?.id);
       if (role === 'client' && user) {
         try {
           const { data: profile, error: profileError } = await supabase
@@ -41,8 +40,6 @@ export function Sidebar() {
             .eq('id', user.id)
             .single();
 
-          console.log('Sidebar - Profile:', profile, 'Error:', profileError);
-
           if (profile?.email) {
             const { data: client, error: clientError } = await supabase
               .from('clients')
@@ -50,11 +47,8 @@ export function Sidebar() {
               .eq('email', profile.email)
               .single();
 
-            console.log('Sidebar - Client:', client, 'Error:', clientError);
-
             if (client) {
               setClientId(client.id);
-              console.log('Sidebar - Client ID set:', client.id);
             }
           }
         } catch (error) {
