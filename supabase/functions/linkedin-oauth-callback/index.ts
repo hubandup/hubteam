@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
       }
 
       const redirectUri = "https://ytjxeypquqkrmbmhzfqi.supabase.co/functions/v1/linkedin-oauth-callback";
-      const scopes = "r_organization_social";
+      const scopes = "w_organization_social";
       const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=linkedin_oauth`;
 
       return Response.redirect(authUrl, 302);
