@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      const redirectUri = `${url.origin}${url.pathname}`;
+      const redirectUri = "https://ytjxeypquqkrmbmhzfqi.supabase.co/functions/v1/linkedin-oauth-callback";
       const scopes = "r_organization_social rw_organization_admin";
       const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=linkedin_oauth`;
 
@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     // Step 2: Exchange code for access token
     const clientId = Deno.env.get("LINKEDIN_CLIENT_ID")!;
     const clientSecret = Deno.env.get("LINKEDIN_CLIENT_SECRET")!;
-    const redirectUri = `${url.origin}${url.pathname}`;
+    const redirectUri = "https://ytjxeypquqkrmbmhzfqi.supabase.co/functions/v1/linkedin-oauth-callback";
 
     const tokenResponse = await fetch(
       "https://www.linkedin.com/oauth/v2/accessToken",
