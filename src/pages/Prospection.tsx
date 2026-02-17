@@ -207,93 +207,265 @@ function EditContactDialog({
   );
 }
 
-// ─── IMPORT DIALOG ─────────────────────────────────────
+// ─── IMPORT DIALOG WITH COLUMN MAPPING ─────────────────
+const PROSPECTION_FIELDS = [
+  { key: 'company', label: 'Société', required: false },
+  { key: 'contact_name', label: 'Contact', required: false },
+  { key: 'job_title', label: 'Fonction', required: false },
+  { key: 'linkedin_url', label: 'LinkedIn', required: false },
+  { key: 'email', label: 'Email', required: false },
+  { key: 'phone', label: 'Téléphone', required: false },
+] as const;
+
+type ProspectFieldKey = typeof PROSPECTION_FIELDS[number]['key'];
+type ImportStep = 'upload' | 'mapping' | 'preview';
+
 function ImportDialog({ onImport }: { onImport: (contacts: Partial<ProspectionContact>[]) => void }) {
   const [open, setOpen] = useState(false);
-  const [preview, setPreview] = useState<Partial<ProspectionContact>[]>([]);
+  const [step, setStep] = useState<ImportStep>('upload');
+  const [fileName, setFileName] = useState('');
+  const [headers, setHeaders] = useState<string[]>([]);
+  const [rows, setRows] = useState<Record<string, string>[]>([]);
+  const [mapping, setMapping] = useState<Record<string, ProspectFieldKey | ''>>({});
+
+  const reset = useCallback(() => {
+    setStep('upload');
+    setFileName('');
+    setHeaders([]);
+    setRows([]);
+    setMapping({});
+  }, []);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setFileName(file.name);
 
     const reader = new FileReader();
     reader.onload = (evt) => {
-      const data = evt.target?.result;
-      const wb = XLSX.read(data, { type: 'binary' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json<Record<string, string>>(ws);
+      try {
+        const data = new Uint8Array(evt.target?.result as ArrayBuffer);
+        const wb = XLSX.read(data, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json<Record<string, string>>(ws, { defval: '' });
 
-      const contacts: Partial<ProspectionContact>[] = json.map(row => ({
-        company: row['Société'] || row['Societe'] || row['Company'] || '',
-        contact_name: row['Contacts'] || row['Contact'] || row['Nom'] || row['Name'] || '',
-        job_title: row['Fonction'] || row['Job Title'] || row['Poste'] || '',
-        linkedin_url: row['Linkedin'] || row['LinkedIn'] || row['linkedin'] || '',
-        email: row['Mail'] || row['Email'] || row['email'] || '',
-        phone: row['Numéro de téléphone'] || row['Téléphone'] || row['Phone'] || row['Tel'] || '',
-      }));
+        if (json.length === 0) {
+          toast.error('Le fichier est vide');
+          return;
+        }
 
-      setPreview(contacts);
+        const fileHeaders = Object.keys(json[0]);
+        setHeaders(fileHeaders);
+        setRows(json);
+
+        // Auto-mapping by name similarity
+        const autoMap: Record<string, ProspectFieldKey | ''> = {};
+        fileHeaders.forEach(h => {
+          const norm = h.toLowerCase().trim();
+          const match = PROSPECTION_FIELDS.find(f => {
+            const fl = f.label.toLowerCase();
+            return norm === fl || norm.includes(fl) || fl.includes(norm) ||
+              norm === f.key.toLowerCase() ||
+              (f.key === 'company' && (norm.includes('société') || norm.includes('societe') || norm.includes('entreprise') || norm.includes('company'))) ||
+              (f.key === 'contact_name' && (norm.includes('contact') || norm.includes('nom') || norm.includes('name'))) ||
+              (f.key === 'job_title' && (norm.includes('fonction') || norm.includes('poste') || norm.includes('title') || norm.includes('job'))) ||
+              (f.key === 'linkedin_url' && (norm.includes('linkedin'))) ||
+              (f.key === 'email' && (norm.includes('email') || norm.includes('e-mail') || norm.includes('mail'))) ||
+              (f.key === 'phone' && (norm.includes('téléphone') || norm.includes('telephone') || norm.includes('tel') || norm.includes('phone') || norm.includes('numéro')));
+          });
+          autoMap[h] = match?.key || '';
+        });
+        setMapping(autoMap);
+        setStep('mapping');
+      } catch {
+        toast.error('Erreur lors de la lecture du fichier');
+      }
     };
-    reader.readAsBinaryString(file);
+    reader.readAsArrayBuffer(file);
   };
 
+  const mappedFields = useMemo(() => new Set(Object.values(mapping).filter(Boolean)), [mapping]);
+
+  const previewData = useMemo(() => {
+    return rows.slice(0, 10).map(row => {
+      const mapped: Record<string, string> = {};
+      Object.entries(mapping).forEach(([header, field]) => {
+        if (field) mapped[field] = String(row[header] || '').trim();
+      });
+      return mapped;
+    });
+  }, [rows, mapping]);
+
   const handleConfirm = () => {
-    if (preview.length === 0) return;
-    onImport(preview);
-    setPreview([]);
+    const contacts: Partial<ProspectionContact>[] = rows.map(row => {
+      const c: Record<string, string> = {};
+      Object.entries(mapping).forEach(([header, field]) => {
+        if (field) c[field] = String(row[header] || '').trim();
+      });
+      return c;
+    });
+    onImport(contacts);
+    reset();
     setOpen(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setPreview([]); }}>
+    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Upload className="h-4 w-4" /> Importer
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Importer des contacts</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            Importer des contacts
+          </DialogTitle>
           <DialogDescription>
-            Importez un fichier XLS avec les colonnes : Société, Contacts, Fonction, LinkedIn, Mail, Numéro de téléphone
+            {step === 'upload' && 'Sélectionnez un fichier Excel (.xlsx, .xls) ou CSV.'}
+            {step === 'mapping' && 'Associez les colonnes de votre fichier aux champs de prospection.'}
+            {step === 'preview' && 'Vérifiez les données avant import.'}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
-          <Input type="file" accept=".xls,.xlsx,.csv" onChange={handleFile} />
-          {preview.length > 0 && (
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">{preview.length} contact(s) détecté(s)</p>
-              <ScrollArea className="h-[300px] border rounded-md">
+
+        {/* Step indicators */}
+        <div className="flex items-center gap-2 pb-2">
+          {(['upload', 'mapping', 'preview'] as ImportStep[]).map((s, i) => (
+            <div key={s} className="flex items-center gap-2">
+              <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold ${
+                step === s ? 'bg-primary text-primary-foreground' :
+                (['upload', 'mapping', 'preview'].indexOf(step) > i) ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+              }`}>
+                {i + 1}
+              </div>
+              <span className={`text-xs ${step === s ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                {s === 'upload' ? 'Fichier' : s === 'mapping' ? 'Correspondance' : 'Aperçu'}
+              </span>
+              {i < 2 && <span className="text-muted-foreground">→</span>}
+            </div>
+          ))}
+        </div>
+
+        <div className="flex-1 overflow-auto">
+          {/* STEP 1: Upload */}
+          {step === 'upload' && (
+            <div className="flex flex-col items-center justify-center py-12 gap-4">
+              <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+                <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground mb-4">Glissez votre fichier ou cliquez pour sélectionner</p>
+                <Label htmlFor="prospection-file-upload" className="cursor-pointer">
+                  <Button variant="outline" asChild><span>Choisir un fichier</span></Button>
+                </Label>
+                <Input id="prospection-file-upload" type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFile} />
+              </div>
+              <p className="text-xs text-muted-foreground">Formats acceptés : .xlsx, .xls, .csv</p>
+            </div>
+          )}
+
+          {/* STEP 2: Column Mapping */}
+          {step === 'mapping' && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Badge variant="secondary">{fileName}</Badge>
+                <Badge variant="outline">{rows.length} ligne(s)</Badge>
+              </div>
+
+              <ScrollArea className="h-[350px]">
+                <div className="space-y-3 pr-4">
+                  {headers.map(header => (
+                    <div key={header} className="flex items-center gap-3">
+                      <div className="w-1/3 text-sm font-medium truncate border rounded-md px-3 py-2 bg-muted/50" title={header}>
+                        {header}
+                      </div>
+                      <span className="text-muted-foreground text-xs">→</span>
+                      <Select
+                        value={mapping[header] || '_none'}
+                        onValueChange={(value) => {
+                          setMapping(prev => ({
+                            ...prev,
+                            [header]: value === '_none' ? '' : value as ProspectFieldKey,
+                          }));
+                        }}
+                      >
+                        <SelectTrigger className="w-2/3">
+                          <SelectValue placeholder="Ne pas importer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="_none">— Ne pas importer —</SelectItem>
+                          {PROSPECTION_FIELDS.map(field => {
+                            const alreadyUsed = Object.entries(mapping).some(
+                              ([h, v]) => v === field.key && h !== header
+                            );
+                            return (
+                              <SelectItem key={field.key} value={field.key} disabled={alreadyUsed}>
+                                {field.label}{alreadyUsed ? ' (déjà assigné)' : ''}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+
+              {mappedFields.size === 0 && (
+                <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+                  <span>Associez au moins une colonne pour continuer.</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* STEP 3: Preview */}
+          {step === 'preview' && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Aperçu des {Math.min(10, rows.length)} premières lignes sur {rows.length} au total
+              </p>
+              <ScrollArea className="h-[350px]">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Société</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Fonction</TableHead>
-                      <TableHead>Email</TableHead>
+                      {PROSPECTION_FIELDS.filter(f => mappedFields.has(f.key)).map(f => (
+                        <TableHead key={f.key} className="whitespace-nowrap">{f.label}</TableHead>
+                      ))}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {preview.slice(0, 50).map((c, i) => (
+                    {previewData.map((row, i) => (
                       <TableRow key={i}>
-                        <TableCell className="text-sm">{c.company}</TableCell>
-                        <TableCell className="text-sm">{c.contact_name}</TableCell>
-                        <TableCell className="text-sm">{c.job_title}</TableCell>
-                        <TableCell className="text-sm">{c.email}</TableCell>
+                        {PROSPECTION_FIELDS.filter(f => mappedFields.has(f.key)).map(f => (
+                          <TableCell key={f.key} className="text-sm max-w-[200px] truncate">
+                            {row[f.key] || <span className="text-muted-foreground italic">—</span>}
+                          </TableCell>
+                        ))}
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </ScrollArea>
-              {preview.length > 50 && <p className="text-xs text-muted-foreground mt-1">...et {preview.length - 50} autres</p>}
             </div>
           )}
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
-          <Button onClick={handleConfirm} disabled={preview.length === 0}>
-            Importer {preview.length} contact(s)
-          </Button>
+
+        <DialogFooter className="gap-2">
+          {step !== 'upload' && (
+            <Button variant="outline" onClick={() => setStep(step === 'preview' ? 'mapping' : 'upload')}>
+              Retour
+            </Button>
+          )}
+          {step === 'mapping' && (
+            <Button onClick={() => setStep('preview')} disabled={mappedFields.size === 0}>
+              Suivant
+            </Button>
+          )}
+          {step === 'preview' && (
+            <Button onClick={handleConfirm}>
+              Importer {rows.length} contact(s)
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
