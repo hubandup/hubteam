@@ -632,7 +632,7 @@ function ContactRow({
       <TableCell className="py-3">
         <InlineEditCell value={contact.email || ''} field="email" contactId={contact.id} onSave={onFieldSave} type="email" />
       </TableCell>
-      <TableCell className="py-3">
+      <TableCell className="py-3 whitespace-nowrap min-w-[140px]">
         <InlineEditCell value={contact.phone || ''} field="phone" contactId={contact.id} onSave={onFieldSave} type="tel" />
       </TableCell>
       <TableCell className="py-3">
@@ -1158,18 +1158,18 @@ export default function Prospection() {
                     />
                   </TableHead>
                   {([
-                    ['first_name', 'Prénom'],
-                    ['last_name', 'Nom'],
-                    ['company', 'Société'],
-                    ['job_title', 'Fonction'],
-                    ['linkedin_url', 'LinkedIn'],
-                    ['email', 'Email'],
-                    ['phone', 'Téléphone'],
-                    ['stage', 'Étape'],
-                  ] as [SortKey, string][]).map(([key, label]) => (
-                    <TableHead key={key}>
+                    ['first_name', 'Prénom', ''],
+                    ['last_name', 'Nom', ''],
+                    ['company', 'Société', ''],
+                    ['job_title', 'Fonction', ''],
+                    ['linkedin_url', 'LinkedIn', ''],
+                    ['email', 'Email', ''],
+                    ['phone', 'Téléphone', 'min-w-[140px]'],
+                    ['stage', 'Étape', ''],
+                  ] as [SortKey, string, string][]).map(([key, label, cls]) => (
+                    <TableHead key={key} className={cls}>
                       <button
-                        className="flex items-center gap-1 hover:text-foreground transition-colors font-semibold"
+                        className="flex items-center gap-1 hover:text-foreground transition-colors font-semibold whitespace-nowrap"
                         onClick={() => toggleSort(key)}
                       >
                         {label}
