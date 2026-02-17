@@ -1200,7 +1200,7 @@ export default function Prospection() {
 
         {/* Bulk action bar */}
         {selectedIds.size > 0 && (
-          <div className="flex items-center gap-3 px-3 py-2 bg-primary/10 border border-primary/20 rounded-md mb-2">
+          <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/20 rounded-md mb-2 overflow-x-auto">
             <span className="text-sm font-medium text-foreground">
               {selectedIds.size} sélectionné(s)
             </span>
