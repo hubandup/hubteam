@@ -99,7 +99,7 @@ export function Layout({ children }: LayoutProps) {
               <HeaderUserProfile />
             </div>
           </header>
-          <main id="main-content" className="flex-1 min-h-0 min-w-0 overflow-auto bg-background transition-opacity duration-150">
+          <main id="main-content" className="flex-1 min-h-0 min-w-0 overflow-auto bg-background transition-opacity duration-150" style={{ scrollbarGutter: 'stable' }}>
             <div className="px-5 md:px-8 py-4">
               <Breadcrumbs />
             </div>
