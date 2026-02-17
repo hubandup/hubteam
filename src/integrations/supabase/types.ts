@@ -1730,6 +1730,7 @@ export type Database = {
           created_at: string
           email: string | null
           first_name: string
+          hunter_confidence: string | null
           id: string
           job_title: string | null
           last_name: string
@@ -1747,6 +1748,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           first_name?: string
+          hunter_confidence?: string | null
           id?: string
           job_title?: string | null
           last_name?: string
@@ -1764,6 +1766,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           first_name?: string
+          hunter_confidence?: string | null
           id?: string
           job_title?: string | null
           last_name?: string

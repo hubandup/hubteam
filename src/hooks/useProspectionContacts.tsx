@@ -34,6 +34,7 @@ export interface ProspectionContact {
   notes: string | null;
   owner_id: string | null;
   linked_client_id: string | null;
+  hunter_confidence: 'high' | 'medium' | 'low' | null;
   created_at: string;
   updated_at: string;
 }
