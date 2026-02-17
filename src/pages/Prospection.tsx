@@ -1028,9 +1028,9 @@ export default function Prospection() {
   if (isLoading) return <PageLoader />;
 
   return (
-    <div className="flex flex-col">
-      {/* Header sticky — colle au scroll du <main> du Layout */}
-      <div className="sticky top-0 z-20 bg-background pb-2">
+    <div className={`flex flex-col ${isMobile ? 'h-[calc(100vh-8rem)]' : 'h-[calc(100vh-7.5rem)]'} -mb-8`}>
+      {/* Header fixe en haut de ce conteneur */}
+      <div className="flex-none bg-background pb-2 z-20">
         {/* Title + actions */}
         <div className="pb-2 md:pb-3">
           <div className="flex items-start justify-between">
@@ -1127,8 +1127,8 @@ export default function Prospection() {
         )}
       </div>
 
-      {/* Content */}
-      <div>
+      {/* Content — zone scrollable */}
+      <div className="flex-1 min-h-0 overflow-auto rounded-md">
         {filtered.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">
@@ -1139,7 +1139,7 @@ export default function Prospection() {
             </p>
           </div>
         ) : viewMode === 'kanban' && !isMobile ? (
-          <div className="overflow-x-auto overflow-y-hidden px-1" style={{ height: 'calc(100vh - 240px)' }}>
+          <div className="overflow-x-auto overflow-y-hidden px-1 h-full">
             <KanbanView
               contacts={filtered}
               onContactClick={c => setEditContact(c)}
@@ -1148,15 +1148,15 @@ export default function Prospection() {
           </div>
         ) : (
           <div className="rounded-md border border-border">
-            <Table>
-              <TableHeader className="sticky top-[var(--prospection-header-h,180px)] z-10 bg-muted/90 backdrop-blur-sm shadow-sm">
-                <TableRow className="border-b-2 border-border hover:bg-transparent">
-                  <TableHead className="w-10 pr-0">
+            <table className="w-full caption-bottom text-sm">
+              <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm shadow-sm [&_tr]:border-b">
+                <tr className="border-b-2 border-border hover:bg-transparent">
+                  <th className="h-10 px-4 text-left align-middle text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70 w-10 pr-0">
                     <Checkbox
                       checked={filtered.length > 0 && selectedIds.size === filtered.length}
                       onCheckedChange={toggleSelectAll}
                     />
-                  </TableHead>
+                  </th>
                   {([
                     ['first_name', 'Prénom', ''],
                     ['last_name', 'Nom', ''],
@@ -1167,7 +1167,7 @@ export default function Prospection() {
                     ['phone', 'Téléphone', 'min-w-[140px]'],
                     ['stage', 'Étape', ''],
                   ] as [SortKey, string, string][]).map(([key, label, cls]) => (
-                    <TableHead key={key} className={cls}>
+                    <th key={key} className={`h-10 px-4 text-left align-middle text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70 ${cls}`}>
                       <button
                         className="flex items-center gap-1 hover:text-foreground transition-colors font-semibold whitespace-nowrap"
                         onClick={() => toggleSort(key)}
@@ -1179,12 +1179,12 @@ export default function Prospection() {
                           <ArrowUpDown className="h-3 w-3 opacity-30" />
                         )}
                       </button>
-                    </TableHead>
+                    </th>
                   ))}
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+                  <th className="h-10 px-4"></th>
+                </tr>
+              </thead>
+              <tbody className="[&_tr:last-child]:border-0">
                 {filtered.map((c, idx) => (
                   <ContactRow
                     key={c.id}
@@ -1196,8 +1196,8 @@ export default function Prospection() {
                     isEven={idx % 2 === 0}
                   />
                 ))}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
           </div>
         )}
       </div>
