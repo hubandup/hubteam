@@ -1,0 +1,1 @@
+ALTER TABLE public.prospection_contacts ALTER COLUMN stage SET DEFAULT '';
