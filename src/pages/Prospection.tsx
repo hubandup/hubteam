@@ -48,7 +48,7 @@ function AddContactDialog({ onAdd }: { onAdd: (c: Partial<ProspectionContact>) =
       return;
     }
     const contactName = `${form.first_name} ${form.last_name}`.trim();
-    onAdd({ ...form, contact_name: contactName || form.contact_name });
+    onAdd({ ...form, phone: formatPhoneFR(form.phone), contact_name: contactName || form.contact_name });
     setForm({ company: '', first_name: '', last_name: '', contact_name: '', job_title: '', linkedin_url: '', email: '', phone: '' });
     setOpen(false);
   };
@@ -140,7 +140,7 @@ function EditContactDialog({
   });
 
   const handleSave = () => {
-    onSave({ id: contact.id, ...form });
+    onSave({ id: contact.id, ...form, phone: formatPhoneFR(form.phone) });
     onOpenChange(false);
   };
 
@@ -320,7 +320,11 @@ function ImportDialog({ onImport }: { onImport: (contacts: Partial<ProspectionCo
     const contacts: Partial<ProspectionContact>[] = rows.map(row => {
       const c: Record<string, string> = {};
       Object.entries(mapping).forEach(([header, field]) => {
-        if (field) c[field] = String(row[header] || '').trim();
+        if (field) {
+          let val = String(row[header] || '').trim();
+          if (field === 'phone') val = formatPhoneFR(val);
+          c[field] = val;
+        }
       });
       return c;
     });
@@ -492,6 +496,22 @@ function ImportDialog({ onImport }: { onImport: (contacts: Partial<ProspectionCo
   );
 }
 
+// ─── PHONE FORMATTING ──────────────────────────────────
+function formatPhoneFR(raw: string): string {
+  if (!raw) return '';
+  // Strip all non-digit and non-plus characters
+  let digits = raw.replace(/[^\d+]/g, '');
+  // Normalize: convert 0033 or +33 prefix to 0
+  if (digits.startsWith('+33')) digits = '0' + digits.slice(3);
+  else if (digits.startsWith('0033')) digits = '0' + digits.slice(4);
+  // Must be 10 digits starting with 0 for French formatting
+  if (/^0[1-9]\d{8}$/.test(digits)) {
+    return `+33 (0)${digits[1]} ${digits.slice(2, 4)} ${digits.slice(4, 6)} ${digits.slice(6, 8)} ${digits.slice(8, 10)}`;
+  }
+  // Return original if not a valid French number
+  return raw;
+}
+
 // ─── INLINE EDITABLE CELL ──────────────────────────────
 function InlineEditCell({
   value,
@@ -525,8 +545,9 @@ function InlineEditCell({
 
   const commit = () => {
     setEditing(false);
-    if (editValue !== value) {
-      onSave(contactId, field, editValue);
+    const finalValue = field === 'phone' ? formatPhoneFR(editValue) : editValue;
+    if (finalValue !== value) {
+      onSave(contactId, field, finalValue);
     }
   };
 
@@ -553,7 +574,7 @@ function InlineEditCell({
       onClick={e => { e.stopPropagation(); setEditing(true); }}
       title="Cliquer pour modifier"
     >
-      {value || '—'}
+      {(field === 'phone' ? formatPhoneFR(value) : value) || '—'}
     </span>
   );
 }
@@ -803,7 +824,7 @@ export default function Prospection() {
       'Fonction': c.job_title || '',
       'Linkedin': c.linkedin_url || '',
       'Mail': c.email || '',
-      'Numéro de téléphone': c.phone || '',
+      'Numéro de téléphone': formatPhoneFR(c.phone || ''),
       'Étape': KANBAN_STAGES.find(s => s.value === c.stage)?.label || c.stage,
     }));
     const ws = XLSX.utils.json_to_sheet(data);
