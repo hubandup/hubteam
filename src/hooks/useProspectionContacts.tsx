@@ -93,7 +93,7 @@ export function useCreateProspectionContact() {
           linkedin_url: contact.linkedin_url || '',
           email: contact.email || '',
           phone: contact.phone || '',
-          stage: contact.stage || 'added_linkedin',
+          stage: contact.stage || '',
           notes: contact.notes || '',
           owner_id: contact.owner_id || user?.id,
         })
@@ -163,7 +163,7 @@ export function useBulkCreateProspectionContacts() {
         linkedin_url: c.linkedin_url || '',
         email: c.email || '',
         phone: c.phone || '',
-        stage: c.stage || 'added_linkedin',
+        stage: c.stage || '',
         notes: c.notes || '',
         owner_id: c.owner_id || user?.id,
       }));

@@ -595,7 +595,7 @@ function ContactRow({
   selected: boolean;
   onToggleSelect: (id: string) => void;
 }) {
-  const stageInfo = KANBAN_STAGES.find(s => s.value === contact.stage) || KANBAN_STAGES[0];
+  const stageInfo = contact.stage ? KANBAN_STAGES.find(s => s.value === contact.stage) : null;
 
   return (
     <TableRow className={`hover:bg-muted/50 ${selected ? 'bg-primary/5' : ''}`}>
@@ -631,9 +631,13 @@ function ContactRow({
         <InlineEditCell value={contact.phone || ''} field="phone" contactId={contact.id} onSave={onFieldSave} type="tel" />
       </TableCell>
       <TableCell>
-        <Select value={contact.stage} onValueChange={v => onStageChange(v as ProspectionStage)}>
+        <Select value={contact.stage || ''} onValueChange={v => onStageChange(v as ProspectionStage)}>
           <SelectTrigger className="h-7 w-auto border-0 p-0">
-            <Badge className={`${stageInfo.color} text-xs whitespace-nowrap`}>{stageInfo.label}</Badge>
+            {stageInfo ? (
+              <Badge className={`${stageInfo.color} text-xs whitespace-nowrap`}>{stageInfo.label}</Badge>
+            ) : (
+              <span className="text-xs text-muted-foreground italic">Sélectionner</span>
+            )}
           </SelectTrigger>
           <SelectContent>
             {KANBAN_STAGES.map(s => (
