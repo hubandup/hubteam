@@ -591,33 +591,35 @@ function ContactRow({
   onStageChange,
   selected,
   onToggleSelect,
+  isEven,
 }: {
   contact: ProspectionContact;
   onFieldSave: (id: string, field: string, value: string) => void;
   onStageChange: (stage: ProspectionStage) => void;
   selected: boolean;
   onToggleSelect: (id: string) => void;
+  isEven?: boolean;
 }) {
   const stageInfo = contact.stage ? KANBAN_STAGES.find(s => s.value === contact.stage) : null;
 
   return (
-    <TableRow className={`hover:bg-muted/50 ${selected ? 'bg-primary/5' : ''}`}>
-      <TableCell className="w-10 pr-0">
+    <TableRow className={`border-b border-border/50 transition-colors ${selected ? 'bg-primary/8' : isEven ? 'bg-muted/20' : 'bg-background'} hover:bg-muted/40`}>
+      <TableCell className="w-10 pr-0 py-3">
         <Checkbox checked={selected} onCheckedChange={() => onToggleSelect(contact.id)} />
       </TableCell>
-      <TableCell>
+      <TableCell className="py-3">
         <InlineEditCell value={contact.first_name || ''} field="first_name" contactId={contact.id} onSave={onFieldSave} />
       </TableCell>
-      <TableCell>
+      <TableCell className="py-3">
         <InlineEditCell value={contact.last_name || ''} field="last_name" contactId={contact.id} onSave={onFieldSave} className="font-medium" />
       </TableCell>
-      <TableCell>
+      <TableCell className="py-3">
         <InlineEditCell value={contact.company} field="company" contactId={contact.id} onSave={onFieldSave} />
       </TableCell>
-      <TableCell>
+      <TableCell className="py-3">
         <InlineEditCell value={contact.job_title || ''} field="job_title" contactId={contact.id} onSave={onFieldSave} className="text-muted-foreground" />
       </TableCell>
-      <TableCell>
+      <TableCell className="py-3">
         <div className="flex items-center gap-1">
           <InlineEditCell value={contact.linkedin_url || ''} field="linkedin_url" contactId={contact.id} onSave={onFieldSave} className="text-sm max-w-[120px] truncate" />
           {contact.linkedin_url && (
@@ -627,13 +629,13 @@ function ContactRow({
           )}
         </div>
       </TableCell>
-      <TableCell>
+      <TableCell className="py-3">
         <InlineEditCell value={contact.email || ''} field="email" contactId={contact.id} onSave={onFieldSave} type="email" />
       </TableCell>
-      <TableCell>
+      <TableCell className="py-3">
         <InlineEditCell value={contact.phone || ''} field="phone" contactId={contact.id} onSave={onFieldSave} type="tel" />
       </TableCell>
-      <TableCell>
+      <TableCell className="py-3">
         <Select value={contact.stage || ''} onValueChange={v => onStageChange(v as ProspectionStage)}>
           <SelectTrigger className="h-7 w-auto border-0 p-0">
             {stageInfo ? (
@@ -649,7 +651,7 @@ function ContactRow({
           </SelectContent>
         </Select>
       </TableCell>
-      <TableCell>
+      <TableCell className="py-3">
         {contact.linked_client_id && (
           <Badge variant="outline" className="text-xs">CRM</Badge>
         )}
@@ -1027,78 +1029,105 @@ export default function Prospection() {
 
   return (
     <div className="flex flex-col h-full min-h-0 overflow-hidden">
-      {/* Header */}
-      <div className="flex-shrink-0 pb-2 md:pb-4 bg-background">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-xl md:text-3xl font-bold text-foreground mb-0.5">Prospection</h1>
-            <p className="text-muted-foreground text-xs md:text-base">
-              {contacts.length} contact(s) • {contacts.filter(c => c.stage === 'meeting_planned').length} RDV planifié(s)
-            </p>
+      {/* Sticky header zone */}
+      <div className="flex-shrink-0 bg-background z-10">
+        {/* Title + actions */}
+        <div className="pb-2 md:pb-3">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-xl md:text-3xl font-bold text-foreground mb-0.5">Prospection</h1>
+              <p className="text-muted-foreground text-xs md:text-base">
+                {contacts.length} contact(s) • {contacts.filter(c => c.stage === 'meeting_planned').length} RDV planifié(s)
+              </p>
+            </div>
+            {isMobile && <AddContactDialog onAdd={handleCreate} />}
           </div>
-          {isMobile && <AddContactDialog onAdd={handleCreate} />}
+
+          {!isMobile && (
+            <div className="flex gap-2 mt-3 justify-end">
+              <Button variant="outline" size="sm" className="gap-2" onClick={handleEnrich}>
+                <Sparkles className="h-4 w-4" /> Enrichir
+              </Button>
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => handleExport()}>
+                <Download className="h-4 w-4" /> Exporter
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => setShowEmailDialog(true)}
+                disabled={filtered.length === 0}
+              >
+                <Mail className="h-4 w-4" /> Envoyer un email
+              </Button>
+              <ImportDialog onImport={handleImport} />
+              <div className="flex gap-1 border rounded-md">
+                <Button variant={viewMode === 'table' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('table')}>
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button variant={viewMode === 'kanban' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('kanban')}>
+                  <Columns3 className="h-4 w-4" />
+                </Button>
+              </div>
+              <AddContactDialog onAdd={handleCreate} />
+            </div>
+          )}
         </div>
 
-        {!isMobile && (
-          <div className="flex gap-2 mt-4 justify-end">
-            <Button variant="outline" size="sm" className="gap-2" onClick={handleEnrich}>
-              <Sparkles className="h-4 w-4" /> Enrichir
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2" onClick={() => handleExport()}>
-              <Download className="h-4 w-4" /> Exporter
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={() => setShowEmailDialog(true)}
-              disabled={filtered.length === 0}
-            >
-              <Mail className="h-4 w-4" /> Envoyer un email
-            </Button>
-            <ImportDialog onImport={handleImport} />
-            <div className="flex gap-1 border rounded-md">
-              <Button variant={viewMode === 'table' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('table')}>
-                <List className="h-4 w-4" />
-              </Button>
-              <Button variant={viewMode === 'kanban' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('kanban')}>
-                <Columns3 className="h-4 w-4" />
-              </Button>
+        {/* Filters */}
+        <div className="pb-2 md:pb-3">
+          <div className="flex gap-2 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="pl-8 bg-white dark:bg-background h-10 text-sm"
+              />
             </div>
-            <AddContactDialog onAdd={handleCreate} />
+            {!isMobile && (
+              <Select value={filterStage} onValueChange={setFilterStage}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Toutes les étapes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les étapes</SelectItem>
+                  {KANBAN_STAGES.map(s => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        </div>
+
+        {/* Bulk action bar (sticky too) */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-3 px-3 py-2 bg-primary/10 border border-primary/20 rounded-md mb-2">
+            <span className="text-sm font-medium text-foreground">
+              {selectedIds.size} sélectionné(s)
+            </span>
+            <Button
+              variant="outline" size="sm" className="gap-1.5 h-7"
+              onClick={() => setShowEmailDialog(true)}
+            >
+              <Mail className="h-3.5 w-3.5" /> Email
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5 h-7" onClick={handleBulkExport}>
+              <Download className="h-3.5 w-3.5" /> Exporter
+            </Button>
+            <Button variant="destructive" size="sm" className="gap-1.5 h-7" onClick={handleBulkDelete}>
+              <Trash2 className="h-3.5 w-3.5" /> Supprimer
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 ml-auto" onClick={() => setSelectedIds(new Set())}>
+              <X className="h-3.5 w-3.5" />
+            </Button>
           </div>
         )}
       </div>
 
-      {/* Filters */}
-      <div className="flex-shrink-0 pb-2 md:pb-4 bg-background">
-        <div className="flex gap-2 items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="pl-8 bg-white dark:bg-background h-10 text-sm"
-            />
-          </div>
-          {!isMobile && (
-            <Select value={filterStage} onValueChange={setFilterStage}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Toutes les étapes" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes les étapes</SelectItem>
-                {KANBAN_STAGES.map(s => (
-                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
-      </div>
-
-      {/* Content */}
+      {/* Content — seule zone scrollable */}
       <div className="flex-1 min-w-0 overflow-hidden">
         {filtered.length === 0 ? (
           <div className="text-center py-12">
@@ -1118,33 +1147,10 @@ export default function Prospection() {
             />
           </div>
         ) : (
-          <div className="overflow-auto h-full">
-            {/* Bulk action bar */}
-            {selectedIds.size > 0 && (
-              <div className="flex items-center gap-3 px-3 py-2 bg-primary/10 border-b rounded-t-md">
-                <span className="text-sm font-medium text-foreground">
-                  {selectedIds.size} sélectionné(s)
-                </span>
-                <Button
-                  variant="outline" size="sm" className="gap-1.5 h-7"
-                  onClick={() => setShowEmailDialog(true)}
-                >
-                  <Mail className="h-3.5 w-3.5" /> Email
-                </Button>
-                <Button variant="outline" size="sm" className="gap-1.5 h-7" onClick={handleBulkExport}>
-                  <Download className="h-3.5 w-3.5" /> Exporter
-                </Button>
-                <Button variant="destructive" size="sm" className="gap-1.5 h-7" onClick={handleBulkDelete}>
-                  <Trash2 className="h-3.5 w-3.5" /> Supprimer
-                </Button>
-                <Button variant="ghost" size="sm" className="h-7 ml-auto" onClick={() => setSelectedIds(new Set())}>
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            )}
+          <div className="overflow-auto h-full rounded-md border border-border">
             <Table>
-              <TableHeader>
-                <TableRow>
+              <TableHeader className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm shadow-sm">
+                <TableRow className="border-b-2 border-border hover:bg-transparent">
                   <TableHead className="w-10 pr-0">
                     <Checkbox
                       checked={filtered.length > 0 && selectedIds.size === filtered.length}
@@ -1163,7 +1169,7 @@ export default function Prospection() {
                   ] as [SortKey, string][]).map(([key, label]) => (
                     <TableHead key={key}>
                       <button
-                        className="flex items-center gap-1 hover:text-foreground transition-colors"
+                        className="flex items-center gap-1 hover:text-foreground transition-colors font-semibold"
                         onClick={() => toggleSort(key)}
                       >
                         {label}
@@ -1179,7 +1185,7 @@ export default function Prospection() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map(c => (
+                {filtered.map((c, idx) => (
                   <ContactRow
                     key={c.id}
                     contact={c}
@@ -1187,6 +1193,7 @@ export default function Prospection() {
                     onStageChange={stage => handleStageChange(c.id, stage)}
                     selected={selectedIds.has(c.id)}
                     onToggleSelect={toggleSelect}
+                    isEven={idx % 2 === 0}
                   />
                 ))}
               </TableBody>
