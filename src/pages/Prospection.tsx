@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
   useProspectionContacts,
@@ -585,6 +586,85 @@ function InlineEditCell({
 }
 
 // ─── CONTACT ROW ───────────────────────────────────────
+// ─── ADD TO CRM (ProspectionContact) ───────────────────
+function AddToCrmRowButton({ contact }: { contact: ProspectionContact }) {
+  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleAdd = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setLoading(true);
+    try {
+      const { data: existing } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('email', contact.email || '')
+        .maybeSingle();
+
+      if (existing) {
+        // Link contact to existing client
+        await supabase
+          .from('prospection_contacts')
+          .update({ linked_client_id: existing.id })
+          .eq('id', contact.id);
+        queryClient.invalidateQueries({ queryKey: ['prospection_contacts'] });
+        toast.info('Contact déjà présent dans le CRM — lien créé');
+        return;
+      }
+
+      const { data: newClient, error } = await supabase
+        .from('clients')
+        .insert({
+          company: contact.company || 'N/A',
+          first_name: contact.first_name || contact.contact_name.split(' ')[0] || 'N/A',
+          last_name: contact.last_name || contact.contact_name.split(' ').slice(1).join(' ') || 'N/A',
+          email: contact.email || `no-email-${contact.id}@placeholder.com`,
+          phone: contact.phone || null,
+          kanban_stage: 'prospect',
+          active: true,
+          linkedin_connected: !!contact.linkedin_url,
+        })
+        .select('id')
+        .single();
+
+      if (error) throw error;
+
+      if (newClient) {
+        await supabase
+          .from('prospection_contacts')
+          .update({ linked_client_id: newClient.id })
+          .eq('id', contact.id);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ['prospection_contacts'] });
+      toast.success(`${contact.first_name || contact.contact_name} ajouté au CRM`);
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Erreur lors de l\'ajout au CRM');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (contact.linked_client_id) {
+    return <Badge variant="outline" className="text-xs whitespace-nowrap">✓ Dans le CRM</Badge>;
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-7 gap-1 text-xs px-2 text-primary hover:bg-primary/10"
+      onClick={handleAdd}
+      disabled={loading}
+    >
+      <UserPlus className="h-3.5 w-3.5" />
+      {loading ? '...' : 'CRM'}
+    </Button>
+  );
+}
+
 function ContactRow({
   contact,
   onFieldSave,
@@ -652,9 +732,7 @@ function ContactRow({
         </Select>
       </TableCell>
       <TableCell className="py-3">
-        {contact.linked_client_id && (
-          <Badge variant="outline" className="text-xs">CRM</Badge>
-        )}
+        <AddToCrmRowButton contact={contact} />
       </TableCell>
     </TableRow>
   );
@@ -929,6 +1007,23 @@ export default function Prospection() {
     }
   }, [updateContact]);
 
+  const handleBulkAddToCRM = useCallback(async () => {
+    const toAdd = filtered.filter(c => selectedIds.has(c.id) && !c.linked_client_id);
+    if (toAdd.length === 0) {
+      toast.info('Tous les contacts sélectionnés sont déjà dans le CRM');
+      return;
+    }
+    let added = 0;
+    for (const contact of toAdd) {
+      try {
+        await handleAddToCRM(contact);
+        added++;
+      } catch { /* skip */ }
+    }
+    toast.success(`${added} contact(s) ajouté(s) au CRM`);
+    setSelectedIds(new Set());
+  }, [filtered, selectedIds, handleAddToCRM]);
+
   const handleStageChange = useCallback(async (id: string, stage: ProspectionStage) => {
     try {
       await updateContact.mutateAsync({ id, stage });
@@ -936,6 +1031,7 @@ export default function Prospection() {
       toast.error('Erreur lors du changement d\'étape');
     }
   }, [updateContact]);
+
 
   const handleEnrich = useCallback(() => {
     setShowEnrichDialog(true);
@@ -1116,6 +1212,13 @@ export default function Prospection() {
             </Button>
             <Button variant="outline" size="sm" className="gap-1.5 h-7" onClick={handleBulkExport}>
               <Download className="h-3.5 w-3.5" /> Exporter
+            </Button>
+            <Button
+              variant="outline" size="sm"
+              className="gap-1.5 h-7 text-primary border-primary/30 hover:bg-primary/10"
+              onClick={handleBulkAddToCRM}
+            >
+              <UserPlus className="h-3.5 w-3.5" /> Ajouter au CRM
             </Button>
             <Button variant="destructive" size="sm" className="gap-1.5 h-7" onClick={handleBulkDelete}>
               <Trash2 className="h-3.5 w-3.5" /> Supprimer
