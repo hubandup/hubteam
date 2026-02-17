@@ -27,6 +27,7 @@ import {
   Columns3, List, Trash2, UserPlus, Sparkles, ArrowUpDown, ArrowUp, ArrowDown, X,
   Loader2, CheckCircle2, AlertCircle,
 } from 'lucide-react';
+import { SendEmailDialog } from '@/components/prospection/SendEmailDialog';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -742,6 +743,7 @@ export default function Prospection() {
   const [enrichProgress, setEnrichProgress] = useState({ done: 0, total: 0 });
   const [enrichResults, setEnrichResults] = useState<{ updated: number; skipped: number } | null>(null);
   const [showEnrichDialog, setShowEnrichDialog] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
 
   const toggleSort = useCallback((key: SortKey) => {
     if (sortKey === key) {
@@ -1045,6 +1047,15 @@ export default function Prospection() {
             <Button variant="outline" size="sm" className="gap-2" onClick={() => handleExport()}>
               <Download className="h-4 w-4" /> Exporter
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => setShowEmailDialog(true)}
+              disabled={filtered.length === 0}
+            >
+              <Mail className="h-4 w-4" /> Envoyer un email
+            </Button>
             <ImportDialog onImport={handleImport} />
             <div className="flex gap-1 border rounded-md">
               <Button variant={viewMode === 'table' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('table')}>
@@ -1114,6 +1125,12 @@ export default function Prospection() {
                 <span className="text-sm font-medium text-foreground">
                   {selectedIds.size} sélectionné(s)
                 </span>
+                <Button
+                  variant="outline" size="sm" className="gap-1.5 h-7"
+                  onClick={() => setShowEmailDialog(true)}
+                >
+                  <Mail className="h-3.5 w-3.5" /> Email
+                </Button>
                 <Button variant="outline" size="sm" className="gap-1.5 h-7" onClick={handleBulkExport}>
                   <Download className="h-3.5 w-3.5" /> Exporter
                 </Button>
@@ -1177,6 +1194,17 @@ export default function Prospection() {
           </div>
         )}
       </div>
+
+      {/* Email Dialog */}
+      <SendEmailDialog
+        open={showEmailDialog}
+        onOpenChange={setShowEmailDialog}
+        recipients={
+          selectedIds.size > 0
+            ? filtered.filter(c => selectedIds.has(c.id))
+            : filtered
+        }
+      />
 
       {/* Edit Dialog */}
       {editContact && (
