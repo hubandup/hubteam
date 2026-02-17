@@ -504,6 +504,8 @@ function formatPhoneFR(raw: string): string {
   // Normalize: convert 0033 or +33 prefix to 0
   if (digits.startsWith('+33')) digits = '0' + digits.slice(3);
   else if (digits.startsWith('0033')) digits = '0' + digits.slice(4);
+  // If 9 digits starting with 1-9, assume missing leading 0
+  if (/^[1-9]\d{8}$/.test(digits)) digits = '0' + digits;
   // Must be 10 digits starting with 0 for French formatting
   if (/^0[1-9]\d{8}$/.test(digits)) {
     return `+33 (0)${digits[1]} ${digits.slice(2, 4)} ${digits.slice(4, 6)} ${digits.slice(6, 8)} ${digits.slice(8, 10)}`;
