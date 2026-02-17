@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   useProspectionContacts,
@@ -20,16 +20,18 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  Search, Upload, Download, Plus, MoreHorizontal, Linkedin, Mail, Phone, Building2,
-  Columns3, List, Trash2, UserPlus, Sparkles, ExternalLink, GripVertical,
+  Search, Upload, Download, Plus, Linkedin, Mail, Phone, Building2,
+  Columns3, List, Trash2, UserPlus, Sparkles, ArrowUpDown, ArrowUp, ArrowDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PageLoader } from '@/components/PageLoader';
 import * as XLSX from 'xlsx';
+
+type SortKey = 'company' | 'contact_name' | 'job_title' | 'email' | 'phone' | 'stage';
+type SortDir = 'asc' | 'desc';
 
 // ─── STAGES ────────────────────────────────────────────
 const KANBAN_STAGES = PROSPECTION_STAGES;
@@ -298,39 +300,112 @@ function ImportDialog({ onImport }: { onImport: (contacts: Partial<ProspectionCo
   );
 }
 
+// ─── INLINE EDITABLE CELL ──────────────────────────────
+function InlineEditCell({
+  value,
+  field,
+  contactId,
+  onSave,
+  type = 'text',
+  className = '',
+}: {
+  value: string;
+  field: string;
+  contactId: string;
+  onSave: (id: string, field: string, value: string) => void;
+  type?: string;
+  className?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  useEffect(() => {
+    setEditValue(value);
+  }, [value]);
+
+  const commit = () => {
+    setEditing(false);
+    if (editValue !== value) {
+      onSave(contactId, field, editValue);
+    }
+  };
+
+  if (editing) {
+    return (
+      <Input
+        ref={inputRef}
+        type={type}
+        value={editValue}
+        onChange={e => setEditValue(e.target.value)}
+        onBlur={commit}
+        onKeyDown={e => {
+          if (e.key === 'Enter') commit();
+          if (e.key === 'Escape') { setEditValue(value); setEditing(false); }
+        }}
+        className="h-7 text-sm px-1 min-w-[80px]"
+      />
+    );
+  }
+
+  return (
+    <span
+      className={`cursor-text hover:bg-muted/60 rounded px-1 py-0.5 inline-block min-w-[40px] ${className}`}
+      onClick={e => { e.stopPropagation(); setEditing(true); }}
+      title="Cliquer pour modifier"
+    >
+      {value || '—'}
+    </span>
+  );
+}
+
 // ─── CONTACT ROW ───────────────────────────────────────
 function ContactRow({
   contact,
-  onClick,
+  onFieldSave,
   onStageChange,
 }: {
   contact: ProspectionContact;
-  onClick: () => void;
+  onFieldSave: (id: string, field: string, value: string) => void;
   onStageChange: (stage: ProspectionStage) => void;
 }) {
   const stageInfo = KANBAN_STAGES.find(s => s.value === contact.stage) || KANBAN_STAGES[0];
 
   return (
-    <TableRow className="cursor-pointer hover:bg-muted/50" onClick={onClick}>
-      <TableCell className="font-medium">{contact.company || '—'}</TableCell>
-      <TableCell>{contact.contact_name || '—'}</TableCell>
-      <TableCell className="text-muted-foreground text-sm">{contact.job_title || '—'}</TableCell>
+    <TableRow className="hover:bg-muted/50">
       <TableCell>
-        {contact.linkedin_url ? (
-          <a
-            href={contact.linkedin_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
-            onClick={e => e.stopPropagation()}
-          >
-            <Linkedin className="h-4 w-4" />
-          </a>
-        ) : <span className="text-muted-foreground">—</span>}
+        <InlineEditCell value={contact.company} field="company" contactId={contact.id} onSave={onFieldSave} className="font-medium" />
       </TableCell>
-      <TableCell className="text-sm">{contact.email || '—'}</TableCell>
-      <TableCell className="text-sm">{contact.phone || '—'}</TableCell>
-      <TableCell onClick={e => e.stopPropagation()}>
+      <TableCell>
+        <InlineEditCell value={contact.contact_name} field="contact_name" contactId={contact.id} onSave={onFieldSave} />
+      </TableCell>
+      <TableCell>
+        <InlineEditCell value={contact.job_title || ''} field="job_title" contactId={contact.id} onSave={onFieldSave} className="text-muted-foreground" />
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-1">
+          <InlineEditCell value={contact.linkedin_url || ''} field="linkedin_url" contactId={contact.id} onSave={onFieldSave} className="text-sm max-w-[120px] truncate" />
+          {contact.linkedin_url && (
+            <a href={contact.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 flex-shrink-0">
+              <Linkedin className="h-3.5 w-3.5" />
+            </a>
+          )}
+        </div>
+      </TableCell>
+      <TableCell>
+        <InlineEditCell value={contact.email || ''} field="email" contactId={contact.id} onSave={onFieldSave} type="email" />
+      </TableCell>
+      <TableCell>
+        <InlineEditCell value={contact.phone || ''} field="phone" contactId={contact.id} onSave={onFieldSave} type="tel" />
+      </TableCell>
+      <TableCell>
         <Select value={contact.stage} onValueChange={v => onStageChange(v as ProspectionStage)}>
           <SelectTrigger className="h-7 w-auto border-0 p-0">
             <Badge className={`${stageInfo.color} text-xs whitespace-nowrap`}>{stageInfo.label}</Badge>
@@ -429,6 +504,17 @@ export default function Prospection() {
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
   const [filterStage, setFilterStage] = useState<string>('all');
   const [editContact, setEditContact] = useState<ProspectionContact | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+
+  const toggleSort = useCallback((key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  }, [sortKey]);
 
   const filtered = useMemo(() => {
     let result = contacts;
@@ -447,8 +533,17 @@ export default function Prospection() {
       result = result.filter(c => c.stage === filterStage);
     }
 
+    if (sortKey) {
+      result = [...result].sort((a, b) => {
+        const aVal = (a[sortKey] || '').toLowerCase();
+        const bVal = (b[sortKey] || '').toLowerCase();
+        const cmp = aVal.localeCompare(bVal);
+        return sortDir === 'asc' ? cmp : -cmp;
+      });
+    }
+
     return result;
-  }, [contacts, search, filterStage]);
+  }, [contacts, search, filterStage, sortKey, sortDir]);
 
   const handleCreate = useCallback(async (c: Partial<ProspectionContact>) => {
     try {
@@ -463,6 +558,14 @@ export default function Prospection() {
     try {
       await updateContact.mutateAsync(c);
       toast.success('Contact mis à jour');
+    } catch {
+      toast.error('Erreur lors de la mise à jour');
+    }
+  }, [updateContact]);
+
+  const handleFieldSave = useCallback(async (id: string, field: string, value: string) => {
+    try {
+      await updateContact.mutateAsync({ id, [field]: value });
     } catch {
       toast.error('Erreur lors de la mise à jour');
     }
@@ -651,13 +754,29 @@ export default function Prospection() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Société</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Fonction</TableHead>
-                  <TableHead>LinkedIn</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Téléphone</TableHead>
-                  <TableHead>Étape</TableHead>
+                  {([
+                    ['company', 'Société'],
+                    ['contact_name', 'Contact'],
+                    ['job_title', 'Fonction'],
+                    ['linkedin_url', 'LinkedIn'],
+                    ['email', 'Email'],
+                    ['phone', 'Téléphone'],
+                    ['stage', 'Étape'],
+                  ] as [SortKey, string][]).map(([key, label]) => (
+                    <TableHead key={key}>
+                      <button
+                        className="flex items-center gap-1 hover:text-foreground transition-colors"
+                        onClick={() => toggleSort(key)}
+                      >
+                        {label}
+                        {sortKey === key ? (
+                          sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 opacity-30" />
+                        )}
+                      </button>
+                    </TableHead>
+                  ))}
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -666,7 +785,7 @@ export default function Prospection() {
                   <ContactRow
                     key={c.id}
                     contact={c}
-                    onClick={() => setEditContact(c)}
+                    onFieldSave={handleFieldSave}
                     onStageChange={stage => handleStageChange(c.id, stage)}
                   />
                 ))}
