@@ -21,9 +21,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Search, Upload, Download, Plus, Linkedin, Mail, Phone, Building2,
-  Columns3, List, Trash2, UserPlus, Sparkles, ArrowUpDown, ArrowUp, ArrowDown,
+  Columns3, List, Trash2, UserPlus, Sparkles, ArrowUpDown, ArrowUp, ArrowDown, X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -543,15 +544,22 @@ function ContactRow({
   contact,
   onFieldSave,
   onStageChange,
+  selected,
+  onToggleSelect,
 }: {
   contact: ProspectionContact;
   onFieldSave: (id: string, field: string, value: string) => void;
   onStageChange: (stage: ProspectionStage) => void;
+  selected: boolean;
+  onToggleSelect: (id: string) => void;
 }) {
   const stageInfo = KANBAN_STAGES.find(s => s.value === contact.stage) || KANBAN_STAGES[0];
 
   return (
-    <TableRow className="hover:bg-muted/50">
+    <TableRow className={`hover:bg-muted/50 ${selected ? 'bg-primary/5' : ''}`}>
+      <TableCell className="w-10 pr-0">
+        <Checkbox checked={selected} onCheckedChange={() => onToggleSelect(contact.id)} />
+      </TableCell>
       <TableCell>
         <InlineEditCell value={contact.company} field="company" contactId={contact.id} onSave={onFieldSave} className="font-medium" />
       </TableCell>
@@ -678,6 +686,7 @@ export default function Prospection() {
   const [editContact, setEditContact] = useState<ProspectionContact | null>(null);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const toggleSort = useCallback((key: SortKey) => {
     if (sortKey === key) {
@@ -761,8 +770,9 @@ export default function Prospection() {
     }
   }, [bulkCreate]);
 
-  const handleExport = useCallback(() => {
-    const data = filtered.map(c => ({
+  const handleExport = useCallback((contactsToExport?: ProspectionContact[]) => {
+    const source = contactsToExport || filtered;
+    const data = source.map(c => ({
       'Société': c.company,
       'Contacts': c.contact_name,
       'Fonction': c.job_title || '',
@@ -775,8 +785,42 @@ export default function Prospection() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Prospection');
     XLSX.writeFile(wb, 'prospection-contacts.xlsx');
-    toast.success('Export téléchargé');
+    toast.success(`${source.length} contact(s) exporté(s)`);
   }, [filtered]);
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    setSelectedIds(prev => {
+      if (prev.size === filtered.length) return new Set();
+      return new Set(filtered.map(c => c.id));
+    });
+  }, [filtered]);
+
+  const handleBulkExport = useCallback(() => {
+    const selected = filtered.filter(c => selectedIds.has(c.id));
+    handleExport(selected);
+    setSelectedIds(new Set());
+  }, [filtered, selectedIds, handleExport]);
+
+  const handleBulkDelete = useCallback(async () => {
+    const ids = Array.from(selectedIds);
+    let deleted = 0;
+    for (const id of ids) {
+      try {
+        await deleteContact.mutateAsync(id);
+        deleted++;
+      } catch { /* skip */ }
+    }
+    setSelectedIds(new Set());
+    toast.success(`${deleted} contact(s) supprimé(s)`);
+  }, [selectedIds, deleteContact]);
 
   const handleAddToCRM = useCallback(async (contact: ProspectionContact) => {
     try {
@@ -857,7 +901,7 @@ export default function Prospection() {
             <Button variant="outline" size="sm" className="gap-2" onClick={handleEnrich}>
               <Sparkles className="h-4 w-4" /> Enrichir
             </Button>
-            <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}>
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => handleExport()}>
               <Download className="h-4 w-4" /> Exporter
             </Button>
             <ImportDialog onImport={handleImport} />
@@ -923,9 +967,32 @@ export default function Prospection() {
           </div>
         ) : (
           <div className="overflow-auto h-full">
+            {/* Bulk action bar */}
+            {selectedIds.size > 0 && (
+              <div className="flex items-center gap-3 px-3 py-2 bg-primary/10 border-b rounded-t-md">
+                <span className="text-sm font-medium text-foreground">
+                  {selectedIds.size} sélectionné(s)
+                </span>
+                <Button variant="outline" size="sm" className="gap-1.5 h-7" onClick={handleBulkExport}>
+                  <Download className="h-3.5 w-3.5" /> Exporter
+                </Button>
+                <Button variant="destructive" size="sm" className="gap-1.5 h-7" onClick={handleBulkDelete}>
+                  <Trash2 className="h-3.5 w-3.5" /> Supprimer
+                </Button>
+                <Button variant="ghost" size="sm" className="h-7 ml-auto" onClick={() => setSelectedIds(new Set())}>
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )}
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10 pr-0">
+                    <Checkbox
+                      checked={filtered.length > 0 && selectedIds.size === filtered.length}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
                   {([
                     ['company', 'Société'],
                     ['contact_name', 'Contact'],
@@ -959,6 +1026,8 @@ export default function Prospection() {
                     contact={c}
                     onFieldSave={handleFieldSave}
                     onStageChange={stage => handleStageChange(c.id, stage)}
+                    selected={selectedIds.has(c.id)}
+                    onToggleSelect={toggleSelect}
                   />
                 ))}
               </TableBody>
