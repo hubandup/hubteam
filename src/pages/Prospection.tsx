@@ -1028,9 +1028,9 @@ export default function Prospection() {
   if (isLoading) return <PageLoader />;
 
   return (
-    <div className="flex flex-col h-full min-h-0 overflow-hidden">
-      {/* Sticky header zone */}
-      <div className="flex-shrink-0 bg-background z-10">
+    <div className="flex flex-col">
+      {/* Header sticky — colle au scroll du <main> du Layout */}
+      <div className="sticky top-0 z-20 bg-background pb-2">
         {/* Title + actions */}
         <div className="pb-2 md:pb-3">
           <div className="flex items-start justify-between">
@@ -1102,7 +1102,7 @@ export default function Prospection() {
           </div>
         </div>
 
-        {/* Bulk action bar (sticky too) */}
+        {/* Bulk action bar */}
         {selectedIds.size > 0 && (
           <div className="flex items-center gap-3 px-3 py-2 bg-primary/10 border border-primary/20 rounded-md mb-2">
             <span className="text-sm font-medium text-foreground">
@@ -1127,8 +1127,8 @@ export default function Prospection() {
         )}
       </div>
 
-      {/* Content — seule zone scrollable */}
-      <div className="flex-1 min-w-0 overflow-hidden">
+      {/* Content */}
+      <div>
         {filtered.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">
@@ -1139,7 +1139,7 @@ export default function Prospection() {
             </p>
           </div>
         ) : viewMode === 'kanban' && !isMobile ? (
-          <div className="h-full overflow-x-auto overflow-y-hidden px-1">
+          <div className="overflow-x-auto overflow-y-hidden px-1" style={{ height: 'calc(100vh - 240px)' }}>
             <KanbanView
               contacts={filtered}
               onContactClick={c => setEditContact(c)}
@@ -1147,9 +1147,9 @@ export default function Prospection() {
             />
           </div>
         ) : (
-          <div className="overflow-auto h-full rounded-md border border-border">
+          <div className="rounded-md border border-border">
             <Table>
-              <TableHeader className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm shadow-sm">
+              <TableHeader className="sticky top-[var(--prospection-header-h,180px)] z-10 bg-muted/90 backdrop-blur-sm shadow-sm">
                 <TableRow className="border-b-2 border-border hover:bg-transparent">
                   <TableHead className="w-10 pr-0">
                     <Checkbox
