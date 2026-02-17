@@ -1723,6 +1723,62 @@ export type Database = {
         }
         Relationships: []
       }
+      prospection_contacts: {
+        Row: {
+          company: string
+          contact_name: string
+          created_at: string
+          email: string | null
+          id: string
+          job_title: string | null
+          linked_client_id: string | null
+          linkedin_url: string | null
+          notes: string | null
+          owner_id: string | null
+          phone: string | null
+          stage: string
+          updated_at: string
+        }
+        Insert: {
+          company?: string
+          contact_name?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          job_title?: string | null
+          linked_client_id?: string | null
+          linkedin_url?: string | null
+          notes?: string | null
+          owner_id?: string | null
+          phone?: string | null
+          stage?: string
+          updated_at?: string
+        }
+        Update: {
+          company?: string
+          contact_name?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          job_title?: string | null
+          linked_client_id?: string | null
+          linkedin_url?: string | null
+          notes?: string | null
+          owner_id?: string | null
+          phone?: string | null
+          stage?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospection_contacts_linked_client_id_fkey"
+            columns: ["linked_client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prospection_email_logs: {
         Row: {
           created_at: string | null
