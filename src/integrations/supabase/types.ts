@@ -1729,6 +1729,7 @@ export type Database = {
           contact_name: string
           created_at: string
           email: string | null
+          email_verified: boolean | null
           first_name: string
           hunter_confidence: string | null
           id: string
@@ -1747,6 +1748,7 @@ export type Database = {
           contact_name?: string
           created_at?: string
           email?: string | null
+          email_verified?: boolean | null
           first_name?: string
           hunter_confidence?: string | null
           id?: string
@@ -1765,6 +1767,7 @@ export type Database = {
           contact_name?: string
           created_at?: string
           email?: string | null
+          email_verified?: boolean | null
           first_name?: string
           hunter_confidence?: string | null
           id?: string

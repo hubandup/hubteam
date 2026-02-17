@@ -1,0 +1,1 @@
+ALTER TABLE public.prospection_contacts ADD COLUMN IF NOT EXISTS email_verified boolean DEFAULT NULL;

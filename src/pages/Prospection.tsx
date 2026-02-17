@@ -750,6 +750,27 @@ function ContactRow({
         )}
       </TableCell>
       <TableCell className="py-3">
+        {contact.email_verified === true ? (
+          <Badge
+            variant="outline"
+            className="text-[10px] px-1.5 py-0.5 whitespace-nowrap border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400"
+          >
+            <CheckCircle2 className="h-3 w-3 mr-1 inline-block" />
+            Vérifié
+          </Badge>
+        ) : contact.email_verified === false ? (
+          <Badge
+            variant="outline"
+            className="text-[10px] px-1.5 py-0.5 whitespace-nowrap border-destructive/50 bg-destructive/10 text-destructive"
+          >
+            <AlertCircle className="h-3 w-3 mr-1 inline-block" />
+            Invalide
+          </Badge>
+        ) : (
+          <span className="text-muted-foreground text-xs">—</span>
+        )}
+      </TableCell>
+      <TableCell className="py-3">
         <AddToCrmRowButton contact={contact} />
       </TableCell>
     </TableRow>
@@ -1106,13 +1127,15 @@ export default function Prospection() {
           const original = chunk.find(c => c.id === result.id);
           if (!original) continue;
 
-          const updates: Record<string, string> = {};
+          const updates: Record<string, string | boolean> = {};
           if (result.email && !original.email) updates.email = result.email;
           if (result.phone && !original.phone) updates.phone = result.phone;
           if (result.linkedin_url && !original.linkedin_url) updates.linkedin_url = result.linkedin_url;
           if (result.job_title && !original.job_title) updates.job_title = result.job_title;
           // Always store Hunter confidence when we get a result
           if (result.confidence) updates.hunter_confidence = result.confidence;
+          // Store email verification status
+          if (result.email_verified !== undefined) updates.email_verified = result.email_verified;
 
           if (Object.keys(updates).length > 0) {
             try {
@@ -1306,6 +1329,9 @@ export default function Prospection() {
                   ))}
                   <th className="h-10 px-4 text-left align-middle text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70 whitespace-nowrap">
                     Fiabilité
+                  </th>
+                  <th className="h-10 px-4 text-left align-middle text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70 whitespace-nowrap">
+                    Vérifié
                   </th>
                   <th className="h-10 px-4"></th>
                 </tr>
