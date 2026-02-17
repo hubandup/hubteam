@@ -31,7 +31,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { PageLoader } from '@/components/PageLoader';
 import * as XLSX from 'xlsx';
 
-type SortKey = 'company' | 'contact_name' | 'job_title' | 'email' | 'phone' | 'stage';
+type SortKey = 'company' | 'first_name' | 'last_name' | 'contact_name' | 'job_title' | 'email' | 'phone' | 'stage';
 type SortDir = 'asc' | 'desc';
 
 // ─── STAGES ────────────────────────────────────────────
@@ -40,15 +40,16 @@ const KANBAN_STAGES = PROSPECTION_STAGES;
 // ─── ADD CONTACT DIALOG ────────────────────────────────
 function AddContactDialog({ onAdd }: { onAdd: (c: Partial<ProspectionContact>) => void }) {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ company: '', contact_name: '', job_title: '', linkedin_url: '', email: '', phone: '' });
+  const [form, setForm] = useState({ company: '', first_name: '', last_name: '', contact_name: '', job_title: '', linkedin_url: '', email: '', phone: '' });
 
   const handleSubmit = () => {
-    if (!form.contact_name.trim() && !form.company.trim()) {
+    if (!form.first_name.trim() && !form.last_name.trim() && !form.company.trim()) {
       toast.error('Renseignez au moins un nom ou une société');
       return;
     }
-    onAdd(form);
-    setForm({ company: '', contact_name: '', job_title: '', linkedin_url: '', email: '', phone: '' });
+    const contactName = `${form.first_name} ${form.last_name}`.trim();
+    onAdd({ ...form, contact_name: contactName || form.contact_name });
+    setForm({ company: '', first_name: '', last_name: '', contact_name: '', job_title: '', linkedin_url: '', email: '', phone: '' });
     setOpen(false);
   };
 
@@ -67,17 +68,23 @@ function AddContactDialog({ onAdd }: { onAdd: (c: Partial<ProspectionContact>) =
         <div className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
+              <Label>Prénom</Label>
+              <Input value={form.first_name} onChange={e => setForm(f => ({ ...f, first_name: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Nom</Label>
+              <Input value={form.last_name} onChange={e => setForm(f => ({ ...f, last_name: e.target.value }))} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
               <Label>Société</Label>
               <Input value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} />
             </div>
             <div>
-              <Label>Contact</Label>
-              <Input value={form.contact_name} onChange={e => setForm(f => ({ ...f, contact_name: e.target.value }))} />
+              <Label>Fonction</Label>
+              <Input value={form.job_title} onChange={e => setForm(f => ({ ...f, job_title: e.target.value }))} />
             </div>
-          </div>
-          <div>
-            <Label>Fonction</Label>
-            <Input value={form.job_title} onChange={e => setForm(f => ({ ...f, job_title: e.target.value }))} />
           </div>
           <div>
             <Label>LinkedIn</Label>
@@ -121,6 +128,8 @@ function EditContactDialog({
 }) {
   const [form, setForm] = useState({
     company: contact.company,
+    first_name: contact.first_name || '',
+    last_name: contact.last_name || '',
     contact_name: contact.contact_name,
     job_title: contact.job_title || '',
     linkedin_url: contact.linkedin_url || '',
@@ -144,17 +153,23 @@ function EditContactDialog({
         <div className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
+              <Label>Prénom</Label>
+              <Input value={form.first_name} onChange={e => setForm(f => ({ ...f, first_name: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Nom</Label>
+              <Input value={form.last_name} onChange={e => setForm(f => ({ ...f, last_name: e.target.value }))} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
               <Label>Société</Label>
               <Input value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} />
             </div>
             <div>
-              <Label>Contact</Label>
-              <Input value={form.contact_name} onChange={e => setForm(f => ({ ...f, contact_name: e.target.value }))} />
+              <Label>Fonction</Label>
+              <Input value={form.job_title} onChange={e => setForm(f => ({ ...f, job_title: e.target.value }))} />
             </div>
-          </div>
-          <div>
-            <Label>Fonction</Label>
-            <Input value={form.job_title} onChange={e => setForm(f => ({ ...f, job_title: e.target.value }))} />
           </div>
           <div>
             <Label>LinkedIn</Label>
@@ -210,8 +225,10 @@ function EditContactDialog({
 
 // ─── IMPORT DIALOG WITH COLUMN MAPPING ─────────────────
 const PROSPECTION_FIELDS = [
+  { key: 'first_name', label: 'Prénom', required: false },
+  { key: 'last_name', label: 'Nom', required: false },
   { key: 'company', label: 'Société', required: false },
-  { key: 'contact_name', label: 'Contact', required: false },
+  { key: 'contact_name', label: 'Contact (Prénom Nom)', required: false },
   { key: 'job_title', label: 'Fonction', required: false },
   { key: 'linkedin_url', label: 'LinkedIn', required: false },
   { key: 'email', label: 'Email', required: false },
@@ -267,8 +284,10 @@ function ImportDialog({ onImport }: { onImport: (contacts: Partial<ProspectionCo
             const fl = f.label.toLowerCase();
             return norm === fl || norm.includes(fl) || fl.includes(norm) ||
               norm === f.key.toLowerCase() ||
+              (f.key === 'first_name' && (norm.includes('prénom') || norm.includes('prenom') || norm === 'first name' || norm === 'firstname')) ||
+              (f.key === 'last_name' && (norm === 'nom' || norm === 'last name' || norm === 'lastname' || norm === 'nom de famille')) ||
               (f.key === 'company' && (norm.includes('société') || norm.includes('societe') || norm.includes('entreprise') || norm.includes('company'))) ||
-              (f.key === 'contact_name' && (norm.includes('contact') || norm.includes('nom') || norm.includes('name'))) ||
+              (f.key === 'contact_name' && (norm.includes('contact') || norm.includes('nom complet') || norm.includes('full name'))) ||
               (f.key === 'job_title' && (norm.includes('fonction') || norm.includes('poste') || norm.includes('title') || norm.includes('job'))) ||
               (f.key === 'linkedin_url' && (norm.includes('linkedin'))) ||
               (f.key === 'email' && (norm.includes('email') || norm.includes('e-mail') || norm.includes('mail'))) ||
@@ -561,10 +580,13 @@ function ContactRow({
         <Checkbox checked={selected} onCheckedChange={() => onToggleSelect(contact.id)} />
       </TableCell>
       <TableCell>
-        <InlineEditCell value={contact.company} field="company" contactId={contact.id} onSave={onFieldSave} className="font-medium" />
+        <InlineEditCell value={contact.first_name || ''} field="first_name" contactId={contact.id} onSave={onFieldSave} />
       </TableCell>
       <TableCell>
-        <InlineEditCell value={contact.contact_name} field="contact_name" contactId={contact.id} onSave={onFieldSave} />
+        <InlineEditCell value={contact.last_name || ''} field="last_name" contactId={contact.id} onSave={onFieldSave} className="font-medium" />
+      </TableCell>
+      <TableCell>
+        <InlineEditCell value={contact.company} field="company" contactId={contact.id} onSave={onFieldSave} />
       </TableCell>
       <TableCell>
         <InlineEditCell value={contact.job_title || ''} field="job_title" contactId={contact.id} onSave={onFieldSave} className="text-muted-foreground" />
@@ -612,7 +634,7 @@ function KanbanCard({ contact, onClick }: { contact: ProspectionContact; onClick
     <Card className="cursor-pointer hover:shadow-md transition-shadow mb-2" onClick={onClick}>
       <CardContent className="p-3 space-y-1">
         <div className="flex items-center justify-between">
-          <p className="font-medium text-sm truncate">{contact.contact_name || '—'}</p>
+          <p className="font-medium text-sm truncate">{[contact.first_name, contact.last_name].filter(Boolean).join(' ') || contact.contact_name || '—'}</p>
           {contact.linked_client_id && <Badge variant="outline" className="text-[10px] px-1">CRM</Badge>}
         </div>
         {contact.company && (
@@ -704,6 +726,8 @@ export default function Prospection() {
       const q = search.toLowerCase();
       result = result.filter(c =>
         c.company?.toLowerCase().includes(q) ||
+        c.first_name?.toLowerCase().includes(q) ||
+        c.last_name?.toLowerCase().includes(q) ||
         c.contact_name?.toLowerCase().includes(q) ||
         c.email?.toLowerCase().includes(q) ||
         c.job_title?.toLowerCase().includes(q)
@@ -773,8 +797,9 @@ export default function Prospection() {
   const handleExport = useCallback((contactsToExport?: ProspectionContact[]) => {
     const source = contactsToExport || filtered;
     const data = source.map(c => ({
+      'Prénom': c.first_name || '',
+      'Nom': c.last_name || '',
       'Société': c.company,
-      'Contacts': c.contact_name,
       'Fonction': c.job_title || '',
       'Linkedin': c.linkedin_url || '',
       'Mail': c.email || '',
@@ -824,10 +849,9 @@ export default function Prospection() {
 
   const handleAddToCRM = useCallback(async (contact: ProspectionContact) => {
     try {
-      // Split contact_name into first/last
-      const parts = contact.contact_name.trim().split(' ');
-      const firstName = parts[0] || '';
-      const lastName = parts.slice(1).join(' ') || '';
+      // Use first_name/last_name if available, fallback to splitting contact_name
+      const firstName = contact.first_name || contact.contact_name.trim().split(' ')[0] || '';
+      const lastName = contact.last_name || contact.contact_name.trim().split(' ').slice(1).join(' ') || '';
 
       // Check for duplicate by email
       if (contact.email) {
@@ -994,8 +1018,9 @@ export default function Prospection() {
                     />
                   </TableHead>
                   {([
+                    ['first_name', 'Prénom'],
+                    ['last_name', 'Nom'],
                     ['company', 'Société'],
-                    ['contact_name', 'Contact'],
                     ['job_title', 'Fonction'],
                     ['linkedin_url', 'LinkedIn'],
                     ['email', 'Email'],

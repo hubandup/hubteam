@@ -24,6 +24,8 @@ export interface ProspectionContact {
   id: string;
   company: string;
   contact_name: string;
+  first_name: string;
+  last_name: string;
   job_title: string | null;
   linkedin_url: string | null;
   email: string | null;
@@ -85,6 +87,8 @@ export function useCreateProspectionContact() {
         .insert({
           company: contact.company || '',
           contact_name: contact.contact_name || '',
+          first_name: contact.first_name || '',
+          last_name: contact.last_name || '',
           job_title: contact.job_title || '',
           linkedin_url: contact.linkedin_url || '',
           email: contact.email || '',
@@ -153,6 +157,8 @@ export function useBulkCreateProspectionContacts() {
       const rows = contacts.map(c => ({
         company: c.company || '',
         contact_name: c.contact_name || '',
+        first_name: c.first_name || '',
+        last_name: c.last_name || '',
         job_title: c.job_title || '',
         linkedin_url: c.linkedin_url || '',
         email: c.email || '',

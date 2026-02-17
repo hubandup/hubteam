@@ -1729,8 +1729,10 @@ export type Database = {
           contact_name: string
           created_at: string
           email: string | null
+          first_name: string
           id: string
           job_title: string | null
+          last_name: string
           linked_client_id: string | null
           linkedin_url: string | null
           notes: string | null
@@ -1744,8 +1746,10 @@ export type Database = {
           contact_name?: string
           created_at?: string
           email?: string | null
+          first_name?: string
           id?: string
           job_title?: string | null
+          last_name?: string
           linked_client_id?: string | null
           linkedin_url?: string | null
           notes?: string | null
@@ -1759,8 +1763,10 @@ export type Database = {
           contact_name?: string
           created_at?: string
           email?: string | null
+          first_name?: string
           id?: string
           job_title?: string | null
+          last_name?: string
           linked_client_id?: string | null
           linkedin_url?: string | null
           notes?: string | null
