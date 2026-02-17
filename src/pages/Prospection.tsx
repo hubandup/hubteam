@@ -25,7 +25,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Search, Upload, Download, Plus, Linkedin, Mail, Phone, Building2,
   Columns3, List, Trash2, UserPlus, Sparkles, ArrowUpDown, ArrowUp, ArrowDown, X,
+  Loader2, CheckCircle2, AlertCircle,
 } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PageLoader } from '@/components/PageLoader';
@@ -736,6 +738,10 @@ export default function Prospection() {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [enriching, setEnriching] = useState(false);
+  const [enrichProgress, setEnrichProgress] = useState({ done: 0, total: 0 });
+  const [enrichResults, setEnrichResults] = useState<{ updated: number; skipped: number } | null>(null);
+  const [showEnrichDialog, setShowEnrichDialog] = useState(false);
 
   const toggleSort = useCallback((key: SortKey) => {
     if (sortKey === key) {
@@ -928,8 +934,92 @@ export default function Prospection() {
   }, [updateContact]);
 
   const handleEnrich = useCallback(() => {
-    toast.info('Enrichissement automatique — Bientôt disponible ! Nous recommandons Dropcontact pour trouver les emails et profils LinkedIn.', { duration: 5000 });
+    setShowEnrichDialog(true);
+    setEnrichResults(null);
   }, []);
+
+  const runEnrichment = useCallback(async () => {
+    // Determine which contacts to enrich: selected or all visible
+    const toEnrich = selectedIds.size > 0
+      ? filtered.filter(c => selectedIds.has(c.id))
+      : filtered;
+
+    if (toEnrich.length === 0) {
+      toast.error('Aucun contact à enrichir');
+      return;
+    }
+
+    setEnriching(true);
+    setEnrichProgress({ done: 0, total: toEnrich.length });
+
+    try {
+      // Process in chunks of 10 for the edge function
+      const CHUNK = 10;
+      let totalUpdated = 0;
+      let totalSkipped = 0;
+
+      for (let i = 0; i < toEnrich.length; i += CHUNK) {
+        const chunk = toEnrich.slice(i, i + CHUNK);
+        const contactsPayload = chunk.map(c => ({
+          id: c.id,
+          first_name: c.first_name || '',
+          last_name: c.last_name || '',
+          company: c.company || '',
+          job_title: c.job_title || '',
+          email: c.email || '',
+          phone: c.phone || '',
+          linkedin_url: c.linkedin_url || '',
+        }));
+
+        const { data, error } = await supabase.functions.invoke('enrich-contacts', {
+          body: { contacts: contactsPayload },
+        });
+
+        if (error) {
+          console.error('Enrichment error:', error);
+          toast.error('Erreur lors de l\'enrichissement');
+          break;
+        }
+
+        const results = data?.results || [];
+
+        // Update contacts with enriched data (only fill empty fields)
+        for (const result of results) {
+          const original = chunk.find(c => c.id === result.id);
+          if (!original) continue;
+
+          const updates: Record<string, string> = {};
+          if (result.email && !original.email) updates.email = result.email;
+          if (result.phone && !original.phone) updates.phone = result.phone;
+          if (result.linkedin_url && !original.linkedin_url) updates.linkedin_url = result.linkedin_url;
+          if (result.job_title && !original.job_title) updates.job_title = result.job_title;
+
+          if (Object.keys(updates).length > 0) {
+            try {
+              await updateContact.mutateAsync({ id: result.id, ...updates });
+              totalUpdated++;
+            } catch { totalSkipped++; }
+          } else {
+            totalSkipped++;
+          }
+        }
+
+        setEnrichProgress({ done: Math.min(i + CHUNK, toEnrich.length), total: toEnrich.length });
+      }
+
+      setEnrichResults({ updated: totalUpdated, skipped: totalSkipped });
+      if (totalUpdated > 0) {
+        toast.success(`${totalUpdated} contact(s) enrichi(s) !`);
+      } else {
+        toast.info('Aucune nouvelle information trouvée.');
+      }
+    } catch (err) {
+      console.error('Enrichment failed:', err);
+      toast.error('Erreur lors de l\'enrichissement');
+    } finally {
+      setEnriching(false);
+    }
+  }, [filtered, selectedIds, updateContact]);
 
   if (isLoading) return <PageLoader />;
 
@@ -1099,6 +1189,85 @@ export default function Prospection() {
           onAddToCRM={handleAddToCRM}
         />
       )}
+
+      {/* Enrichment Dialog */}
+      <Dialog open={showEnrichDialog} onOpenChange={o => { if (!enriching) setShowEnrichDialog(o); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Enrichissement IA
+            </DialogTitle>
+            <DialogDescription>
+              L'IA va rechercher les informations manquantes (email, LinkedIn, téléphone, poste) pour vos contacts à partir de leur nom et entreprise.
+            </DialogDescription>
+          </DialogHeader>
+
+          {!enriching && !enrichResults && (
+            <div className="space-y-3">
+              <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
+                <p className="font-medium text-foreground">
+                  {selectedIds.size > 0
+                    ? `${selectedIds.size} contact(s) sélectionné(s)`
+                    : `${filtered.length} contact(s) visibles`}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  Seuls les champs vides seront complétés. Les données existantes ne seront pas écrasées.
+                </p>
+              </div>
+              <div className="flex items-start gap-2 text-xs text-muted-foreground bg-accent/30 rounded-lg p-3">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <p>Les résultats sont basés sur des estimations IA. Vérifiez les informations avant de les utiliser pour des envois.</p>
+              </div>
+            </div>
+          )}
+
+          {enriching && (
+            <div className="space-y-3 py-2">
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <span className="text-sm font-medium">Enrichissement en cours...</span>
+              </div>
+              <Progress value={enrichProgress.total > 0 ? (enrichProgress.done / enrichProgress.total) * 100 : 0} />
+              <p className="text-xs text-muted-foreground text-center">
+                {enrichProgress.done} / {enrichProgress.total} contacts traités
+              </p>
+            </div>
+          )}
+
+          {enrichResults && (
+            <div className="space-y-3 py-2">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                <span className="text-sm font-medium">Enrichissement terminé !</span>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
+                <p><span className="font-medium">{enrichResults.updated}</span> contact(s) enrichi(s)</p>
+                <p className="text-muted-foreground">{enrichResults.skipped} contact(s) sans nouvelle donnée</p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            {!enriching && !enrichResults && (
+              <>
+                <Button variant="outline" onClick={() => setShowEnrichDialog(false)}>
+                  Annuler
+                </Button>
+                <Button onClick={runEnrichment} className="gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  Lancer l'enrichissement
+                </Button>
+              </>
+            )}
+            {enrichResults && (
+              <Button onClick={() => { setShowEnrichDialog(false); setEnrichResults(null); }}>
+                Fermer
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
