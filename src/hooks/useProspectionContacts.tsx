@@ -35,6 +35,7 @@ export interface ProspectionContact {
   owner_id: string | null;
   linked_client_id: string | null;
   hunter_confidence: 'high' | 'medium' | 'low' | null;
+  email_verified: boolean | null;
   created_at: string;
   updated_at: string;
 }

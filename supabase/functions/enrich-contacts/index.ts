@@ -26,6 +26,7 @@ interface EnrichedResult {
   linkedin_url?: string;
   job_title?: string;
   confidence: "high" | "medium" | "low";
+  email_verified?: boolean;
 }
 
 // Find company domain via Hunter domain search
@@ -291,14 +292,21 @@ Deno.serve(async (req) => {
               enriched.email = found.email;
               enriched.confidence = scoreToConfidence(found.score);
 
+              // High score (>=70): trust without explicit verification
+              if (found.score >= 70) {
+                enriched.email_verified = true;
+              }
+
               // Verify if score is borderline (between 40-70)
               if (found.score >= 40 && found.score < 70) {
                 const verification = await verifyEmail(found.email, HUNTER_API_KEY);
                 if (verification.status === "invalid") {
                   console.log(`[enrich] Email verified as invalid: ${found.email}`);
                   delete enriched.email;
+                  enriched.email_verified = false;
                 } else if (verification.status === "valid") {
                   enriched.confidence = "high";
+                  enriched.email_verified = true;
                 }
               }
 
