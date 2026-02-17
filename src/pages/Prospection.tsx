@@ -189,9 +189,9 @@ function EditContactDialog({
           </div>
           <div>
             <Label>Étape</Label>
-            <Select value={form.stage} onValueChange={(v) => setForm(f => ({ ...f, stage: v as ProspectionStage }))}>
+            <Select value={form.stage || ''} onValueChange={(v) => setForm(f => ({ ...f, stage: v as ProspectionStage }))}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Sélectionner une étape" />
               </SelectTrigger>
               <SelectContent>
                 {KANBAN_STAGES.map(s => (
