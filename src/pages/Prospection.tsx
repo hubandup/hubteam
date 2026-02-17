@@ -732,6 +732,24 @@ function ContactRow({
         </Select>
       </TableCell>
       <TableCell className="py-3">
+        {contact.hunter_confidence ? (
+          <Badge
+            variant="outline"
+            className={`text-[10px] px-1.5 py-0.5 whitespace-nowrap ${
+              contact.hunter_confidence === 'high'
+                ? 'border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400'
+                : contact.hunter_confidence === 'medium'
+                ? 'border-yellow-500/50 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400'
+                : 'border-muted-foreground/30 bg-muted/50 text-muted-foreground'
+            }`}
+          >
+            {contact.hunter_confidence === 'high' ? '● Élevée' : contact.hunter_confidence === 'medium' ? '● Moyenne' : '● Faible'}
+          </Badge>
+        ) : (
+          <span className="text-muted-foreground text-xs">—</span>
+        )}
+      </TableCell>
+      <TableCell className="py-3">
         <AddToCrmRowButton contact={contact} />
       </TableCell>
     </TableRow>
@@ -1093,6 +1111,8 @@ export default function Prospection() {
           if (result.phone && !original.phone) updates.phone = result.phone;
           if (result.linkedin_url && !original.linkedin_url) updates.linkedin_url = result.linkedin_url;
           if (result.job_title && !original.job_title) updates.job_title = result.job_title;
+          // Always store Hunter confidence when we get a result
+          if (result.confidence) updates.hunter_confidence = result.confidence;
 
           if (Object.keys(updates).length > 0) {
             try {
@@ -1284,6 +1304,9 @@ export default function Prospection() {
                       </button>
                     </th>
                   ))}
+                  <th className="h-10 px-4 text-left align-middle text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70 whitespace-nowrap">
+                    Fiabilité
+                  </th>
                   <th className="h-10 px-4"></th>
                 </tr>
               </thead>
