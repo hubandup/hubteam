@@ -1734,6 +1734,7 @@ export type Database = {
           hunter_confidence: string | null
           id: string
           job_title: string | null
+          last_action_at: string | null
           last_name: string
           linked_client_id: string | null
           linkedin_url: string | null
@@ -1753,6 +1754,7 @@ export type Database = {
           hunter_confidence?: string | null
           id?: string
           job_title?: string | null
+          last_action_at?: string | null
           last_name?: string
           linked_client_id?: string | null
           linkedin_url?: string | null
@@ -1772,6 +1774,7 @@ export type Database = {
           hunter_confidence?: string | null
           id?: string
           job_title?: string | null
+          last_action_at?: string | null
           last_name?: string
           linked_client_id?: string | null
           linkedin_url?: string | null
