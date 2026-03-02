@@ -23,6 +23,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Search, Upload, Download, Plus, Linkedin, Mail, Phone, Building2,
   Columns3, List, Trash2, UserPlus, Sparkles, ArrowUpDown, ArrowUp, ArrowDown, X,
@@ -716,8 +718,25 @@ function ContactRow({
       <TableCell className="py-3 whitespace-nowrap min-w-[140px]">
         <InlineEditCell value={contact.phone || ''} field="phone" contactId={contact.id} onSave={onFieldSave} type="tel" />
       </TableCell>
-      <TableCell className="py-3 whitespace-nowrap text-xs text-muted-foreground">
-        {contact.updated_at ? format(new Date(contact.updated_at), 'dd/MM/yyyy') : '—'}
+      <TableCell className="py-3 whitespace-nowrap text-xs">
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="text-muted-foreground hover:text-foreground transition-colors text-left">
+              {contact.last_action_at ? format(new Date(contact.last_action_at), 'dd/MM/yyyy') : <span className="italic text-muted-foreground/50">Aucune</span>}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={contact.last_action_at ? new Date(contact.last_action_at) : undefined}
+              onSelect={(date) => {
+                onFieldSave(contact.id, 'last_action_at', date ? format(date, 'yyyy-MM-dd') : '');
+              }}
+              initialFocus
+              className="p-3 pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
       </TableCell>
       <TableCell className="py-3">
         <div className="flex items-center gap-1">
