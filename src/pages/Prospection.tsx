@@ -34,6 +34,7 @@ import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PageLoader } from '@/components/PageLoader';
 import * as XLSX from 'xlsx';
+import { format } from 'date-fns';
 
 type SortKey = 'company' | 'first_name' | 'last_name' | 'contact_name' | 'job_title' | 'email' | 'phone' | 'stage';
 type SortDir = 'asc' | 'desc';
@@ -715,60 +716,35 @@ function ContactRow({
       <TableCell className="py-3 whitespace-nowrap min-w-[140px]">
         <InlineEditCell value={contact.phone || ''} field="phone" contactId={contact.id} onSave={onFieldSave} type="tel" />
       </TableCell>
-      <TableCell className="py-3">
-        <Select value={contact.stage || ''} onValueChange={v => onStageChange(v as ProspectionStage)}>
-          <SelectTrigger className="h-7 w-auto border-0 p-0">
-            {stageInfo ? (
-              <Badge className={`${stageInfo.color} text-xs whitespace-nowrap`}>{stageInfo.label}</Badge>
-            ) : (
-              <span className="text-xs text-muted-foreground italic">Sélectionner</span>
-            )}
-          </SelectTrigger>
-          <SelectContent>
-            {KANBAN_STAGES.map(s => (
-              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <TableCell className="py-3 whitespace-nowrap text-xs text-muted-foreground">
+        {contact.updated_at ? format(new Date(contact.updated_at), 'dd/MM/yyyy') : '—'}
       </TableCell>
       <TableCell className="py-3">
-        {contact.hunter_confidence ? (
-          <Badge
-            variant="outline"
-            className={`text-[10px] px-1.5 py-0.5 whitespace-nowrap ${
-              contact.hunter_confidence === 'high'
-                ? 'border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400'
-                : contact.hunter_confidence === 'medium'
-                ? 'border-yellow-500/50 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400'
-                : 'border-muted-foreground/30 bg-muted/50 text-muted-foreground'
-            }`}
-          >
-            {contact.hunter_confidence === 'high' ? '● Élevée' : contact.hunter_confidence === 'medium' ? '● Moyenne' : '● Faible'}
-          </Badge>
-        ) : (
-          <span className="text-muted-foreground text-xs">—</span>
-        )}
-      </TableCell>
-      <TableCell className="py-3">
-        {contact.email_verified === true ? (
-          <Badge
-            variant="outline"
-            className="text-[10px] px-1.5 py-0.5 whitespace-nowrap border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400"
-          >
-            <CheckCircle2 className="h-3 w-3 mr-1 inline-block" />
-            Vérifié
-          </Badge>
-        ) : contact.email_verified === false ? (
-          <Badge
-            variant="outline"
-            className="text-[10px] px-1.5 py-0.5 whitespace-nowrap border-destructive/50 bg-destructive/10 text-destructive"
-          >
-            <AlertCircle className="h-3 w-3 mr-1 inline-block" />
-            Invalide
-          </Badge>
-        ) : (
-          <span className="text-muted-foreground text-xs">—</span>
-        )}
+        <div className="flex items-center gap-1">
+          <Select value={contact.stage || ''} onValueChange={v => onStageChange(v as ProspectionStage)}>
+            <SelectTrigger className="h-7 w-auto border-0 p-0">
+              {stageInfo ? (
+                <Badge className={`${stageInfo.color} text-xs whitespace-nowrap`}>{stageInfo.label}</Badge>
+              ) : (
+                <span className="text-xs text-muted-foreground italic">Sélectionner</span>
+              )}
+            </SelectTrigger>
+            <SelectContent>
+              {KANBAN_STAGES.map(s => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {stageInfo && (
+            <button
+              className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded"
+              onClick={() => onFieldSave(contact.id, 'stage', '')}
+              title="Supprimer l'étape"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
       </TableCell>
       <TableCell className="py-3">
         <AddToCrmRowButton contact={contact} />
@@ -1311,7 +1287,6 @@ export default function Prospection() {
                     ['linkedin_url', 'LinkedIn', ''],
                     ['email', 'Email', ''],
                     ['phone', 'Téléphone', 'min-w-[140px]'],
-                    ['stage', 'Étape', ''],
                   ] as [SortKey, string, string][]).map(([key, label, cls]) => (
                     <th key={key} className={`h-10 px-4 text-left align-middle text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70 ${cls}`}>
                       <button
@@ -1328,10 +1303,10 @@ export default function Prospection() {
                     </th>
                   ))}
                   <th className="h-10 px-4 text-left align-middle text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70 whitespace-nowrap">
-                    Fiabilité
+                    Dernière action
                   </th>
                   <th className="h-10 px-4 text-left align-middle text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70 whitespace-nowrap">
-                    Vérifié
+                    Étape
                   </th>
                   <th className="h-10 px-4"></th>
                 </tr>
