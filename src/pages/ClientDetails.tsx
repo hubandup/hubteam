@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, FileText, Receipt, Users, FolderKanban } from 'lucide-react';
+import { ArrowLeft, Loader2, FileText, Receipt, Users, FolderKanban, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { ResponsiveTabs, type TabItem } from '@/components/ui/responsive-tabs';
 import { ClientInfoTab } from '@/components/client-details/ClientInfoTab';
@@ -178,6 +179,21 @@ export default function ClientDetails() {
     role !== 'agency' || tab.value !== 'invoices'
   );
 
+  const handleDeleteClient = async () => {
+    if (!id) return;
+    try {
+      const { error } = await supabase.from('clients').delete().eq('id', id);
+      if (error) throw error;
+      toast.success('Client supprimé');
+      navigate('/crm');
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Erreur lors de la suppression du client');
+    }
+  };
+
+  const canDelete = role === 'admin' || role === 'team';
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-4">
@@ -203,6 +219,29 @@ export default function ClientDetails() {
             <p className="text-muted-foreground">{client.first_name} {client.last_name}</p>
           </div>
         </div>
+        {canDelete && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                <Trash2 className="h-5 w-5" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Supprimer ce client ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Cette action est irréversible. Toutes les données associées (contacts, notes, factures) seront également supprimées.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteClient} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Supprimer
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       <ResponsiveTabs defaultValue="info" tabs={tabs} storageKey="client-tabs" />
