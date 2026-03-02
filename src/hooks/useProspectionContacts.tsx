@@ -41,11 +41,33 @@ export interface ProspectionContact {
   updated_at: string;
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => reject(new Error(message)), ms);
+
+    promise
+      .then((value) => {
+        clearTimeout(timeoutId);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      });
+  });
+}
+
 async function fetchProspectionContacts() {
-  const { data, error } = await supabase
-    .from('prospection_contacts')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const { data, error } = await withTimeout(
+    Promise.resolve(
+      supabase
+        .from('prospection_contacts')
+        .select('*')
+        .order('created_at', { ascending: false })
+    ),
+    15000,
+    'Le chargement des contacts de prospection a expiré. Réessayez.'
+  );
 
   if (error) throw error;
   return (data || []) as ProspectionContact[];

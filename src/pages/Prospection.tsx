@@ -840,7 +840,7 @@ function KanbanView({
 export default function Prospection() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const { data: contacts = [], isLoading } = useProspectionContacts();
+  const { data: contacts = [], isLoading, isError, refetch } = useProspectionContacts();
   const createContact = useCreateProspectionContact();
   const updateContact = useUpdateProspectionContact();
   const deleteContact = useDeleteProspectionContact();
@@ -1160,6 +1160,20 @@ export default function Prospection() {
   }, [filtered, selectedIds, updateContact]);
 
   if (isLoading) return <PageLoader />;
+
+  if (isError) {
+    return (
+      <div className="flex h-[calc(100vh-8rem)] items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center gap-3 p-6 text-center">
+            <AlertCircle className="h-6 w-6 text-destructive" />
+            <p className="text-sm text-muted-foreground">Impossible de charger la prospection.</p>
+            <Button onClick={() => refetch()} size="sm">Réessayer</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex flex-col ${isMobile ? 'h-[calc(100vh-8rem)]' : 'h-[calc(100vh-7.5rem)]'} -mb-8`}>
