@@ -30,7 +30,6 @@ import { ProjectTeamTab } from '@/components/project-details/ProjectTeamTab';
 import { ProjectTasksTab } from '@/components/project-details/ProjectTasksTab';
 import { ProjectTasksNotebookTab } from '@/components/project-details/ProjectTasksNotebookTab';
 import { ProjectNotesTab } from '@/components/project-details/ProjectNotesTab';
-
 import { ClientKDriveTab } from '@/components/client-details/ClientKDriveTab';
 import { SelectClientDialog } from '@/components/project-details/SelectClientDialog';
 import { EditProjectInfoDialog } from '@/components/project-details/EditProjectInfoDialog';
@@ -60,38 +59,29 @@ export default function ProjectDetails() {
       fetchBadgeCounts();
     }
 
-    // Écoute temps réel pour les changements de tâches
     const channel = supabase
       .channel('project-details-tasks')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'tasks', 
-        filter: `project_id=eq.${id}` 
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'tasks',
+        filter: `project_id=eq.${id}`
       }, () => {
         fetchProjectDetails();
         fetchBadgeCounts();
       })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [id]);
 
   const fetchBadgeCounts = async () => {
     if (!id) return;
-
     try {
-      // Count pending tasks (not done)
-      const { data: tasks, error: tasksError } = await supabase
-        .from('tasks')
-        .select('id, status')
-        .eq('project_id', id);
-
-      if (tasksError) throw tasksError;
-      const pending = tasks?.filter(t => t.status !== 'done').length || 0;
-      setPendingTasksCount(pending);
+      const { data: tasks, error } = await supabase
+        .from('tasks').select('id, status').eq('project_id', id);
+      if (error) throw error;
+      setPendingTasksCount(tasks?.filter(t => t.status !== 'done').length || 0);
     } catch (error) {
       console.error('Error fetching badge counts:', error);
     }
@@ -101,38 +91,14 @@ export default function ProjectDetails() {
     try {
       const { data, error } = await supabase
         .from('projects')
-        .select(`
-          *,
-          project_clients (
-            clients (
-              id,
-              company,
-              first_name,
-              last_name
-            )
-          ),
-          tasks (
-            id,
-            status
-          )
-        `)
-        .eq('id', id)
-        .single();
-
+        .select(`*, project_clients(clients(id, company, first_name, last_name)), tasks(id, status)`)
+        .eq('id', id).single();
       if (error) throw error;
-      
-      // Calculate progress
       const tasks = data.tasks || [];
       const totalTasks = tasks.length;
       const completedTasks = tasks.filter((t: any) => t.status === 'done').length;
       const percentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-      
-      setProjectProgress({
-        completed: completedTasks,
-        total: totalTasks,
-        percentage
-      });
-      
+      setProjectProgress({ completed: completedTasks, total: totalTasks, percentage });
       setProject(data);
     } catch (error) {
       console.error('Error fetching project:', error);
@@ -143,30 +109,18 @@ export default function ProjectDetails() {
     }
   };
 
-  // Refresh badge counts when project details change
   useEffect(() => {
-    if (project && id) {
-      fetchBadgeCounts();
-    }
+    if (project && id) fetchBadgeCounts();
   }, [project, id]);
 
-  const handleClientSelected = () => {
-    fetchProjectDetails();
-  };
+  const handleClientSelected = () => { fetchProjectDetails(); };
 
   const handleDeleteProject = async () => {
     if (!id) return;
-    
     setDeleting(true);
     try {
-      // Delete project (cascade will handle related records)
-      const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('projects').delete().eq('id', id);
       if (error) throw error;
-
       toast.success('Projet supprimé avec succès');
       navigate('/projects');
     } catch (error) {
@@ -180,15 +134,9 @@ export default function ProjectDetails() {
 
   const handleStatusChange = async (newStatus: string) => {
     if (!id) return;
-
     try {
-      const { error } = await supabase
-        .from('projects')
-        .update({ status: newStatus })
-        .eq('id', id);
-
+      const { error } = await supabase.from('projects').update({ status: newStatus }).eq('id', id);
       if (error) throw error;
-
       toast.success('Statut mis à jour avec succès');
       fetchProjectDetails();
     } catch (error) {
@@ -199,50 +147,74 @@ export default function ProjectDetails() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center h-screen bg-white">
+        <Loader2 className="h-6 w-6 animate-spin text-black" />
       </div>
     );
   }
 
-  if (!project) {
-    return null;
-  }
+  if (!project) return null;
 
+  // ── Status config ─────────────────────────────────────────────────────────
   const statusConfig = {
-    'planning': { label: 'À faire', variant: 'secondary' as const, color: 'bg-[hsl(var(--status-planning))] text-[hsl(var(--status-planning-foreground))]' },
-    'reco_in_progress': { label: 'Reco en cours', variant: 'default' as const, color: 'bg-[hsl(var(--status-reco-in-progress))] text-[hsl(var(--status-reco-in-progress-foreground))]' },
-    'active': { label: 'En cours', variant: 'default' as const, color: 'bg-[hsl(var(--status-active))] text-[hsl(var(--status-active-foreground))]' },
-    'urgent': { label: 'Urgent', variant: 'destructive' as const, color: 'bg-[hsl(var(--status-urgent))] text-[hsl(var(--status-urgent-foreground))]' },
-    'completed': { label: 'Terminé', variant: 'outline' as const, color: 'bg-[hsl(var(--status-completed))] text-[hsl(var(--status-completed-foreground))]' },
-    'lost': { label: 'Perdu', variant: 'destructive' as const, color: 'bg-[hsl(var(--status-lost))] text-[hsl(var(--status-lost-foreground))]' },
+    'planning':         { label: 'À faire',       bg: '#F5F5F5', color: '#6B6B6B', border: '1px solid #D4D4D4' },
+    'reco_in_progress': { label: 'Reco en cours',  bg: '#000000', color: '#E8FF4C', border: 'none' },
+    'active':           { label: 'En cours',       bg: '#E8FF4C', color: '#000000', border: 'none' },
+    'urgent':           { label: 'Urgent',         bg: '#000000', color: '#E8FF4C', border: 'none' },
+    'completed':        { label: 'Terminé',        bg: '#E8E8E8', color: '#6B6B6B', border: 'none' },
+    'lost':             { label: 'Perdu',          bg: '#FEE2E2', color: '#991B1B', border: 'none' },
   };
 
   const statusInfo = statusConfig[project.status as keyof typeof statusConfig] || statusConfig['active'];
   const client = project.project_clients?.[0]?.clients;
 
+  // ── Status badge (dropdown) ───────────────────────────────────────────────
   const StatusBadge = () => (
     <ProtectedAction module="projects" action="update">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button 
-            variant="ghost" 
-            className={`h-auto px-3 py-1 rounded-full border-0 hover:opacity-80 ${statusInfo.color}`}
+          <button
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '3px 10px',
+              background: statusInfo.bg,
+              color: statusInfo.color,
+              border: statusInfo.border,
+              fontFamily: "'Instrument Sans', sans-serif",
+              fontWeight: 700,
+              fontSize: 11,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              outline: 'none',
+            }}
           >
-            <span className="font-semibold text-sm">{statusInfo.label}</span>
-            <ChevronDown className="h-3 w-3 ml-1" />
-          </Button>
+            {statusInfo.label}
+            <ChevronDown size={11} />
+          </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="bg-background">
-          {Object.entries(statusConfig).map(([key, config]) => (
+        <DropdownMenuContent align="start" className="bg-white border border-[#E8E8E8] shadow-sm rounded-none p-1 min-w-[160px]">
+          {Object.entries(statusConfig).map(([key, cfg]) => (
             <DropdownMenuItem
               key={key}
               onClick={() => handleStatusChange(key)}
-              className="cursor-pointer"
+              className="cursor-pointer rounded-none focus:bg-[#F5F5F5] px-3 py-2"
             >
-              <div className={`px-3 py-1 rounded-full text-sm font-semibold ${config.color}`}>
-                {config.label}
-              </div>
+              <span style={{
+                fontFamily: "'Instrument Sans', sans-serif",
+                fontWeight: 700,
+                fontSize: 11,
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+                padding: '2px 8px',
+                background: cfg.bg,
+                color: cfg.color,
+                border: cfg.border,
+              }}>
+                {cfg.label}
+              </span>
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>
@@ -251,281 +223,327 @@ export default function ProjectDetails() {
   );
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex-1">
+    <div className="bg-white min-h-screen">
+      <div className="max-w-[960px] px-7 py-7 space-y-6">
+
+        {/* ── Header ───────────────────────────────────────────────────── */}
+        <div className="space-y-3">
+
+          {/* Back */}
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-1.5 text-[#9A9A9A] hover:text-black transition-colors"
+            style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 600, fontSize: 12, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          >
+            <ArrowLeft size={14} />
+            Retour
+          </button>
+
+          {/* Title row */}
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-3xl font-bold text-foreground">{project.name}</h1>
+            <h1 style={{
+              fontFamily: "'Instrument Sans', sans-serif",
+              fontWeight: 700,
+              fontSize: 26,
+              letterSpacing: '-0.03em',
+              lineHeight: 1,
+              color: '#000',
+              margin: 0,
+            }}>
+              {project.name}
+            </h1>
+
             <StatusBadge />
+
             {!isMobile && (
-              <>
+              <div className="ml-auto flex items-center gap-2">
                 <ProtectedAction module="projects" action="update">
-                  <Button
-                    variant="outline"
-                    size="sm"
+                  <button
                     onClick={() => setShowEditDialog(true)}
+                    className="flex items-center gap-1.5 hover:bg-[#F5F5F5] transition-colors"
+                    style={{
+                      fontFamily: "'Instrument Sans', sans-serif",
+                      fontWeight: 600, fontSize: 12,
+                      color: '#000',
+                      padding: '7px 14px',
+                      border: '1px solid #D4D4D4',
+                      background: 'transparent',
+                      cursor: 'pointer',
+                    }}
                   >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Modifier
-                  </Button>
+                    <Edit size={12} /> Modifier
+                  </button>
                 </ProtectedAction>
                 <ProtectedAction module="projects" action="delete">
-                  <Button
-                    variant="destructive"
-                    size="sm"
+                  <button
                     onClick={() => setShowDeleteDialog(true)}
+                    className="flex items-center gap-1.5 transition-colors hover:opacity-90"
+                    style={{
+                      fontFamily: "'Instrument Sans', sans-serif",
+                      fontWeight: 700, fontSize: 12,
+                      color: '#fff',
+                      padding: '7px 14px',
+                      border: 'none',
+                      background: '#DC2626',
+                      cursor: 'pointer',
+                    }}
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Supprimer
-                  </Button>
+                    <Trash2 size={12} /> Supprimer
+                  </button>
                 </ProtectedAction>
-              </>
+              </div>
             )}
           </div>
+
+          {/* Client */}
           {client && (
-            <p className="text-muted-foreground mt-1">
-              <span className="uppercase">{client.company}</span> - {client.first_name} {client.last_name}
+            <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#9A9A9A', margin: 0 }}>
+              <span className="uppercase">{client.company}</span> – {client.first_name} {client.last_name}
             </p>
           )}
         </div>
-      </div>
 
-      {/* Progress Display - Conditional based on project status */}
-      {project.status === 'reco_in_progress' ? (
-        <RecoTimeline
-          projectId={project.id}
-          dates={{
-            date_brief: project.date_brief,
-            date_prise_en_main: project.date_prise_en_main,
-            date_concertation_agences: project.date_concertation_agences,
-            date_montage_reco: project.date_montage_reco,
-            date_restitution: project.date_restitution,
-          }}
-          canEdit={isAdmin}
-          onDatesUpdate={fetchProjectDetails}
-        />
-      ) : (
-        <Card className="border-0 bg-gradient-to-r from-primary/5 to-primary/10">
-          <CardContent className="pt-6">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-base font-semibold text-foreground">Progression du projet</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-3xl font-bold text-primary">
-                    {projectProgress.percentage}%
-                  </span>
-                </div>
+        {/* ── Progress ─────────────────────────────────────────────────── */}
+        {project.status === 'reco_in_progress' ? (
+          <RecoTimeline
+            projectId={project.id}
+            dates={{
+              date_brief: project.date_brief,
+              date_prise_en_main: project.date_prise_en_main,
+              date_concertation_agences: project.date_concertation_agences,
+              date_montage_reco: project.date_montage_reco,
+              date_restitution: project.date_restitution,
+            }}
+            canEdit={isAdmin}
+            onDatesUpdate={fetchProjectDetails}
+          />
+        ) : (
+          <div style={{
+            background: '#000',
+            padding: '20px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 24,
+          }}>
+            {/* Pourcentage en jaune fluo */}
+            <span style={{
+              fontFamily: "'Instrument Sans', sans-serif",
+              fontWeight: 700,
+              fontSize: 36,
+              letterSpacing: '-0.04em',
+              color: '#E8FF4C',
+              lineHeight: 1,
+              flexShrink: 0,
+            }}>
+              {projectProgress.percentage}%
+            </span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 13, color: '#fff', marginBottom: 10 }}>
+                Progression du projet
               </div>
-              <Progress value={projectProgress.percentage} className="h-4" />
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>
+              {/* Barre jaune sur fond sombre */}
+              <div style={{ width: '100%', height: 6, background: 'rgba(255,255,255,0.15)', borderRadius: 99, overflow: 'hidden', marginBottom: 8 }}>
+                <div style={{
+                  height: '100%',
+                  width: `${projectProgress.percentage}%`,
+                  background: '#E8FF4C',
+                  borderRadius: 99,
+                  transition: 'width 0.4s ease',
+                }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
                   {projectProgress.completed} tâche{projectProgress.completed !== 1 ? 's' : ''} terminée{projectProgress.completed !== 1 ? 's' : ''}
                 </span>
-                <span>
+                <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
                   {projectProgress.total} tâche{projectProgress.total !== 1 ? 's' : ''} au total
                 </span>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
 
-      {/* Tabs */}
-      <ResponsiveTabs
-        defaultValue="tasks"
-        storageKey="project-tabs"
-        tabs={[
-          {
-            value: 'tasks',
-            label: 'Tâches',
-            icon: <FileText className="h-4 w-4" />,
-            badge: pendingTasksCount,
-            badgeVariant: pendingTasksCount > 0 ? 'destructive' : undefined,
-            content: <ProjectTasksNotebookTab 
-              projectId={id!} 
-              onTasksChange={() => {
-                fetchProjectDetails();
-                fetchBadgeCounts();
-              }}
-            />
-          },
-          {
-            value: 'notes',
-            label: 'Notes',
-            icon: <StickyNote className="h-4 w-4" />,
-            content: <ProjectNotesTab projectId={id!} />
-          },
-          {
-            value: 'team',
-            label: 'Équipe',
-            icon: <Users className="h-4 w-4" />,
-            content: <ProjectTeamTab projectId={id!} />
-          },
-          {
-            value: 'kdrive',
-            label: 'kDrive',
-            icon: <ExternalLink className="h-4 w-4" />,
-            content: client ? (
-              <ClientKDriveTab clientId={client.id} />
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                Aucun client associé à ce projet
-              </div>
-            )
-          },
-          {
-            value: 'info',
-            label: 'Informations',
-            icon: <Info className="h-4 w-4" />,
-            content: (
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Informations générales</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {client ? (
-                      <div className="flex items-start gap-3">
-                        <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
+        {/* ── Tabs ─────────────────────────────────────────────────────── */}
+        <ResponsiveTabs
+          defaultValue="tasks"
+          storageKey="project-tabs"
+          tabs={[
+            {
+              value: 'tasks',
+              label: 'Tâches',
+              icon: <FileText className="h-4 w-4" />,
+              badge: pendingTasksCount,
+              badgeVariant: pendingTasksCount > 0 ? 'destructive' : undefined,
+              content: (
+                <ProjectTasksNotebookTab
+                  projectId={id!}
+                  onTasksChange={() => { fetchProjectDetails(); fetchBadgeCounts(); }}
+                />
+              )
+            },
+            {
+              value: 'notes',
+              label: 'Notes',
+              icon: <StickyNote className="h-4 w-4" />,
+              content: <ProjectNotesTab projectId={id!} />
+            },
+            {
+              value: 'team',
+              label: 'Équipe',
+              icon: <Users className="h-4 w-4" />,
+              content: <ProjectTeamTab projectId={id!} />
+            },
+            {
+              value: 'kdrive',
+              label: 'kDrive',
+              icon: <ExternalLink className="h-4 w-4" />,
+              content: client ? (
+                <ClientKDriveTab clientId={client.id} />
+              ) : (
+                <div style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#9A9A9A', padding: '32px 0', textAlign: 'center' }}>
+                  Aucun client associé à ce projet
+                </div>
+              )
+            },
+            {
+              value: 'info',
+              label: 'Informations',
+              icon: <Info className="h-4 w-4" />,
+              content: (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {/* Infos générales */}
+                  <div style={{ background: '#fff', border: '1px solid #E8E8E8', padding: '20px' }}>
+                    <div style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: '#000', marginBottom: 16 }}>
+                      Informations générales
+                    </div>
+                    <div className="space-y-4">
+                      {client ? (
                         <div>
-                          <p className="text-sm text-muted-foreground">Client</p>
-                          <p className="font-medium">
-                            <span className="uppercase">{client.company}</span> - {client.first_name} {client.last_name}
+                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#9A9A9A', marginBottom: 4 }}>Client</p>
+                          <p style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: '#000' }}>
+                            <span className="uppercase">{client.company}</span> – {client.first_name} {client.last_name}
                           </p>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-start gap-3">
-                        <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
-                        <div className="flex-1">
-                          <p className="text-sm text-muted-foreground mb-2">Client</p>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setShowSelectClientDialog(true)}
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Sélectionner un client
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-start gap-3">
-                      <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Nom du projet</p>
-                        <p className="font-medium">{project.name}</p>
-                      </div>
-                    </div>
-
-                    {project.description && (
-                      <div className="flex items-start gap-3">
-                        <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-muted-foreground">Description</p>
-                          <p className="font-medium break-words whitespace-pre-wrap">{project.description}</p>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Dates & Statut</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {project.start_date && (
-                      <div className="flex items-start gap-3">
-                        <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
+                      ) : (
                         <div>
-                          <p className="text-sm text-muted-foreground">Date de début</p>
-                          <p className="font-medium">
+                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#9A9A9A', marginBottom: 8 }}>Client</p>
+                          <button
+                            onClick={() => setShowSelectClientDialog(true)}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 6,
+                              fontFamily: "'Instrument Sans', sans-serif", fontWeight: 600, fontSize: 12,
+                              color: '#000', padding: '7px 14px',
+                              border: '1px solid #D4D4D4', background: 'transparent', cursor: 'pointer',
+                            }}
+                          >
+                            <Plus size={12} /> Sélectionner un client
+                          </button>
+                        </div>
+                      )}
+
+                      <div>
+                        <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#9A9A9A', marginBottom: 4 }}>Nom du projet</p>
+                        <p style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: '#000' }}>
+                          {project.name}
+                        </p>
+                      </div>
+
+                      {project.description && (
+                        <div>
+                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#9A9A9A', marginBottom: 4 }}>Description</p>
+                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#000', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                            {project.description}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Dates & Statut */}
+                  <div style={{ background: '#fff', border: '1px solid #E8E8E8', padding: '20px' }}>
+                    <div style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: '#000', marginBottom: 16 }}>
+                      Dates & Statut
+                    </div>
+                    <div className="space-y-4">
+                      {project.start_date && (
+                        <div>
+                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#9A9A9A', marginBottom: 4 }}>Date de début</p>
+                          <p style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: '#000' }}>
                             {format(new Date(project.start_date), 'dd MMMM yyyy', { locale: fr })}
                           </p>
                         </div>
-                      </div>
-                    )}
-
-                    {project.end_date && (
-                      <div className="flex items-start gap-3">
-                        <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
+                      )}
+                      {project.end_date && (
                         <div>
-                          <p className="text-sm text-muted-foreground">Date de fin</p>
-                          <p className="font-medium">
+                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#9A9A9A', marginBottom: 4 }}>Date de fin</p>
+                          <p style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: '#000' }}>
                             {format(new Date(project.end_date), 'dd MMMM yyyy', { locale: fr })}
                           </p>
                         </div>
+                      )}
+                      <div>
+                        <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#9A9A9A', marginBottom: 8 }}>Statut</p>
+                        <StatusBadge />
                       </div>
-                    )}
-
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-2">Statut</p>
-                      <StatusBadge />
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )
-          }
-        ]}
-      />
+                  </div>
+                </div>
+              )
+            }
+          ]}
+        />
 
-      <SelectClientDialog 
-        open={showSelectClientDialog}
-        onOpenChange={setShowSelectClientDialog}
-        projectId={id!}
-        onClientSelected={handleClientSelected}
-      />
+        {/* ── Dialogs (inchangés) ───────────────────────────────────────── */}
+        <SelectClientDialog
+          open={showSelectClientDialog}
+          onOpenChange={setShowSelectClientDialog}
+          projectId={id!}
+          onClientSelected={handleClientSelected}
+        />
 
-      {isAdmin && (
-        <>
-          <EditProjectInfoDialog
-            open={showEditDialog}
-            onOpenChange={setShowEditDialog}
-            project={project}
-            onSuccess={fetchProjectDetails}
-          />
-          
-          <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Êtes-vous sûr de vouloir supprimer le projet "{project.name}" ? 
-                  Cette action est irréversible et supprimera également toutes les tâches, 
-                  membres d'équipe et pièces jointes associés.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDeleteProject}
-                  disabled={deleting}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  {deleting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Suppression...
-                    </>
-                  ) : (
-                    'Supprimer'
-                  )}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </>
-      )}
+        {isAdmin && (
+          <>
+            <EditProjectInfoDialog
+              open={showEditDialog}
+              onOpenChange={setShowEditDialog}
+              project={project}
+              onSuccess={fetchProjectDetails}
+            />
+
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+              <AlertDialogContent className="rounded-none border-[#E8E8E8]">
+                <AlertDialogHeader>
+                  <AlertDialogTitle style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 16, color: '#000' }}>
+                    Confirmer la suppression
+                  </AlertDialogTitle>
+                  <AlertDialogDescription style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#6B6B6B' }}>
+                    Êtes-vous sûr de vouloir supprimer le projet "{project.name}" ?
+                    Cette action est irréversible et supprimera également toutes les tâches,
+                    membres d'équipe et pièces jointes associés.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel
+                    disabled={deleting}
+                    className="rounded-none border-[#D4D4D4] font-['Instrument_Sans'] font-semibold text-sm"
+                  >
+                    Annuler
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteProject}
+                    disabled={deleting}
+                    className="rounded-none bg-[#DC2626] hover:bg-[#B91C1C] font-['Instrument_Sans'] font-bold text-sm"
+                  >
+                    {deleting ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Suppression...</>
+                    ) : 'Supprimer'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </>
+        )}
+      </div>
     </div>
   );
 }
