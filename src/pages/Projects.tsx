@@ -131,7 +131,6 @@ export default function Projects() {
     return filtered;
   }, [projects, archivedProjects, activeTab, searchQuery]);
 
-  // Stats counts
   const statusCounts = useMemo(() => ({
     all: projects.length,
     planning: projects.filter(p => p.status === 'planning').length,
@@ -145,26 +144,36 @@ export default function Projects() {
   if (loading) return <PageLoader />;
   if (!canRead('projects')) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen bg-white">
         <div className="text-center">
-          <p className="text-lg font-semibold text-foreground">{t('common.accessDenied')}</p>
-          <p className="text-muted-foreground">{t('projects.noPermission')}</p>
+          <p style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 16, color: '#000', marginBottom: 6 }}>
+            {t('common.accessDenied')}
+          </p>
+          <p style={{ fontSize: 13, color: '#9A9A9A' }}>{t('projects.noPermission')}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-0">
+    <div className="space-y-0 bg-white min-h-screen p-7">
       <PendingQuoteActionsBanner />
 
-      {/* Page title + actions */}
+      {/* ── Page title + actions ──────────────────────────────────────── */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="font-['Instrument_Sans'] font-bold text-[28px] text-foreground tracking-[-0.03em] leading-none mb-1">
+          <h1 style={{
+            fontFamily: "'Instrument Sans', sans-serif",
+            fontWeight: 700,
+            fontSize: 28,
+            color: '#000',
+            letterSpacing: '-0.03em',
+            lineHeight: 1,
+            marginBottom: 4,
+          }}>
             Projets
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p style={{ fontSize: 13, color: '#9A9A9A' }}>
             Vue d'ensemble de tous vos projets actifs et archivés
           </p>
           {isMobile && !isClient && (
@@ -195,42 +204,49 @@ export default function Projects() {
         )}
       </div>
 
-      {/* Stats bar */}
-      <div className="flex items-center gap-6 mb-6">
+      {/* ── Stats bar ─────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 24 }}>
         {[
-          { num: statusCounts.all, label: 'Total projets' },
-          { num: statusCounts.active, label: 'En cours' },
-          { num: statusCounts.completed, label: 'Terminés' },
-          { num: statusCounts.lost, label: 'Perdus' },
+          { num: statusCounts.all,       label: 'Total projets' },
+          { num: statusCounts.active,    label: 'En cours'      },
+          { num: statusCounts.completed, label: 'Terminés'      },
+          { num: statusCounts.lost,      label: 'Perdus'        },
         ].map((s, i) => (
-          <div key={i} className="flex items-center gap-6">
-            {i > 0 && <div className="w-px h-7 bg-border" />}
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+            {i > 0 && <div style={{ width: 1, height: 28, background: '#E8E8E8' }} />}
             <div>
-              <div className="font-['Instrument_Sans'] font-bold text-[22px] text-foreground tracking-[-0.03em] leading-none">
+              <div style={{
+                fontFamily: "'Instrument Sans', sans-serif",
+                fontWeight: 700,
+                fontSize: 22,
+                color: '#000',
+                letterSpacing: '-0.03em',
+                lineHeight: 1,
+              }}>
                 {s.num}
               </div>
-              <div className="text-[11px] text-muted-foreground">{s.label}</div>
+              <div style={{ fontSize: 11, color: '#9A9A9A', marginTop: 2 }}>{s.label}</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Tabs */}
+      {/* ── Tabs ──────────────────────────────────────────────────────── */}
       {isMobile ? (
         <Select value={activeTab} onValueChange={handleTabChange}>
-          <SelectTrigger className="w-full mb-3 bg-card h-10">
+          <SelectTrigger className="w-full mb-3 rounded-none border-[#D4D4D4] h-10 font-['Instrument_Sans'] font-semibold text-[13px]">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="bg-card z-50">
+          <SelectContent className="rounded-none border-[#D4D4D4]">
             {TABS.map(tab => (
-              <SelectItem key={tab.key} value={tab.key}>
+              <SelectItem key={tab.key} value={tab.key} className="font-['Instrument_Sans'] font-semibold text-[13px]">
                 {tab.label} ({statusCounts[tab.key as keyof typeof statusCounts] || 0})
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       ) : (
-        <div className="flex border-b border-border mb-5">
+        <div style={{ display: 'flex', borderBottom: '1px solid #E8E8E8', marginBottom: 20 }}>
           {TABS.map(tab => {
             const isActive = activeTab === tab.key;
             const count = statusCounts[tab.key as keyof typeof statusCounts] || 0;
@@ -238,19 +254,35 @@ export default function Projects() {
               <button
                 key={tab.key}
                 onClick={() => handleTabChange(tab.key)}
-                className={cn(
-                  "font-['Instrument_Sans'] font-semibold text-[13px] px-3.5 py-2.5 cursor-pointer border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 relative top-px",
-                  isActive
-                    ? "text-foreground border-foreground"
-                    : "text-muted-foreground border-transparent hover:text-foreground/70"
-                )}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '10px 14px',
+                  fontFamily: "'Instrument Sans', sans-serif",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  color: isActive ? '#000' : '#9A9A9A',
+                  background: 'transparent',
+                  border: 'none',
+                  borderBottom: isActive ? '2px solid #000' : '2px solid transparent',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  top: 1,
+                  whiteSpace: 'nowrap',
+                  transition: 'color 0.12s',
+                }}
               >
-                {tab.key === 'archived' && <Archive className="h-3.5 w-3.5" />}
+                {tab.key === 'archived' && <Archive size={13} />}
                 {tab.label}
-                <span className={cn(
-                  "text-[11px] font-bold px-1.5 py-[1px] rounded-full",
-                  isActive ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
-                )}>
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: '1px 6px',
+                  borderRadius: 99,
+                  background: isActive ? '#E8FF4C' : '#F5F5F5',
+                  color: isActive ? '#000' : '#6B6B6B',
+                }}>
                   {count}
                 </span>
               </button>
@@ -259,31 +291,48 @@ export default function Projects() {
         </div>
       )}
 
-      {/* Toolbar: search + view toggle */}
-      <div className="flex items-center justify-between gap-3 mb-5">
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
+      {/* ── Toolbar ───────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 20 }}>
+        <div style={{ position: 'relative', flex: 1, maxWidth: 320 }}>
+          <Search style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9A9A9A' }} size={14} />
+          <input
+            type="text"
             placeholder="Rechercher un projet..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-9 bg-muted border-border h-9 text-[13px] font-[Roboto,sans-serif] rounded-none"
+            style={{
+              width: '100%',
+              paddingLeft: 36,
+              paddingRight: 12,
+              paddingTop: 8,
+              paddingBottom: 8,
+              border: '1px solid #D4D4D4',
+              background: '#F5F5F5',
+              fontFamily: 'Roboto, sans-serif',
+              fontSize: 13,
+              color: '#000',
+              outline: 'none',
+            }}
           />
         </div>
         {!isMobile && (
-          <div className="flex border border-border overflow-hidden">
+          <div style={{ display: 'flex', border: '1px solid #D4D4D4', overflow: 'hidden' }}>
             {(['grid', 'list', 'kanban'] as ViewMode[]).map((mode, i) => (
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
                 title={mode}
-                className={cn(
-                  "px-2.5 py-[7px] flex items-center cursor-pointer transition-all duration-100",
-                  i > 0 && "border-l border-border",
-                  viewMode === mode
-                    ? "bg-foreground text-accent"
-                    : "bg-transparent text-muted-foreground hover:text-foreground"
-                )}
+                style={{
+                  padding: '7px 10px',
+                  background: viewMode === mode ? '#000' : 'transparent',
+                  color: viewMode === mode ? '#E8FF4C' : '#9A9A9A',
+                  border: 'none',
+                  borderLeft: i > 0 ? '1px solid #D4D4D4' : 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  transition: 'all 0.1s',
+                }}
               >
                 {mode === 'grid' && (
                   <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -311,73 +360,96 @@ export default function Projects() {
         )}
       </div>
 
-      {/* Content */}
+      {/* ── Content ───────────────────────────────────────────────────── */}
       <div>
         {activeTab === 'archived' ? (
           filteredProjects.length === 0 ? (
-            <div className="text-center py-12">
-              <Archive className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">{t('projects.noArchivedProjects')}</p>
-              <p className="text-sm text-muted-foreground mt-2">{t('projects.archivedAutoDescription')}</p>
+            <div style={{ textAlign: 'center', padding: '48px 0', border: '1px solid #E8E8E8' }}>
+              <Archive size={40} style={{ margin: '0 auto 12px', color: '#C0C0C0' }} />
+              <p style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: '#000', marginBottom: 4 }}>
+                {t('projects.noArchivedProjects')}
+              </p>
+              <p style={{ fontSize: 12, color: '#9A9A9A' }}>{t('projects.archivedAutoDescription')}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
               {filteredProjects.map((project) => (
-                <Card key={project.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-xl mb-2">{project.name}</CardTitle>
-                        {project.project_clients?.[0]?.clients?.company && (
-                          <CardDescription className="flex items-center gap-2">
-                            {project.project_clients[0].clients.logo_url && (
-                              <img src={project.project_clients[0].clients.logo_url} alt="" className="w-5 h-5 rounded object-cover" />
-                            )}
-                            {project.project_clients[0].clients.company}
-                          </CardDescription>
-                        )}
+                <div key={project.id} style={{ border: '1px solid #E8E8E8', background: '#fff', padding: '18px 20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 15, color: '#000', letterSpacing: '-0.02em', marginBottom: 4 }}>
+                        {project.name}
                       </div>
-                      <Badge variant="secondary"><Archive className="h-3 w-3 mr-1" /> Archivé</Badge>
+                      {project.project_clients?.[0]?.clients?.company && (
+                        <div style={{ fontSize: 12, color: '#9A9A9A' }}>
+                          {project.project_clients[0].clients.company}
+                        </div>
+                      )}
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    {project.description && <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{project.description}</p>}
-                    <div className="flex items-center justify-end gap-2 mt-4">
-                      <ProtectedAction module="projects" action="update">
-                        <Button variant="outline" size="sm" onClick={() => navigate(`/project/${project.id}`)}>
-                          <Edit className="h-4 w-4 mr-1" /> {t('common.edit')}
-                        </Button>
-                      </ProtectedAction>
-                      <ProtectedAction module="projects" action="update">
-                        <Button variant="outline" size="sm" onClick={() => unarchiveMutation.mutate(project.id)} disabled={unarchiveMutation.isPending}>
-                          <ArchiveRestore className="h-4 w-4 mr-1" /> {t('common.unarchive')}
-                        </Button>
-                      </ProtectedAction>
-                      <ProtectedAction module="projects" action="delete">
-                        <Button variant="destructive" size="sm" onClick={() => setProjectToDelete(project.id)}>
-                          <Trash2 className="h-4 w-4 mr-1" /> {t('common.delete')}
-                        </Button>
-                      </ProtectedAction>
-                    </div>
-                  </CardContent>
-                </Card>
+                    <span style={{
+                      fontFamily: "'Instrument Sans', sans-serif",
+                      fontWeight: 700,
+                      fontSize: 10,
+                      letterSpacing: '0.05em',
+                      textTransform: 'uppercase',
+                      padding: '3px 8px',
+                      background: '#E8E8E8',
+                      color: '#6B6B6B',
+                    }}>
+                      Archivé
+                    </span>
+                  </div>
+                  {project.description && (
+                    <p style={{ fontSize: 12, color: '#9A9A9A', marginBottom: 12, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {project.description}
+                    </p>
+                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
+                    <ProtectedAction module="projects" action="update">
+                      <button
+                        onClick={() => navigate(`/project/${project.id}`)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Instrument Sans', sans-serif", fontWeight: 600, fontSize: 12, color: '#000', padding: '6px 12px', border: '1px solid #D4D4D4', background: 'transparent', cursor: 'pointer' }}
+                      >
+                        <Edit size={11} /> {t('common.edit')}
+                      </button>
+                    </ProtectedAction>
+                    <ProtectedAction module="projects" action="update">
+                      <button
+                        onClick={() => unarchiveMutation.mutate(project.id)}
+                        disabled={unarchiveMutation.isPending}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Instrument Sans', sans-serif", fontWeight: 600, fontSize: 12, color: '#000', padding: '6px 12px', border: '1px solid #D4D4D4', background: 'transparent', cursor: 'pointer' }}
+                      >
+                        <ArchiveRestore size={11} /> {t('common.unarchive')}
+                      </button>
+                    </ProtectedAction>
+                    <ProtectedAction module="projects" action="delete">
+                      <button
+                        onClick={() => setProjectToDelete(project.id)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 12, color: '#fff', padding: '6px 12px', border: 'none', background: '#DC2626', cursor: 'pointer' }}
+                      >
+                        <Trash2 size={11} /> {t('common.delete')}
+                      </button>
+                    </ProtectedAction>
+                  </div>
+                </div>
               ))}
             </div>
           )
         ) : filteredProjects.length === 0 ? (
-          <div className="text-center py-16 border border-border bg-card">
-            <div className="font-['Instrument_Sans'] font-bold text-base text-foreground mb-1.5">
+          <div style={{ textAlign: 'center', padding: '64px 20px', border: '1px solid #E8E8E8', background: '#fff' }}>
+            <div style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 15, color: '#000', marginBottom: 6 }}>
               Aucun projet trouvé
             </div>
-            <div className="text-[13px] text-muted-foreground">
+            <div style={{ fontSize: 13, color: '#9A9A9A' }}>
               Essayez d'autres mots-clés ou changez de filtre.
             </div>
           </div>
         ) : isMobile || viewMode === 'grid' ? (
-          <div
-            className="grid gap-px bg-border border border-border"
-            style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}
-          >
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+            gap: 16,
+          }}>
             {filteredProjects.map((project) => (
               <ProjectCard
                 key={project.id}
@@ -400,17 +472,24 @@ export default function Projects() {
         )}
       </div>
 
+      {/* ── Dialog suppression ────────────────────────────────────────── */}
       <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-none border-[#E8E8E8]">
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('projects.confirmDelete')}</AlertDialogTitle>
-            <AlertDialogDescription>{t('projects.confirmDeleteDescription')}</AlertDialogDescription>
+            <AlertDialogTitle style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 16, color: '#000' }}>
+              {t('projects.confirmDelete')}
+            </AlertDialogTitle>
+            <AlertDialogDescription style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#6B6B6B' }}>
+              {t('projects.confirmDeleteDescription')}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-none border-[#D4D4D4] font-['Instrument_Sans'] font-semibold text-sm">
+              {t('common.cancel')}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => projectToDelete && deleteMutation.mutate(projectToDelete)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="rounded-none bg-[#DC2626] hover:bg-[#B91C1C] font-['Instrument_Sans'] font-bold text-sm"
             >
               {t('common.deleteForever')}
             </AlertDialogAction>
