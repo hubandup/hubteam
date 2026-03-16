@@ -9,15 +9,14 @@ import { AddProjectDialog } from '@/components/AddProjectDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, LayoutGrid, List, Kanban, Archive, ArchiveRestore, Edit, Trash2 } from 'lucide-react';
+import { Search, Archive, ArchiveRestore, Edit, Trash2 } from 'lucide-react';
 import { ExportButton } from '@/components/exports/ExportButton';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -25,6 +24,19 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProjects, useArchivedProjects } from '@/hooks/useProjects';
 import { PageLoader } from '@/components/PageLoader';
 import { PendingQuoteActionsBanner } from '@/components/PendingQuoteActionsBanner';
+import { cn } from '@/lib/utils';
+
+type ViewMode = 'grid' | 'list' | 'kanban';
+
+const TABS = [
+  { key: 'all',              label: 'Tous' },
+  { key: 'planning',         label: 'À faire' },
+  { key: 'reco_in_progress', label: 'Reco' },
+  { key: 'active',           label: 'En cours' },
+  { key: 'completed',        label: 'Terminés' },
+  { key: 'lost',             label: 'Perdus' },
+  { key: 'archived',         label: 'Archivés' },
+];
 
 export default function Projects() {
   const navigate = useNavigate();
@@ -38,55 +50,36 @@ export default function Projects() {
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: archivedProjects = [], isLoading: archivedLoading } = useArchivedProjects();
   const loading = projectsLoading || archivedLoading || permissionsLoading;
-  
-  // Persist tab and search in URL params
-  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'all');
+
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'active');
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') || '');
-  const [viewMode, setViewMode] = useState<'grid' | 'kanban' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
-  // Sync state from URL on mount (when navigating back)
   useEffect(() => {
     const urlTab = searchParams.get('tab');
     const urlQuery = searchParams.get('q');
-    if (urlTab && urlTab !== activeTab) {
-      setActiveTab(urlTab);
-    }
-    if (urlQuery !== null && urlQuery !== searchQuery) {
-      setSearchQuery(urlQuery);
-    }
+    if (urlTab && urlTab !== activeTab) setActiveTab(urlTab);
+    if (urlQuery !== null && urlQuery !== searchQuery) setSearchQuery(urlQuery);
   }, [searchParams]);
 
-  // Update URL when tab or search changes (user interaction)
   const handleTabChange = (newTab: string) => {
     setActiveTab(newTab);
     const params = new URLSearchParams(searchParams);
-    if (newTab !== 'all') {
-      params.set('tab', newTab);
-    } else {
-      params.delete('tab');
-    }
+    if (newTab !== 'all') params.set('tab', newTab); else params.delete('tab');
     setSearchParams(params, { replace: true });
   };
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     const params = new URLSearchParams(searchParams);
-    if (value) {
-      params.set('q', value);
-    } else {
-      params.delete('q');
-    }
+    if (value) params.set('q', value); else params.delete('q');
     setSearchParams(params, { replace: true });
   };
 
   const unarchiveMutation = useMutation({
     mutationFn: async (projectId: string) => {
-      const { error } = await supabase
-        .from('projects')
-        .update({ archived: false })
-        .eq('id', projectId);
-      
+      const { error } = await supabase.from('projects').update({ archived: false }).eq('id', projectId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -94,19 +87,12 @@ export default function Projects() {
       queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
       toast.success(t('projects.unarchived'));
     },
-    onError: (error) => {
-      console.error('Error unarchiving project:', error);
-      toast.error(t('projects.unarchiveError'));
-    },
+    onError: () => toast.error(t('projects.unarchiveError')),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (projectId: string) => {
-      const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', projectId);
-      
+      const { error } = await supabase.from('projects').delete().eq('id', projectId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -115,41 +101,25 @@ export default function Projects() {
       toast.success(t('projects.deleted'));
       setProjectToDelete(null);
     },
-    onError: (error) => {
-      console.error('Error deleting project:', error);
-      toast.error(t('projects.deleteError'));
-      setProjectToDelete(null);
-    },
+    onError: () => { toast.error(t('projects.deleteError')); setProjectToDelete(null); },
   });
 
   const handleStatusChange = async (projectId: string, newStatus: string) => {
     try {
-      const { error } = await supabase
-        .from('projects')
-        .update({ status: newStatus })
-        .eq('id', projectId);
-
+      const { error } = await supabase.from('projects').update({ status: newStatus }).eq('id', projectId);
       if (error) throw error;
-
-      // Invalidate cache to refresh data
       queryClient.invalidateQueries({ queryKey: ['projects'] });
-
       toast.success(t('projects.statusUpdated'));
-    } catch (error) {
-      console.error('Error updating project status:', error);
+    } catch {
       toast.error(t('projects.statusUpdateError'));
     }
   };
 
   const filteredProjects = useMemo(() => {
-    let filtered = projects;
-    
-    // Filter by tab
-    if (activeTab !== 'all') {
+    let filtered = activeTab === 'archived' ? archivedProjects : projects;
+    if (activeTab !== 'all' && activeTab !== 'archived') {
       filtered = filtered.filter(project => project.status === activeTab);
     }
-    
-    // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(project =>
@@ -158,14 +128,21 @@ export default function Projects() {
         project.project_clients?.[0]?.clients?.company?.toLowerCase().includes(query)
       );
     }
-    
     return filtered;
-  }, [projects, activeTab, searchQuery]);
+  }, [projects, archivedProjects, activeTab, searchQuery]);
 
-  if (loading) {
-    return <PageLoader />;
-  }
+  // Stats counts
+  const statusCounts = useMemo(() => ({
+    all: projects.length,
+    planning: projects.filter(p => p.status === 'planning').length,
+    reco_in_progress: projects.filter(p => p.status === 'reco_in_progress').length,
+    active: projects.filter(p => p.status === 'active').length,
+    completed: projects.filter(p => p.status === 'completed').length,
+    lost: projects.filter(p => p.status === 'lost').length,
+    archived: archivedProjects.length,
+  }), [projects, archivedProjects]);
 
+  if (loading) return <PageLoader />;
   if (!canRead('projects')) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -178,128 +155,174 @@ export default function Projects() {
   }
 
   return (
-    <div className="space-y-3 md:space-y-6">
+    <div className="space-y-0">
       <PendingQuoteActionsBanner />
-      
-      <div>
-        <h1 className="text-xl md:text-3xl font-bold text-foreground mb-0.5">{t('projects.title')}</h1>
-        <p className="text-muted-foreground text-xs md:text-base">{t('projects.subtitle')}</p>
-        {isMobile && !isClient && (
-          <div className="mt-3">
+
+      {/* Page title + actions */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="font-['Instrument_Sans'] font-bold text-[28px] text-foreground tracking-[-0.03em] leading-none mb-1">
+            Projets
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Vue d'ensemble de tous vos projets actifs et archivés
+          </p>
+          {isMobile && !isClient && (
+            <div className="mt-3">
+              <ProtectedAction module="projects" action="create">
+                <AddProjectDialog onProjectAdded={() => queryClient.invalidateQueries({ queryKey: ['projects'] })} />
+              </ProtectedAction>
+            </div>
+          )}
+        </div>
+        {!isMobile && !isClient && (
+          <div className="flex items-center gap-2">
+            <ExportButton
+              data={filteredProjects}
+              columns={[
+                { key: 'name', label: 'Projet' },
+                { key: 'status', label: 'Statut' },
+                { key: 'description', label: 'Description' },
+                { key: 'start_date', label: 'Date début' },
+                { key: 'end_date', label: 'Date fin' },
+              ]}
+              filename="projets"
+            />
             <ProtectedAction module="projects" action="create">
               <AddProjectDialog onProjectAdded={() => queryClient.invalidateQueries({ queryKey: ['projects'] })} />
             </ProtectedAction>
           </div>
         )}
       </div>
-      {!isMobile && !isClient && (
-        <div className="flex justify-end gap-2">
-          <ExportButton
-            data={filteredProjects}
-            columns={[
-              { key: 'name', label: 'Projet' },
-              { key: 'status', label: 'Statut' },
-              { key: 'description', label: 'Description' },
-              { key: 'start_date', label: 'Date début' },
-              { key: 'end_date', label: 'Date fin' },
-            ]}
-            filename="projets"
-          />
-          <ProtectedAction module="projects" action="create">
-              <AddProjectDialog onProjectAdded={() => queryClient.invalidateQueries({ queryKey: ['projects'] })} />
-          </ProtectedAction>
-        </div>
-      )}
 
-      {projects.length > 0 && (
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={t('common.search')}
-              value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-8 bg-white dark:bg-background h-10 text-sm"
-            />
-          </div>
-          {!isMobile && (
-            <div className="flex gap-1 border rounded-lg p-1">
-              <Button
-                variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'kanban' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('kanban')}
-              >
-                <Kanban className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-              >
-                <List className="h-4 w-4" />
-              </Button>
+      {/* Stats bar */}
+      <div className="flex items-center gap-6 mb-6">
+        {[
+          { num: statusCounts.all, label: 'Total projets' },
+          { num: statusCounts.active, label: 'En cours' },
+          { num: statusCounts.completed, label: 'Terminés' },
+          { num: statusCounts.lost, label: 'Perdus' },
+        ].map((s, i) => (
+          <div key={i} className="flex items-center gap-6">
+            {i > 0 && <div className="w-px h-7 bg-border" />}
+            <div>
+              <div className="font-['Instrument_Sans'] font-bold text-[22px] text-foreground tracking-[-0.03em] leading-none">
+                {s.num}
+              </div>
+              <div className="text-[11px] text-muted-foreground">{s.label}</div>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
 
-{isMobile ? (
+      {/* Tabs */}
+      {isMobile ? (
         <Select value={activeTab} onValueChange={handleTabChange}>
-          <SelectTrigger className="w-full mb-3 bg-background h-10">
+          <SelectTrigger className="w-full mb-3 bg-card h-10">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="bg-background z-50">
-             <SelectItem value="all">{t('projects.statuses.all')} ({projects.length})</SelectItem>
-            <SelectItem value="planning">{t('projects.statuses.planning')} ({projects.filter(p => p.status === 'planning').length})</SelectItem>
-            <SelectItem value="reco_in_progress">{t('projects.statuses.reco_in_progress')} ({projects.filter(p => p.status === 'reco_in_progress').length})</SelectItem>
-            <SelectItem value="active">{t('projects.statuses.active')} ({projects.filter(p => p.status === 'active').length})</SelectItem>
-            <SelectItem value="completed">{t('projects.statuses.completed')} ({projects.filter(p => p.status === 'completed').length})</SelectItem>
-            <SelectItem value="lost">{t('projects.statuses.lost')} ({projects.filter(p => p.status === 'lost').length})</SelectItem>
-            <SelectItem value="archived">
-              <div className="flex items-center gap-2">
-                <Archive className="h-4 w-4" />
-                {t('projects.statuses.archived')} ({archivedProjects.length})
-              </div>
-            </SelectItem>
+          <SelectContent className="bg-card z-50">
+            {TABS.map(tab => (
+              <SelectItem key={tab.key} value={tab.key}>
+                {tab.label} ({statusCounts[tab.key as keyof typeof statusCounts] || 0})
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       ) : (
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList>
-            <TabsTrigger value="all">{t('projects.statuses.all')} ({projects.length})</TabsTrigger>
-            <TabsTrigger value="planning">{t('projects.statuses.planning')} ({projects.filter(p => p.status === 'planning').length})</TabsTrigger>
-            <TabsTrigger value="reco_in_progress">{t('projects.statuses.reco_in_progress')} ({projects.filter(p => p.status === 'reco_in_progress').length})</TabsTrigger>
-            <TabsTrigger value="active">{t('projects.statuses.active')} ({projects.filter(p => p.status === 'active').length})</TabsTrigger>
-            <TabsTrigger value="completed">{t('projects.statuses.completed')} ({projects.filter(p => p.status === 'completed').length})</TabsTrigger>
-            <TabsTrigger value="lost">{t('projects.statuses.lost')} ({projects.filter(p => p.status === 'lost').length})</TabsTrigger>
-            <TabsTrigger value="archived">
-              <Archive className="h-4 w-4 mr-1" />
-              {t('projects.statuses.archived')} ({archivedProjects.length})
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex border-b border-border mb-5">
+          {TABS.map(tab => {
+            const isActive = activeTab === tab.key;
+            const count = statusCounts[tab.key as keyof typeof statusCounts] || 0;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => handleTabChange(tab.key)}
+                className={cn(
+                  "font-['Instrument_Sans'] font-semibold text-[13px] px-3.5 py-2.5 cursor-pointer border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 relative top-px",
+                  isActive
+                    ? "text-foreground border-foreground"
+                    : "text-muted-foreground border-transparent hover:text-foreground/70"
+                )}
+              >
+                {tab.key === 'archived' && <Archive className="h-3.5 w-3.5" />}
+                {tab.label}
+                <span className={cn(
+                  "text-[11px] font-bold px-1.5 py-[1px] rounded-full",
+                  isActive ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
+                )}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       )}
 
-      <div className="mt-6">
+      {/* Toolbar: search + view toggle */}
+      <div className="flex items-center justify-between gap-3 mb-5">
+        <div className="relative flex-1 max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher un projet..."
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="pl-9 bg-muted border-border h-9 text-[13px] font-[Roboto,sans-serif] rounded-none"
+          />
+        </div>
+        {!isMobile && (
+          <div className="flex border border-border overflow-hidden">
+            {(['grid', 'list', 'kanban'] as ViewMode[]).map((mode, i) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                title={mode}
+                className={cn(
+                  "px-2.5 py-[7px] flex items-center cursor-pointer transition-all duration-100",
+                  i > 0 && "border-l border-border",
+                  viewMode === mode
+                    ? "bg-foreground text-accent"
+                    : "bg-transparent text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {mode === 'grid' && (
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor" />
+                    <rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" />
+                    <rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" />
+                    <rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" />
+                  </svg>
+                )}
+                {mode === 'list' && (
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M2 4h12M2 8h12M2 12h12" strokeLinecap="round" />
+                  </svg>
+                )}
+                {mode === 'kanban' && (
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <rect x="1" y="1" width="4" height="14" rx="1" fill="currentColor" opacity="0.5" />
+                    <rect x="6" y="1" width="4" height="10" rx="1" fill="currentColor" />
+                    <rect x="11" y="1" width="4" height="12" rx="1" fill="currentColor" opacity="0.7" />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div>
         {activeTab === 'archived' ? (
-          archivedProjects.length === 0 ? (
+          filteredProjects.length === 0 ? (
             <div className="text-center py-12">
               <Archive className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">{t('projects.noArchivedProjects')}</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                {t('projects.archivedAutoDescription')}
-              </p>
+              <p className="text-sm text-muted-foreground mt-2">{t('projects.archivedAutoDescription')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {archivedProjects.map((project) => (
+              {filteredProjects.map((project) => (
                 <Card key={project.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -308,58 +331,31 @@ export default function Projects() {
                         {project.project_clients?.[0]?.clients?.company && (
                           <CardDescription className="flex items-center gap-2">
                             {project.project_clients[0].clients.logo_url && (
-                              <img 
-                                src={project.project_clients[0].clients.logo_url} 
-                                alt="" 
-                                className="w-5 h-5 rounded object-cover"
-                              />
+                              <img src={project.project_clients[0].clients.logo_url} alt="" className="w-5 h-5 rounded object-cover" />
                             )}
                             {project.project_clients[0].clients.company}
                           </CardDescription>
                         )}
                       </div>
-                      <Badge variant="secondary">
-                        <Archive className="h-3 w-3 mr-1" />
-                         Archivé
-                      </Badge>
+                      <Badge variant="secondary"><Archive className="h-3 w-3 mr-1" /> Archivé</Badge>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {project.description && (
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                        {project.description}
-                      </p>
-                    )}
+                    {project.description && <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{project.description}</p>}
                     <div className="flex items-center justify-end gap-2 mt-4">
                       <ProtectedAction module="projects" action="update">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/project/${project.id}`)}
-                        >
-                           <Edit className="h-4 w-4 mr-1" />
-                           {t('common.edit')}
+                        <Button variant="outline" size="sm" onClick={() => navigate(`/project/${project.id}`)}>
+                          <Edit className="h-4 w-4 mr-1" /> {t('common.edit')}
                         </Button>
                       </ProtectedAction>
                       <ProtectedAction module="projects" action="update">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => unarchiveMutation.mutate(project.id)}
-                          disabled={unarchiveMutation.isPending}
-                        >
-                           <ArchiveRestore className="h-4 w-4 mr-1" />
-                           {t('common.unarchive')}
+                        <Button variant="outline" size="sm" onClick={() => unarchiveMutation.mutate(project.id)} disabled={unarchiveMutation.isPending}>
+                          <ArchiveRestore className="h-4 w-4 mr-1" /> {t('common.unarchive')}
                         </Button>
                       </ProtectedAction>
                       <ProtectedAction module="projects" action="delete">
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => setProjectToDelete(project.id)}
-                        >
-                           <Trash2 className="h-4 w-4 mr-1" />
-                           {t('common.delete')}
+                        <Button variant="destructive" size="sm" onClick={() => setProjectToDelete(project.id)}>
+                          <Trash2 className="h-4 w-4 mr-1" /> {t('common.delete')}
                         </Button>
                       </ProtectedAction>
                     </div>
@@ -368,41 +364,39 @@ export default function Projects() {
               ))}
             </div>
           )
+        ) : filteredProjects.length === 0 ? (
+          <div className="text-center py-16 border border-border bg-card">
+            <div className="font-['Instrument_Sans'] font-bold text-base text-foreground mb-1.5">
+              Aucun projet trouvé
+            </div>
+            <div className="text-[13px] text-muted-foreground">
+              Essayez d'autres mots-clés ou changez de filtre.
+            </div>
+          </div>
+        ) : isMobile || viewMode === 'grid' ? (
+          <div
+            className="grid gap-px bg-border border border-border"
+            style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}
+          >
+            {filteredProjects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onClick={() => navigate(`/project/${project.id}`)}
+              />
+            ))}
+          </div>
+        ) : viewMode === 'kanban' ? (
+          <ProjectKanbanView
+            projects={filteredProjects}
+            onProjectClick={(id) => navigate(`/project/${id}`)}
+            onStatusChange={handleStatusChange}
+          />
         ) : (
-          filteredProjects.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                {activeTab === 'all' 
-                  ? t('projects.noProjects')
-                  : `${t('projects.noProjects')} ${t(`projects.noProjectStatus.${activeTab}`, '')}`
-                }
-              </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                {t('projects.startCreateProject')}
-              </p>
-            </div>
-          ) : isMobile || viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
-              {filteredProjects.map((project) => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  onClick={() => navigate(`/project/${project.id}`)}
-                />
-              ))}
-            </div>
-          ) : viewMode === 'kanban' ? (
-            <ProjectKanbanView 
-              projects={filteredProjects}
-              onProjectClick={(id) => navigate(`/project/${id}`)}
-              onStatusChange={handleStatusChange}
-            />
-          ) : (
-            <ProjectListView 
-              projects={filteredProjects}
-              onProjectClick={(id) => navigate(`/project/${id}`)}
-            />
-          )
+          <ProjectListView
+            projects={filteredProjects}
+            onProjectClick={(id) => navigate(`/project/${id}`)}
+          />
         )}
       </div>
 
@@ -410,9 +404,7 @@ export default function Projects() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('projects.confirmDelete')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('projects.confirmDeleteDescription')}
-            </AlertDialogDescription>
+            <AlertDialogDescription>{t('projects.confirmDeleteDescription')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
