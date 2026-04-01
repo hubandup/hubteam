@@ -57,275 +57,219 @@ export default function Dashboard() {
       toast.error(t('dashboard.adminOnly'));
       return;
     }
-    
+
     if (isAdmin) {
-      fetchDashboardData();
+      fetchDashboardData(true);
     }
   }, [isAdmin, roleLoading, navigate, periodFilter]);
 
   useEffect(() => {
     if (!isAdmin) return;
 
-    // Subscribe to realtime changes for projects, tasks, and clients
     const projectsChannel = supabase
       .channel('dashboard-projects')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
-        fetchDashboardData();
+        fetchDashboardData(false);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => {
-        fetchDashboardData();
+        fetchDashboardData(false);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => {
-        fetchDashboardData();
+        fetchDashboardData(false);
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(projectsChannel);
     };
-  }, [isAdmin]);
+  }, [isAdmin, periodFilter]);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (showLoader = true) => {
     try {
-      // Fetch clients stats
-      const { data: clients, error: clientsError } = await supabase
-        .from('clients')
-        .select('active, revenue, revenue_current_year, kanban_stage');
-      
-      if (clientsError) throw clientsError;
-
-      // Leads: Prospect, RDV à prendre, À relancer, RDV Hub Date, RDV Pris, Reco en cours
-      const leadStages = ['prospect', 'rdv_a_prendre', 'a_relancer', 'rdv_hub_date', 'rdv_pris', 'reco_en_cours'];
-      const leads = clients?.filter(c => c.active && leadStages.includes(c.kanban_stage)).length || 0;
-      
-      // Clients: À fidéliser, Projet Validé
-      const clientStages = ['a_fideliser', 'projet_valide'];
-      const activeClients = clients?.filter(c => c.active && clientStages.includes(c.kanban_stage)).length || 0;
-      
-      const totalRevenue = clients?.reduce((sum, c) => sum + (c.revenue_current_year || 0), 0) || 0;
-
-      // Fetch projects for progress calculation (without relying on FK-based nested selects)
-      const { data: projects, error: projectsError } = await supabase
-        .from('projects')
-        .select(`
-          id,
-          name,
-          status,
-          end_date,
-          project_clients (
-            clients (
-              company
-            )
-          )
-        `)
-        .in('status', ['active', 'reco_in_progress']);
-
-      if (projectsError) throw projectsError;
-
-      // Compute progress by fetching tasks separately and grouping by project_id
-      const projectIds = (projects || []).map((p: any) => p.id);
-      let tasksByProject: Record<string, { total: number; done: number }> = {};
-
-      if (projectIds.length > 0) {
-        const { data: tasksList, error: tasksListError } = await supabase
-          .from('tasks')
-          .select('project_id, status')
-          .in('project_id', projectIds);
-        if (tasksListError) throw tasksListError;
-
-        tasksByProject = (tasksList || []).reduce((acc: Record<string, { total: number; done: number }>, t: any) => {
-          const pid = t.project_id;
-          if (!pid) return acc;
-          if (!acc[pid]) acc[pid] = { total: 0, done: 0 };
-          acc[pid].total += 1;
-          if (t.status === 'done') acc[pid].done += 1;
-          return acc;
-        }, {});
+      if (showLoader) {
+        setLoading(true);
       }
 
-      const projectsProgress = (projects || [])
+      const now = new Date();
+      const sixMonthsAgo = subMonths(now, 5);
+      const sixMonthsStart = format(startOfMonth(sixMonthsAgo), 'yyyy-MM-dd');
+      const sixMonthsEnd = format(endOfMonth(now), 'yyyy-MM-dd');
+
+      const [
+        clientsResult,
+        projectsResult,
+        topClientsResult,
+        commentsResult,
+        invoicesResult,
+        allProjectsResult,
+        recentProjectsResult,
+        recentTasksResult,
+        teamAdminUsersResult,
+      ] = await Promise.all([
+        supabase.from('clients').select('active, revenue_current_year, kanban_stage'),
+        supabase
+          .from('projects')
+          .select(`
+            id,
+            name,
+            status,
+            end_date,
+            project_clients (
+              clients (
+                company
+              )
+            )
+          `)
+          .in('status', ['active', 'reco_in_progress']),
+        supabase
+          .from('clients')
+          .select('company, first_name, last_name, revenue_current_year')
+          .eq('active', true)
+          .order('revenue_current_year', { ascending: false })
+          .limit(5),
+        supabase
+          .from('task_comments')
+          .select('id, content, created_at, user_id, task_id, project_id')
+          .order('created_at', { ascending: false })
+          .limit(10),
+        supabase
+          .from('invoices')
+          .select('invoice_date, amount')
+          .gte('invoice_date', sixMonthsStart)
+          .lte('invoice_date', sixMonthsEnd)
+          .order('invoice_date', { ascending: true }),
+        supabase.from('projects').select('status'),
+        supabase.from('projects').select('created_at').gte('created_at', sixMonthsStart),
+        supabase.from('tasks').select('created_at').gte('created_at', sixMonthsStart),
+        supabase.from('user_roles').select('user_id, role').in('role', ['admin', 'team']),
+      ]);
+
+      if (clientsResult.error) throw clientsResult.error;
+      if (projectsResult.error) throw projectsResult.error;
+      if (topClientsResult.error) throw topClientsResult.error;
+      if (commentsResult.error) console.error('Error fetching comments:', commentsResult.error);
+      if (invoicesResult.error) console.error('Error fetching invoices:', invoicesResult.error);
+      if (allProjectsResult.error) console.error('Error fetching all projects:', allProjectsResult.error);
+      if (teamAdminUsersResult.error) console.error('Error fetching team/admin users:', teamAdminUsersResult.error);
+
+      const clients = clientsResult.data || [];
+      const projects = projectsResult.data || [];
+      const topClientsData = topClientsResult.data || [];
+      const commentsData = commentsResult.data || [];
+      const invoices = invoicesResult.data || [];
+      const allProjects = allProjectsResult.data || [];
+      const recentProjects = recentProjectsResult.data || [];
+      const recentTasks = recentTasksResult.data || [];
+      const teamAdminUsers = teamAdminUsersResult.data || [];
+
+      const leadStages = ['prospect', 'rdv_a_prendre', 'a_relancer', 'rdv_hub_date', 'rdv_pris', 'reco_en_cours'];
+      const clientStages = ['a_fideliser', 'projet_valide'];
+
+      const leads = clients.filter(c => c.active && leadStages.includes(c.kanban_stage)).length;
+      const activeClients = clients.filter(c => c.active && clientStages.includes(c.kanban_stage)).length;
+      const totalRevenue = clients.reduce((sum, c) => sum + (c.revenue_current_year || 0), 0);
+
+      const projectIds = projects.map((p: any) => p.id);
+      const openProjectTasksResult = projectIds.length
+        ? await supabase.from('tasks').select('project_id, status').in('project_id', projectIds)
+        : { data: [], error: null };
+
+      if (openProjectTasksResult.error) throw openProjectTasksResult.error;
+
+      const tasksByProject = (openProjectTasksResult.data || []).reduce<Record<string, { total: number; done: number; inProgress: number }>>((acc, task: any) => {
+        if (!task.project_id) return acc;
+        if (!acc[task.project_id]) {
+          acc[task.project_id] = { total: 0, done: 0, inProgress: 0 };
+        }
+        acc[task.project_id].total += 1;
+        if (task.status === 'done') acc[task.project_id].done += 1;
+        if (task.status === 'in_progress') acc[task.project_id].inProgress += 1;
+        return acc;
+      }, {});
+
+      const projectsProgress = projects
         .map((project: any) => {
-          const counts = tasksByProject[project.id] || { total: 0, done: 0 };
-          const totalTasks = counts.total;
-          const completedTasks = counts.done;
-          const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+          const counts = tasksByProject[project.id] || { total: 0, done: 0, inProgress: 0 };
+          const progress = counts.total > 0 ? Math.round((counts.done / counts.total) * 100) : 0;
           const clientName = project.project_clients?.[0]?.clients?.company || t('dashboard.unknownClient');
 
           return {
             ...project,
             clientName,
-            totalTasks,
-            completedTasks,
+            totalTasks: counts.total,
+            completedTasks: counts.done,
             progress,
           };
         })
-        .filter((p: any) => p.totalTasks > 0);
+        .filter((project: any) => project.totalTasks > 0);
 
-      // Fetch tasks in progress (only from open projects)
-      let tasksInProgressCount = 0;
-      if (projectIds.length > 0) {
-        const { data: tasks, error: tasksError } = await supabase
-          .from('tasks')
-          .select('id')
-          .eq('status', 'in_progress')
-          .in('project_id', projectIds);
+      const tasksInProgressCount = Object.values(tasksByProject).reduce((sum: number, taskGroup) => sum + taskGroup.inProgress, 0);
 
-        if (tasksError) throw tasksError;
-        tasksInProgressCount = tasks?.length || 0;
-      }
+      const commentUserIds = [...new Set(commentsData.map(comment => comment.user_id).filter(Boolean))];
+      const commentTaskIds = [...new Set(commentsData.map(comment => comment.task_id).filter(Boolean))];
 
-      const { data: topClientsData, error: topClientsError } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('active', true)
-        .order('revenue_current_year', { ascending: false })
-        .limit(5);
+      const [commentProfilesResult, commentTasksResult] = await Promise.all([
+        commentUserIds.length
+          ? supabase.from('profiles').select('id, first_name, last_name, avatar_url').in('id', commentUserIds)
+          : Promise.resolve({ data: [], error: null }),
+        commentTaskIds.length
+          ? supabase.from('tasks').select('id, title, project_id').in('id', commentTaskIds)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
 
-      if (topClientsError) throw topClientsError;
+      const commentProfiles = commentProfilesResult.data || [];
+      const commentTasks = commentTasksResult.data || [];
+      const commentProjectIds = [...new Set([
+        ...commentsData.map(comment => comment.project_id).filter(Boolean),
+        ...commentTasks.map(task => task.project_id).filter(Boolean),
+      ])];
 
-      // Fetch recent task comments
-      const { data: commentsData, error: commentsError } = await supabase
-        .from('task_comments')
-        .select(`
-          id,
-          content,
-          created_at,
-          user_id,
-          task_id,
-          project_id
-        `)
-        .order('created_at', { ascending: false })
-        .limit(10);
+      const commentProjectsResult = commentProjectIds.length
+        ? await supabase.from('projects').select('id, name').in('id', commentProjectIds)
+        : { data: [], error: null };
 
-      if (commentsError) console.error('Error fetching comments:', commentsError);
+      const profileMap = new Map(commentProfiles.map(profile => [profile.id, profile]));
+      const taskMap = new Map(commentTasks.map(task => [task.id, task]));
+      const projectMap = new Map((commentProjectsResult.data || []).map(project => [project.id, project.name]));
 
-      const commentsWithDetails = await Promise.all(
-        (commentsData || []).map(async (comment) => {
-          let profile = null;
-          let task = null;
-          let project = 'Projet inconnu';
-          let projectId = comment.project_id; // Start with comment's project_id
+      const comments = commentsData.map(comment => {
+        const task = comment.task_id ? taskMap.get(comment.task_id) : null;
+        const resolvedProjectId = comment.project_id || task?.project_id || null;
 
-          if (comment.user_id) {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('first_name, last_name, avatar_url')
-              .eq('id', comment.user_id)
-              .maybeSingle();
-            profile = profileData;
-          }
-
-          if (comment.task_id) {
-            const { data: taskData } = await supabase
-              .from('tasks')
-              .select('title, project_id')
-              .eq('id', comment.task_id)
-              .maybeSingle();
-            
-            if (taskData) {
-              task = { title: taskData.title };
-              projectId = projectId || taskData.project_id; // Use task's project_id if comment doesn't have one
-              
-              if (taskData.project_id) {
-                const { data: projectData } = await supabase
-                  .from('projects')
-                  .select('name')
-                  .eq('id', taskData.project_id)
-                  .maybeSingle();
-                
-                if (projectData) {
-                  project = projectData.name;
-                }
-              }
-            }
-          } else if (comment.project_id) {
-            // For free comments without task, get project directly
-            const { data: projectData } = await supabase
-              .from('projects')
-              .select('name')
-              .eq('id', comment.project_id)
-              .maybeSingle();
-            
-            if (projectData) {
-              project = projectData.name;
-            }
-          }
-
-          return {
-            id: comment.id,
-            content: comment.content,
-            created_at: comment.created_at,
-            profiles: profile,
-            tasks: task,
-            project,
-            project_id: projectId,
-            task_id: comment.task_id
-          };
-        })
-      );
-
-      const comments = commentsWithDetails;
-
-      setStats({
-        leads,
-        clients: activeClients,
-        openProjects: projects?.length || 0,
-        tasksInProgress: tasksInProgressCount,
-        totalRevenue,
+        return {
+          id: comment.id,
+          content: comment.content,
+          created_at: comment.created_at,
+          profiles: comment.user_id ? profileMap.get(comment.user_id) || null : null,
+          tasks: task ? { title: task.title } : null,
+          project: resolvedProjectId ? projectMap.get(resolvedProjectId) || 'Projet inconnu' : 'Projet inconnu',
+          project_id: resolvedProjectId,
+          task_id: comment.task_id,
+        };
       });
 
-      // Fetch revenue evolution data from invoices (last 6 months)
-      const now = new Date();
-      const sixMonthsAgo = subMonths(now, 5); // 5 months ago + current month = 6 months
-      
-      const { data: invoices, error: invoicesError } = await supabase
-        .from('invoices')
-        .select('invoice_date, amount')
-        .gte('invoice_date', format(startOfMonth(sixMonthsAgo), 'yyyy-MM-dd'))
-        .lte('invoice_date', format(endOfMonth(now), 'yyyy-MM-dd'))
-        .order('invoice_date', { ascending: true });
-      
-      if (invoicesError) {
-        console.error('Error fetching invoices:', invoicesError);
-      }
-
-      // Group invoices by month and calculate revenue
       const revenueByMonth: Record<string, number> = {};
-      
-      invoices?.forEach((invoice) => {
+      invoices.forEach((invoice: any) => {
+        if (!invoice.invoice_date) return;
         const monthKey = format(new Date(invoice.invoice_date), 'yyyy-MM');
-        if (!revenueByMonth[monthKey]) {
-          revenueByMonth[monthKey] = 0;
-        }
-        revenueByMonth[monthKey] += Number(invoice.amount);
+        revenueByMonth[monthKey] = (revenueByMonth[monthKey] || 0) + Number(invoice.amount || 0);
       });
 
-      // Generate array of last 6 months with revenue data
       const revenueEvolution = [];
       for (let i = 5; i >= 0; i--) {
         const monthDate = subMonths(now, i);
         const monthKey = format(monthDate, 'yyyy-MM');
         const monthName = format(monthDate, 'MMMM', { locale: fr });
-        const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
-        
         revenueEvolution.push({
-          month: capitalizedMonth,
+          month: monthName.charAt(0).toUpperCase() + monthName.slice(1),
           revenue: revenueByMonth[monthKey] || 0,
         });
       }
 
-      // Calculate project status distribution
-      const { data: allProjects, error: allProjectsError } = await supabase
-        .from('projects')
-        .select('status');
-
-      if (allProjectsError) console.error('Error fetching all projects:', allProjectsError);
-
-      const statusCounts = allProjects?.reduce((acc: any, project: any) => {
-        const status = project.status;
-        acc[status] = (acc[status] || 0) + 1;
+      const statusCounts = allProjects.reduce((acc: Record<string, number>, project: any) => {
+        acc[project.status] = (acc[project.status] || 0) + 1;
         return acc;
-      }, {}) || {};
+      }, {});
 
       const projectsStatus = [
         { name: 'Planification', value: statusCounts['planning'] || 0 },
@@ -333,191 +277,151 @@ export default function Dashboard() {
         { name: 'Terminé', value: statusCounts['completed'] || 0 },
       ].filter(item => item.value > 0);
 
-      // Real monthly performance data from DB (last 6 months)
-      const performance = [];
+      const monthlyPerformanceMap = new Map<string, { month: string; projets: number; taches: number }>();
       for (let i = 5; i >= 0; i--) {
         const monthDate = subMonths(now, i);
-        const monthStart = format(startOfMonth(monthDate), 'yyyy-MM-dd');
-        const monthEnd = format(endOfMonth(monthDate), 'yyyy-MM-dd');
-        const monthName = format(monthDate, 'MMM', { locale: fr });
-        const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
-
-        // Count projects created this month
-        const { count: projectCount } = await supabase
-          .from('projects')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', monthStart)
-          .lte('created_at', monthEnd);
-
-        // Count tasks created this month
-        const { count: taskCount } = await supabase
-          .from('tasks')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', monthStart)
-          .lte('created_at', monthEnd);
-
-        performance.push({
-          month: capitalizedMonth,
-          projets: projectCount || 0,
-          taches: taskCount || 0,
+        const key = format(monthDate, 'yyyy-MM');
+        const label = format(monthDate, 'MMM', { locale: fr });
+        monthlyPerformanceMap.set(key, {
+          month: label.charAt(0).toUpperCase() + label.slice(1),
+          projets: 0,
+          taches: 0,
         });
       }
 
-      // Fetch projects by user (team + admin)
-      const { data: teamAdminUsers, error: usersError } = await supabase
-        .from('user_roles')
-        .select('user_id, role')
-        .in('role', ['admin', 'team']);
-
-      if (usersError) {
-        console.error('Error fetching team/admin users:', usersError);
-      }
-
-      // Get profiles for these users
-      const userIds = teamAdminUsers?.map(u => u.user_id) || [];
-      const { data: userProfiles } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name')
-        .in('id', userIds);
-
-      // Create a map of user profiles
-      const profilesMap = new Map(
-        userProfiles?.map(p => [p.id, `${p.first_name} ${p.last_name}`]) || []
-      );
-
-      const projectCountsByUser: Record<string, { name: string; count: number }> = {};
-
-      // Batch: Count projects created by each user, tasks assigned, tasks completed in ONE query each
-      if (teamAdminUsers && userIds.length > 0) {
-        // Fetch all projects created by these users
-        const { data: allUserProjects } = await supabase
-          .from('projects')
-          .select('created_by')
-          .in('created_by', userIds);
-
-        // Fetch all tasks assigned to these users
-        const { data: allUserTasks } = await supabase
-          .from('tasks')
-          .select('assigned_to, status')
-          .in('assigned_to', userIds);
-
-        // Aggregate projects by user
-        const projectCountsByUser: Record<string, number> = {};
-        (allUserProjects || []).forEach((p: any) => {
-          projectCountsByUser[p.created_by] = (projectCountsByUser[p.created_by] || 0) + 1;
-        });
-
-        // Aggregate tasks by user (total + completed)
-        const taskCountsByUser: Record<string, number> = {};
-        const taskCompletedByUser: Record<string, number> = {};
-        (allUserTasks || []).forEach((t: any) => {
-          taskCountsByUser[t.assigned_to] = (taskCountsByUser[t.assigned_to] || 0) + 1;
-          if (t.status === 'done') {
-            taskCompletedByUser[t.assigned_to] = (taskCompletedByUser[t.assigned_to] || 0) + 1;
-          }
-        });
-
-        // Build chart data
-        const projectsByUserData = userIds
-          .map(uid => ({
-            name: profilesMap.get(uid) || 'Utilisateur inconnu',
-            projets: projectCountsByUser[uid] || 0,
-          }))
-          .filter(u => u.projets > 0)
-          .sort((a, b) => b.projets - a.projets);
-
-        const tasksByUserData = userIds
-          .map(uid => ({
-            name: profilesMap.get(uid) || 'Utilisateur inconnu',
-            taches: taskCountsByUser[uid] || 0,
-          }))
-          .filter(u => u.taches > 0)
-          .sort((a, b) => b.taches - a.taches);
-
-        const taskCompletionByUserData = userIds
-          .map(uid => {
-            const total = taskCountsByUser[uid] || 0;
-            const completed = taskCompletedByUser[uid] || 0;
-            if (total === 0) return null;
-            return {
-              name: profilesMap.get(uid) || 'Utilisateur inconnu',
-              taux: Math.round((completed / total) * 100),
-              terminees: completed,
-              total,
-            };
-          })
-          .filter(Boolean)
-          .sort((a: any, b: any) => b.taux - a.taux);
-
-        setProjectsByUser(projectsByUserData);
-        setTasksByUser(tasksByUserData);
-        setTaskCompletionByUser(taskCompletionByUserData);
-      }
-
-      setStats({
-        leads,
-        clients: activeClients,
-        openProjects: projects?.length || 0,
-        tasksInProgress: tasksInProgressCount,
-        totalRevenue,
+      recentProjects.forEach((project: any) => {
+        const key = format(new Date(project.created_at), 'yyyy-MM');
+        const month = monthlyPerformanceMap.get(key);
+        if (month) month.projets += 1;
       });
 
-      setProjectsWithProgress(projectsProgress);
-      setTopClients(topClientsData || []);
-      setRecentComments(comments || []);
-      setRevenueData(revenueEvolution);
-      setProjectStatusData(projectsStatus);
-      setMonthlyPerformance(performance);
+      recentTasks.forEach((task: any) => {
+        const key = format(new Date(task.created_at), 'yyyy-MM');
+        const month = monthlyPerformanceMap.get(key);
+        if (month) month.taches += 1;
+      });
 
-      // === NEW KPIs ===
+      const performance = Array.from(monthlyPerformanceMap.values());
 
-      // 1. Conversion rate
-      const allClients = clients || [];
-      const convertedCount = allClients.filter(c => ['projet_valide', 'a_fideliser'].includes(c.kanban_stage)).length;
-      const totalClientsCount = allClients.length;
+      const convertedCount = clients.filter(c => ['projet_valide', 'a_fideliser'].includes(c.kanban_stage)).length;
+      const totalClientsCount = clients.length;
       const rate = totalClientsCount > 0 ? Math.round((convertedCount / totalClientsCount) * 100) : 0;
-      setConversionRate({ rate, converted: convertedCount, total: totalClientsCount });
 
-      // 2. Monthly revenue (current vs previous month)
       const currentMonthKey = format(now, 'yyyy-MM');
       const prevMonthKey = format(subMonths(now, 1), 'yyyy-MM');
       const currentMonthRevenue = revenueByMonth[currentMonthKey] || 0;
       const prevMonthRevenue = revenueByMonth[prevMonthKey] || 0;
-      const revenueVariation = prevMonthRevenue > 0 
-        ? Math.round(((currentMonthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100) 
+      const revenueVariation = prevMonthRevenue > 0
+        ? Math.round(((currentMonthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100)
         : 0;
+
+      setStats({
+        leads,
+        clients: activeClients,
+        openProjects: projects.length,
+        tasksInProgress: tasksInProgressCount,
+        totalRevenue,
+      });
+      setProjectsWithProgress(projectsProgress);
+      setTopClients(topClientsData);
+      setRecentComments(comments);
+      setRevenueData(revenueEvolution);
+      setProjectStatusData(projectsStatus);
+      setMonthlyPerformance(performance);
+      setConversionRate({ rate, converted: convertedCount, total: totalClientsCount });
       setMonthlyRevenue({ current: currentMonthRevenue, previous: prevMonthRevenue, variation: revenueVariation });
+      setLoading(false);
 
-      // 3. Team workload (tasks in_progress + todo per user)
-      if (userIds.length > 0) {
-        const { data: workloadTasks } = await supabase
-          .from('tasks')
-          .select('assigned_to, status')
-          .in('assigned_to', userIds)
-          .in('status', ['in_progress', 'todo']);
-
-        const workloadByUser: Record<string, { todo: number; in_progress: number }> = {};
-        (workloadTasks || []).forEach((t: any) => {
-          if (!workloadByUser[t.assigned_to]) workloadByUser[t.assigned_to] = { todo: 0, in_progress: 0 };
-          if (t.status === 'todo') workloadByUser[t.assigned_to].todo++;
-          else workloadByUser[t.assigned_to].in_progress++;
-        });
-
-        const workloadData = userIds
-          .map(uid => ({
-            name: formatUserName(profilesMap.get(uid) || 'Inconnu'),
-            todo: workloadByUser[uid]?.todo || 0,
-            en_cours: workloadByUser[uid]?.in_progress || 0,
-          }))
-          .filter(u => u.todo > 0 || u.en_cours > 0)
-          .sort((a, b) => (b.todo + b.en_cours) - (a.todo + a.en_cours));
-
-        setTeamWorkload(workloadData);
+      const userIds = teamAdminUsers.map(user => user.user_id);
+      if (userIds.length === 0) {
+        setProjectsByUser([]);
+        setTasksByUser([]);
+        setTaskCompletionByUser([]);
+        setTeamWorkload([]);
+        return;
       }
+
+      const [userProfilesResult, allUserProjectsResult, allUserTasksResult] = await Promise.all([
+        supabase.from('profiles').select('id, first_name, last_name').in('id', userIds),
+        supabase.from('projects').select('created_by').in('created_by', userIds),
+        supabase.from('tasks').select('assigned_to, status').in('assigned_to', userIds),
+      ]);
+
+      const userProfiles = userProfilesResult.data || [];
+      const allUserProjects = allUserProjectsResult.data || [];
+      const allUserTasks = allUserTasksResult.data || [];
+      const profilesMap = new Map(userProfiles.map(profile => [profile.id, `${profile.first_name} ${profile.last_name}`]));
+
+      const projectCountsByUser = allUserProjects.reduce((acc: Record<string, number>, project: any) => {
+        if (!project.created_by) return acc;
+        acc[project.created_by] = (acc[project.created_by] || 0) + 1;
+        return acc;
+      }, {});
+
+      const taskCountsByUser: Record<string, number> = {};
+      const taskCompletedByUser: Record<string, number> = {};
+      const workloadByUser: Record<string, { todo: number; in_progress: number }> = {};
+
+      allUserTasks.forEach((task: any) => {
+        if (!task.assigned_to) return;
+        taskCountsByUser[task.assigned_to] = (taskCountsByUser[task.assigned_to] || 0) + 1;
+        if (task.status === 'done') {
+          taskCompletedByUser[task.assigned_to] = (taskCompletedByUser[task.assigned_to] || 0) + 1;
+        }
+        if (!workloadByUser[task.assigned_to]) {
+          workloadByUser[task.assigned_to] = { todo: 0, in_progress: 0 };
+        }
+        if (task.status === 'todo') workloadByUser[task.assigned_to].todo += 1;
+        if (task.status === 'in_progress') workloadByUser[task.assigned_to].in_progress += 1;
+      });
+
+      const projectsByUserData = userIds
+        .map(uid => ({
+          name: profilesMap.get(uid) || 'Utilisateur inconnu',
+          projets: projectCountsByUser[uid] || 0,
+        }))
+        .filter(user => user.projets > 0)
+        .sort((a, b) => b.projets - a.projets);
+
+      const tasksByUserData = userIds
+        .map(uid => ({
+          name: profilesMap.get(uid) || 'Utilisateur inconnu',
+          taches: taskCountsByUser[uid] || 0,
+        }))
+        .filter(user => user.taches > 0)
+        .sort((a, b) => b.taches - a.taches);
+
+      const taskCompletionByUserData = userIds
+        .map(uid => {
+          const total = taskCountsByUser[uid] || 0;
+          const completed = taskCompletedByUser[uid] || 0;
+          if (total === 0) return null;
+          return {
+            name: profilesMap.get(uid) || 'Utilisateur inconnu',
+            taux: Math.round((completed / total) * 100),
+            terminees: completed,
+            total,
+          };
+        })
+        .filter(Boolean)
+        .sort((a: any, b: any) => b.taux - a.taux);
+
+      const workloadData = userIds
+        .map(uid => ({
+          name: formatUserName(profilesMap.get(uid) || 'Inconnu'),
+          todo: workloadByUser[uid]?.todo || 0,
+          en_cours: workloadByUser[uid]?.in_progress || 0,
+        }))
+        .filter(user => user.todo > 0 || user.en_cours > 0)
+        .sort((a, b) => (b.todo + b.en_cours) - (a.todo + a.en_cours));
+
+      setProjectsByUser(projectsByUserData);
+      setTasksByUser(tasksByUserData);
+      setTaskCompletionByUser(taskCompletionByUserData as any[]);
+      setTeamWorkload(workloadData);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast.error(t('dashboard.loadError'));
-    } finally {
       setLoading(false);
     }
   };
