@@ -27,7 +27,6 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
   const [loading, setLoading] = useState(false);
   const [addClientOpen, setAddClientOpen] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
-  const [clients, setClients] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
