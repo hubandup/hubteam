@@ -2646,6 +2646,9 @@ export type Database = {
         | "message"
         | "deadline_approaching"
         | "reaction"
+        | "account_created"
+        | "project_updated"
+        | "new_agency"
       permission_action: "read" | "create" | "update" | "delete"
       permission_scope: "all" | "limited" | "own"
       prospect_channel: "Email" | "Téléphone" | "LinkedIn" | "Bouche-à-oreille"
@@ -2848,6 +2851,9 @@ export const Constants = {
         "message",
         "deadline_approaching",
         "reaction",
+        "account_created",
+        "project_updated",
+        "new_agency",
       ],
       permission_action: ["read", "create", "update", "delete"],
       permission_scope: ["all", "limited", "own"],
