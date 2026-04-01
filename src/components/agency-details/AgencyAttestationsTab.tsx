@@ -135,8 +135,8 @@ export function AgencyAttestationsTab({ agencyId, canEdit }: Props) {
 
       if (error) throw error;
 
+      setAttestations(prev => prev.filter(a => a.id !== attestation.id));
       toast.success('Document supprimé');
-      fetchAttestations();
     } catch (error) {
       console.error('Delete error:', error);
       toast.error('Erreur lors de la suppression');
