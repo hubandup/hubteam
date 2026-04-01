@@ -153,7 +153,7 @@ serve(async (req) => {
         }
 
         // Client role restrictions
-        if (userRole === 'client' && !['project_assigned', 'message'].includes(item.notification_type)) {
+        if (userRole === 'client' && !['project_assigned', 'message', 'account_created', 'project_updated', 'new_agency'].includes(item.notification_type)) {
           console.log(`Client role cannot receive ${item.notification_type} notifications`);
           await supabase
             .from('notification_outbox')
