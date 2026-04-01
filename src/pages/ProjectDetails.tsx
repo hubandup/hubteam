@@ -60,7 +60,7 @@ export default function ProjectDetails() {
     }
 
     const channel = supabase
-      .channel('project-details-tasks')
+      .channel('project-details-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -69,6 +69,22 @@ export default function ProjectDetails() {
       }, () => {
         fetchProjectDetails();
         fetchBadgeCounts();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'project_clients',
+        filter: `project_id=eq.${id}`
+      }, () => {
+        fetchProjectDetails();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'projects',
+        filter: `id=eq.${id}`
+      }, () => {
+        fetchProjectDetails();
       })
       .subscribe();
 
