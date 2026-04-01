@@ -150,7 +150,7 @@ export default function AgencyDetails() {
     },
     ...(showAttestations ? [{
       value: 'attestations',
-      label: 'Attestations',
+      label: 'Documents',
       icon: <ShieldCheck className="h-4 w-4" />,
       content: <AgencyAttestationsTab agencyId={agency.id} canEdit={canEditAttestations} />
     }] : []),
