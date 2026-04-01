@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
-import { AddClientDialog } from './AddClientDialog';
+import { AddClientDialog, type AddedClientPayload } from './AddClientDialog';
 
 interface AddProjectDialogProps {
   onProjectAdded: () => void;
@@ -26,7 +26,7 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [addClientOpen, setAddClientOpen] = useState(false);
-  const [clients, setClients] = useState<any[]>([]);
+  const [clients, setClients] = useState<AddedClientPayload[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -46,7 +46,7 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
     try {
       const { data, error } = await supabase
         .from('clients')
-        .select('id, company, first_name, last_name, kdrive_drive_id, kdrive_folder_id, kdrive_folder_path')
+        .select('id, company, first_name, last_name, email, kdrive_drive_id, kdrive_folder_id, kdrive_folder_path')
         .eq('active', true)
         .order('company');
 
@@ -232,11 +232,21 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
                 <AddClientDialog
                   open={addClientOpen}
                   onOpenChange={setAddClientOpen}
-                  onClientAdded={async (newClientId) => {
-                    await fetchClients();
-                    if (newClientId) {
-                      setFormData(prev => ({ ...prev, client_id: newClientId }));
-                    }
+                  onClientAdded={(newClient) => {
+                    if (!newClient) return;
+
+                    setClients((prev) => {
+                      const nextClients = prev.some((client) => client.id === newClient.id)
+                        ? prev.map((client) => client.id === newClient.id ? newClient : client)
+                        : [...prev, newClient];
+
+                      return [...nextClients].sort((a, b) =>
+                        a.company.localeCompare(b.company, 'fr', { sensitivity: 'base' })
+                      );
+                    });
+
+                    setFormData((prev) => ({ ...prev, client_id: newClient.id }));
+                    void fetchClients();
                   }}
                 />
               </div>
