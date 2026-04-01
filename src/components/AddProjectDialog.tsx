@@ -43,7 +43,18 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
     }
   }, [open]);
 
-  const fetchClients = async () => {
+  const sortClients = (items: AddedClientPayload[]) =>
+    [...items].sort((a, b) => a.company.localeCompare(b.company, 'fr', { sensitivity: 'base' }));
+
+  const upsertClientInList = (list: AddedClientPayload[], client: AddedClientPayload) => {
+    const nextClients = list.some((existingClient) => existingClient.id === client.id)
+      ? list.map((existingClient) => existingClient.id === client.id ? client : existingClient)
+      : [...list, client];
+
+    return sortClients(nextClients);
+  };
+
+  const fetchClients = async (preservedClient?: AddedClientPayload | null) => {
     try {
       const { data, error } = await supabase
         .from('clients')
@@ -54,15 +65,15 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
       if (error) throw error;
       setClients((prev) => {
         const fetchedClients = data || [];
-        const selectedClient = selectedClientPreview ?? prev.find((client) => client.id === formData.client_id);
+        const selectedClient = preservedClient
+          ?? selectedClientPreview
+          ?? prev.find((client) => client.id === formData.client_id);
 
         if (!selectedClient || fetchedClients.some((client) => client.id === selectedClient.id)) {
-          return fetchedClients;
+          return sortClients(fetchedClients);
         }
 
-        return [...fetchedClients, selectedClient].sort((a, b) =>
-          a.company.localeCompare(b.company, 'fr', { sensitivity: 'base' })
-        );
+        return upsertClientInList(fetchedClients, selectedClient);
       });
     } catch (error) {
       console.error('Error fetching clients:', error);
@@ -230,6 +241,7 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
               <Label htmlFor="client">Client</Label>
               <div className="flex gap-2">
                 <Select
+                  key={`${formData.client_id || 'empty'}-${clients.length}`}
                   value={formData.client_id}
                   onValueChange={handleClientChange}
                 >
@@ -265,19 +277,9 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
                   onClientAdded={(newClient) => {
                     if (!newClient) return;
 
-                    setClients((prev) => {
-                      const nextClients = prev.some((client) => client.id === newClient.id)
-                        ? prev.map((client) => client.id === newClient.id ? newClient : client)
-                        : [...prev, newClient];
-
-                      return [...nextClients].sort((a, b) =>
-                        a.company.localeCompare(b.company, 'fr', { sensitivity: 'base' })
-                      );
-                    });
-
+                    setClients((prev) => upsertClientInList(prev, newClient));
                     setSelectedClientPreview(newClient);
                     setFormData((prev) => ({ ...prev, client_id: newClient.id }));
-                    void fetchClients();
                   }}
                 />
               </div>
