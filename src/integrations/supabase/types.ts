@@ -1382,6 +1382,38 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_agency_notifications: {
+        Row: {
+          agency_id: string
+          agency_name: string
+          created_at: string
+          id: string
+          sent: boolean
+        }
+        Insert: {
+          agency_id: string
+          agency_name: string
+          created_at?: string
+          id?: string
+          sent?: boolean
+        }
+        Update: {
+          agency_id?: string
+          agency_name?: string
+          created_at?: string
+          id?: string
+          sent?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_agency_notifications_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: true
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pending_quote_actions: {
         Row: {
           actioned_at: string | null
