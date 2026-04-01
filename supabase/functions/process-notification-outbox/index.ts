@@ -195,7 +195,7 @@ serve(async (req) => {
         }
 
         // Client role always gets email for project_assigned and message
-        if (userRole === 'client' && ['project_assigned', 'message'].includes(item.notification_type)) {
+        if (userRole === 'client' && ['project_assigned', 'message', 'account_created', 'project_updated', 'new_agency'].includes(item.notification_type)) {
           shouldSendEmail = true;
         }
 
