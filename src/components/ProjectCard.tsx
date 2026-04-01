@@ -102,8 +102,8 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={cn(
-        "p-5 cursor-pointer flex flex-col gap-3.5 transition-all duration-150",
-        hovered ? "bg-muted/60 shadow-md" : "bg-card shadow-[0_1px_3px_rgba(0,0,0,0.04),0_1px_2px_rgba(0,0,0,0.03)]"
+        "p-5 cursor-pointer flex flex-col gap-3.5 transition-all duration-150 bg-white",
+        hovered ? "shadow-md" : "shadow-[0_1px_3px_rgba(0,0,0,0.04),0_1px_2px_rgba(0,0,0,0.03)]"
       )}
     >
       {/* Top: logo + badge + arrow */}
