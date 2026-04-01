@@ -185,7 +185,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
     } finally {
       setCreatingAccount(false);
       setConfirmAccountOpen(false);
-      setCreatedClientData(null);
+      finishAndNotifyParent();
     }
   };
 
