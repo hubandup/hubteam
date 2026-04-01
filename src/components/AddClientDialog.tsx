@@ -157,11 +157,16 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
     return publicUrl;
   };
 
+  const finishAndNotifyParent = () => {
+    onClientAdded(pendingClientId.current);
+    pendingClientId.current = undefined;
+    setCreatedClientData(null);
+  };
+
   const createUserAccount = async () => {
     if (!createdClientData) return;
     setCreatingAccount(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
       const response = await supabase.functions.invoke('invite-user', {
         body: {
           email: createdClientData.email,
