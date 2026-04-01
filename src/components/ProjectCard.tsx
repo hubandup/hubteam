@@ -108,16 +108,24 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
     >
       {/* Top: logo + badge + arrow */}
       <div className="flex items-center justify-between gap-2">
-        <div
-          className="w-8 h-8 rounded flex items-center justify-center font-['Instrument_Sans'] font-bold text-[11px] leading-none flex-shrink-0"
-          style={{
-            backgroundColor: `${color}18`,
-            border: `1px solid ${color}30`,
-            color: color,
-          }}
-        >
-          {initials}
-        </div>
+        {client?.logo_url ? (
+          <img
+            src={client.logo_url}
+            alt={clientName}
+            className="w-8 h-8 rounded object-contain flex-shrink-0"
+          />
+        ) : (
+          <div
+            className="w-8 h-8 rounded flex items-center justify-center font-['Instrument_Sans'] font-bold text-[11px] leading-none flex-shrink-0"
+            style={{
+              backgroundColor: `${color}18`,
+              border: `1px solid ${color}30`,
+              color: color,
+            }}
+          >
+            {initials}
+          </div>
+        )}
         <div className="flex-1">
           <StatusBadge status={project.status} />
         </div>
