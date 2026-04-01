@@ -46,7 +46,7 @@ interface RecentActivity {
 
 export default function Home() {
   const [userName, setUserName] = useState('');
-  const [overdueProjects, setOverdueProjects] = useState<OverdueProject[]>([]);
+  const [activeProjects, setActiveProjects] = useState<ActiveProject[]>([]);
   const [upcomingDeadlines, setUpcomingDeadlines] = useState<UpcomingDeadline[]>([]);
   const [followUps, setFollowUps] = useState<FollowUpClient[]>([]);
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
