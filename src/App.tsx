@@ -68,49 +68,53 @@ const PWARedirect = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const App = () => {
+function AppInner() {
   useDesignSettings();
   
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AuthProvider>
-            <Routes>
-            <Route path="/auth" element={<Suspense fallback={<AppSkeleton />}><Auth /></Suspense>} />
-            <Route path="/auth/set-password" element={<Suspense fallback={<AppSkeleton />}><SetPassword /></Suspense>} />
-            <Route path="/reset-password" element={<Suspense fallback={<AppSkeleton />}><ResetPassword /></Suspense>} />
-            <Route path="/" element={<ProtectedRoute><Layout><PageSuspense><PWARedirect><Home /></PWARedirect></PageSuspense></Layout></ProtectedRoute>} />
-            <Route path="/home" element={<ProtectedRoute><Layout><PageSuspense><PWARedirect><Home /></PWARedirect></PageSuspense></Layout></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Layout><PageSuspense><PWARedirect><Dashboard /></PWARedirect></PageSuspense></Layout></ProtectedRoute>} />
-            <Route path="/finances" element={<ProtectedRoute><Layout><PageSuspense><PWARedirect><Finances /></PWARedirect></PageSuspense></Layout></ProtectedRoute>} />
-            <Route path="/feed" element={<ProtectedRoute><Layout><PageSuspense><Feed /></PageSuspense></Layout></ProtectedRoute>} />
-            <Route path="/notes" element={<ProtectedRoute><Layout><PageSuspense><Notes /></PageSuspense></Layout></ProtectedRoute>} />
-            <Route path="/crm" element={<ProtectedRoute><Layout><PageSuspense><CRM /></PageSuspense></Layout></ProtectedRoute>} />
-            <Route path="/prospection" element={<ProtectedRoute><Layout><PageSuspense><Prospection /></PageSuspense></Layout></ProtectedRoute>} />
-            <Route path="/client/:id" element={<ProtectedRoute><Layout><PageSuspense><ClientDetails /></PageSuspense></Layout></ProtectedRoute>} />
-            <Route path="/agencies" element={<ProtectedRoute><Layout><PageSuspense><Agencies /></PageSuspense></Layout></ProtectedRoute>} />
-            <Route path="/agency/:id" element={<ProtectedRoute><Layout><PageSuspense><AgencyDetails /></PageSuspense></Layout></ProtectedRoute>} />
-            <Route path="/projects" element={<ProtectedRoute><Layout><PageSuspense><Projects /></PageSuspense></Layout></ProtectedRoute>} />
-            <Route path="/project/:id" element={<ProtectedRoute><Layout><PageSuspense><ProjectDetails /></PageSuspense></Layout></ProtectedRoute>} />
-            <Route path="/archived-projects" element={<ProtectedRoute><Layout><PageSuspense><ArchivedProjects /></PageSuspense></Layout></ProtectedRoute>} />
-            <Route path="/tasks" element={<ProtectedRoute><Layout><PageSuspense><Tasks /></PageSuspense></Layout></ProtectedRoute>} />
-            <Route path="/messages" element={<ProtectedRoute><Layout><PageSuspense><Messages /></PageSuspense></Layout></ProtectedRoute>} />
-            <Route path="/faq" element={<ProtectedRoute><Layout><PageSuspense><FAQ /></PageSuspense></Layout></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><Layout><PageSuspense><Settings /></PageSuspense></Layout></ProtectedRoute>} />
-            <Route path="/install" element={<Suspense fallback={<AppSkeleton />}><Install /></Suspense>} />
-            <Route path="/unsubscribe" element={<Suspense fallback={<AppSkeleton />}><Unsubscribe /></Suspense>} />
-            <Route path="*" element={<Suspense fallback={null}><NotFound /></Suspense>} />
-            </Routes>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-    </ErrorBoundary>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <AuthProvider>
+        <Routes>
+        <Route path="/auth" element={<Suspense fallback={<AppSkeleton />}><Auth /></Suspense>} />
+        <Route path="/auth/set-password" element={<Suspense fallback={<AppSkeleton />}><SetPassword /></Suspense>} />
+        <Route path="/reset-password" element={<Suspense fallback={<AppSkeleton />}><ResetPassword /></Suspense>} />
+        <Route path="/" element={<ProtectedRoute><Layout><PageSuspense><PWARedirect><Home /></PWARedirect></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/home" element={<ProtectedRoute><Layout><PageSuspense><PWARedirect><Home /></PWARedirect></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><Layout><PageSuspense><PWARedirect><Dashboard /></PWARedirect></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/finances" element={<ProtectedRoute><Layout><PageSuspense><PWARedirect><Finances /></PWARedirect></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/feed" element={<ProtectedRoute><Layout><PageSuspense><Feed /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/notes" element={<ProtectedRoute><Layout><PageSuspense><Notes /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/crm" element={<ProtectedRoute><Layout><PageSuspense><CRM /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/prospection" element={<ProtectedRoute><Layout><PageSuspense><Prospection /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/client/:id" element={<ProtectedRoute><Layout><PageSuspense><ClientDetails /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/agencies" element={<ProtectedRoute><Layout><PageSuspense><Agencies /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/agency/:id" element={<ProtectedRoute><Layout><PageSuspense><AgencyDetails /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/projects" element={<ProtectedRoute><Layout><PageSuspense><Projects /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/project/:id" element={<ProtectedRoute><Layout><PageSuspense><ProjectDetails /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/archived-projects" element={<ProtectedRoute><Layout><PageSuspense><ArchivedProjects /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/tasks" element={<ProtectedRoute><Layout><PageSuspense><Tasks /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/messages" element={<ProtectedRoute><Layout><PageSuspense><Messages /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/faq" element={<ProtectedRoute><Layout><PageSuspense><FAQ /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><Layout><PageSuspense><Settings /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/install" element={<Suspense fallback={<AppSkeleton />}><Install /></Suspense>} />
+        <Route path="/unsubscribe" element={<Suspense fallback={<AppSkeleton />}><Unsubscribe /></Suspense>} />
+        <Route path="*" element={<Suspense fallback={null}><NotFound /></Suspense>} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+    </TooltipProvider>
   );
-};
+}
+
+const App = () => (
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <AppInner />
+    </QueryClientProvider>
+  </ErrorBoundary>
+);
 
 export default App;
