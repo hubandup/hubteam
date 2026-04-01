@@ -15,7 +15,7 @@ interface AttestationType {
 }
 
 const ATTESTATION_TYPES: AttestationType[] = [
-  { key: 'presentation', label: 'Présentation de l\'entreprise', validityMonths: 12 },
+  { key: 'presentation', label: 'Présentation de l\'entreprise', validityMonths: 0 },
   { key: 'urssaf', label: 'Attestation de vigilance URSSAF', validityMonths: 3 },
   { key: 'non_dependance', label: 'Attestation de non dépendance financière Hub & Up', validityMonths: 12 },
   { key: 'nda', label: 'NDA Hub & Up', validityMonths: 12 },
@@ -212,9 +212,11 @@ export function AgencyAttestationsTab({ agencyId, canEdit }: Props) {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium">{type.label}</CardTitle>
-                <span className="text-xs text-muted-foreground">
-                  Validité : {type.validityMonths} mois
-                </span>
+                {type.validityMonths > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    Validité : {type.validityMonths} mois
+                  </span>
+                )}
               </div>
             </CardHeader>
             <CardContent>

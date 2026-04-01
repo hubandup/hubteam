@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, Info, FolderKanban, FileText, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Loader2, Info, FolderKanban, FileText, ShieldCheck, Presentation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ResponsiveTabs, type TabItem } from '@/components/ui/responsive-tabs';
@@ -10,6 +10,7 @@ import { AgencyInfoTab } from '@/components/agency-details/AgencyInfoTab';
 import { AgencyProjectsTab } from '@/components/agency-details/AgencyProjectsTab';
 import { AgencyKDriveTab } from '@/components/agency-details/AgencyKDriveTab';
 import { AgencyAttestationsTab } from '@/components/agency-details/AgencyAttestationsTab';
+import { AgencyPresentationTab } from '@/components/agency-details/AgencyPresentationTab';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -147,6 +148,12 @@ export default function AgencyDetails() {
       label: 'KDrive',
       icon: <FileText className="h-4 w-4" />,
       content: <AgencyKDriveTab agencyId={agency.id} agencyName={agency.name} />
+    }] : []),
+    ...(isClient ? [{
+      value: 'presentation',
+      label: 'Présentation',
+      icon: <Presentation className="h-4 w-4" />,
+      content: <AgencyPresentationTab agencyId={agency.id} />
     }] : []),
     ...(showAttestations ? [{
       value: 'attestations',
