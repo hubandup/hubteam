@@ -14,7 +14,10 @@ type NotificationType =
   | 'mention'
   | 'message'
   | 'deadline_approaching'
-  | 'reaction';
+  | 'reaction'
+  | 'account_created'
+  | 'project_updated'
+  | 'new_agency';
 
 interface OutboxItem {
   id: string;
