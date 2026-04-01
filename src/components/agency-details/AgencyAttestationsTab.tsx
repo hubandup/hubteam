@@ -87,8 +87,9 @@ export function AgencyAttestationsTab({ agencyId, canEdit }: Props) {
         if (uploadError) throw uploadError;
 
         const expiresAt = addMonths(new Date(), type.validityMonths);
+        const userId = (await supabase.auth.getUser()).data.user?.id;
 
-        const { error: insertError } = await supabase
+        const { data: insertedData, error: insertError } = await supabase
           .from('agency_attestations')
           .insert({
             agency_id: agencyId,
@@ -96,13 +97,19 @@ export function AgencyAttestationsTab({ agencyId, canEdit }: Props) {
             file_name: file.name,
             file_path: filePath,
             expires_at: expiresAt.toISOString(),
-            uploaded_by: (await supabase.auth.getUser()).data.user?.id,
-          });
+            uploaded_by: userId,
+          })
+          .select()
+          .single();
 
         if (insertError) throw insertError;
 
+        // Update state immediately with the new attestation
+        if (insertedData) {
+          setAttestations(prev => [insertedData, ...prev]);
+        }
+
         toast.success('Document uploadé avec succès');
-        fetchAttestations();
       } catch (error) {
         console.error('Upload error:', error);
         toast.error("Erreur lors de l'upload du document");
@@ -128,8 +135,8 @@ export function AgencyAttestationsTab({ agencyId, canEdit }: Props) {
 
       if (error) throw error;
 
+      setAttestations(prev => prev.filter(a => a.id !== attestation.id));
       toast.success('Document supprimé');
-      fetchAttestations();
     } catch (error) {
       console.error('Delete error:', error);
       toast.error('Erreur lors de la suppression');
