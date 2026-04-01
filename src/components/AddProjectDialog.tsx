@@ -220,12 +220,17 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
                     ))}
                   </SelectContent>
                 </Select>
-                <AddClientDialog onClientAdded={(newClientId) => {
-                  fetchClients();
-                  if (newClientId) {
-                    setFormData(prev => ({ ...prev, client_id: newClientId }));
-                  }
-                }} />
+                <AddClientDialog
+                  open={addClientOpen}
+                  onOpenChange={setAddClientOpen}
+                  onClientAdded={(newClientId) => {
+                    setAddClientOpen(false);
+                    fetchClients();
+                    if (newClientId) {
+                      setFormData(prev => ({ ...prev, client_id: newClientId }));
+                    }
+                  }}
+                />
               </div>
             </div>
             <div className="grid gap-2">
