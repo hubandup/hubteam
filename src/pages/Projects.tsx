@@ -102,28 +102,34 @@ export default function Projects() {
         queryClient.cancelQueries({ queryKey: ['archived-projects'] }),
       ]);
 
-      const previousProjects = queryClient.getQueryData<any[]>(['projects', user?.id]) || [];
-      const previousArchivedProjects = queryClient.getQueryData<any[]>(['archived-projects', user?.id]) || [];
+      const previousProjects = queryClient.getQueriesData<any[]>({ queryKey: ['projects'] });
+      const previousArchivedProjects = queryClient.getQueriesData<any[]>({ queryKey: ['archived-projects'] });
 
-      queryClient.setQueryData(['projects', user?.id], (old: any[] = []) =>
-        old.filter((project) => project.id !== projectId)
+      queryClient.setQueriesData({ queryKey: ['projects'] }, (old: any[] | undefined) =>
+        Array.isArray(old) ? old.filter((project) => project.id !== projectId) : old
       );
-      queryClient.setQueryData(['archived-projects', user?.id], (old: any[] = []) =>
-        old.filter((project) => project.id !== projectId)
+      queryClient.setQueriesData({ queryKey: ['archived-projects'] }, (old: any[] | undefined) =>
+        Array.isArray(old) ? old.filter((project) => project.id !== projectId) : old
       );
 
       return { previousProjects, previousArchivedProjects };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' }),
+      ]);
       toast.success(t('projects.deleted'));
       setProjectToDelete(null);
     },
     onError: (_error, _projectId, context) => {
       if (context) {
-        queryClient.setQueryData(['projects', user?.id], context.previousProjects);
-        queryClient.setQueryData(['archived-projects', user?.id], context.previousArchivedProjects);
+        context.previousProjects.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+        context.previousArchivedProjects.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
       }
       toast.error(t('projects.deleteError'));
       setProjectToDelete(null);
@@ -134,7 +140,10 @@ export default function Projects() {
     try {
       const { error } = await supabase.from('projects').update({ status: newStatus }).eq('id', projectId);
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' }),
+      ]);
       toast.success(t('projects.statusUpdated'));
     } catch {
       toast.error(t('projects.statusUpdateError'));
@@ -205,7 +214,12 @@ export default function Projects() {
           {isMobile && !isClient && (
             <div className="mt-3">
               <ProtectedAction module="projects" action="create">
-                <AddProjectDialog onProjectAdded={() => queryClient.invalidateQueries({ queryKey: ['projects'] })} />
+                <AddProjectDialog onProjectAdded={() => {
+                  void Promise.all([
+                    queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' }),
+                    queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' }),
+                  ]);
+                }} />
               </ProtectedAction>
             </div>
           )}
@@ -224,7 +238,12 @@ export default function Projects() {
               filename="projets"
             />
             <ProtectedAction module="projects" action="create">
-              <AddProjectDialog onProjectAdded={() => queryClient.invalidateQueries({ queryKey: ['projects'] })} />
+              <AddProjectDialog onProjectAdded={() => {
+                void Promise.all([
+                  queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' }),
+                  queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' }),
+                ]);
+              }} />
             </ProtectedAction>
           </div>
         )}
