@@ -32,6 +32,7 @@ export const Widget = ({
   <div
     style={{
       border: "1px solid #E8E8E8",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03)",
       background: "#fff",
       padding: "20px",
       display: "flex",
