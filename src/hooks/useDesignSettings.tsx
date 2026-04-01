@@ -35,17 +35,21 @@ export function useDesignSettings() {
     root.style.setProperty('--font-body-weight', data.body_font_weight || '400');
     root.style.setProperty('--font-body-size', data.body_font_size || '1rem');
     
-    // Apply light mode colors
-    root.style.setProperty('--primary', data.light_primary);
+    // Apply colors while preserving the global black primary for buttons and active states
+    root.style.setProperty('--primary', '0 0% 9%');
+    root.style.setProperty('--primary-light', '0 0% 96%');
+    root.style.setProperty('--ring', '0 0% 9%');
     root.style.setProperty('--secondary', data.light_secondary);
     root.style.setProperty('--background', '0 0% 100%');
     
-    // Apply dark mode colors with !important to override static CSS
+    // Apply dark mode colors while preserving the same primary override
     const style = document.getElementById('dynamic-theme-style') || document.createElement('style');
     style.id = 'dynamic-theme-style';
     style.innerHTML = `
       .dark {
-        --primary: ${data.dark_primary} !important;
+        --primary: 0 0% 9% !important;
+        --primary-light: 0 0% 96% !important;
+        --ring: 0 0% 9% !important;
         --secondary: ${data.dark_secondary} !important;
         --background: ${data.dark_background} !important;
       }
