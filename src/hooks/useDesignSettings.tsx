@@ -27,11 +27,13 @@ export function useDesignSettings() {
   const applyDesignSettings = (data: any) => {
     const root = document.documentElement;
     
-    // Apply fonts
-    root.style.setProperty('--font-heading', data.heading_font);
+    // Apply fonts — force Instrument Sans over any DB value (e.g. Poppins)
+    const headingFont = 'Instrument Sans';
+    const bodyFont = 'Instrument Sans';
+    root.style.setProperty('--font-heading', headingFont);
     root.style.setProperty('--font-heading-weight', data.heading_font_weight || '700');
     root.style.setProperty('--font-heading-size', data.heading_font_size || '2.5rem');
-    root.style.setProperty('--font-body', data.body_font);
+    root.style.setProperty('--font-body', bodyFont);
     root.style.setProperty('--font-body-weight', data.body_font_weight || '400');
     root.style.setProperty('--font-body-size', data.body_font_size || '1rem');
     
