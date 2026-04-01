@@ -27,8 +27,9 @@ export default function AgencyDetails() {
     if (id) {
       fetchAgencyDetails();
       fetchProjectsCount();
+      checkAgencyContact();
     }
-  }, [id]);
+  }, [id, user]);
 
   const fetchProjectsCount = async () => {
     if (!id) return;
