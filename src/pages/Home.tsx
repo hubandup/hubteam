@@ -242,16 +242,16 @@ export default function Home() {
         {!isAgency && <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-destructive" />
-              Projets en retard
+              <FolderKanban className="h-4 w-4 text-primary" />
+              Projets en cours
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {overdueProjects.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucun projet en retard 🎉</p>
+            {activeProjects.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Aucun projet en cours</p>
             ) : (
               <div className="space-y-2">
-                {overdueProjects.map((p) => (
+                {activeProjects.map((p) => (
                   <div
                     key={p.id}
                     className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded-md p-2 -mx-2 transition-colors"
@@ -261,8 +261,8 @@ export default function Home() {
                       <p className="text-sm font-medium truncate">{p.name}</p>
                       <p className="text-xs text-muted-foreground">{p.clientName}</p>
                     </div>
-                    <Badge variant="destructive" className="text-xs shrink-0 ml-2">
-                      {format(new Date(p.end_date), 'd MMM', { locale: fr })}
+                    <Badge variant="outline" className="text-xs shrink-0 ml-2">
+                      {p.status === 'reco_in_progress' ? 'Reco' : p.status === 'planning' ? 'Planning' : 'Actif'}
                     </Badge>
                   </div>
                 ))}
