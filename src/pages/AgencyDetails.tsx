@@ -2,29 +2,57 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, Info, FolderKanban, FileText } from 'lucide-react';
+import { ArrowLeft, Loader2, Info, FolderKanban, FileText, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ResponsiveTabs, type TabItem } from '@/components/ui/responsive-tabs';
 import { AgencyInfoTab } from '@/components/agency-details/AgencyInfoTab';
 import { AgencyProjectsTab } from '@/components/agency-details/AgencyProjectsTab';
 import { AgencyKDriveTab } from '@/components/agency-details/AgencyKDriveTab';
+import { AgencyAttestationsTab } from '@/components/agency-details/AgencyAttestationsTab';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function AgencyDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { role, loading: roleLoading } = useUserRole();
+  const { role, loading: roleLoading, isAdmin, isAgency } = useUserRole();
+  const { user } = useAuth();
   const [agency, setAgency] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [projectsCount, setProjectsCount] = useState(0);
+  const [isAgencyContact, setIsAgencyContact] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchAgencyDetails();
       fetchProjectsCount();
+      checkAgencyContact();
     }
-  }, [id]);
+  }, [id, user]);
+
+  const checkAgencyContact = async () => {
+    if (!id || !user) return;
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.email) {
+        const { count } = await supabase
+          .from('agency_contacts')
+          .select('*', { count: 'exact', head: true })
+          .eq('agency_id', id)
+          .eq('email', profile.email);
+
+        setIsAgencyContact((count || 0) > 0);
+      }
+    } catch (error) {
+      console.error('Error checking agency contact:', error);
+    }
+  };
 
   const fetchProjectsCount = async () => {
     if (!id) return;
@@ -98,6 +126,9 @@ export default function AgencyDetails() {
     return null;
   }
 
+  const showAttestations = isAdmin || (isAgency && isAgencyContact);
+  const canEditAttestations = isAdmin || (isAgency && isAgencyContact);
+
   const tabs: TabItem[] = [
     {
       value: 'info',
@@ -116,7 +147,13 @@ export default function AgencyDetails() {
       label: 'KDrive',
       icon: <FileText className="h-4 w-4" />,
       content: <AgencyKDriveTab agencyId={agency.id} agencyName={agency.name} />
-    }
+    },
+    ...(showAttestations ? [{
+      value: 'attestations',
+      label: 'Attestations',
+      icon: <ShieldCheck className="h-4 w-4" />,
+      content: <AgencyAttestationsTab agencyId={agency.id} canEdit={canEditAttestations} />
+    }] : []),
   ];
 
   return (
