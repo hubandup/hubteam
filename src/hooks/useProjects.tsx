@@ -327,6 +327,59 @@ export function useProjects() {
           queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' });
         }
       )
+        () => {
+          queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' });
+          queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'project_team_members',
+        },
+        () => {
+          queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' });
+          queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'project_clients',
+        },
+        () => {
+          queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' });
+          queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'project_agencies',
+        },
+        () => {
+          queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' });
+          queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tasks',
+        },
+        () => {
+          queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' });
+          queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' });
+        }
+      )
       .subscribe();
 
     return () => {
