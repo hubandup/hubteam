@@ -141,7 +141,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
 
       {/* Content */}
       <div className="flex-1">
-        <div className="font-['Instrument_Sans'] font-bold text-[15px] text-foreground tracking-[-0.02em] leading-tight mb-1 truncate max-w-[220px]">
+        <div className="font-['Instrument_Sans'] font-bold text-[17px] text-foreground tracking-[-0.02em] leading-tight mb-1 truncate max-w-[220px]">
           {project.name}
         </div>
         <div className="font-[Roboto,sans-serif] text-xs text-muted-foreground">
