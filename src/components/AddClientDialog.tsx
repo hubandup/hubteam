@@ -232,6 +232,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
   };
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       {!open && !onOpenChange && (
         <DialogTrigger asChild>
