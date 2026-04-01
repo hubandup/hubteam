@@ -222,8 +222,8 @@ export function useProjects() {
           table: 'projects',
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['projects'] });
-          queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
+          queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' });
+          queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' });
         }
       )
       .on(
@@ -234,8 +234,8 @@ export function useProjects() {
           table: 'project_team_members',
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['projects'] });
-          queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
+          queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' });
+          queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' });
         }
       )
       .on(
@@ -246,8 +246,8 @@ export function useProjects() {
           table: 'project_clients',
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['projects'] });
-          queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
+          queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' });
+          queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' });
         }
       )
       .on(
@@ -258,8 +258,8 @@ export function useProjects() {
           table: 'project_agencies',
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['projects'] });
-          queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
+          queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' });
+          queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' });
         }
       )
       .on(
@@ -270,8 +270,8 @@ export function useProjects() {
           table: 'tasks',
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['projects'] });
-          queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
+          queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' });
+          queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' });
         }
       )
       .subscribe();
@@ -307,8 +307,8 @@ export function useArchivedProjects() {
           table: 'projects',
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['projects'] });
-          queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
+          queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' });
+          queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' });
         }
       )
       .on(
@@ -319,8 +319,8 @@ export function useArchivedProjects() {
           table: 'project_team_members',
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['projects'] });
-          queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
+          queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' });
+          queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' });
         }
       )
       .on(
@@ -331,8 +331,8 @@ export function useArchivedProjects() {
           table: 'project_agencies',
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['projects'] });
-          queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
+          queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' });
+          queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' });
         }
       )
       .subscribe();
