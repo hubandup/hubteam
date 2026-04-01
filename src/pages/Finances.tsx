@@ -120,77 +120,76 @@ export default function Finances() {
     try {
       setLoading(true);
 
-      // Fetch clients revenue
-      const { data: clients, error: clientsError } = await supabase
-        .from('clients')
-        .select('revenue_current_year, company, first_name, last_name')
-        .eq('active', true)
-        .order('revenue_current_year', { ascending: false });
-      
-      if (clientsError) throw clientsError;
-
-      const currentYearRevenue = clients?.reduce((sum, c) => sum + (c.revenue_current_year || 0), 0) || 0;
-      setTotalRevenue(currentYearRevenue);
-
-      // Top 5 clients
-      setTopClients(clients?.slice(0, 5) || []);
-
-      // Revenue evolution (last N months + 3 future months for forecast)
       const periodMonths = parseInt(revenuePeriod) || 6;
-      const revenueByMonth: any[] = [];
-      
-      // Past N months (actual data)
+      const startDate = startOfMonth(subMonths(new Date(), periodMonths - 1)).toISOString();
+      const endDate = endOfMonth(new Date()).toISOString();
+
+      const [clientsResult, invoicesResult, lastSyncedClientResult] = await Promise.all([
+        supabase
+          .from('clients')
+          .select('revenue_current_year, company, first_name, last_name')
+          .eq('active', true)
+          .order('revenue_current_year', { ascending: false }),
+        supabase
+          .from('invoices')
+          .select('invoice_date, amount')
+          .gte('invoice_date', startDate)
+          .lte('invoice_date', endDate)
+          .order('invoice_date', { ascending: true }),
+        supabase
+          .from('clients')
+          .select('facturation_pro_synced_at')
+          .not('facturation_pro_synced_at', 'is', null)
+          .order('facturation_pro_synced_at', { ascending: false })
+          .limit(1)
+          .single(),
+      ]);
+
+      if (clientsResult.error) throw clientsResult.error;
+      if (invoicesResult.error) throw invoicesResult.error;
+
+      const clients = clientsResult.data || [];
+      const invoices = invoicesResult.data || [];
+
+      const currentYearRevenue = clients.reduce((sum, client) => sum + (client.revenue_current_year || 0), 0);
+      setTotalRevenue(currentYearRevenue);
+      setTopClients(clients.slice(0, 5));
+
+      const revenueTotalsByMonth = invoices.reduce((acc: Record<string, number>, invoice: any) => {
+        if (!invoice.invoice_date) return acc;
+        const key = format(new Date(invoice.invoice_date), 'yyyy-MM');
+        acc[key] = (acc[key] || 0) + (invoice.amount || 0);
+        return acc;
+      }, {});
+
+      const revenueByMonth = [];
       for (let i = periodMonths - 1; i >= 0; i--) {
         const monthDate = subMonths(new Date(), i);
-        const monthStart = startOfMonth(monthDate);
-        const monthEnd = endOfMonth(monthDate);
-
-        const { data: monthInvoices, error: monthError } = await supabase
-          .from('invoices')
-          .select('amount')
-          .gte('invoice_date', monthStart.toISOString())
-          .lte('invoice_date', monthEnd.toISOString());
-
-        if (monthError) throw monthError;
-
-        const monthRevenue = monthInvoices?.reduce((sum, inv) => sum + (inv.amount || 0), 0) || 0;
-        
         revenueByMonth.push({
           month: format(monthDate, 'MMM', { locale: fr }),
-          revenue: monthRevenue,
-          forecast: null, // No forecast for past months
+          revenue: revenueTotalsByMonth[format(monthDate, 'yyyy-MM')] || 0,
+          forecast: null,
         });
       }
-      
-      // Add 3 future months (for forecast display)
+
       for (let i = 1; i <= 3; i++) {
         const monthDate = addMonths(new Date(), i);
         revenueByMonth.push({
           month: format(monthDate, 'MMM', { locale: fr }),
-          revenue: null, // No actual revenue for future months
-          forecast: null, // Will be filled by forecastRevenue effect
+          revenue: null,
+          forecast: null,
         });
       }
 
       setRevenueData(revenueByMonth);
 
-      // Get last sync timestamp from clients
-      const { data: lastSyncedClient } = await supabase
-        .from('clients')
-        .select('facturation_pro_synced_at')
-        .not('facturation_pro_synced_at', 'is', null)
-        .order('facturation_pro_synced_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (lastSyncedClient?.facturation_pro_synced_at) {
-        setLastSyncTimestamp(lastSyncedClient.facturation_pro_synced_at);
+      if (lastSyncedClientResult.data?.facturation_pro_synced_at) {
+        setLastSyncTimestamp(lastSyncedClientResult.data.facturation_pro_synced_at);
       }
-
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching financial data:', error);
       toast.error('Erreur lors du chargement des données financières');
+    } finally {
       setLoading(false);
     }
   };
