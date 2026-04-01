@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
+import { AddClientDialog } from './AddClientDialog';
 
 interface AddProjectDialogProps {
   onProjectAdded: () => void;
@@ -202,21 +203,29 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="client">Client</Label>
-              <Select
-                value={formData.client_id}
-                onValueChange={(value) => setFormData({ ...formData, client_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un client" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      <span className="uppercase">{client.company}</span> - {client.first_name} {client.last_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <Select
+                  value={formData.client_id}
+                  onValueChange={(value) => setFormData({ ...formData, client_id: value })}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Sélectionner un client" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        <span className="uppercase">{client.company}</span> - {client.first_name} {client.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <AddClientDialog onClientAdded={(newClientId) => {
+                  fetchClients();
+                  if (newClientId) {
+                    setFormData(prev => ({ ...prev, client_id: newClientId }));
+                  }
+                }} />
+              </div>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="description">Description</Label>
