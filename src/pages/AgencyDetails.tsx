@@ -126,6 +126,9 @@ export default function AgencyDetails() {
     return null;
   }
 
+  const showAttestations = isAdmin || (isAgency && isAgencyContact);
+  const canEditAttestations = isAdmin || (isAgency && isAgencyContact);
+
   const tabs: TabItem[] = [
     {
       value: 'info',
@@ -144,7 +147,13 @@ export default function AgencyDetails() {
       label: 'KDrive',
       icon: <FileText className="h-4 w-4" />,
       content: <AgencyKDriveTab agencyId={agency.id} agencyName={agency.name} />
-    }
+    },
+    ...(showAttestations ? [{
+      value: 'attestations',
+      label: 'Attestations',
+      icon: <ShieldCheck className="h-4 w-4" />,
+      content: <AgencyAttestationsTab agencyId={agency.id} canEdit={canEditAttestations} />
+    }] : []),
   ];
 
   return (
