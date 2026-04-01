@@ -212,9 +212,11 @@ export function AgencyAttestationsTab({ agencyId, canEdit }: Props) {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium">{type.label}</CardTitle>
-                <span className="text-xs text-muted-foreground">
-                  Validité : {type.validityMonths} mois
-                </span>
+                {type.validityMonths > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    Validité : {type.validityMonths} mois
+                  </span>
+                )}
               </div>
             </CardHeader>
             <CardContent>
