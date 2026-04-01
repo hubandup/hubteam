@@ -21,8 +21,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <Navigate to="/auth" replace />;
   }
 
-  // Redirect clients away from /crm page
-  if (role === 'client' && location.pathname === '/crm') {
+  // Redirect clients away from restricted pages
+  if (role === 'client' && (location.pathname === '/crm' || location.pathname === '/feed')) {
     return <Navigate to="/" replace />;
   }
 
