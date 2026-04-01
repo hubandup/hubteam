@@ -25,6 +25,7 @@ interface AddProjectDialogProps {
 export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [addClientOpen, setAddClientOpen] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: '',
@@ -183,7 +184,7 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
           Nouveau projet
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px]" onInteractOutside={(e) => { if (addClientOpen) e.preventDefault(); }}>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Créer un nouveau projet</DialogTitle>
@@ -219,12 +220,17 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
                     ))}
                   </SelectContent>
                 </Select>
-                <AddClientDialog onClientAdded={(newClientId) => {
-                  fetchClients();
-                  if (newClientId) {
-                    setFormData(prev => ({ ...prev, client_id: newClientId }));
-                  }
-                }} />
+                <AddClientDialog
+                  open={addClientOpen}
+                  onOpenChange={setAddClientOpen}
+                  onClientAdded={(newClientId) => {
+                    setAddClientOpen(false);
+                    fetchClients();
+                    if (newClientId) {
+                      setFormData(prev => ({ ...prev, client_id: newClientId }));
+                    }
+                  }}
+                />
               </div>
             </div>
             <div className="grid gap-2">
