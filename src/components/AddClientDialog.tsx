@@ -20,16 +20,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -56,6 +46,13 @@ const clientSchema = z.object({
 
 type ClientFormData = z.infer<typeof clientSchema>;
 
+type CreatedClientData = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+};
+
 interface AddClientDialogProps {
   onClientAdded: (clientId?: string) => void;
   open?: boolean;
@@ -65,18 +62,17 @@ interface AddClientDialogProps {
 export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClientDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [creatingAccount, setCreatingAccount] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [clientStatuses, setClientStatuses] = useState<any[]>([]);
   const [clientSources, setClientSources] = useState<any[]>([]);
-  const [confirmAccountOpen, setConfirmAccountOpen] = useState(false);
-  const [createdClientData, setCreatedClientData] = useState<{ id: string; first_name: string; last_name: string; email: string } | null>(null);
-  const [creatingAccount, setCreatingAccount] = useState(false);
+  const [createdClientData, setCreatedClientData] = useState<CreatedClientData | null>(null);
   const pendingClientId = useRef<string | undefined>(undefined);
 
-  // Use controlled state if provided, otherwise use internal state
   const isOpen = open !== undefined ? open : internalOpen;
   const setIsOpen = onOpenChange || setInternalOpen;
+  const isConfirmationStep = !!createdClientData;
 
   const {
     register,
@@ -118,6 +114,16 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
     setClientSources(sources || []);
   };
 
+  const resetLocalState = () => {
+    reset();
+    setLogoFile(null);
+    setLogoPreview(null);
+    setCreatedClientData(null);
+    pendingClientId.current = undefined;
+    setLoading(false);
+    setCreatingAccount(false);
+  };
+
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -157,12 +163,14 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
     return publicUrl;
   };
 
-  const finishAndNotifyParent = () => {
-    const clientId = pendingClientId.current;
-    pendingClientId.current = undefined;
-    setConfirmAccountOpen(false);
-    setCreatedClientData(null);
+  const closeDialog = () => {
+    resetLocalState();
     setIsOpen(false);
+  };
+
+  const finishFlow = () => {
+    const clientId = pendingClientId.current;
+    closeDialog();
     onClientAdded(clientId);
   };
 
@@ -179,16 +187,15 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
       });
 
       if (response.error) {
-        throw new Error(response.error.message || "Erreur lors de la création du compte");
+        throw new Error(response.error.message || 'Erreur lors de la création du compte');
       }
 
       toast.success(`Compte utilisateur créé pour ${createdClientData.first_name} ${createdClientData.last_name}. Un email lui a été envoyé.`);
+      finishFlow();
     } catch (error: any) {
       console.error('Error creating user account:', error);
       toast.error(error.message || "Erreur lors de la création du compte utilisateur");
-    } finally {
       setCreatingAccount(false);
-      finishAndNotifyParent();
     }
   };
 
@@ -197,23 +204,25 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
     try {
       const logoUrl = await uploadLogo();
 
-      const { data: clientData, error } = await supabase.from('clients').insert({
-        first_name: data.first_name,
-        last_name: data.last_name,
-        company: data.company,
-        email: data.email,
-        phone: data.phone || null,
-        revenue: data.revenue,
-        active: data.active,
-        logo_url: logoUrl,
-        follow_up_date: data.follow_up_date ? data.follow_up_date.toISOString() : null,
-        status_id: data.status_id || null,
-        source_id: data.source_id || null,
-      }).select().single();
+      const { data: clientData, error } = await supabase
+        .from('clients')
+        .insert({
+          first_name: data.first_name,
+          last_name: data.last_name,
+          company: data.company,
+          email: data.email,
+          phone: data.phone || null,
+          revenue: data.revenue,
+          active: data.active,
+          logo_url: logoUrl,
+          follow_up_date: data.follow_up_date ? data.follow_up_date.toISOString() : null,
+          status_id: data.status_id || null,
+          source_id: data.source_id || null,
+        })
+        .select()
+        .single();
 
       if (error) throw error;
-
-      toast.success('Client ajouté avec succès');
 
       pendingClientId.current = clientData.id;
       setCreatedClientData({
@@ -222,308 +231,232 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
         last_name: data.last_name,
         email: data.email,
       });
-      setConfirmAccountOpen(true);
-
-      reset();
-      setLogoFile(null);
-      setLogoPreview(null);
+      setLoading(false);
+      toast.success('Client ajouté avec succès');
     } catch (error) {
       console.error('Error adding client:', error);
       toast.error("Erreur lors de l'ajout du client");
-    } finally {
       setLoading(false);
     }
   };
 
   const handleDialogOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen && (confirmAccountOpen || loading || creatingAccount)) {
+    if (!nextOpen && (loading || creatingAccount)) return;
+    if (!nextOpen) {
+      closeDialog();
       return;
     }
-
     setIsOpen(nextOpen);
   };
 
   return (
-    <>
-      <Dialog open={isOpen} onOpenChange={handleDialogOpenChange}>
-        {!open && !onOpenChange && (
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Nouveau client
-            </Button>
-          </DialogTrigger>
-        )}
-        <DialogContent
-          className="max-w-2xl max-h-[90vh] overflow-y-auto"
-          onInteractOutside={(e) => {
-            if (confirmAccountOpen) e.preventDefault();
-          }}
-          onEscapeKeyDown={(e) => {
-            if (confirmAccountOpen) e.preventDefault();
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle>Ajouter un nouveau client</DialogTitle>
-            <DialogDescription>
-              Remplissez les informations du client pour l'ajouter à votre base.
-            </DialogDescription>
-          </DialogHeader>
+    <Dialog open={isOpen} onOpenChange={handleDialogOpenChange}>
+      {!open && !onOpenChange && (
+        <DialogTrigger asChild>
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Nouveau client
+          </Button>
+        </DialogTrigger>
+      )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="first_name">Prénom *</Label>
-                <Input
-                  id="first_name"
-                  {...register('first_name')}
-                  placeholder="Jean"
-                />
-                {errors.first_name && (
-                  <p className="text-sm text-destructive">{errors.first_name.message}</p>
-                )}
-              </div>
+      <DialogContent
+        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        onInteractOutside={(e) => {
+          if (loading || creatingAccount) e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (loading || creatingAccount) e.preventDefault();
+        }}
+      >
+        {isConfirmationStep && createdClientData ? (
+          <div className="space-y-6">
+            <DialogHeader>
+              <DialogTitle>Créer un compte utilisateur ?</DialogTitle>
+              <DialogDescription>
+                Souhaitez-vous vraiment créer le compte utilisateur pour <strong>{createdClientData.first_name} {createdClientData.last_name}</strong> ? Un email automatique lui sera envoyé pour qu'il se connecte à son compte.
+              </DialogDescription>
+            </DialogHeader>
 
-              <div className="space-y-2">
-                <Label htmlFor="last_name">Nom *</Label>
-                <Input
-                  id="last_name"
-                  {...register('last_name')}
-                  placeholder="Dupont"
-                />
-                {errors.last_name && (
-                  <p className="text-sm text-destructive">{errors.last_name.message}</p>
-                )}
-              </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button type="button" variant="outline" onClick={finishFlow} disabled={creatingAccount}>
+                Non
+              </Button>
+              <Button type="button" onClick={createUserAccount} disabled={creatingAccount}>
+                {creatingAccount && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Oui, créer le compte
+              </Button>
             </div>
+          </div>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>Ajouter un nouveau client</DialogTitle>
+              <DialogDescription>
+                Remplissez les informations du client pour l'ajouter à votre base.
+              </DialogDescription>
+            </DialogHeader>
 
-            <div className="space-y-2">
-              <Label htmlFor="company">Entreprise *</Label>
-              <Input
-                id="company"
-                {...register('company')}
-                placeholder="Acme Corp"
-              />
-              {errors.company && (
-                <p className="text-sm text-destructive">{errors.company.message}</p>
-              )}
-            </div>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="first_name">Prénom *</Label>
+                  <Input id="first_name" {...register('first_name')} placeholder="Jean" />
+                  {errors.first_name && <p className="text-sm text-destructive">{errors.first_name.message}</p>}
+                </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  {...register('email')}
-                  placeholder="jean.dupont@acme.com"
-                />
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email.message}</p>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="last_name">Nom *</Label>
+                  <Input id="last_name" {...register('last_name')} placeholder="Dupont" />
+                  {errors.last_name && <p className="text-sm text-destructive">{errors.last_name.message}</p>}
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Téléphone</Label>
-                <Input
-                  id="phone"
-                  {...register('phone')}
-                  placeholder="+33 6 12 34 56 78"
-                />
-                {errors.phone && (
-                  <p className="text-sm text-destructive">{errors.phone.message}</p>
-                )}
+                <Label htmlFor="company">Entreprise *</Label>
+                <Input id="company" {...register('company')} placeholder="Acme Corp" />
+                {errors.company && <p className="text-sm text-destructive">{errors.company.message}</p>}
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="revenue">Chiffre d'affaires (€) *</Label>
-                <Input
-                  id="revenue"
-                  type="number"
-                  step="0.01"
-                  {...register('revenue', { valueAsNumber: true })}
-                  placeholder="50000"
-                />
-                {errors.revenue && (
-                  <p className="text-sm text-destructive">{errors.revenue.message}</p>
-                )}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input id="email" type="email" {...register('email')} placeholder="jean.dupont@acme.com" />
+                  {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Téléphone</Label>
+                  <Input id="phone" {...register('phone')} placeholder="+33 6 12 34 56 78" />
+                  {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="revenue">Chiffre d'affaires (€) *</Label>
+                  <Input
+                    id="revenue"
+                    type="number"
+                    step="0.01"
+                    {...register('revenue', { valueAsNumber: true })}
+                    placeholder="50000"
+                  />
+                  {errors.revenue && <p className="text-sm text-destructive">{errors.revenue.message}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="source_id">Source</Label>
+                    <AddClientSourceDialog onSourceAdded={fetchStatuses} />
+                  </div>
+                  <Select value={selectedSourceId} onValueChange={(value) => setValue('source_id', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner une source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clientSources.map((source) => (
+                        <SelectItem key={source.id} value={source.id}>
+                          {source.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="source_id">Source</Label>
-                  <AddClientSourceDialog onSourceAdded={fetchStatuses} />
+                  <Label htmlFor="status_id">Action</Label>
+                  <AddClientStatusDialog onStatusAdded={fetchStatuses} />
                 </div>
-                <Select
-                  value={selectedSourceId}
-                  onValueChange={(value) => setValue('source_id', value)}
-                >
+                <Select value={selectedStatusId} onValueChange={(value) => setValue('status_id', value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une source" />
+                    <SelectValue placeholder="Sélectionner une action" />
                   </SelectTrigger>
                   <SelectContent>
-                    {clientSources.map((source) => (
-                      <SelectItem key={source.id} value={source.id}>
-                        {source.name}
+                    {clientStatuses.map((status) => (
+                      <SelectItem key={status.id} value={status.id}>
+                        {status.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="status_id">Action</Label>
-                <AddClientStatusDialog onStatusAdded={fetchStatuses} />
+              <div className="space-y-2">
+                <Label htmlFor="follow_up_date">Prochaine échéance</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        'w-full justify-start text-left font-normal',
+                        !followUpDate && 'text-muted-foreground'
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {followUpDate ? format(followUpDate, 'dd/MM/yyyy') : 'Choisir une date'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={followUpDate}
+                      onSelect={(date) => setValue('follow_up_date', date)}
+                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                      initialFocus
+                      className={cn('p-3 pointer-events-auto')}
+                    />
+                  </PopoverContent>
+                </Popover>
+                {errors.follow_up_date && <p className="text-sm text-destructive">{errors.follow_up_date.message}</p>}
               </div>
-              <Select
-                value={selectedStatusId}
-                onValueChange={(value) => setValue('status_id', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner une action" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clientStatuses.map((status) => (
-                    <SelectItem key={status.id} value={status.id}>
-                      {status.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="follow_up_date">Prochaine échéance</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !followUpDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {followUpDate ? format(followUpDate, "dd/MM/yyyy") : "Choisir une date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={followUpDate}
-                    onSelect={(date) => setValue('follow_up_date', date)}
-                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-              {errors.follow_up_date && (
-                <p className="text-sm text-destructive">{errors.follow_up_date.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="logo">Logo de l'entreprise</Label>
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <Input
-                    id="logo"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleLogoChange}
-                    className="cursor-pointer"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    PNG, JPG ou WEBP - Max 5MB
-                  </p>
+              <div className="space-y-2">
+                <Label htmlFor="logo">Logo de l'entreprise</Label>
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <Input
+                      id="logo"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoChange}
+                      className="cursor-pointer"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG ou WEBP - Max 5MB</p>
+                  </div>
+                  {logoPreview && (
+                    <img
+                      src={logoPreview}
+                      alt="Aperçu du logo"
+                      className="w-16 h-16 object-cover rounded-lg border"
+                    />
+                  )}
                 </div>
-                {logoPreview && (
-                  <img
-                    src={logoPreview}
-                    alt="Aperçu du logo"
-                    className="w-16 h-16 object-cover rounded-lg border"
-                  />
-                )}
               </div>
-            </div>
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label htmlFor="active">Statut</Label>
-                <p className="text-sm text-muted-foreground">
-                  Le client est-il actuellement actif ?
-                </p>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label htmlFor="active">Statut</Label>
+                  <p className="text-sm text-muted-foreground">Le client est-il actuellement actif ?</p>
+                </div>
+                <Switch id="active" checked={active} onCheckedChange={(checked) => setValue('active', checked)} />
               </div>
-              <Switch
-                id="active"
-                checked={active}
-                onCheckedChange={(checked) => setValue('active', checked)}
-              />
-            </div>
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  reset();
-                  setLogoFile(null);
-                  setLogoPreview(null);
-                  setIsOpen(false);
-                }}
-                disabled={loading}
-              >
-                Annuler
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Ajouter le client
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog
-        open={confirmAccountOpen}
-        onOpenChange={(nextOpen) => {
-          if (creatingAccount) return;
-          if (!nextOpen) {
-            finishAndNotifyParent();
-            return;
-          }
-          setConfirmAccountOpen(nextOpen);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Créer un compte utilisateur ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Souhaitez-vous créer un compte utilisateur pour{' '}
-              <strong>{createdClientData?.first_name} {createdClientData?.last_name}</strong> ?
-              Un email automatique lui sera envoyé pour qu'il se connecte à son compte.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={creatingAccount}>Non</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                createUserAccount();
-              }}
-              disabled={creatingAccount}
-            >
-              {creatingAccount && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Oui, créer le compte
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+              <div className="flex justify-end gap-3 pt-4">
+                <Button type="button" variant="outline" onClick={closeDialog} disabled={loading}>
+                  Annuler
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Ajouter le client
+                </Button>
+              </div>
+            </form>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
