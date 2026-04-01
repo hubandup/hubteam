@@ -15,7 +15,7 @@ interface AttestationType {
 }
 
 const ATTESTATION_TYPES: AttestationType[] = [
-  { key: 'presentation', label: 'Présentation de l\'entreprise', validityMonths: 12 },
+  { key: 'presentation', label: 'Présentation de l\'entreprise', validityMonths: 0 },
   { key: 'urssaf', label: 'Attestation de vigilance URSSAF', validityMonths: 3 },
   { key: 'non_dependance', label: 'Attestation de non dépendance financière Hub & Up', validityMonths: 12 },
   { key: 'nda', label: 'NDA Hub & Up', validityMonths: 12 },
