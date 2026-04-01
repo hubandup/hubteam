@@ -116,7 +116,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
           />
         ) : (
           <div
-            className="w-8 h-8 rounded flex items-center justify-center font-['Instrument_Sans'] font-bold text-[11px] leading-none flex-shrink-0"
+            className="w-10 h-10 rounded flex items-center justify-center font-['Instrument_Sans'] font-bold text-[13px] leading-none flex-shrink-0"
             style={{
               backgroundColor: `${color}18`,
               border: `1px solid ${color}30`,
