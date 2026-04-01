@@ -20,6 +20,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -59,6 +69,9 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [clientStatuses, setClientStatuses] = useState<any[]>([]);
   const [clientSources, setClientSources] = useState<any[]>([]);
+  const [confirmAccountOpen, setConfirmAccountOpen] = useState(false);
+  const [createdClientData, setCreatedClientData] = useState<{ id: string; first_name: string; last_name: string; email: string } | null>(null);
+  const [creatingAccount, setCreatingAccount] = useState(false);
 
   // Use controlled state if provided, otherwise use internal state
   const isOpen = open !== undefined ? open : internalOpen;
@@ -143,6 +156,33 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
     return publicUrl;
   };
 
+  const createUserAccount = async () => {
+    if (!createdClientData) return;
+    setCreatingAccount(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const response = await supabase.functions.invoke('invite-user', {
+        body: {
+          email: createdClientData.email,
+          role: 'client',
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Erreur lors de la création du compte");
+      }
+
+      toast.success(`Compte utilisateur créé pour ${createdClientData.first_name} ${createdClientData.last_name}. Un email lui a été envoyé.`);
+    } catch (error: any) {
+      console.error('Error creating user account:', error);
+      toast.error(error.message || "Erreur lors de la création du compte utilisateur");
+    } finally {
+      setCreatingAccount(false);
+      setConfirmAccountOpen(false);
+      setCreatedClientData(null);
+    }
+  };
+
   const onSubmit = async (data: ClientFormData) => {
     setLoading(true);
     try {
@@ -165,11 +205,24 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
       if (error) throw error;
 
       toast.success('Client ajouté avec succès');
+      
+      // Store client info for account creation prompt
+      const clientInfo = {
+        id: clientData.id,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+      };
+      
       reset();
       setLogoFile(null);
       setLogoPreview(null);
       setIsOpen(false);
       onClientAdded(clientData?.id);
+      
+      // Show account creation confirmation
+      setCreatedClientData(clientInfo);
+      setConfirmAccountOpen(true);
     } catch (error) {
       console.error('Error adding client:', error);
       toast.error("Erreur lors de l'ajout du client");
@@ -179,6 +232,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
   };
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       {!open && !onOpenChange && (
         <DialogTrigger asChild>
@@ -414,5 +468,31 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
         </form>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={confirmAccountOpen} onOpenChange={(open) => {
+      if (!open && !creatingAccount) {
+        setConfirmAccountOpen(false);
+        setCreatedClientData(null);
+      }
+    }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Créer un compte utilisateur ?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Souhaitez-vous créer un compte utilisateur pour{' '}
+            <strong>{createdClientData?.first_name} {createdClientData?.last_name}</strong> ?
+            Un email automatique lui sera envoyé pour qu'il se connecte à son compte.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={creatingAccount}>Non</AlertDialogCancel>
+          <AlertDialogAction onClick={createUserAccount} disabled={creatingAccount}>
+            {creatingAccount && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Oui, créer le compte
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
