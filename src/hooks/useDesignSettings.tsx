@@ -65,8 +65,8 @@ export function useDesignSettings() {
       document.head.appendChild(style);
     }
     
-    // Load Google Fonts
-    loadGoogleFonts(data.heading_font, data.body_font);
+    // Load Google Fonts — always load Instrument Sans
+    loadGoogleFonts(headingFont, bodyFont);
   };
 
   const loadGoogleFonts = (headingFont: string, bodyFont: string) => {
