@@ -333,6 +333,32 @@ export function useArchivedProjects() {
         () => {
           queryClient.invalidateQueries({ queryKey: ['projects'] });
           queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
+          queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' });
+          queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'project_team_members',
+        },
+        () => {
+          queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' });
+          queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'project_agencies',
+        },
+        () => {
+          queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' });
+          queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' });
         }
       )
       .subscribe();
