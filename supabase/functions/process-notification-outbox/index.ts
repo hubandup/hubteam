@@ -14,7 +14,10 @@ type NotificationType =
   | 'mention'
   | 'message'
   | 'deadline_approaching'
-  | 'reaction';
+  | 'reaction'
+  | 'account_created'
+  | 'project_updated'
+  | 'new_agency';
 
 interface OutboxItem {
   id: string;
@@ -153,7 +156,7 @@ serve(async (req) => {
         }
 
         // Client role restrictions
-        if (userRole === 'client' && !['project_assigned', 'message'].includes(item.notification_type)) {
+        if (userRole === 'client' && !['project_assigned', 'message', 'account_created', 'project_updated', 'new_agency'].includes(item.notification_type)) {
           console.log(`Client role cannot receive ${item.notification_type} notifications`);
           await supabase
             .from('notification_outbox')
@@ -195,7 +198,7 @@ serve(async (req) => {
         }
 
         // Client role always gets email for project_assigned and message
-        if (userRole === 'client' && ['project_assigned', 'message'].includes(item.notification_type)) {
+        if (userRole === 'client' && ['project_assigned', 'message', 'account_created', 'project_updated', 'new_agency'].includes(item.notification_type)) {
           shouldSendEmail = true;
         }
 

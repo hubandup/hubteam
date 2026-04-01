@@ -1382,6 +1382,38 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_agency_notifications: {
+        Row: {
+          agency_id: string
+          agency_name: string
+          created_at: string
+          id: string
+          sent: boolean
+        }
+        Insert: {
+          agency_id: string
+          agency_name: string
+          created_at?: string
+          id?: string
+          sent?: boolean
+        }
+        Update: {
+          agency_id?: string
+          agency_name?: string
+          created_at?: string
+          id?: string
+          sent?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_agency_notifications_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: true
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pending_quote_actions: {
         Row: {
           actioned_at: string | null
@@ -2646,6 +2678,9 @@ export type Database = {
         | "message"
         | "deadline_approaching"
         | "reaction"
+        | "account_created"
+        | "project_updated"
+        | "new_agency"
       permission_action: "read" | "create" | "update" | "delete"
       permission_scope: "all" | "limited" | "own"
       prospect_channel: "Email" | "Téléphone" | "LinkedIn" | "Bouche-à-oreille"
@@ -2848,6 +2883,9 @@ export const Constants = {
         "message",
         "deadline_approaching",
         "reaction",
+        "account_created",
+        "project_updated",
+        "new_agency",
       ],
       permission_action: ["read", "create", "update", "delete"],
       permission_scope: ["all", "limited", "own"],
