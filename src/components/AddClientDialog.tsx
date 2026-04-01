@@ -72,6 +72,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
   const [confirmAccountOpen, setConfirmAccountOpen] = useState(false);
   const [createdClientData, setCreatedClientData] = useState<{ id: string; first_name: string; last_name: string; email: string } | null>(null);
   const [creatingAccount, setCreatingAccount] = useState(false);
+  const pendingClientId = useRef<string | undefined>(undefined);
 
   // Use controlled state if provided, otherwise use internal state
   const isOpen = open !== undefined ? open : internalOpen;
