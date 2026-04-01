@@ -53,8 +53,19 @@ type CreatedClientData = {
   email: string;
 };
 
+export type AddedClientPayload = {
+  id: string;
+  company: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  kdrive_drive_id: number | null;
+  kdrive_folder_id: string | null;
+  kdrive_folder_path: string | null;
+};
+
 interface AddClientDialogProps {
-  onClientAdded: (clientId?: string) => void;
+  onClientAdded: (client?: AddedClientPayload) => void | Promise<void>;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
@@ -68,7 +79,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
   const [clientStatuses, setClientStatuses] = useState<any[]>([]);
   const [clientSources, setClientSources] = useState<any[]>([]);
   const [createdClientData, setCreatedClientData] = useState<CreatedClientData | null>(null);
-  const pendingClientId = useRef<string | undefined>(undefined);
+  const pendingClient = useRef<AddedClientPayload | undefined>(undefined);
 
   const isOpen = open !== undefined ? open : internalOpen;
   const setIsOpen = onOpenChange || setInternalOpen;
@@ -119,7 +130,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
     setLogoFile(null);
     setLogoPreview(null);
     setCreatedClientData(null);
-    pendingClientId.current = undefined;
+    pendingClient.current = undefined;
     setLoading(false);
     setCreatingAccount(false);
   };
@@ -168,10 +179,9 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
     setIsOpen(false);
   };
 
-  const finishFlow = () => {
-    const clientId = pendingClientId.current;
+  const finishFlow = async () => {
+    await onClientAdded(pendingClient.current);
     closeDialog();
-    onClientAdded(clientId);
   };
 
   const createUserAccount = async () => {
@@ -191,7 +201,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
       }
 
       toast.success(`Compte utilisateur créé pour ${createdClientData.first_name} ${createdClientData.last_name}. Un email lui a été envoyé.`);
-      finishFlow();
+      await finishFlow();
     } catch (error: any) {
       console.error('Error creating user account:', error);
       toast.error(error.message || "Erreur lors de la création du compte utilisateur");
@@ -224,7 +234,16 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
 
       if (error) throw error;
 
-      pendingClientId.current = clientData.id;
+      pendingClient.current = {
+        id: clientData.id,
+        company: clientData.company,
+        first_name: clientData.first_name,
+        last_name: clientData.last_name,
+        email: clientData.email,
+        kdrive_drive_id: clientData.kdrive_drive_id,
+        kdrive_folder_id: clientData.kdrive_folder_id,
+        kdrive_folder_path: clientData.kdrive_folder_path,
+      };
       setCreatedClientData({
         id: clientData.id,
         first_name: data.first_name,
@@ -285,7 +304,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
             </DialogHeader>
 
             <div className="flex justify-end gap-3 pt-2">
-              <Button type="button" variant="outline" onClick={finishFlow} disabled={creatingAccount}>
+               <Button type="button" variant="outline" onClick={() => { void finishFlow(); }} disabled={creatingAccount}>
                 Non
               </Button>
               <Button type="button" onClick={createUserAccount} disabled={creatingAccount}>
