@@ -240,6 +240,12 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
     }
   };
 
+  const handleClientFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    void handleSubmit(onSubmit)(e);
+  };
+
   const handleDialogOpenChange = (nextOpen: boolean) => {
     if (!nextOpen && (loading || creatingAccount)) return;
     if (!nextOpen) {
@@ -297,7 +303,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
               </DialogDescription>
             </DialogHeader>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={handleClientFormSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="first_name">Prénom *</Label>
