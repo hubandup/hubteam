@@ -25,6 +25,8 @@ interface AddProjectDialogProps {
 export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [addClientOpen, setAddClientOpen] = useState(false);
+  const [clients, setClients] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: '',
