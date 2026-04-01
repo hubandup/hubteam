@@ -184,7 +184,7 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
           Nouveau projet
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px]" onInteractOutside={(e) => { if (addClientOpen) e.preventDefault(); }}>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Créer un nouveau projet</DialogTitle>
