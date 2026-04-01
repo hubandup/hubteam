@@ -94,14 +94,40 @@ export default function Projects() {
     mutationFn: async (projectId: string) => {
       const { error } = await supabase.from('projects').delete().eq('id', projectId);
       if (error) throw error;
+      return projectId;
+    },
+    onMutate: async (projectId: string) => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: ['projects'] }),
+        queryClient.cancelQueries({ queryKey: ['archived-projects'] }),
+      ]);
+
+      const previousProjects = queryClient.getQueryData<any[]>(['projects', user?.id]) || [];
+      const previousArchivedProjects = queryClient.getQueryData<any[]>(['archived-projects', user?.id]) || [];
+
+      queryClient.setQueryData(['projects', user?.id], (old: any[] = []) =>
+        old.filter((project) => project.id !== projectId)
+      );
+      queryClient.setQueryData(['archived-projects', user?.id], (old: any[] = []) =>
+        old.filter((project) => project.id !== projectId)
+      );
+
+      return { previousProjects, previousArchivedProjects };
     },
     onSuccess: () => {
-      queryClient.refetchQueries({ queryKey: ['projects'] });
-      queryClient.refetchQueries({ queryKey: ['archived-projects'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
       toast.success(t('projects.deleted'));
       setProjectToDelete(null);
     },
-    onError: () => { toast.error(t('projects.deleteError')); setProjectToDelete(null); },
+    onError: (_error, _projectId, context) => {
+      if (context) {
+        queryClient.setQueryData(['projects', user?.id], context.previousProjects);
+        queryClient.setQueryData(['archived-projects', user?.id], context.previousArchivedProjects);
+      }
+      toast.error(t('projects.deleteError'));
+      setProjectToDelete(null);
+    },
   });
 
   const handleStatusChange = async (projectId: string, newStatus: string) => {
