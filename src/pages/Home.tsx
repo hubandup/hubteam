@@ -12,13 +12,13 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useNotifications } from '@/hooks/useNotifications';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Bell, AlertTriangle, Calendar, Clock, Activity, Users } from 'lucide-react';
+import { Bell, Calendar, Clock, Activity, Users, FolderKanban } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-interface OverdueProject {
+interface ActiveProject {
   id: string;
   name: string;
-  end_date: string;
+  status: string;
   clientName: string;
 }
 
@@ -46,7 +46,7 @@ interface RecentActivity {
 
 export default function Home() {
   const [userName, setUserName] = useState('');
-  const [overdueProjects, setOverdueProjects] = useState<OverdueProject[]>([]);
+  const [activeProjects, setActiveProjects] = useState<ActiveProject[]>([]);
   const [upcomingDeadlines, setUpcomingDeadlines] = useState<UpcomingDeadline[]>([]);
   const [followUps, setFollowUps] = useState<FollowUpClient[]>([]);
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
@@ -75,48 +75,72 @@ export default function Home() {
 
       if (profile) setUserName(profile.first_name);
 
-      // Fetch overdue projects (end_date past, not completed/archived)
-      const { data: overdueData } = await supabase
-        .from('projects')
-        .select('id, name, end_date, project_clients(clients(company))')
-        .lt('end_date', new Date().toISOString())
-        .eq('archived', false)
-        .in('status', ['active', 'reco_in_progress', 'planning'])
-        .not('end_date', 'is', null)
-        .order('end_date', { ascending: true })
-        .limit(5);
+      // Get user's project IDs (team member or creator)
+      const { data: memberProjects } = await supabase
+        .from('project_team_members')
+        .select('project_id')
+        .eq('member_type', 'profile')
+        .eq('member_id', user.id);
 
-      setOverdueProjects(
-        (overdueData || []).map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          end_date: p.end_date,
-          clientName: p.project_clients?.[0]?.clients?.company || 'N/A',
-        }))
-      );
+      const { data: createdProjects } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('created_by', user.id);
+
+      const userProjectIds = [
+        ...new Set([
+          ...(memberProjects || []).map((p: any) => p.project_id),
+          ...(createdProjects || []).map((p: any) => p.id),
+        ]),
+      ];
+
+      // Fetch active projects for user
+      if (userProjectIds.length > 0) {
+        const { data: activeData } = await supabase
+          .from('projects')
+          .select('id, name, status, project_clients(clients(company))')
+          .in('id', userProjectIds)
+          .eq('archived', false)
+          .in('status', ['active', 'reco_in_progress', 'planning'])
+          .order('updated_at', { ascending: false })
+          .limit(5);
+
+        setActiveProjects(
+          (activeData || []).map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            status: p.status,
+            clientName: p.project_clients?.[0]?.clients?.company || 'N/A',
+          }))
+        );
+      }
 
       // Upcoming deadlines (tasks due in next 7 days)
       const in7days = addDays(new Date(), 7).toISOString();
       const now = new Date().toISOString();
 
-      const { data: upcomingTasks } = await supabase
-        .from('tasks')
-        .select('id, title, end_date, projects(name)')
-        .gte('end_date', now)
-        .lte('end_date', in7days)
-        .neq('status', 'done')
-        .order('end_date', { ascending: true })
-        .limit(8);
+      // Upcoming deadlines - only user's tasks (assigned or in user's projects)
+      if (userProjectIds.length > 0) {
+        const { data: upcomingTasks } = await supabase
+          .from('tasks')
+          .select('id, title, end_date, assigned_to, project_id, projects(name)')
+          .gte('end_date', now)
+          .lte('end_date', in7days)
+          .neq('status', 'done')
+          .in('project_id', userProjectIds)
+          .order('end_date', { ascending: true })
+          .limit(8);
 
-      setUpcomingDeadlines(
-        (upcomingTasks || []).map((tk: any) => ({
-          id: tk.id,
-          title: tk.title,
-          end_date: tk.end_date,
-          type: 'task' as const,
-          projectName: tk.projects?.name,
-        }))
-      );
+        setUpcomingDeadlines(
+          (upcomingTasks || []).map((tk: any) => ({
+            id: tk.id,
+            title: tk.title,
+            end_date: tk.end_date,
+            type: 'task' as const,
+            projectName: tk.projects?.name,
+          }))
+        );
+      }
 
       // Client follow-ups due
       const { data: followUpData } = await supabase
@@ -218,16 +242,16 @@ export default function Home() {
         {!isAgency && <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-destructive" />
-              Projets en retard
+              <FolderKanban className="h-4 w-4 text-primary" />
+              Projets en cours
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {overdueProjects.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucun projet en retard 🎉</p>
+            {activeProjects.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Aucun projet en cours</p>
             ) : (
               <div className="space-y-2">
-                {overdueProjects.map((p) => (
+                {activeProjects.map((p) => (
                   <div
                     key={p.id}
                     className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded-md p-2 -mx-2 transition-colors"
@@ -237,8 +261,8 @@ export default function Home() {
                       <p className="text-sm font-medium truncate">{p.name}</p>
                       <p className="text-xs text-muted-foreground">{p.clientName}</p>
                     </div>
-                    <Badge variant="destructive" className="text-xs shrink-0 ml-2">
-                      {format(new Date(p.end_date), 'd MMM', { locale: fr })}
+                    <Badge variant="outline" className="text-xs shrink-0 ml-2">
+                      {p.status === 'reco_in_progress' ? 'Reco' : p.status === 'planning' ? 'Planning' : 'Actif'}
                     </Badge>
                   </div>
                 ))}
