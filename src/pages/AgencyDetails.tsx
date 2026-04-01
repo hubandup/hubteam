@@ -149,6 +149,12 @@ export default function AgencyDetails() {
       icon: <FileText className="h-4 w-4" />,
       content: <AgencyKDriveTab agencyId={agency.id} agencyName={agency.name} />
     }] : []),
+    ...(isClient ? [{
+      value: 'presentation',
+      label: 'Présentation',
+      icon: <Presentation className="h-4 w-4" />,
+      content: <AgencyPresentationTab agencyId={agency.id} />
+    }] : []),
     ...(showAttestations ? [{
       value: 'attestations',
       label: 'Documents',
