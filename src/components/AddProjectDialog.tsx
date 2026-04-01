@@ -220,6 +220,15 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
                     ))}
                   </SelectContent>
                 </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0"
+                  onClick={() => setAddClientOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
                 <AddClientDialog
                   open={addClientOpen}
                   onOpenChange={setAddClientOpen}
