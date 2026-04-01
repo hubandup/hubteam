@@ -233,7 +233,6 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
                   open={addClientOpen}
                   onOpenChange={setAddClientOpen}
                   onClientAdded={(newClientId) => {
-                    setAddClientOpen(false);
                     fetchClients();
                     if (newClientId) {
                       setFormData(prev => ({ ...prev, client_id: newClientId }));
