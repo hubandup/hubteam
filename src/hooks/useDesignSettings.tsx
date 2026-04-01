@@ -53,6 +53,11 @@ export function useDesignSettings() {
         --secondary: ${data.dark_secondary} !important;
         --background: ${data.dark_background} !important;
       }
+      button, [role="tab"], .btn, 
+      [data-radix-collection-item],
+      [class*="rounded"] {
+        border-radius: 0 !important;
+      }
     `;
     if (!document.getElementById('dynamic-theme-style')) {
       document.head.appendChild(style);
