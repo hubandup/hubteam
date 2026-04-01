@@ -467,5 +467,31 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
         </form>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={confirmAccountOpen} onOpenChange={(open) => {
+      if (!open && !creatingAccount) {
+        setConfirmAccountOpen(false);
+        setCreatedClientData(null);
+      }
+    }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Créer un compte utilisateur ?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Souhaitez-vous créer un compte utilisateur pour{' '}
+            <strong>{createdClientData?.first_name} {createdClientData?.last_name}</strong> ?
+            Un email automatique lui sera envoyé pour qu'il se connecte à son compte.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={creatingAccount}>Non</AlertDialogCancel>
+          <AlertDialogAction onClick={createUserAccount} disabled={creatingAccount}>
+            {creatingAccount && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Oui, créer le compte
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
