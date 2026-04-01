@@ -142,12 +142,12 @@ export default function AgencyDetails() {
       icon: <FolderKanban className="h-4 w-4" />,
       content: <AgencyProjectsTab agencyId={agency.id} />
     },
-    {
+    ...(!isClient ? [{
       value: 'kdrive',
       label: 'KDrive',
       icon: <FileText className="h-4 w-4" />,
       content: <AgencyKDriveTab agencyId={agency.id} agencyName={agency.name} />
-    },
+    }] : []),
     ...(showAttestations ? [{
       value: 'attestations',
       label: 'Documents',
