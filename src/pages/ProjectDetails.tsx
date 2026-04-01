@@ -312,10 +312,25 @@ export default function ProjectDetails() {
           </div>
 
           {/* Client */}
-          {client && (
+          {client ? (
             <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#9A9A9A', margin: 0 }}>
               <span className="uppercase">{client.company}</span> – {client.first_name} {client.last_name}
             </p>
+          ) : (
+            <ProtectedAction module="projects" action="update">
+              <button
+                onClick={() => setShowSelectClientDialog(true)}
+                className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+                style={{
+                  fontFamily: "'Instrument Sans', sans-serif",
+                  fontWeight: 600, fontSize: 12,
+                  color: '#9A9A9A',
+                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                }}
+              >
+                <Plus size={12} /> Associer un client
+              </button>
+            </ProtectedAction>
           )}
         </div>
 
