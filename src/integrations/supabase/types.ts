@@ -162,6 +162,53 @@ export type Database = {
           },
         ]
       }
+      agency_attestations: {
+        Row: {
+          agency_id: string
+          attestation_type: string
+          created_at: string
+          expires_at: string
+          file_name: string
+          file_path: string
+          id: string
+          updated_at: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          agency_id: string
+          attestation_type: string
+          created_at?: string
+          expires_at: string
+          file_name: string
+          file_path: string
+          id?: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          agency_id?: string
+          attestation_type?: string
+          created_at?: string
+          expires_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_attestations_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agency_contacts: {
         Row: {
           agency_id: string
