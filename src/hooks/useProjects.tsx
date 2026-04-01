@@ -262,6 +262,18 @@ export function useProjects() {
           queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tasks',
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['projects'] });
+          queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
+        }
+      )
       .subscribe();
 
     return () => {
