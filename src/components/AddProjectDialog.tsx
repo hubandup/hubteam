@@ -27,6 +27,7 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
   const [loading, setLoading] = useState(false);
   const [addClientOpen, setAddClientOpen] = useState(false);
   const [clients, setClients] = useState<AddedClientPayload[]>([]);
+  const [selectedClientPreview, setSelectedClientPreview] = useState<AddedClientPayload | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -51,11 +52,30 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
         .order('company');
 
       if (error) throw error;
-      setClients(data || []);
+      setClients((prev) => {
+        const fetchedClients = data || [];
+        const selectedClient = selectedClientPreview ?? prev.find((client) => client.id === formData.client_id);
+
+        if (!selectedClient || fetchedClients.some((client) => client.id === selectedClient.id)) {
+          return fetchedClients;
+        }
+
+        return [...fetchedClients, selectedClient].sort((a, b) =>
+          a.company.localeCompare(b.company, 'fr', { sensitivity: 'base' })
+        );
+      });
     } catch (error) {
       console.error('Error fetching clients:', error);
       toast.error('Erreur lors du chargement des clients');
     }
+  };
+
+  const selectedClient = clients.find((client) => client.id === formData.client_id)
+    ?? (selectedClientPreview?.id === formData.client_id ? selectedClientPreview : null);
+
+  const handleClientChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, client_id: value }));
+    setSelectedClientPreview(clients.find((client) => client.id === value) ?? null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -167,6 +187,7 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
         end_date: '',
         client_id: '',
       });
+      setSelectedClientPreview(null);
       onProjectAdded();
     } catch (error) {
       console.error('Error creating project:', error);
@@ -207,10 +228,16 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
               <div className="flex gap-2">
                 <Select
                   value={formData.client_id}
-                  onValueChange={(value) => setFormData({ ...formData, client_id: value })}
+                  onValueChange={handleClientChange}
                 >
                   <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Sélectionner un client" />
+                    <SelectValue placeholder="Sélectionner un client">
+                      {selectedClient ? (
+                        <>
+                          <span className="uppercase">{selectedClient.company}</span> - {selectedClient.first_name} {selectedClient.last_name}
+                        </>
+                      ) : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {clients.map((client) => (
@@ -245,6 +272,7 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
                       );
                     });
 
+                    setSelectedClientPreview(newClient);
                     setFormData((prev) => ({ ...prev, client_id: newClient.id }));
                     void fetchClients();
                   }}

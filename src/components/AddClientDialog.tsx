@@ -80,6 +80,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
   const [clientSources, setClientSources] = useState<any[]>([]);
   const [createdClientData, setCreatedClientData] = useState<CreatedClientData | null>(null);
   const pendingClient = useRef<AddedClientPayload | undefined>(undefined);
+  const resetTimeoutRef = useRef<number | null>(null);
 
   const isOpen = open !== undefined ? open : internalOpen;
   const setIsOpen = onOpenChange || setInternalOpen;
@@ -109,6 +110,28 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
     if (isOpen) {
       fetchStatuses();
     }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (resetTimeoutRef.current) {
+        window.clearTimeout(resetTimeoutRef.current);
+        resetTimeoutRef.current = null;
+      }
+      return;
+    }
+
+    resetTimeoutRef.current = window.setTimeout(() => {
+      resetLocalState();
+      resetTimeoutRef.current = null;
+    }, 220);
+
+    return () => {
+      if (resetTimeoutRef.current) {
+        window.clearTimeout(resetTimeoutRef.current);
+        resetTimeoutRef.current = null;
+      }
+    };
   }, [isOpen]);
 
   const fetchStatuses = async () => {
@@ -175,13 +198,13 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
   };
 
   const closeDialog = () => {
-    resetLocalState();
     setIsOpen(false);
   };
 
   const finishFlow = async () => {
-    await onClientAdded(pendingClient.current);
+    const client = pendingClient.current;
     closeDialog();
+    await onClientAdded(client);
   };
 
   const createUserAccount = async () => {
@@ -268,7 +291,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
   const handleDialogOpenChange = (nextOpen: boolean) => {
     if (!nextOpen && (loading || creatingAccount)) return;
     if (!nextOpen) {
-      closeDialog();
+      setIsOpen(false);
       return;
     }
     setIsOpen(nextOpen);
