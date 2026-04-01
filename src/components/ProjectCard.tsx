@@ -112,7 +112,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
           <img
             src={client.logo_url}
             alt={clientName}
-            className="w-8 h-8 rounded object-contain flex-shrink-0"
+            className="w-10 h-10 rounded object-contain flex-shrink-0"
           />
         ) : (
           <div
