@@ -16,7 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 export default function AgencyDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { role, loading: roleLoading, isAdmin, isAgency } = useUserRole();
+  const { role, loading: roleLoading, isAdmin, isAgency, isClient } = useUserRole();
   const { user } = useAuth();
   const [agency, setAgency] = useState<any>(null);
   const [loading, setLoading] = useState(true);
