@@ -158,13 +158,17 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
   };
 
   const finishAndNotifyParent = () => {
-    onClientAdded(pendingClientId.current);
+    const clientId = pendingClientId.current;
     pendingClientId.current = undefined;
+    setConfirmAccountOpen(false);
     setCreatedClientData(null);
+    setIsOpen(false);
+    onClientAdded(clientId);
   };
 
   const createUserAccount = async () => {
     if (!createdClientData) return;
+
     setCreatingAccount(true);
     try {
       const response = await supabase.functions.invoke('invite-user', {
@@ -184,7 +188,6 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
       toast.error(error.message || "Erreur lors de la création du compte utilisateur");
     } finally {
       setCreatingAccount(false);
-      setConfirmAccountOpen(false);
       finishAndNotifyParent();
     }
   };
@@ -211,31 +214,19 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
       if (error) throw error;
 
       toast.success('Client ajouté avec succès');
-      
-      // Store client info for account creation prompt
-      const clientInfo = {
+
+      pendingClientId.current = clientData.id;
+      setCreatedClientData({
         id: clientData.id,
         first_name: data.first_name,
         last_name: data.last_name,
         email: data.email,
-      };
-      
+      });
+      setConfirmAccountOpen(true);
+
       reset();
       setLogoFile(null);
       setLogoPreview(null);
-      
-      // Store the client id to pass after confirmation dialog closes
-      pendingClientId.current = clientData?.id;
-      
-      // Close the form dialog first
-      setIsOpen(false);
-      
-      // Show account creation confirmation after a short delay
-      // to avoid the AlertDialog being unmounted with the parent
-      setTimeout(() => {
-        setCreatedClientData(clientInfo);
-        setConfirmAccountOpen(true);
-      }, 300);
     } catch (error) {
       console.error('Error adding client:', error);
       toast.error("Erreur lors de l'ajout du client");
@@ -244,274 +235,295 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
     }
   };
 
+  const handleDialogOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen && (confirmAccountOpen || loading || creatingAccount)) {
+      return;
+    }
+
+    setIsOpen(nextOpen);
+  };
+
   return (
     <>
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      {!open && !onOpenChange && (
-        <DialogTrigger asChild>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Nouveau client
-          </Button>
-        </DialogTrigger>
-      )}
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Ajouter un nouveau client</DialogTitle>
-          <DialogDescription>
-            Remplissez les informations du client pour l'ajouter à votre base.
-          </DialogDescription>
-        </DialogHeader>
+      <Dialog open={isOpen} onOpenChange={handleDialogOpenChange}>
+        {!open && !onOpenChange && (
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Nouveau client
+            </Button>
+          </DialogTrigger>
+        )}
+        <DialogContent
+          className="max-w-2xl max-h-[90vh] overflow-y-auto"
+          onInteractOutside={(e) => {
+            if (confirmAccountOpen) e.preventDefault();
+          }}
+          onEscapeKeyDown={(e) => {
+            if (confirmAccountOpen) e.preventDefault();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Ajouter un nouveau client</DialogTitle>
+            <DialogDescription>
+              Remplissez les informations du client pour l'ajouter à votre base.
+            </DialogDescription>
+          </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="first_name">Prénom *</Label>
-              <Input
-                id="first_name"
-                {...register('first_name')}
-                placeholder="Jean"
-              />
-              {errors.first_name && (
-                <p className="text-sm text-destructive">{errors.first_name.message}</p>
-              )}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="first_name">Prénom *</Label>
+                <Input
+                  id="first_name"
+                  {...register('first_name')}
+                  placeholder="Jean"
+                />
+                {errors.first_name && (
+                  <p className="text-sm text-destructive">{errors.first_name.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="last_name">Nom *</Label>
+                <Input
+                  id="last_name"
+                  {...register('last_name')}
+                  placeholder="Dupont"
+                />
+                {errors.last_name && (
+                  <p className="text-sm text-destructive">{errors.last_name.message}</p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="last_name">Nom *</Label>
+              <Label htmlFor="company">Entreprise *</Label>
               <Input
-                id="last_name"
-                {...register('last_name')}
-                placeholder="Dupont"
+                id="company"
+                {...register('company')}
+                placeholder="Acme Corp"
               />
-              {errors.last_name && (
-                <p className="text-sm text-destructive">{errors.last_name.message}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="company">Entreprise *</Label>
-            <Input
-              id="company"
-              {...register('company')}
-              placeholder="Acme Corp"
-            />
-            {errors.company && (
-              <p className="text-sm text-destructive">{errors.company.message}</p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                {...register('email')}
-                placeholder="jean.dupont@acme.com"
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
+              {errors.company && (
+                <p className="text-sm text-destructive">{errors.company.message}</p>
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="phone">Téléphone</Label>
-              <Input
-                id="phone"
-                {...register('phone')}
-                placeholder="+33 6 12 34 56 78"
-              />
-              {errors.phone && (
-                <p className="text-sm text-destructive">{errors.phone.message}</p>
-              )}
-            </div>
-          </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  {...register('email')}
+                  placeholder="jean.dupont@acme.com"
+                />
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email.message}</p>
+                )}
+              </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="revenue">Chiffre d'affaires (€) *</Label>
-              <Input
-                id="revenue"
-                type="number"
-                step="0.01"
-                {...register('revenue', { valueAsNumber: true })}
-                placeholder="50000"
-              />
-              {errors.revenue && (
-                <p className="text-sm text-destructive">{errors.revenue.message}</p>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="phone">Téléphone</Label>
+                <Input
+                  id="phone"
+                  {...register('phone')}
+                  placeholder="+33 6 12 34 56 78"
+                />
+                {errors.phone && (
+                  <p className="text-sm text-destructive">{errors.phone.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="revenue">Chiffre d'affaires (€) *</Label>
+                <Input
+                  id="revenue"
+                  type="number"
+                  step="0.01"
+                  {...register('revenue', { valueAsNumber: true })}
+                  placeholder="50000"
+                />
+                {errors.revenue && (
+                  <p className="text-sm text-destructive">{errors.revenue.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="source_id">Source</Label>
+                  <AddClientSourceDialog onSourceAdded={fetchStatuses} />
+                </div>
+                <Select
+                  value={selectedSourceId}
+                  onValueChange={(value) => setValue('source_id', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clientSources.map((source) => (
+                      <SelectItem key={source.id} value={source.id}>
+                        {source.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="source_id">Source</Label>
-                <AddClientSourceDialog onSourceAdded={fetchStatuses} />
+                <Label htmlFor="status_id">Action</Label>
+                <AddClientStatusDialog onStatusAdded={fetchStatuses} />
               </div>
               <Select
-                value={selectedSourceId}
-                onValueChange={(value) => setValue('source_id', value)}
+                value={selectedStatusId}
+                onValueChange={(value) => setValue('status_id', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner une source" />
+                  <SelectValue placeholder="Sélectionner une action" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clientSources.map((source) => (
-                    <SelectItem key={source.id} value={source.id}>
-                      {source.name}
+                  {clientStatuses.map((status) => (
+                    <SelectItem key={status.id} value={status.id}>
+                      {status.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="status_id">Action</Label>
-              <AddClientStatusDialog onStatusAdded={fetchStatuses} />
-            </div>
-            <Select
-              value={selectedStatusId}
-              onValueChange={(value) => setValue('status_id', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner une action" />
-              </SelectTrigger>
-              <SelectContent>
-                {clientStatuses.map((status) => (
-                  <SelectItem key={status.id} value={status.id}>
-                    {status.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="follow_up_date">Prochaine échéance</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !followUpDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {followUpDate ? format(followUpDate, "dd/MM/yyyy") : "Choisir une date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={followUpDate}
-                  onSelect={(date) => setValue('follow_up_date', date)}
-                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-            {errors.follow_up_date && (
-              <p className="text-sm text-destructive">{errors.follow_up_date.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="logo">Logo de l'entreprise</Label>
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <Input
-                  id="logo"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoChange}
-                  className="cursor-pointer"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  PNG, JPG ou WEBP - Max 5MB
-                </p>
-              </div>
-              {logoPreview && (
-                <img
-                  src={logoPreview}
-                  alt="Aperçu du logo"
-                  className="w-16 h-16 object-cover rounded-lg border"
-                />
+            <div className="space-y-2">
+              <Label htmlFor="follow_up_date">Prochaine échéance</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !followUpDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {followUpDate ? format(followUpDate, "dd/MM/yyyy") : "Choisir une date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={followUpDate}
+                    onSelect={(date) => setValue('follow_up_date', date)}
+                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+              {errors.follow_up_date && (
+                <p className="text-sm text-destructive">{errors.follow_up_date.message}</p>
               )}
             </div>
-          </div>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label htmlFor="active">Statut</Label>
-              <p className="text-sm text-muted-foreground">
-                Le client est-il actuellement actif ?
-              </p>
+            <div className="space-y-2">
+              <Label htmlFor="logo">Logo de l'entreprise</Label>
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <Input
+                    id="logo"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoChange}
+                    className="cursor-pointer"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    PNG, JPG ou WEBP - Max 5MB
+                  </p>
+                </div>
+                {logoPreview && (
+                  <img
+                    src={logoPreview}
+                    alt="Aperçu du logo"
+                    className="w-16 h-16 object-cover rounded-lg border"
+                  />
+                )}
+              </div>
             </div>
-            <Switch
-              id="active"
-              checked={active}
-              onCheckedChange={(checked) => setValue('active', checked)}
-            />
-          </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                reset();
-                setLogoFile(null);
-                setLogoPreview(null);
-                setIsOpen(false);
-              }}
-              disabled={loading}
-            >
-              Annuler
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Ajouter le client
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="active">Statut</Label>
+                <p className="text-sm text-muted-foreground">
+                  Le client est-il actuellement actif ?
+                </p>
+              </div>
+              <Switch
+                id="active"
+                checked={active}
+                onCheckedChange={(checked) => setValue('active', checked)}
+              />
+            </div>
 
-    <AlertDialog open={confirmAccountOpen} onOpenChange={(open) => {
-      if (!open && !creatingAccount) {
-        setConfirmAccountOpen(false);
-        setCreatedClientData(null);
-      }
-    }}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Créer un compte utilisateur ?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Souhaitez-vous créer un compte utilisateur pour{' '}
-            <strong>{createdClientData?.first_name} {createdClientData?.last_name}</strong> ?
-            Un email automatique lui sera envoyé pour qu'il se connecte à son compte.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={creatingAccount} onClick={() => {
-            setConfirmAccountOpen(false);
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  reset();
+                  setLogoFile(null);
+                  setLogoPreview(null);
+                  setIsOpen(false);
+                }}
+                disabled={loading}
+              >
+                Annuler
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Ajouter le client
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={confirmAccountOpen}
+        onOpenChange={(nextOpen) => {
+          if (creatingAccount) return;
+          if (!nextOpen) {
             finishAndNotifyParent();
-          }}>Non</AlertDialogCancel>
-          <AlertDialogAction onClick={(e) => {
-            e.preventDefault();
-            createUserAccount();
-          }} disabled={creatingAccount}>
-            {creatingAccount && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Oui, créer le compte
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+            return;
+          }
+          setConfirmAccountOpen(nextOpen);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Créer un compte utilisateur ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Souhaitez-vous créer un compte utilisateur pour{' '}
+              <strong>{createdClientData?.first_name} {createdClientData?.last_name}</strong> ?
+              Un email automatique lui sera envoyé pour qu'il se connecte à son compte.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={creatingAccount}>Non</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                createUserAccount();
+              }}
+              disabled={creatingAccount}
+            >
+              {creatingAccount && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Oui, créer le compte
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
