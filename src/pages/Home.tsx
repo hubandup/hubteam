@@ -221,7 +221,7 @@ export default function Home() {
           </h1>
           <p className="text-muted-foreground mt-1 capitalize">{today}</p>
         </div>
-        {unreadCount > 0 && (
+        {!isClient && unreadCount > 0 && (
           <Card
             className="cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => navigate('/feed')}
