@@ -89,6 +89,10 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
     setSelectedClientPreview(clients.find((client) => client.id === value) ?? null);
   };
 
+  const selectedClientLabel = selectedClient
+    ? `${selectedClient.company.toUpperCase()} - ${selectedClient.first_name} ${selectedClient.last_name}`.trim()
+    : '';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -246,13 +250,11 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
                   onValueChange={handleClientChange}
                 >
                   <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Sélectionner un client">
-                      {selectedClient ? (
-                        <>
-                          <span className="uppercase">{selectedClient.company}</span> - {selectedClient.first_name} {selectedClient.last_name}
-                        </>
-                      ) : undefined}
-                    </SelectValue>
+                    {selectedClient ? (
+                      <span className="block truncate">{selectedClientLabel}</span>
+                    ) : (
+                      <SelectValue placeholder="Sélectionner un client" />
+                    )}
                   </SelectTrigger>
                   <SelectContent>
                     {clients.map((client) => (
