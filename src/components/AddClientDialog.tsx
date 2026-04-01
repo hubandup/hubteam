@@ -217,12 +217,19 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
       reset();
       setLogoFile(null);
       setLogoPreview(null);
-      setIsOpen(false);
-      onClientAdded(clientData?.id);
       
-      // Show account creation confirmation
-      setCreatedClientData(clientInfo);
-      setConfirmAccountOpen(true);
+      // Store the client id to pass after confirmation dialog closes
+      pendingClientId.current = clientData?.id;
+      
+      // Close the form dialog first
+      setIsOpen(false);
+      
+      // Show account creation confirmation after a short delay
+      // to avoid the AlertDialog being unmounted with the parent
+      setTimeout(() => {
+        setCreatedClientData(clientInfo);
+        setConfirmAccountOpen(true);
+      }, 300);
     } catch (error) {
       console.error('Error adding client:', error);
       toast.error("Erreur lors de l'ajout du client");
