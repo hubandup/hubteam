@@ -317,36 +317,32 @@ export default function Finances() {
   const handleExportPDF = async () => {
     try {
       toast.info('Génération du PDF en cours...');
+
+      const [{ default: jsPDF }, { default: autoTable }, { default: html2canvas }] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable'),
+        import('html2canvas'),
+      ]);
       
-      // Page 1: Portrait - Résumé financier
       const doc = new jsPDF('portrait', 'mm', 'a4');
       const pageWidth = doc.internal.pageSize.getWidth();
       const margin = 15;
       
-      // Header avec fond coloré
-      doc.setFillColor(1, 74, 148); // #014a94
+      doc.setFillColor(1, 74, 148);
       doc.rect(0, 0, pageWidth, 45, 'F');
-      
-      // Logo / Titre
       doc.setFontSize(28);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(255, 255, 255);
       doc.text('Rapport Financier', pageWidth / 2, 22, { align: 'center' });
-      
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
       doc.text(`Hub & Up - ${format(new Date(), 'dd MMMM yyyy', { locale: fr })}`, pageWidth / 2, 35, { align: 'center' });
-      
-      // Reset text color
       doc.setTextColor(0, 0, 0);
       
       let yPos = 60;
-      
-      // Section KPIs - 2x2 grid
       const cardWidth = (pageWidth - margin * 3) / 2;
       const cardHeight = 35;
       
-      // Card 1: CA Année Fiscale
       doc.setFillColor(245, 247, 250);
       doc.roundedRect(margin, yPos, cardWidth, cardHeight, 3, 3, 'F');
       doc.setFontSize(10);
@@ -358,7 +354,6 @@ export default function Finances() {
       doc.setTextColor(1, 74, 148);
       doc.text(`${totalRevenue.toLocaleString('fr-FR')} €`, margin + 8, yPos + 27);
       
-      // Card 2: Adhésions
       doc.setFillColor(245, 247, 250);
       doc.roundedRect(margin * 2 + cardWidth, yPos, cardWidth, cardHeight, 3, 3, 'F');
       doc.setFontSize(10);
@@ -376,7 +371,6 @@ export default function Finances() {
       
       yPos += cardHeight + 10;
       
-      // Card 3: Marge Moyenne
       doc.setFillColor(245, 247, 250);
       doc.roundedRect(margin, yPos, cardWidth, cardHeight, 3, 3, 'F');
       doc.setFontSize(10);
@@ -388,7 +382,6 @@ export default function Finances() {
       doc.setTextColor(1, 74, 148);
       doc.text(validatedQuotes.length > 0 ? `${averageMargin.toFixed(1)}%` : 'N/A', margin + 8, yPos + 27);
       
-      // Card 4: Marge Brute
       doc.setFillColor(245, 247, 250);
       doc.roundedRect(margin * 2 + cardWidth, yPos, cardWidth, cardHeight, 3, 3, 'F');
       doc.setFontSize(10);
@@ -397,7 +390,7 @@ export default function Finances() {
       doc.text('Marge Brute', margin * 2 + cardWidth + 8, yPos + 12);
       doc.setFontSize(22);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(69, 108, 52); // Vert
+      doc.setTextColor(69, 108, 52);
       doc.text(`${margeBrutePercent.toFixed(1)}%`, margin * 2 + cardWidth + 8, yPos + 27);
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
@@ -405,8 +398,6 @@ export default function Finances() {
       doc.text(`(${margeBrute.toLocaleString('fr-FR')} € HT)`, margin * 2 + cardWidth + 45, yPos + 27);
       
       yPos += cardHeight + 20;
-      
-      // Top 5 Clients
       doc.setTextColor(0, 0, 0);
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
@@ -436,18 +427,14 @@ export default function Finances() {
         margin: { left: margin, right: margin },
       });
       
-      // Page 2: Landscape - Graphique CA
       doc.addPage('landscape');
       const landscapeWidth = doc.internal.pageSize.getWidth();
       const landscapeHeight = doc.internal.pageSize.getHeight();
-      
-      // Titre du graphique
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 0, 0);
       doc.text('Évolution du Chiffre d\'Affaires', margin, 20);
       
-      // Capture Revenue Evolution Chart
       if (revenueChartRef.current) {
         try {
           const canvas = await html2canvas(revenueChartRef.current, {
@@ -456,9 +443,7 @@ export default function Finances() {
             logging: false,
           });
           const imgData = canvas.toDataURL('image/png');
-          const chartWidth = landscapeWidth - margin * 2;
-          const chartHeight = landscapeHeight - 45;
-          doc.addImage(imgData, 'PNG', margin, 28, chartWidth, chartHeight);
+          doc.addImage(imgData, 'PNG', margin, 28, landscapeWidth - margin * 2, landscapeHeight - 45);
         } catch (chartError) {
           console.warn('Could not capture revenue chart:', chartError);
           doc.setFontSize(12);
@@ -466,10 +451,8 @@ export default function Finances() {
         }
       }
       
-      // Page 3: Landscape - Graphique Trésorerie (si données)
       if (treasuryChartRef.current && treasuryData.length > 0) {
         doc.addPage('landscape');
-        
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(0, 0, 0);
@@ -482,17 +465,13 @@ export default function Finances() {
             logging: false,
           });
           const imgData = canvas.toDataURL('image/png');
-          const chartWidth = landscapeWidth - margin * 2;
-          const chartHeight = landscapeHeight - 45;
-          doc.addImage(imgData, 'PNG', margin, 28, chartWidth, chartHeight);
+          doc.addImage(imgData, 'PNG', margin, 28, landscapeWidth - margin * 2, landscapeHeight - 45);
         } catch (chartError) {
           console.warn('Could not capture treasury chart:', chartError);
         }
       }
       
-      // Page 4+: Portrait - Tableau des projets validés
       doc.addPage('portrait');
-      
       doc.setFillColor(1, 74, 148);
       doc.rect(0, 0, pageWidth, 25, 'F');
       doc.setFontSize(16);
@@ -527,8 +506,7 @@ export default function Finances() {
           6: { cellWidth: 18, halign: 'right' },
         },
         margin: { left: margin, right: margin },
-        didDrawPage: (data) => {
-          // Footer sur chaque page
+        didDrawPage: () => {
           doc.setFontSize(8);
           doc.setTextColor(150, 150, 150);
           doc.text(
@@ -540,7 +518,6 @@ export default function Finances() {
         },
       });
       
-      // Save PDF
       doc.save(`rapport-financier-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
       toast.success('Rapport PDF généré avec succès');
     } catch (error) {
@@ -549,8 +526,10 @@ export default function Finances() {
     }
   };
 
-  const handleExportXLS = () => {
+  const handleExportXLS = async () => {
     try {
+      const XLSX = await import('xlsx');
+
       const xlsData = validatedQuotes.map((quote) => ({
         'Client': quote.client,
         'N° Devis': quote.quoteRef,
@@ -564,18 +543,15 @@ export default function Finances() {
       const worksheet = XLSX.utils.json_to_sheet(xlsData);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Projets Validés');
-
-      // Auto-size columns
-      const maxWidths = [
-        { wch: 30 }, // Client
-        { wch: 15 }, // N° Devis
-        { wch: 50 }, // Objet
-        { wch: 15 }, // Montant HT
-        { wch: 15 }, // Montant HA
-        { wch: 15 }, // Marge €
-        { wch: 12 }, // Marge %
+      worksheet['!cols'] = [
+        { wch: 30 },
+        { wch: 15 },
+        { wch: 50 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 12 },
       ];
-      worksheet['!cols'] = maxWidths;
 
       XLSX.writeFile(workbook, `projets-valides-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
       toast.success('Export XLS généré avec succès');

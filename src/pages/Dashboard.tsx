@@ -176,7 +176,7 @@ export default function Dashboard() {
 
       if (openProjectTasksResult.error) throw openProjectTasksResult.error;
 
-      const tasksByProject = (openProjectTasksResult.data || []).reduce((acc: Record<string, { total: number; done: number; inProgress: number }>, task: any) => {
+      const tasksByProject = (openProjectTasksResult.data || []).reduce<Record<string, { total: number; done: number; inProgress: number }>>((acc, task: any) => {
         if (!task.project_id) return acc;
         if (!acc[task.project_id]) {
           acc[task.project_id] = { total: 0, done: 0, inProgress: 0 };
@@ -203,7 +203,7 @@ export default function Dashboard() {
         })
         .filter((project: any) => project.totalTasks > 0);
 
-      const tasksInProgressCount = Object.values(tasksByProject).reduce((sum, taskGroup) => sum + taskGroup.inProgress, 0);
+      const tasksInProgressCount = Object.values(tasksByProject).reduce((sum: number, taskGroup) => sum + taskGroup.inProgress, 0);
 
       const commentUserIds = [...new Set(commentsData.map(comment => comment.user_id).filter(Boolean))];
       const commentTaskIds = [...new Set(commentsData.map(comment => comment.task_id).filter(Boolean))];
