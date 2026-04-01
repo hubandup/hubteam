@@ -16,10 +16,12 @@ import { useAuth } from '@/hooks/useAuth';
 export default function AgencyDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { role, loading: roleLoading } = useUserRole();
+  const { role, loading: roleLoading, isAdmin, isAgency } = useUserRole();
+  const { user } = useAuth();
   const [agency, setAgency] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [projectsCount, setProjectsCount] = useState(0);
+  const [isAgencyContact, setIsAgencyContact] = useState(false);
 
   useEffect(() => {
     if (id) {
