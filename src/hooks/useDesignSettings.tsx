@@ -38,7 +38,7 @@ export function useDesignSettings() {
     // Apply light mode colors
     root.style.setProperty('--primary', data.light_primary);
     root.style.setProperty('--secondary', data.light_secondary);
-    root.style.setProperty('--background', data.light_background);
+    root.style.setProperty('--background', '0 0% 100%');
     
     // Apply dark mode colors with !important to override static CSS
     const style = document.getElementById('dynamic-theme-style') || document.createElement('style');
