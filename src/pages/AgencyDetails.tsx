@@ -10,6 +10,7 @@ import { AgencyInfoTab } from '@/components/agency-details/AgencyInfoTab';
 import { AgencyProjectsTab } from '@/components/agency-details/AgencyProjectsTab';
 import { AgencyKDriveTab } from '@/components/agency-details/AgencyKDriveTab';
 import { AgencyAttestationsTab } from '@/components/agency-details/AgencyAttestationsTab';
+import { AgencyPresentationTab } from '@/components/agency-details/AgencyPresentationTab';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
 
