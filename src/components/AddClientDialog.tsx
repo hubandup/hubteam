@@ -498,8 +498,14 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={creatingAccount}>Non</AlertDialogCancel>
-          <AlertDialogAction onClick={createUserAccount} disabled={creatingAccount}>
+          <AlertDialogCancel disabled={creatingAccount} onClick={() => {
+            setConfirmAccountOpen(false);
+            finishAndNotifyParent();
+          }}>Non</AlertDialogCancel>
+          <AlertDialogAction onClick={(e) => {
+            e.preventDefault();
+            createUserAccount();
+          }} disabled={creatingAccount}>
             {creatingAccount && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Oui, créer le compte
           </AlertDialogAction>
