@@ -15,10 +15,10 @@ import { Badge } from '@/components/ui/badge';
 import { Bell, Calendar, Clock, Activity, Users, FolderKanban } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-interface OverdueProject {
+interface ActiveProject {
   id: string;
   name: string;
-  end_date: string;
+  status: string;
   clientName: string;
 }
 
