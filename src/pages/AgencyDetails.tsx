@@ -16,7 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 export default function AgencyDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { role, loading: roleLoading, isAdmin, isAgency } = useUserRole();
+  const { role, loading: roleLoading, isAdmin, isAgency, isClient } = useUserRole();
   const { user } = useAuth();
   const [agency, setAgency] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -142,15 +142,15 @@ export default function AgencyDetails() {
       icon: <FolderKanban className="h-4 w-4" />,
       content: <AgencyProjectsTab agencyId={agency.id} />
     },
-    {
+    ...(!isClient ? [{
       value: 'kdrive',
       label: 'KDrive',
       icon: <FileText className="h-4 w-4" />,
       content: <AgencyKDriveTab agencyId={agency.id} agencyName={agency.name} />
-    },
+    }] : []),
     ...(showAttestations ? [{
       value: 'attestations',
-      label: 'Attestations',
+      label: 'Documents',
       icon: <ShieldCheck className="h-4 w-4" />,
       content: <AgencyAttestationsTab agencyId={agency.id} canEdit={canEditAttestations} />
     }] : []),
