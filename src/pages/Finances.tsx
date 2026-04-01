@@ -11,7 +11,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Euro, Loader2, RefreshCw, TrendingUp, FileDown, Users, FileSpreadsheet, ExternalLink } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { format, subMonths, startOfMonth, endOfMonth, addMonths } from 'date-fns';
@@ -19,9 +18,6 @@ import { fr } from 'date-fns/locale';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import html2canvas from 'html2canvas';
 import { MonthlyComparisonTable } from '@/components/finances/MonthlyComparisonTable';
 
 
