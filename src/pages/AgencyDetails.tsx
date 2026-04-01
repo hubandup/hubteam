@@ -31,6 +31,29 @@ export default function AgencyDetails() {
     }
   }, [id, user]);
 
+  const checkAgencyContact = async () => {
+    if (!id || !user) return;
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.email) {
+        const { count } = await supabase
+          .from('agency_contacts')
+          .select('*', { count: 'exact', head: true })
+          .eq('agency_id', id)
+          .eq('email', profile.email);
+
+        setIsAgencyContact((count || 0) > 0);
+      }
+    } catch (error) {
+      console.error('Error checking agency contact:', error);
+    }
+  };
+
   const fetchProjectsCount = async () => {
     if (!id) return;
 
