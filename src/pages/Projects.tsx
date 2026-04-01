@@ -96,8 +96,8 @@ export default function Projects() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.invalidateQueries({ queryKey: ['archived-projects'] });
+      queryClient.refetchQueries({ queryKey: ['projects'] });
+      queryClient.refetchQueries({ queryKey: ['archived-projects'] });
       toast.success(t('projects.deleted'));
       setProjectToDelete(null);
     },
