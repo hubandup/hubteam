@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -72,6 +72,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
   const [confirmAccountOpen, setConfirmAccountOpen] = useState(false);
   const [createdClientData, setCreatedClientData] = useState<{ id: string; first_name: string; last_name: string; email: string } | null>(null);
   const [creatingAccount, setCreatingAccount] = useState(false);
+  const pendingClientId = useRef<string | undefined>(undefined);
 
   // Use controlled state if provided, otherwise use internal state
   const isOpen = open !== undefined ? open : internalOpen;
@@ -156,11 +157,16 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
     return publicUrl;
   };
 
+  const finishAndNotifyParent = () => {
+    onClientAdded(pendingClientId.current);
+    pendingClientId.current = undefined;
+    setCreatedClientData(null);
+  };
+
   const createUserAccount = async () => {
     if (!createdClientData) return;
     setCreatingAccount(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
       const response = await supabase.functions.invoke('invite-user', {
         body: {
           email: createdClientData.email,
@@ -179,7 +185,7 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
     } finally {
       setCreatingAccount(false);
       setConfirmAccountOpen(false);
-      setCreatedClientData(null);
+      finishAndNotifyParent();
     }
   };
 
@@ -217,12 +223,19 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
       reset();
       setLogoFile(null);
       setLogoPreview(null);
-      setIsOpen(false);
-      onClientAdded(clientData?.id);
       
-      // Show account creation confirmation
-      setCreatedClientData(clientInfo);
-      setConfirmAccountOpen(true);
+      // Store the client id to pass after confirmation dialog closes
+      pendingClientId.current = clientData?.id;
+      
+      // Close the form dialog first
+      setIsOpen(false);
+      
+      // Show account creation confirmation after a short delay
+      // to avoid the AlertDialog being unmounted with the parent
+      setTimeout(() => {
+        setCreatedClientData(clientInfo);
+        setConfirmAccountOpen(true);
+      }, 300);
     } catch (error) {
       console.error('Error adding client:', error);
       toast.error("Erreur lors de l'ajout du client");
@@ -485,8 +498,14 @@ export function AddClientDialog({ onClientAdded, open, onOpenChange }: AddClient
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={creatingAccount}>Non</AlertDialogCancel>
-          <AlertDialogAction onClick={createUserAccount} disabled={creatingAccount}>
+          <AlertDialogCancel disabled={creatingAccount} onClick={() => {
+            setConfirmAccountOpen(false);
+            finishAndNotifyParent();
+          }}>Non</AlertDialogCancel>
+          <AlertDialogAction onClick={(e) => {
+            e.preventDefault();
+            createUserAccount();
+          }} disabled={creatingAccount}>
             {creatingAccount && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Oui, créer le compte
           </AlertDialogAction>
