@@ -198,7 +198,10 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(nextOpen) => {
+      if (!nextOpen && addClientOpen) return;
+      setOpen(nextOpen);
+    }}>
       <DialogTrigger asChild>
         <Button>
           <Plus className="h-4 w-4 mr-2" />
