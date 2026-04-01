@@ -119,24 +119,28 @@ export default function Home() {
       const in7days = addDays(new Date(), 7).toISOString();
       const now = new Date().toISOString();
 
-      const { data: upcomingTasks } = await supabase
-        .from('tasks')
-        .select('id, title, end_date, projects(name)')
-        .gte('end_date', now)
-        .lte('end_date', in7days)
-        .neq('status', 'done')
-        .order('end_date', { ascending: true })
-        .limit(8);
+      // Upcoming deadlines - only user's tasks (assigned or in user's projects)
+      if (userProjectIds.length > 0) {
+        const { data: upcomingTasks } = await supabase
+          .from('tasks')
+          .select('id, title, end_date, assigned_to, project_id, projects(name)')
+          .gte('end_date', now)
+          .lte('end_date', in7days)
+          .neq('status', 'done')
+          .in('project_id', userProjectIds)
+          .order('end_date', { ascending: true })
+          .limit(8);
 
-      setUpcomingDeadlines(
-        (upcomingTasks || []).map((tk: any) => ({
-          id: tk.id,
-          title: tk.title,
-          end_date: tk.end_date,
-          type: 'task' as const,
-          projectName: tk.projects?.name,
-        }))
-      );
+        setUpcomingDeadlines(
+          (upcomingTasks || []).map((tk: any) => ({
+            id: tk.id,
+            title: tk.title,
+            end_date: tk.end_date,
+            type: 'task' as const,
+            projectName: tk.projects?.name,
+          }))
+        );
+      }
 
       // Client follow-ups due
       const { data: followUpData } = await supabase
