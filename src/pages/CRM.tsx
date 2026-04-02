@@ -32,10 +32,18 @@ export default function CRM() {
   const { data: clients = [], isLoading: clientsLoading } = useClients();
   const loading = clientsLoading || permissionsLoading;
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'grid'>('kanban');
-  const [sortBy, setSortBy] = useState<'created_at' | 'revenue_current_year' | 'alphabetical'>('alphabetical');
-  const [filterWithProjects, setFilterWithProjects] = useState(false);
-  const [showArchived, setShowArchived] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'grid'>(() => {
+    return (localStorage.getItem('crm-view-mode') as 'list' | 'kanban' | 'grid') || 'kanban';
+  });
+  const [sortBy, setSortBy] = useState<'created_at' | 'revenue_current_year' | 'alphabetical'>(() => {
+    return (localStorage.getItem('crm-sort-by') as 'created_at' | 'revenue_current_year' | 'alphabetical') || 'alphabetical';
+  });
+  const [filterWithProjects, setFilterWithProjects] = useState(() => {
+    return localStorage.getItem('crm-filter-projects') === 'true';
+  });
+  const [showArchived, setShowArchived] = useState(() => {
+    return localStorage.getItem('crm-show-archived') === 'true';
+  });
 
   const filteredClients = useMemo(() => {
     let result = clients;
