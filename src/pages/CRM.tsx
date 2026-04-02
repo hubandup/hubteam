@@ -45,6 +45,12 @@ export default function CRM() {
     return localStorage.getItem('crm-show-archived') === 'true';
   });
 
+  // Persist preferences to localStorage
+  useEffect(() => { localStorage.setItem('crm-view-mode', viewMode); }, [viewMode]);
+  useEffect(() => { localStorage.setItem('crm-sort-by', sortBy); }, [sortBy]);
+  useEffect(() => { localStorage.setItem('crm-filter-projects', String(filterWithProjects)); }, [filterWithProjects]);
+  useEffect(() => { localStorage.setItem('crm-show-archived', String(showArchived)); }, [showArchived]);
+
   const filteredClients = useMemo(() => {
     let result = clients;
     
