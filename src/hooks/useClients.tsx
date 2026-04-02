@@ -95,7 +95,14 @@ export function useClients() {
           schema: 'public',
           table: 'clients',
         },
-        () => {
+        (payload) => {
+          if (payload.eventType === 'DELETE') {
+            // Optimistically remove from cache immediately
+            queryClient.setQueryData(['clients'], (old: Client[] | undefined) => {
+              if (!old) return old;
+              return old.filter(c => c.id !== (payload.old as any)?.id);
+            });
+          }
           queryClient.invalidateQueries({ queryKey: ['clients'] });
         }
       )
