@@ -135,6 +135,7 @@ export function AddTeamMemberDialog({
     }
 
     setLoading(true);
+    let pendingInviteRef: { first_name: string; last_name: string; email: string } | null = null;
     try {
       // Helper function to grant project access to a user profile by email (case-insensitive)
       const grantProfileAccess = async (email: string) => {
