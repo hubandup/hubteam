@@ -296,6 +296,65 @@ export function AddTeamMemberDialog({
     return `${name} (${member.email})`;
   };
 
+  const handleCreateContact = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!projectClientId) return;
+    if (!newContact.first_name || !newContact.last_name || !newContact.email) {
+      toast.error('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+
+    setCreatingContact(true);
+    try {
+      const { data, error } = await supabase
+        .from('client_contacts')
+        .insert({
+          client_id: projectClientId,
+          first_name: newContact.first_name.trim(),
+          last_name: newContact.last_name.trim(),
+          email: newContact.email.trim(),
+          title: newContact.title.trim() || null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success('Contact créé avec succès');
+      setCreateContactOpen(false);
+      setNewContact({ first_name: '', last_name: '', email: '', title: '' });
+
+      // Refresh members list and auto-select new contact
+      await fetchMembers();
+      if (data) {
+        setMemberId(data.id);
+      }
+
+      // Check if profile exists, if not propose invitation
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .ilike('email', newContact.email.trim())
+        .maybeSingle();
+
+      if (!existingProfile) {
+        setInviteContact({
+          first_name: newContact.first_name.trim(),
+          last_name: newContact.last_name.trim(),
+          email: newContact.email.trim(),
+        });
+        setInviteRole('client');
+        setInviteDialogOpen(true);
+      }
+    } catch (error) {
+      console.error('Error creating contact:', error);
+      toast.error('Erreur lors de la création du contact');
+    } finally {
+      setCreatingContact(false);
+    }
+  };
+
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -326,32 +385,47 @@ export function AddTeamMemberDialog({
 
           <div className="space-y-2">
             <Label>Membre</Label>
-            <Select value={memberId} onValueChange={setMemberId}>
-              <SelectTrigger>
-                <SelectValue placeholder={
-                  memberType === 'client_contact' && !projectClientId
-                    ? "Associez d'abord un client au projet"
-                    : memberType === 'client_contact'
-                    ? 'Sélectionner un contact client'
-                    : members.length === 0
-                    ? "Aucun membre disponible"
-                    : "Sélectionner un membre"
-                } />
-              </SelectTrigger>
-              <SelectContent>
-                {members.length === 0 ? (
-                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                    Aucun membre disponible
-                  </div>
-                ) : (
-                  members.map((member) => (
-                    <SelectItem key={member.id} value={member.id}>
-                      {getMemberLabel(member)}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Select value={memberId} onValueChange={setMemberId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={
+                      memberType === 'client_contact' && !projectClientId
+                        ? "Associez d'abord un client au projet"
+                        : memberType === 'client_contact'
+                        ? 'Sélectionner un contact client'
+                        : members.length === 0
+                        ? "Aucun membre disponible"
+                        : "Sélectionner un membre"
+                    } />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {members.length === 0 ? (
+                      <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                        Aucun membre disponible
+                      </div>
+                    ) : (
+                      members.map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {getMemberLabel(member)}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              {memberType === 'client_contact' && projectClientId && (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  onClick={() => setCreateContactOpen(true)}
+                  title="Créer un nouveau contact"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-end gap-2">
@@ -366,6 +440,66 @@ export function AddTeamMemberDialog({
               Ajouter
             </Button>
           </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+
+    {/* Create contact dialog */}
+    <Dialog open={createContactOpen} onOpenChange={(o) => {
+      setCreateContactOpen(o);
+      if (!o) setNewContact({ first_name: '', last_name: '', email: '', title: '' });
+    }}>
+      <DialogContent className="sm:max-w-[420px]">
+        <DialogHeader>
+          <DialogTitle>Nouveau contact client</DialogTitle>
+          <DialogDescription>
+            Créez un nouveau contact pour le client associé au projet.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleCreateContact} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Prénom *</Label>
+              <Input
+                value={newContact.first_name}
+                onChange={(e) => setNewContact(prev => ({ ...prev, first_name: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Nom *</Label>
+              <Input
+                value={newContact.last_name}
+                onChange={(e) => setNewContact(prev => ({ ...prev, last_name: e.target.value }))}
+                required
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Email *</Label>
+            <Input
+              type="email"
+              value={newContact.email}
+              onChange={(e) => setNewContact(prev => ({ ...prev, email: e.target.value }))}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Fonction</Label>
+            <Input
+              value={newContact.title}
+              onChange={(e) => setNewContact(prev => ({ ...prev, title: e.target.value }))}
+              placeholder="Ex: Directeur marketing"
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setCreateContactOpen(false)}>
+              Annuler
+            </Button>
+            <Button type="submit" disabled={creatingContact}>
+              {creatingContact ? 'Création...' : 'Créer'}
+            </Button>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
