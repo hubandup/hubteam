@@ -45,6 +45,9 @@ export function AddTeamMemberDialog({
   const [inviteContact, setInviteContact] = useState<{ first_name: string; last_name: string; email: string } | null>(null);
   const [inviteRole, setInviteRole] = useState<string>('client');
   const [inviting, setInviting] = useState(false);
+  const [createContactOpen, setCreateContactOpen] = useState(false);
+  const [newContact, setNewContact] = useState({ first_name: '', last_name: '', email: '', title: '' });
+  const [creatingContact, setCreatingContact] = useState(false);
 
   useEffect(() => {
     if (open) {
