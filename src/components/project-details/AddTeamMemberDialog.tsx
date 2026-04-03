@@ -363,5 +363,51 @@ export function AddTeamMemberDialog({
         </form>
       </DialogContent>
     </Dialog>
+
+      <Dialog open={inviteDialogOpen} onOpenChange={(open) => {
+        setInviteDialogOpen(open);
+        if (!open) setInviteContact(null);
+      }}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Créer un compte utilisateur ?</DialogTitle>
+            <DialogDescription>
+              {inviteContact?.first_name} {inviteContact?.last_name} n'a pas encore de compte sur la plateforme. Souhaitez-vous lui envoyer une invitation ?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2 text-sm border rounded-md p-3 bg-muted/30">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Nom</span>
+                <span className="font-medium">{inviteContact?.first_name} {inviteContact?.last_name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Email</span>
+                <span className="font-medium">{inviteContact?.email}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Rôle</span>
+                <span className="font-medium capitalize">{inviteRole}</span>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setInviteDialogOpen(false);
+                  setInviteContact(null);
+                }}
+                disabled={inviting}
+              >
+                Non merci
+              </Button>
+              <Button onClick={handleInviteContact} disabled={inviting}>
+                {inviting ? 'Envoi...' : "Envoyer l'invitation"}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
