@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -37,6 +39,10 @@ export function AddTeamMemberDialog({
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [projectClientId, setProjectClientId] = useState<string | null>(null);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [inviteContact, setInviteContact] = useState<{ first_name: string; last_name: string; email: string } | null>(null);
+  const [inviteRole, setInviteRole] = useState<string>('client');
+  const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -129,6 +135,7 @@ export function AddTeamMemberDialog({
     }
 
     setLoading(true);
+    let pendingInviteRef: { first_name: string; last_name: string; email: string } | null = null;
     try {
       // Helper function to grant project access to a user profile by email (case-insensitive)
       const grantProfileAccess = async (email: string) => {
@@ -165,7 +172,12 @@ export function AddTeamMemberDialog({
         if (memberEmail) {
           const hasProfile = await grantProfileAccess(memberEmail);
           if (!hasProfile) {
-            toast.info("Ce contact n'a pas de compte utilisateur");
+            // Store contact info for invite proposal after adding
+            pendingInviteRef = {
+              first_name: selectedMember.first_name,
+              last_name: selectedMember.last_name,
+              email: memberEmail,
+            };
           }
         }
       }
@@ -220,11 +232,51 @@ export function AddTeamMemberDialog({
       onSuccess();
       onOpenChange(false);
       setMemberId('');
+
+      // After successfully adding, propose invitation if no profile found
+      if (pendingInviteRef) {
+        setInviteContact(pendingInviteRef);
+        setInviteRole(memberType === 'agency_contact' ? 'agency' : 'client');
+        setInviteDialogOpen(true);
+      }
     } catch (error) {
       console.error('Error adding team member:', error);
       toast.error('Erreur lors de l\'ajout du membre');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleInviteContact = async () => {
+    if (!inviteContact) return;
+
+    setInviting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Vous devez être connecté pour inviter un utilisateur');
+        return;
+      }
+
+      const { error } = await supabase.functions.invoke('invite-user', {
+        body: {
+          email: inviteContact.email,
+          role: inviteRole,
+          firstName: inviteContact.first_name,
+          lastName: inviteContact.last_name,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success('Invitation envoyée avec succès');
+      setInviteDialogOpen(false);
+      setInviteContact(null);
+    } catch (error) {
+      console.error('Error inviting user:', error);
+      toast.error("Erreur lors de l'envoi de l'invitation");
+    } finally {
+      setInviting(false);
     }
   };
 
@@ -240,6 +292,7 @@ export function AddTeamMemberDialog({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
@@ -311,5 +364,51 @@ export function AddTeamMemberDialog({
         </form>
       </DialogContent>
     </Dialog>
+
+      <Dialog open={inviteDialogOpen} onOpenChange={(open) => {
+        setInviteDialogOpen(open);
+        if (!open) setInviteContact(null);
+      }}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Créer un compte utilisateur ?</DialogTitle>
+            <DialogDescription>
+              {inviteContact?.first_name} {inviteContact?.last_name} n'a pas encore de compte sur la plateforme. Souhaitez-vous lui envoyer une invitation ?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2 text-sm border rounded-md p-3 bg-muted/30">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Nom</span>
+                <span className="font-medium">{inviteContact?.first_name} {inviteContact?.last_name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Email</span>
+                <span className="font-medium">{inviteContact?.email}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Rôle</span>
+                <span className="font-medium capitalize">{inviteRole}</span>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setInviteDialogOpen(false);
+                  setInviteContact(null);
+                }}
+                disabled={inviting}
+              >
+                Non merci
+              </Button>
+              <Button onClick={handleInviteContact} disabled={inviting}>
+                {inviting ? 'Envoi...' : "Envoyer l'invitation"}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
