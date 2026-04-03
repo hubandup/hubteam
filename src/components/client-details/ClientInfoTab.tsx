@@ -570,14 +570,7 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
             </Card>
           )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Contacts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ClientContactsManager clientId={client.id} />
-            </CardContent>
-          </Card>
+          <ClientContactsManager clientId={client.id} />
         </>
       )}
 
