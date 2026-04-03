@@ -171,7 +171,12 @@ export function AddTeamMemberDialog({
         if (memberEmail) {
           const hasProfile = await grantProfileAccess(memberEmail);
           if (!hasProfile) {
-            toast.info("Ce contact n'a pas de compte utilisateur");
+            // Store contact info for invite proposal after adding
+            pendingInviteRef = {
+              first_name: selectedMember.first_name,
+              last_name: selectedMember.last_name,
+              email: memberEmail,
+            };
           }
         }
       }
@@ -226,11 +231,51 @@ export function AddTeamMemberDialog({
       onSuccess();
       onOpenChange(false);
       setMemberId('');
+
+      // After successfully adding, propose invitation if no profile found
+      if (pendingInviteRef) {
+        setInviteContact(pendingInviteRef);
+        setInviteRole(memberType === 'agency_contact' ? 'agency' : 'client');
+        setInviteDialogOpen(true);
+      }
     } catch (error) {
       console.error('Error adding team member:', error);
       toast.error('Erreur lors de l\'ajout du membre');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleInviteContact = async () => {
+    if (!inviteContact) return;
+
+    setInviting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Vous devez être connecté pour inviter un utilisateur');
+        return;
+      }
+
+      const { error } = await supabase.functions.invoke('invite-user', {
+        body: {
+          email: inviteContact.email,
+          role: inviteRole,
+          firstName: inviteContact.first_name,
+          lastName: inviteContact.last_name,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success('Invitation envoyée avec succès');
+      setInviteDialogOpen(false);
+      setInviteContact(null);
+    } catch (error) {
+      console.error('Error inviting user:', error);
+      toast.error("Erreur lors de l'envoi de l'invitation");
+    } finally {
+      setInviting(false);
     }
   };
 
