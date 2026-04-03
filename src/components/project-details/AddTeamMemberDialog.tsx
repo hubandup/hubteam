@@ -39,6 +39,10 @@ export function AddTeamMemberDialog({
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [projectClientId, setProjectClientId] = useState<string | null>(null);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [inviteContact, setInviteContact] = useState<{ first_name: string; last_name: string; email: string } | null>(null);
+  const [inviteRole, setInviteRole] = useState<string>('client');
+  const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
     if (open) {
