@@ -117,8 +117,29 @@ export function ClientContactsManager({ clientId }: ClientContactsManagerProps) 
       if (error) throw error;
 
       toast.success('Contact ajouté avec succès');
-      setFormData({ first_name: '', last_name: '', title: '', email: '' });
       setOpen(false);
+
+      // Check if this email already has a user account
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .ilike('email', validatedData.email)
+        .maybeSingle();
+
+      if (!existingProfile) {
+        // Auto-propose invitation
+        setSelectedContact({
+          id: '', // will be refreshed
+          first_name: validatedData.first_name,
+          last_name: validatedData.last_name,
+          email: validatedData.email,
+          is_user: false,
+        });
+        setInviteRole('client');
+        setInviteDialogOpen(true);
+      }
+
+      setFormData({ first_name: '', last_name: '', title: '', email: '' });
       fetchContacts();
     } catch (error) {
       if (error instanceof z.ZodError) {
