@@ -85,7 +85,6 @@ export default function Lagostina() {
         .select('priority, priority_label')
         .order('priority');
       if (error) throw error;
-      // Deduplicate
       const map = new Map<string, string>();
       for (const row of data || []) {
         if (!map.has(row.priority)) map.set(row.priority, row.priority_label);
@@ -94,12 +93,6 @@ export default function Lagostina() {
     },
     staleTime: 1000 * 60 * 5,
   });
-
-  if (role !== 'admin' && role !== 'team' && role !== 'client') {
-    return <Navigate to="/" replace />;
-  }
-
-  const exportCfg = EXPORT_CONFIG[activeTab];
 
   const priorityOptions = useMemo(() => {
     const opts = [{ key: 'all', label: 'Toutes les priorités' }];
