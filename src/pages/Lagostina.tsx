@@ -61,7 +61,7 @@ function EmptyState({ section, role }: { section: string; role: string | null })
       <p className="text-black dark:text-white font-['Roboto'] text-sm">Données {section} non disponibles</p>
       <p className="text-[#9ca3af] font-['Roboto'] text-xs">En attente de synchronisation</p>
       {(role === 'admin' || role === 'team') ? (
-        <a href="/lagostina-admin" className="px-4 py-2 border border-black dark:border-white text-black dark:text-white font-['Roboto'] text-sm hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">
+        <a href="/lagostina-admin" className="px-4 py-2 border border-black dark:border-[#E8FF4C] text-black dark:text-[#E8FF4C] font-['Roboto'] text-sm hover:bg-black hover:text-white dark:hover:bg-[#E8FF4C] dark:hover:text-black transition-colors">
           Synchroniser
         </a>
       ) : (
@@ -139,7 +139,7 @@ export default function Lagostina() {
               className={`
                 px-4 py-3 text-sm font-['Roboto'] whitespace-nowrap transition-all duration-150 border-b-2
                 ${activeTab === tab.id
-                  ? 'text-black dark:text-white border-black dark:border-white font-medium'
+                  ? 'text-black dark:text-[#E8FF4C] border-black dark:border-[#E8FF4C] font-medium'
                   : 'text-[#9ca3af] border-transparent hover:text-[#6b7280]'}
               `}
             >
@@ -161,7 +161,7 @@ export default function Lagostina() {
                 onClick={() => setSelectedPriority(opt.key)}
                 className={`px-3 py-1 text-xs font-['Roboto'] transition-colors ${
                   selectedPriority === opt.key
-                    ? 'bg-black dark:bg-white text-white dark:text-black font-medium'
+                    ? 'bg-black dark:bg-[#E8FF4C] text-white dark:text-black font-medium'
                     : 'bg-black/5 dark:bg-white/10 text-[#6b7280] dark:text-[#9ca3af] hover:bg-black/10 dark:hover:bg-white/15'
                 }`}
               >
