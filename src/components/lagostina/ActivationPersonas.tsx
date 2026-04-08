@@ -43,7 +43,7 @@ const AXES = [
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   ok: { bg: 'bg-[#22c55e]/20', text: 'text-[#22c55e]' },
-  alert: { bg: 'bg-[#E8FF4C]/20', text: 'text-[#E8FF4C]' },
+  alert: { bg: 'bg-black/20', text: 'text-black font-semibold' },
   blocked: { bg: 'bg-[#ef4444]/20', text: 'text-[#ef4444]' },
 };
 
@@ -107,9 +107,9 @@ export function ActivationPersonas() {
   if (isEmpty && !isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <Database className="h-16 w-16 text-[#9ca3af]" />
-        <p className="text-white font-['Instrument_Sans'] text-lg font-bold">Données Activation non disponibles</p>
-        <p className="text-[#9ca3af] font-['Roboto'] text-sm">Importez un fichier Activation depuis l'admin</p>
+        <Database className="h-16 w-16 text-muted-foreground" />
+        <p className="text-foreground font-['Instrument_Sans'] text-lg font-bold">Données Activation non disponibles</p>
+        <p className="text-muted-foreground font-['Roboto'] text-sm">Importez un fichier Activation depuis l'admin</p>
       </div>
     );
   }
@@ -118,7 +118,7 @@ export function ActivationPersonas() {
     return (
       <div className="space-y-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-32 bg-white/5 animate-pulse" />
+          <div key={i} className="h-32 bg-gray-100 animate-pulse" />
         ))}
       </div>
     );
@@ -134,8 +134,8 @@ export function ActivationPersonas() {
             onClick={() => setSelectedPriority(p)}
             className={`px-4 py-2 text-sm font-['Roboto'] transition-colors ${
               selectedPriority === p
-                ? 'bg-[#E8FF4C] text-[#0f1422] font-medium'
-                : 'bg-[#0f1422] text-[#9ca3af] hover:text-white'
+                ? 'bg-black text-[#0f1422] font-medium'
+                : 'bg-white border border-border/30 text-muted-foreground hover:text-foreground'
             }`}
           >
             {p.replace('_', ' ').toUpperCase()}
@@ -148,8 +148,8 @@ export function ActivationPersonas() {
                 onClick={() => setSelectedPriority(p)}
                 className={`px-4 py-2 text-sm font-['Roboto'] transition-colors ${
                   selectedPriority === p
-                    ? 'bg-[#E8FF4C] text-[#0f1422] font-medium'
-                    : 'bg-[#0f1422] text-[#9ca3af] hover:text-white'
+                    ? 'bg-black text-[#0f1422] font-medium'
+                    : 'bg-white border border-border/30 text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {p.replace('_', ' ').toUpperCase()}
@@ -161,12 +161,12 @@ export function ActivationPersonas() {
 
       {/* Status bar */}
       {filteredStatus.length > 0 && (
-        <div className="bg-[#0f1422] overflow-x-auto">
+        <div className="bg-white border border-border/30 overflow-x-auto">
           <table className="w-full text-xs font-['Roboto']">
             <thead>
-              <tr className="border-b border-white/10">
+              <tr className="border-b border-border/40">
                 {AXES.map((axis) => (
-                  <th key={axis.key} className="text-center px-3 py-2 text-[#9ca3af] font-medium uppercase tracking-wider">
+                  <th key={axis.key} className="text-center px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider">
                     {axis.label}
                   </th>
                 ))}
@@ -176,8 +176,8 @@ export function ActivationPersonas() {
               <tr>
                 {AXES.map((axis) => {
                   const item = filteredStatus.find((s) => s.axis === axis.key);
-                  if (!item) return <td key={axis.key} className="text-center px-3 py-2 text-[#9ca3af]/40">—</td>;
-                  const style = STATUS_STYLES[item.status] || { bg: 'bg-white/10', text: 'text-[#9ca3af]' };
+                  if (!item) return <td key={axis.key} className="text-center px-3 py-2 text-muted-foreground/40">—</td>;
+                  const style = STATUS_STYLES[item.status] || { bg: 'bg-gray-200', text: 'text-muted-foreground' };
                   const label = item.status === 'ok' ? 'OK' : item.status === 'alert' ? 'Alerte' : item.status === 'blocked' ? 'Bloqué' : item.status;
                   return (
                     <td key={axis.key} className="text-center px-3 py-2">
@@ -194,27 +194,27 @@ export function ActivationPersonas() {
       {/* Personas */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <Users className="h-4 w-4 text-[#E8FF4C]" />
-          <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">Personas</h3>
+          <Users className="h-4 w-4 text-black font-semibold" />
+          <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">Personas</h3>
         </div>
         {filteredPersonas.length === 0 ? (
-          <div className="bg-[#0f1422] p-6 text-center text-[#9ca3af] font-['Roboto'] text-sm">
+          <div className="bg-white border border-border/30 p-6 text-center text-muted-foreground font-['Roboto'] text-sm">
             Aucun persona défini pour cette priorité
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredPersonas.map((persona) => (
-              <div key={persona.id} className="bg-[#1a1f2e] border-t-[3px] border-[#E8FF4C]">
+              <div key={persona.id} className="bg-gray-50 border-t-[3px] border-black">
                 <div className="p-4 space-y-3">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h4 className="text-white font-['Instrument_Sans'] font-bold text-lg">{persona.persona_name}</h4>
-                      <p className="text-[#9ca3af] font-['Roboto'] text-xs">
+                      <h4 className="text-foreground font-['Instrument_Sans'] font-bold text-lg">{persona.persona_name}</h4>
+                      <p className="text-muted-foreground font-['Roboto'] text-xs">
                         {[persona.persona_type, persona.age_range, persona.has_children].filter(Boolean).join(' • ')}
                       </p>
                     </div>
                     {persona.market_weight && (
-                      <span className="bg-[#E8FF4C] text-[#0f1422] px-2 py-0.5 text-xs font-['Roboto'] font-bold">
+                      <span className="bg-black text-[#0f1422] px-2 py-0.5 text-xs font-['Roboto'] font-bold">
                         {persona.market_weight}
                       </span>
                     )}
@@ -223,11 +223,11 @@ export function ActivationPersonas() {
                   {/* Motivators */}
                   {jsonToArray(persona.motivators).length > 0 && (
                     <div>
-                      <p className="text-[#9ca3af] text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Motivations</p>
+                      <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Motivations</p>
                       <ol className="space-y-0.5">
                         {jsonToArray(persona.motivators).map((m, i) => (
-                          <li key={i} className="text-white text-xs font-['Roboto'] flex gap-1.5">
-                            <span className="text-[#E8FF4C] font-bold">{i + 1}.</span> {m}
+                          <li key={i} className="text-foreground text-xs font-['Roboto'] flex gap-1.5">
+                            <span className="text-black font-semibold font-bold">{i + 1}.</span> {m}
                           </li>
                         ))}
                       </ol>
@@ -237,7 +237,7 @@ export function ActivationPersonas() {
                   {/* Barriers */}
                   {jsonToArray(persona.barriers).length > 0 && (
                     <div>
-                      <p className="text-[#9ca3af] text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Freins</p>
+                      <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Freins</p>
                       <ol className="space-y-0.5">
                         {jsonToArray(persona.barriers).map((b, i) => (
                           <li key={i} className="text-[#fca5a5] text-xs font-['Roboto'] flex gap-1.5">
@@ -249,7 +249,7 @@ export function ActivationPersonas() {
                   )}
 
                   {persona.preferred_media && (
-                    <p className="text-[#9ca3af] text-xs font-['Roboto'] italic border-t border-white/5 pt-2">
+                    <p className="text-muted-foreground text-xs font-['Roboto'] italic border-t border-border/20 pt-2">
                       Média préféré : {persona.preferred_media}
                     </p>
                   )}
@@ -268,51 +268,51 @@ export function ActivationPersonas() {
         return (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Package className="h-4 w-4 text-[#E8FF4C]" />
-              <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">Produit</h3>
+              <Package className="h-4 w-4 text-black font-semibold" />
+              <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">Produit</h3>
             </div>
-            <div className="bg-[#0f1422] p-4">
+            <div className="bg-white border border-border/30 p-4">
               <div className="grid grid-cols-2 gap-4">
                 {d.flagship && (
                   <div className="col-span-2">
-                    <p className="text-[#9ca3af] text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Flagship</p>
-                    <p className="text-white text-sm font-['Roboto']">{String(d.flagship)}</p>
+                    <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Flagship</p>
+                    <p className="text-foreground text-sm font-['Roboto']">{String(d.flagship)}</p>
                   </div>
                 )}
                 {d.benefit_1 && (
                   <div>
-                    <p className="text-[#9ca3af] text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Key Consumer Benefit 1</p>
-                    <p className="text-white text-sm font-['Roboto']">{String(d.benefit_1)}</p>
+                    <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Key Consumer Benefit 1</p>
+                    <p className="text-foreground text-sm font-['Roboto']">{String(d.benefit_1)}</p>
                   </div>
                 )}
                 {d.benefit_2 && (
                   <div>
-                    <p className="text-[#9ca3af] text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Key Consumer Benefit 2</p>
-                    <p className="text-white text-sm font-['Roboto']">{String(d.benefit_2)}</p>
+                    <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Key Consumer Benefit 2</p>
+                    <p className="text-foreground text-sm font-['Roboto']">{String(d.benefit_2)}</p>
                   </div>
                 )}
                 {d.rtb && (
                   <div>
-                    <p className="text-[#9ca3af] text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">RTB</p>
-                    <p className="text-white text-sm font-['Roboto']">{String(d.rtb)}</p>
+                    <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">RTB</p>
+                    <p className="text-foreground text-sm font-['Roboto']">{String(d.rtb)}</p>
                   </div>
                 )}
                 {d.claims && (
                   <div>
-                    <p className="text-[#9ca3af] text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Claims</p>
-                    <p className="text-white text-sm font-['Roboto']">{String(d.claims)}</p>
+                    <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Claims</p>
+                    <p className="text-foreground text-sm font-['Roboto']">{String(d.claims)}</p>
                   </div>
                 )}
               </div>
               {(d.marge_std || d.prix_conso) && (
-                <div className="flex gap-3 mt-4 pt-3 border-t border-white/10">
+                <div className="flex gap-3 mt-4 pt-3 border-t border-border/40">
                   {d.marge_std && (
-                    <span className="bg-[#E8FF4C]/20 text-[#E8FF4C] px-3 py-1 text-xs font-['Roboto'] font-medium">
+                    <span className="bg-black/20 text-black font-semibold px-3 py-1 text-xs font-['Roboto'] font-medium">
                       Marge std: {String(d.marge_std)}
                     </span>
                   )}
                   {d.prix_conso && (
-                    <span className="bg-[#E8FF4C]/20 text-[#E8FF4C] px-3 py-1 text-xs font-['Roboto'] font-medium">
+                    <span className="bg-black/20 text-black font-semibold px-3 py-1 text-xs font-['Roboto'] font-medium">
                       Prix conso: {String(d.prix_conso)}
                     </span>
                   )}
@@ -332,37 +332,37 @@ export function ActivationPersonas() {
         return (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Store className="h-4 w-4 text-[#E8FF4C]" />
-              <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">Distribution</h3>
+              <Store className="h-4 w-4 text-black font-semibold" />
+              <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">Distribution</h3>
             </div>
-            <div className="bg-[#0f1422] overflow-x-auto">
+            <div className="bg-white border border-border/30 overflow-x-auto">
               {channels && channels.length > 0 ? (
                 <table className="w-full text-xs font-['Roboto']">
                   <thead>
-                    <tr className="border-b border-white/10">
-                      <th className="text-left px-3 py-2 text-[#9ca3af] font-medium" />
+                    <tr className="border-b border-border/40">
+                      <th className="text-left px-3 py-2 text-muted-foreground font-medium" />
                       {channels.map((ch: any) => (
-                        <th key={ch.name} className="text-center px-3 py-2 text-white font-medium">{ch.name}</th>
+                        <th key={ch.name} className="text-center px-3 py-2 text-foreground font-medium">{ch.name}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="border-b border-white/5">
-                      <td className="px-3 py-2 text-[#9ca3af]">Poids estimé (%)</td>
+                    <tr className="border-b border-border/20">
+                      <td className="px-3 py-2 text-muted-foreground">Poids estimé (%)</td>
                       {channels.map((ch: any) => (
-                        <td key={ch.name} className="px-3 py-2 text-center text-white">{ch.weight ?? '—'}</td>
+                        <td key={ch.name} className="px-3 py-2 text-center text-foreground">{ch.weight ?? '—'}</td>
                       ))}
                     </tr>
                     <tr>
-                      <td className="px-3 py-2 text-[#9ca3af]">Niveau distribution</td>
+                      <td className="px-3 py-2 text-muted-foreground">Niveau distribution</td>
                       {channels.map((ch: any) => (
-                        <td key={ch.name} className="px-3 py-2 text-center text-white">{ch.level ?? '—'}</td>
+                        <td key={ch.name} className="px-3 py-2 text-center text-foreground">{ch.level ?? '—'}</td>
                       ))}
                     </tr>
                   </tbody>
                 </table>
               ) : (
-                <div className="p-4 text-[#9ca3af] text-sm">Aucune donnée de distribution</div>
+                <div className="p-4 text-muted-foreground text-sm">Aucune donnée de distribution</div>
               )}
             </div>
           </div>
@@ -381,22 +381,22 @@ export function ActivationPersonas() {
         return (
           <div key={section}>
             <div className="flex items-center gap-2 mb-3">
-              {section === 'sell_in' ? <TrendingUp className="h-4 w-4 text-[#E8FF4C]" /> : <TrendingDown className="h-4 w-4 text-[#E8FF4C]" />}
-              <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">
+              {section === 'sell_in' ? <TrendingUp className="h-4 w-4 text-black font-semibold" /> : <TrendingDown className="h-4 w-4 text-black font-semibold" />}
+              <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">
                 {section === 'sell_in' ? 'Sell-in' : 'Sell-out'}
               </h3>
             </div>
-            <div className="bg-[#0f1422] overflow-x-auto">
+            <div className="bg-white border border-border/30 overflow-x-auto">
               {rows && rows.length > 0 ? (
                 <table className="w-full text-xs font-['Roboto']">
                   <thead>
-                    <tr className="border-b border-white/10">
-                      <th className="text-left px-3 py-2 text-[#9ca3af] font-medium min-w-[160px]">Indicateur</th>
+                    <tr className="border-b border-border/40">
+                      <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">Indicateur</th>
                       {months.map((m) => (
-                        <th key={m} className="text-center px-2 py-2 text-[#9ca3af] font-medium">{m}</th>
+                        <th key={m} className="text-center px-2 py-2 text-muted-foreground font-medium">{m}</th>
                       ))}
                       {quarters.map((q) => (
-                        <th key={q} className="text-center px-2 py-2 text-[#E8FF4C] font-bold border-l border-white/10">{q}</th>
+                        <th key={q} className="text-center px-2 py-2 text-black font-semibold font-bold border-l border-border/40">{q}</th>
                       ))}
                     </tr>
                   </thead>
@@ -404,12 +404,12 @@ export function ActivationPersonas() {
                     {rows.map((row: any, ri: number) => {
                       const isEvol = String(row.label || '').toLowerCase().includes('évol') || String(row.label || '').toLowerCase().includes('evol');
                       return (
-                        <tr key={ri} className="border-b border-white/5 hover:bg-white/[0.02]">
-                          <td className="px-3 py-2 text-white font-medium">{row.label || '—'}</td>
+                        <tr key={ri} className="border-b border-border/20 hover:bg-gray-50">
+                          <td className="px-3 py-2 text-foreground font-medium">{row.label || '—'}</td>
                           {months.map((m) => {
                             const val = row[m.toLowerCase()] ?? row[m] ?? null;
                             const numVal = val != null ? Number(val) : null;
-                            let cls = 'text-white';
+                            let cls = 'text-foreground';
                             if (isEvol && numVal != null) {
                               cls = numVal >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]';
                             }
@@ -423,7 +423,7 @@ export function ActivationPersonas() {
                             const val = row[q.toLowerCase()] ?? row[q] ?? null;
                             const numVal = val != null ? Number(val) : null;
                             return (
-                              <td key={q} className="px-2 py-2 text-center text-[#E8FF4C] font-medium border-l border-white/10">
+                              <td key={q} className="px-2 py-2 text-center text-black font-semibold font-medium border-l border-border/40">
                                 {numVal != null ? formatNum(numVal) : '—'}
                               </td>
                             );
@@ -434,7 +434,7 @@ export function ActivationPersonas() {
                   </tbody>
                 </table>
               ) : (
-                <div className="p-4 text-[#9ca3af] text-sm">Aucune donnée</div>
+                <div className="p-4 text-muted-foreground text-sm">Aucune donnée</div>
               )}
             </div>
           </div>

@@ -28,8 +28,8 @@ const LEVIER_COLORS: Record<string, string> = {
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-[#0f1422] border border-[#E8FF4C] px-3 py-2 font-['Roboto'] text-xs">
-      <p className="text-white font-medium mb-1">{label}</p>
+    <div className="bg-white border border-border/30 border border-black px-3 py-2 font-['Roboto'] text-xs">
+      <p className="text-foreground font-medium mb-1">{label}</p>
       {payload.map((p: any) => (
         <p key={p.dataKey} style={{ color: p.color }}>
           {p.name}: {Number(p.value).toLocaleString('fr-FR')}€
@@ -117,7 +117,7 @@ export function LagostinaBudget() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-16 bg-white/5 animate-pulse" />)}
+        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-16 bg-gray-100 animate-pulse" />)}
       </div>
     );
   }
@@ -125,9 +125,9 @@ export function LagostinaBudget() {
   if (!budgetData?.length) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <Database className="h-16 w-16 text-[#9ca3af]" />
-        <p className="text-white font-['Instrument_Sans'] text-lg font-bold">Données Budget non disponibles</p>
-        <p className="text-[#9ca3af] font-['Roboto'] text-sm">Importez un fichier Budget depuis l'admin</p>
+        <Database className="h-16 w-16 text-muted-foreground" />
+        <p className="text-foreground font-['Instrument_Sans'] text-lg font-bold">Données Budget non disponibles</p>
+        <p className="text-muted-foreground font-['Roboto'] text-sm">Importez un fichier Budget depuis l'admin</p>
       </div>
     );
   }
@@ -135,14 +135,14 @@ export function LagostinaBudget() {
   return (
     <div className="space-y-6">
       {/* Global gauge */}
-      <div className="bg-[#0f1422] p-6">
+      <div className="bg-white border border-border/30 p-6">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <p className="text-[#9ca3af] text-xs font-['Roboto'] uppercase tracking-wider">Budget consommé</p>
-            <p className="text-white text-2xl font-bold font-['Instrument_Sans']">
+            <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">Budget consommé</p>
+            <p className="text-foreground text-2xl font-bold font-['Instrument_Sans']">
               {totalEngaged >= 1000 ? `€${(totalEngaged / 1000).toFixed(0)}K` : `€${totalEngaged}`}
-              <span className="text-[#9ca3af] text-base font-normal"> / {totalPlanned >= 1000 ? `€${(totalPlanned / 1000).toFixed(0)}K` : `€${totalPlanned}`}</span>
-              <span className="text-[#9ca3af] text-sm font-normal ml-2">— {pct.toFixed(0)}%</span>
+              <span className="text-muted-foreground text-base font-normal"> / {totalPlanned >= 1000 ? `€${(totalPlanned / 1000).toFixed(0)}K` : `€${totalPlanned}`}</span>
+              <span className="text-muted-foreground text-sm font-normal ml-2">— {pct.toFixed(0)}%</span>
             </p>
           </div>
           {isOverBudget && (
@@ -152,7 +152,7 @@ export function LagostinaBudget() {
             </div>
           )}
         </div>
-        <div className="w-full h-3 bg-white/10">
+        <div className="w-full h-3 bg-gray-200">
           <div
             className="h-full transition-all"
             style={{
@@ -162,17 +162,17 @@ export function LagostinaBudget() {
           />
         </div>
         <div className="flex justify-between mt-1">
-          <span className="text-[#9ca3af] text-[10px] font-['Roboto']">0%</span>
-          <span className="text-[#9ca3af] text-[10px] font-['Roboto']">Progression année : {yearProgress.toFixed(0)}%</span>
-          <span className="text-[#9ca3af] text-[10px] font-['Roboto']">100%</span>
+          <span className="text-muted-foreground text-[10px] font-['Roboto']">0%</span>
+          <span className="text-muted-foreground text-[10px] font-['Roboto']">Progression année : {yearProgress.toFixed(0)}%</span>
+          <span className="text-muted-foreground text-[10px] font-['Roboto']">100%</span>
         </div>
       </div>
 
       {/* Donut + Burn rate */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Donut */}
-        <div className="bg-[#0f1422] p-4">
-          <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold mb-4">Répartition par levier</h3>
+        <div className="bg-white border border-border/30 p-4">
+          <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Répartition par levier</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -194,8 +194,8 @@ export function LagostinaBudget() {
                   content={({ active, payload }) => {
                     if (!active || !payload?.length) return null;
                     return (
-                      <div className="bg-[#0f1422] border border-[#E8FF4C] px-3 py-2 font-['Roboto'] text-xs">
-                        <p className="text-white">{payload[0].name}: {Number(payload[0].value).toLocaleString('fr-FR')}€</p>
+                      <div className="bg-white border border-border/30 border border-black px-3 py-2 font-['Roboto'] text-xs">
+                        <p className="text-foreground">{payload[0].name}: {Number(payload[0].value).toLocaleString('fr-FR')}€</p>
                       </div>
                     );
                   }}
@@ -204,7 +204,7 @@ export function LagostinaBudget() {
                   layout="vertical"
                   align="right"
                   verticalAlign="middle"
-                  formatter={(value: string) => <span className="text-[#9ca3af] text-xs font-['Roboto']">{value}</span>}
+                  formatter={(value: string) => <span className="text-muted-foreground text-xs font-['Roboto']">{value}</span>}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -212,8 +212,8 @@ export function LagostinaBudget() {
         </div>
 
         {/* Burn rate */}
-        <div className="bg-[#0f1422] p-4">
-          <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold mb-4">Burn rate cumulé</h3>
+        <div className="bg-white border border-border/30 p-4">
+          <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Burn rate cumulé</h3>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={burnRateData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
@@ -227,22 +227,22 @@ export function LagostinaBudget() {
             </ResponsiveContainer>
           </div>
           {projectionText && (
-            <p className="text-[#9ca3af] text-xs font-['Roboto'] mt-2 text-center">{projectionText}</p>
+            <p className="text-muted-foreground text-xs font-['Roboto'] mt-2 text-center">{projectionText}</p>
           )}
         </div>
       </div>
 
       {/* Monthly table */}
-      <div className="bg-[#0f1422] overflow-x-auto">
+      <div className="bg-white border border-border/30 overflow-x-auto">
         <table className="w-full text-xs font-['Roboto']">
           <thead>
-            <tr className="border-b border-white/10">
-              <th className="text-left px-3 py-2 text-[#9ca3af] font-medium uppercase tracking-wider sticky left-0 bg-[#0f1422] z-10 min-w-[120px]">Levier</th>
-              <th className="text-left px-2 py-2 text-[#9ca3af] font-medium uppercase tracking-wider min-w-[60px]">Type</th>
+            <tr className="border-b border-border/40">
+              <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white border border-border/30 z-10 min-w-[120px]">Levier</th>
+              <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[60px]">Type</th>
               {MONTHS.map((m) => (
-                <th key={m} className="text-center px-2 py-2 text-[#9ca3af] font-medium uppercase tracking-wider min-w-[60px]">{m}</th>
+                <th key={m} className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[60px]">{m}</th>
               ))}
-              <th className="text-center px-2 py-2 text-[#E8FF4C] font-bold uppercase tracking-wider min-w-[70px]">Total</th>
+              <th className="text-center px-2 py-2 text-black font-semibold font-bold uppercase tracking-wider min-w-[70px]">Total</th>
             </tr>
           </thead>
           <tbody>
@@ -252,27 +252,27 @@ export function LagostinaBudget() {
               return rows.map((type, ti) => {
                 const total = MONTHS.reduce((s, m) => s + getMonthVal(levier, m, type), 0);
                 return (
-                  <tr key={`${levier}-${type}`} className={`border-b ${ti === 3 ? 'border-white/10' : 'border-white/5'} hover:bg-white/[0.02]`}>
+                  <tr key={`${levier}-${type}`} className={`border-b ${ti === 3 ? 'border-border/40' : 'border-border/20'} hover:bg-gray-50`}>
                     {ti === 0 && (
                       <td
                         rowSpan={4}
-                        className="px-3 py-2 text-white font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-[#0f1422] z-10 border-l-2 capitalize"
+                        className="px-3 py-2 text-foreground font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white border border-border/30 z-10 border-l-2 capitalize"
                         style={{ borderLeftColor: LEVIER_COLORS[levier] || '#E8FF4C' }}
                       >
                         {levier}
                       </td>
                     )}
-                    <td className="px-2 py-1.5 text-[#9ca3af] text-[10px]">{labels[type]}</td>
+                    <td className="px-2 py-1.5 text-muted-foreground text-[10px]">{labels[type]}</td>
                     {MONTHS.map((m) => {
                       const val = getMonthVal(levier, m, type);
                       const isOver = type === 'engaged' && val > getMonthVal(levier, m, 'planned') && getMonthVal(levier, m, 'planned') > 0;
                       return (
-                        <td key={m} className={`px-2 py-1.5 text-center text-[11px] ${isOver ? 'bg-[#ef4444]/20 text-[#ef4444]' : 'text-white'}`}>
+                        <td key={m} className={`px-2 py-1.5 text-center text-[11px] ${isOver ? 'bg-[#ef4444]/20 text-[#ef4444]' : 'text-foreground'}`}>
                           {val > 0 ? val.toLocaleString('fr-FR') : '—'}
                         </td>
                       );
                     })}
-                    <td className="px-2 py-1.5 text-center text-[11px] text-white font-medium">
+                    <td className="px-2 py-1.5 text-center text-[11px] text-foreground font-medium">
                       {total > 0 ? total.toLocaleString('fr-FR') : '—'}
                     </td>
                   </tr>
@@ -280,18 +280,18 @@ export function LagostinaBudget() {
               });
             })}
             {/* Total row */}
-            <tr className="border-t-2 border-[#E8FF4C]/30 bg-white/[0.02]">
-              <td className="px-3 py-2 text-[#E8FF4C] font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-[#0f1422] z-10">TOTAL</td>
-              <td className="px-2 py-1.5 text-[#9ca3af] text-[10px]">Engagé</td>
+            <tr className="border-t-2 border-black/30 bg-white/[0.02]">
+              <td className="px-3 py-2 text-black font-semibold font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white border border-border/30 z-10">TOTAL</td>
+              <td className="px-2 py-1.5 text-muted-foreground text-[10px]">Engagé</td>
               {MONTHS.map((m) => {
                 const total = leviers.reduce((s, l) => s + getMonthVal(l, m, 'engaged'), 0);
                 return (
-                  <td key={m} className="px-2 py-1.5 text-center text-[11px] text-[#E8FF4C] font-medium">
+                  <td key={m} className="px-2 py-1.5 text-center text-[11px] text-black font-semibold font-medium">
                     {total > 0 ? total.toLocaleString('fr-FR') : '—'}
                   </td>
                 );
               })}
-              <td className="px-2 py-1.5 text-center text-[11px] text-[#E8FF4C] font-bold">
+              <td className="px-2 py-1.5 text-center text-[11px] text-black font-semibold font-bold">
                 {totalEngaged.toLocaleString('fr-FR')}
               </td>
             </tr>

@@ -126,7 +126,7 @@ function getCondColor(actual: number | null, objective: number | null): string {
   if (actual == null || objective == null || objective === 0) return '';
   const ratio = actual / objective;
   if (ratio >= 1) return 'bg-[#22c55e]/20 text-[#22c55e]';
-  if (ratio >= 0.8) return 'bg-[#E8FF4C]/20 text-[#E8FF4C]';
+  if (ratio >= 0.8) return 'bg-black/20 text-black font-semibold';
   return 'bg-[#ef4444]/20 text-[#ef4444]';
 }
 
@@ -140,7 +140,7 @@ function formatNum(n: number | null): string {
 
 // ── SPARKLINE ──
 function Sparkline({ data }: { data: number[] }) {
-  if (!data.length) return <span className="text-[#9ca3af]/40">—</span>;
+  if (!data.length) return <span className="text-muted-foreground/40">—</span>;
   const chartData = data.map((v, i) => ({ i, v }));
   return (
     <div className="w-16 h-6">
@@ -157,8 +157,8 @@ function Sparkline({ data }: { data: number[] }) {
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-[#0f1422] border border-[#E8FF4C] px-3 py-2 font-['Roboto'] text-xs">
-      <p className="text-white font-medium mb-1">{label}</p>
+    <div className="bg-white border border-border/30 border border-black px-3 py-2 font-['Roboto'] text-xs">
+      <p className="text-foreground font-medium mb-1">{label}</p>
       {payload.map((p: any) => (
         <p key={p.dataKey} style={{ color: p.color }}>
           {p.name}: {formatNum(p.value)}
@@ -190,7 +190,7 @@ function GaugeChart({ value, target }: { value: number; target: number }) {
       <div className={`text-lg font-bold font-['Instrument_Sans'] ${isGood ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
         {value.toFixed(2)}€
       </div>
-      <div className="text-[#9ca3af] text-xs font-['Roboto']">Target: {target}€</div>
+      <div className="text-muted-foreground text-xs font-['Roboto']">Target: {target}€</div>
     </div>
   );
 }
@@ -294,7 +294,7 @@ export function ScorecardRECC() {
     return (
       <div className="space-y-4">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-12 bg-white/5 animate-pulse" />
+          <div key={i} className="h-12 bg-gray-100 animate-pulse" />
         ))}
       </div>
     );
@@ -303,9 +303,9 @@ export function ScorecardRECC() {
   if (!scorecards?.length) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <Database className="h-16 w-16 text-[#9ca3af]" />
-        <p className="text-white font-['Instrument_Sans'] text-lg font-bold">Données Scorecard non disponibles</p>
-        <p className="text-[#9ca3af] font-['Roboto'] text-sm">Importez un fichier Scorecard depuis l'admin</p>
+        <Database className="h-16 w-16 text-muted-foreground" />
+        <p className="text-foreground font-['Instrument_Sans'] text-lg font-bold">Données Scorecard non disponibles</p>
+        <p className="text-muted-foreground font-['Roboto'] text-sm">Importez un fichier Scorecard depuis l'admin</p>
       </div>
     );
   }
@@ -313,7 +313,7 @@ export function ScorecardRECC() {
   return (
     <div className="space-y-6">
       {/* Sub-tab toggle */}
-      <div className="flex gap-0 bg-[#0f1422] inline-flex">
+      <div className="flex gap-0 bg-white border border-border/30 inline-flex">
         {[
           { id: 'synthese' as const, label: 'Synthèse' },
           { id: 'par_levier' as const, label: 'Par levier' },
@@ -324,8 +324,8 @@ export function ScorecardRECC() {
             onClick={() => setSubTab(t.id)}
             className={`px-5 py-2.5 text-sm font-['Roboto'] transition-colors ${
               subTab === t.id
-                ? 'bg-[#E8FF4C] text-[#0f1422] font-medium'
-                : 'text-[#9ca3af] hover:text-white'
+                ? 'bg-black text-[#0f1422] font-medium'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             {t.label}
@@ -336,25 +336,25 @@ export function ScorecardRECC() {
       {/* SYNTHÈSE */}
       {subTab === 'synthese' && (
         <>
-          <div className="bg-[#0f1422] overflow-x-auto">
+          <div className="bg-white border border-border/30 overflow-x-auto">
             <table className="w-full text-xs font-['Roboto']">
               <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left px-3 py-2 text-[#9ca3af] font-medium uppercase tracking-wider sticky left-0 bg-[#0f1422] z-10 min-w-[120px]">Levier</th>
-                  <th className="text-left px-2 py-2 text-[#9ca3af] font-medium uppercase tracking-wider min-w-[60px]">RECC</th>
-                  <th className="text-left px-2 py-2 text-[#9ca3af] font-medium uppercase tracking-wider min-w-[140px]">KPI</th>
-                  <th className="text-center px-2 py-2 text-[#9ca3af] font-medium uppercase tracking-wider min-w-[40px]">Type</th>
+                <tr className="border-b border-border/40">
+                  <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white border border-border/30 z-10 min-w-[120px]">Levier</th>
+                  <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[60px]">RECC</th>
+                  <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[140px]">KPI</th>
+                  <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[40px]">Type</th>
                   {monthGroups.map((mg) => (
-                    <th key={mg.month} colSpan={mg.weeks.length} className="text-center px-1 py-2 text-[#E8FF4C] font-bold uppercase tracking-wider border-l border-white/5">
+                    <th key={mg.month} colSpan={mg.weeks.length} className="text-center px-1 py-2 text-black font-semibold font-bold uppercase tracking-wider border-l border-border/20">
                       {mg.month}
                     </th>
                   ))}
-                  <th className="text-center px-2 py-2 text-[#9ca3af] font-medium uppercase tracking-wider min-w-[80px]">Trend</th>
+                  <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[80px]">Trend</th>
                 </tr>
-                <tr className="border-b border-white/5">
-                  <th colSpan={4} className="sticky left-0 bg-[#0f1422] z-10" />
+                <tr className="border-b border-border/20">
+                  <th colSpan={4} className="sticky left-0 bg-white border border-border/30 z-10" />
                   {weeks.map((w) => (
-                    <th key={w} className="text-center px-1 py-1 text-[#9ca3af]/60 text-[10px]">{w}</th>
+                    <th key={w} className="text-center px-1 py-1 text-muted-foreground/60 text-[10px]">{w}</th>
                   ))}
                   <th />
                 </tr>
@@ -368,18 +368,18 @@ export function ScorecardRECC() {
 
                     return [
                       // Actuals row
-                      <tr key={`${group.levier}-${kpi.name}-actual`} className="border-b border-white/5 hover:bg-white/[0.02]">
+                      <tr key={`${group.levier}-${kpi.name}-actual`} className="border-b border-border/20 hover:bg-gray-50">
                         {ki === 0 && (
                           <td
                             rowSpan={group.kpis.length * 2}
-                            className="px-3 py-2 text-white font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-[#0f1422] z-10 border-l-2"
+                            className="px-3 py-2 text-foreground font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white border border-border/30 z-10 border-l-2"
                             style={{ borderLeftColor: LEVIER_COLORS[group.levier] || '#E8FF4C' }}
                           >
                             {group.label}
                           </td>
                         )}
-                        <td className="px-2 py-1.5 text-[#9ca3af] text-[10px]" rowSpan={2}>{kpi.recc}</td>
-                        <td className="px-2 py-1.5 text-white text-xs" rowSpan={2}>{kpi.name}</td>
+                        <td className="px-2 py-1.5 text-muted-foreground text-[10px]" rowSpan={2}>{kpi.recc}</td>
+                        <td className="px-2 py-1.5 text-foreground text-xs" rowSpan={2}>{kpi.name}</td>
                         <td className="px-2 py-1.5 text-center text-[#22c55e] text-[10px] font-medium">A</td>
                         {weeks.map((w, wi) => {
                           const val = actualVals[wi];
@@ -396,10 +396,10 @@ export function ScorecardRECC() {
                         </td>
                       </tr>,
                       // Objectives row
-                      <tr key={`${group.levier}-${kpi.name}-obj`} className="border-b border-white/10 hover:bg-white/[0.02]">
-                        <td className="px-2 py-1.5 text-center text-[#6b7280] text-[10px] font-medium">O</td>
+                      <tr key={`${group.levier}-${kpi.name}-obj`} className="border-b border-border/40 hover:bg-gray-50">
+                        <td className="px-2 py-1.5 text-center text-muted-foreground text-[10px] font-medium">O</td>
                         {weeks.map((w, wi) => (
-                          <td key={w} className="px-1 py-1.5 text-center text-[11px] text-[#6b7280]">
+                          <td key={w} className="px-1 py-1.5 text-center text-[11px] text-muted-foreground">
                             {formatNum(objVals[wi])}
                           </td>
                         ))}
@@ -414,8 +414,8 @@ export function ScorecardRECC() {
           {/* Charts 2x2 grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Reach Actuals vs Objectifs */}
-            <div className="bg-[#0f1422] p-4">
-              <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold mb-4">Reach — Actuals vs Objectifs</h3>
+            <div className="bg-white border border-border/30 p-4">
+              <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Reach — Actuals vs Objectifs</h3>
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={reachChartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
@@ -431,8 +431,8 @@ export function ScorecardRECC() {
             </div>
 
             {/* Budget par levier */}
-            <div className="bg-[#0f1422] p-4">
-              <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold mb-4">Répartition par levier</h3>
+            <div className="bg-white border border-border/30 p-4">
+              <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Répartition par levier</h3>
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={budgetByLevier} layout="vertical" margin={{ top: 5, right: 10, bottom: 5, left: 60 }}>
@@ -451,8 +451,8 @@ export function ScorecardRECC() {
             </div>
 
             {/* ROAS Evolution */}
-            <div className="bg-[#0f1422] p-4">
-              <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold mb-4">Évolution ROAS</h3>
+            <div className="bg-white border border-border/30 p-4">
+              <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Évolution ROAS</h3>
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={roasChartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
@@ -473,8 +473,8 @@ export function ScorecardRECC() {
             </div>
 
             {/* CPV Gauge */}
-            <div className="bg-[#0f1422] p-4">
-              <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold mb-4">CPV vs Target</h3>
+            <div className="bg-white border border-border/30 p-4">
+              <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">CPV vs Target</h3>
               <div className="flex items-center justify-center h-48">
                 <GaugeChart value={cpvData} target={1} />
               </div>
@@ -494,22 +494,22 @@ export function ScorecardRECC() {
             const kpiNames = [...new Set(matchingData.map((s) => s.kpi_name))];
 
             return (
-              <div key={block.levier} className="bg-[#0f1422]">
-                <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-[#E8FF4C]" />
-                  <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold">{block.label}</h3>
+              <div key={block.levier} className="bg-white border border-border/30">
+                <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-black" />
+                  <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">{block.label}</h3>
                 </div>
                 {kpiNames.length === 0 ? (
-                  <div className="p-4 text-[#9ca3af] text-xs font-['Roboto']">Aucune donnée pour ce levier</div>
+                  <div className="p-4 text-muted-foreground text-xs font-['Roboto']">Aucune donnée pour ce levier</div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs font-['Roboto']">
                       <thead>
-                        <tr className="border-b border-white/5">
-                          <th className="text-left px-3 py-2 text-[#9ca3af] font-medium min-w-[160px]">KPI</th>
-                          <th className="text-center px-2 py-2 text-[#9ca3af] font-medium min-w-[40px]">Type</th>
+                        <tr className="border-b border-border/20">
+                          <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
+                          <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[40px]">Type</th>
                           {weeks.map((w) => (
-                            <th key={w} className="text-center px-1 py-2 text-[#9ca3af]/60 text-[10px]">{w}</th>
+                            <th key={w} className="text-center px-1 py-2 text-muted-foreground/60 text-[10px]">{w}</th>
                           ))}
                         </tr>
                       </thead>
@@ -524,8 +524,8 @@ export function ScorecardRECC() {
                             return entry?.objective ?? null;
                           });
                           return [
-                            <tr key={`${kn}-a`} className="border-b border-white/5">
-                              <td className="px-3 py-1.5 text-white" rowSpan={2}>{kn}</td>
+                            <tr key={`${kn}-a`} className="border-b border-border/20">
+                              <td className="px-3 py-1.5 text-foreground" rowSpan={2}>{kn}</td>
                               <td className="px-2 py-1.5 text-center text-[#22c55e] text-[10px] font-medium">A</td>
                               {weeks.map((w, wi) => (
                                 <td key={w} className={`px-1 py-1.5 text-center text-[11px] ${getCondColor(actualVals[wi], objVals[wi])}`}>
@@ -533,10 +533,10 @@ export function ScorecardRECC() {
                                 </td>
                               ))}
                             </tr>,
-                            <tr key={`${kn}-o`} className="border-b border-white/10">
-                              <td className="px-2 py-1.5 text-center text-[#6b7280] text-[10px] font-medium">O</td>
+                            <tr key={`${kn}-o`} className="border-b border-border/40">
+                              <td className="px-2 py-1.5 text-center text-muted-foreground text-[10px] font-medium">O</td>
                               {weeks.map((w, wi) => (
-                                <td key={w} className="px-1 py-1.5 text-center text-[11px] text-[#6b7280]">
+                                <td key={w} className="px-1 py-1.5 text-center text-[11px] text-muted-foreground">
                                   {formatNum(objVals[wi])}
                                 </td>
                               ))}
@@ -557,21 +557,21 @@ export function ScorecardRECC() {
       {subTab === 'full_detail' && (
         <div className="space-y-6">
           {FULL_DETAIL_SECTIONS.map((section) => (
-            <div key={section.section} className="bg-[#0f1422]">
-              <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2">
-                <div className="w-2 h-2 bg-[#E8FF4C]" />
-                <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold">{section.section}</h3>
+            <div key={section.section} className="bg-white border border-border/30">
+              <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2">
+                <div className="w-2 h-2 bg-black" />
+                <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">{section.section}</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs font-['Roboto']">
                   <thead>
-                    <tr className="border-b border-white/5">
-                      <th className="text-left px-3 py-2 text-[#9ca3af] font-medium min-w-[160px]">KPI</th>
+                    <tr className="border-b border-border/20">
+                      <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
                       {weeks.map((w) => (
-                        <th key={w} className="text-center px-1 py-2 text-[#9ca3af]/60 text-[10px]">{w}</th>
+                        <th key={w} className="text-center px-1 py-2 text-muted-foreground/60 text-[10px]">{w}</th>
                       ))}
                       {monthGroups.map((mg) => (
-                        <th key={mg.month} className="text-center px-2 py-2 text-[#E8FF4C] text-[10px] font-bold border-l border-white/10">{mg.month}</th>
+                        <th key={mg.month} className="text-center px-2 py-2 text-black font-semibold text-[10px] font-bold border-l border-border/40">{mg.month}</th>
                       ))}
                     </tr>
                   </thead>
@@ -596,21 +596,21 @@ export function ScorecardRECC() {
                       const isEvol = kpiName.toLowerCase().includes('evol');
 
                       return (
-                        <tr key={kpiName} className="border-b border-white/5 hover:bg-white/[0.02]">
-                          <td className="px-3 py-1.5 text-white">{kpiName}</td>
+                        <tr key={kpiName} className="border-b border-border/20 hover:bg-gray-50">
+                          <td className="px-3 py-1.5 text-foreground">{kpiName}</td>
                           {weeklyVals.map((v, i) => {
                             let cls = '';
                             if (isEvol && v != null) {
                               cls = v >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]';
                             }
                             return (
-                              <td key={i} className={`px-1 py-1.5 text-center text-[11px] ${cls || 'text-white'}`}>
+                              <td key={i} className={`px-1 py-1.5 text-center text-[11px] ${cls || 'text-foreground'}`}>
                                 {v != null ? (isEvol ? `${v >= 0 ? '↑' : '↓'}${Math.abs(v).toFixed(1)}%` : formatNum(v)) : '—'}
                               </td>
                             );
                           })}
                           {monthlyVals.map((v, i) => (
-                            <td key={i} className="px-2 py-1.5 text-center text-[11px] text-[#E8FF4C] font-medium border-l border-white/10">
+                            <td key={i} className="px-2 py-1.5 text-center text-[11px] text-black font-semibold font-medium border-l border-border/40">
                               {formatNum(v)}
                             </td>
                           ))}
@@ -629,31 +629,31 @@ export function ScorecardRECC() {
             const kpiNames = [...new Set(data.map((s) => s.kpi_name))];
             if (!kpiNames.length) return null;
             return (
-              <div key={lev} className="bg-[#0f1422]">
-                <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2">
+              <div key={lev} className="bg-white border border-border/30">
+                <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2">
                   <div className="w-2 h-2" style={{ backgroundColor: LEVIER_COLORS[lev] || '#E8FF4C' }} />
-                  <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold">
+                  <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">
                     {lev === 'influence' ? 'Influence' : 'Social Media'}
                   </h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs font-['Roboto']">
                     <thead>
-                      <tr className="border-b border-white/5">
-                        <th className="text-left px-3 py-2 text-[#9ca3af] font-medium min-w-[160px]">KPI</th>
+                      <tr className="border-b border-border/20">
+                        <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
                         {weeks.map((w) => (
-                          <th key={w} className="text-center px-1 py-2 text-[#9ca3af]/60 text-[10px]">{w}</th>
+                          <th key={w} className="text-center px-1 py-2 text-muted-foreground/60 text-[10px]">{w}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {kpiNames.map((kn) => (
-                        <tr key={kn} className="border-b border-white/5">
-                          <td className="px-3 py-1.5 text-white">{kn}</td>
+                        <tr key={kn} className="border-b border-border/20">
+                          <td className="px-3 py-1.5 text-foreground">{kn}</td>
                           {weeks.map((w) => {
                             const entry = data.find((s) => s.kpi_name === kn && s.week === w);
                             return (
-                              <td key={w} className="px-1 py-1.5 text-center text-[11px] text-white">
+                              <td key={w} className="px-1 py-1.5 text-center text-[11px] text-foreground">
                                 {formatNum(entry?.actual ?? null)}
                               </td>
                             );

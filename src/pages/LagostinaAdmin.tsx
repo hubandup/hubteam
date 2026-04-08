@@ -608,7 +608,7 @@ async function parseContenusFile(workbook: XLSX.WorkBook) {
 const STATUS_ICONS: Record<string, React.ReactNode> = {
   synced: <CheckCircle2 className="h-3.5 w-3.5 text-[#22c55e]" />,
   error: <AlertCircle className="h-3.5 w-3.5 text-[#ef4444]" />,
-  pending: <Clock className="h-3.5 w-3.5 text-[#E8FF4C]" />,
+  pending: <Clock className="h-3.5 w-3.5 text-black font-semibold" />,
 };
 
 export default function LagostinaAdmin() {
@@ -748,24 +748,24 @@ export default function LagostinaAdmin() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0e1a] p-6">
+    <div className="min-h-screen bg-white p-6">
       <div className="max-w-5xl mx-auto space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-white font-['Instrument_Sans'] tracking-tight">
+          <h1 className="text-2xl font-bold text-foreground font-['Instrument_Sans'] tracking-tight">
             Administration Lagostina
           </h1>
-          <p className="text-[#9ca3af] font-['Roboto'] text-sm mt-1">
+          <p className="text-muted-foreground font-['Roboto'] text-sm mt-1">
             Import et synchronisation des données
           </p>
         </div>
 
-        <div className="bg-[#0f1422] p-6 space-y-4">
+        <div className="bg-white border border-border/30 p-6 space-y-4">
           <div className="flex items-center gap-4 flex-wrap">
-            <label className="text-[#9ca3af] text-sm font-['Roboto']">Type de fichier :</label>
+            <label className="text-muted-foreground text-sm font-['Roboto']">Type de fichier :</label>
             <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              className="bg-[#0a0e1a] text-white border border-white/10 px-3 py-1.5 text-sm font-['Roboto'] focus:outline-none focus:border-[#E8FF4C]"
+              className="bg-white text-foreground border border-border/40 px-3 py-1.5 text-sm font-['Roboto'] focus:outline-none focus:border-black"
             >
               {FILE_TYPES.map((ft) => (
                 <option key={ft.value} value={ft.value}>{ft.label}</option>
@@ -779,7 +779,7 @@ export default function LagostinaAdmin() {
             onDrop={handleDrop}
             className={`
               relative border-2 border-dashed p-12 text-center transition-colors cursor-pointer
-              ${isDragging ? 'border-[#E8FF4C] bg-[#E8FF4C]/5' : 'border-white/20 hover:border-white/40'}
+              ${isDragging ? 'border-black bg-black/5' : 'border-white/20 hover:border-white/40'}
               ${uploading ? 'opacity-50 pointer-events-none' : ''}
             `}
             onClick={() => document.getElementById('file-input-lago')?.click()}
@@ -793,16 +793,16 @@ export default function LagostinaAdmin() {
             />
             {uploading ? (
               <div className="flex flex-col items-center gap-3">
-                <RefreshCw className="h-8 w-8 text-[#E8FF4C] animate-spin" />
-                <p className="text-white font-['Roboto'] text-sm">Traitement en cours…</p>
+                <RefreshCw className="h-8 w-8 text-black font-semibold animate-spin" />
+                <p className="text-foreground font-['Roboto'] text-sm">Traitement en cours…</p>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3">
-                <Upload className="h-8 w-8 text-[#9ca3af]" />
-                <p className="text-white font-['Roboto'] text-sm">
-                  Glissez un fichier .xlsx ici ou <span className="text-[#E8FF4C] underline">parcourir</span>
+                <Upload className="h-8 w-8 text-muted-foreground" />
+                <p className="text-foreground font-['Roboto'] text-sm">
+                  Glissez un fichier .xlsx ici ou <span className="text-black font-semibold underline">parcourir</span>
                 </p>
-                <p className="text-[#9ca3af] font-['Roboto'] text-xs">
+                <p className="text-muted-foreground font-['Roboto'] text-xs">
                   Format attendu : fichier Excel Lagostina ({FILE_TYPES.find(f => f.value === selectedType)?.label})
                 </p>
               </div>
@@ -810,7 +810,7 @@ export default function LagostinaAdmin() {
           </div>
 
           <button
-            className="flex items-center gap-2 px-4 py-2 bg-white/5 text-white border border-white/10 font-['Roboto'] text-sm hover:bg-white/10 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-foreground border border-border/40 font-['Roboto'] text-sm hover:bg-gray-200 transition-colors"
             onClick={() => toast.info('Synchronisation kDrive — fonctionnalité à venir')}
           >
             <RefreshCw className="h-4 w-4" />
@@ -818,39 +818,39 @@ export default function LagostinaAdmin() {
           </button>
         </div>
 
-        <div className="bg-[#0f1422] overflow-x-auto">
-          <div className="px-4 py-3 border-b border-white/10">
-            <h2 className="text-white font-['Instrument_Sans'] font-bold text-sm">Fichiers synchronisés</h2>
+        <div className="bg-white border border-border/30 overflow-x-auto">
+          <div className="px-4 py-3 border-b border-border/40">
+            <h2 className="text-foreground font-['Instrument_Sans'] font-bold text-sm">Fichiers synchronisés</h2>
           </div>
           {loadingFiles ? (
             <div className="p-4 space-y-2">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-10 bg-white/5 animate-pulse" />
+                <div key={i} className="h-10 bg-gray-100 animate-pulse" />
               ))}
             </div>
           ) : !files?.length ? (
-            <div className="p-8 text-center text-[#9ca3af] font-['Roboto'] text-sm">
+            <div className="p-8 text-center text-muted-foreground font-['Roboto'] text-sm">
               Aucun fichier importé
             </div>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left px-4 py-2 text-[#9ca3af] font-['Roboto'] font-medium text-xs uppercase">Fichier</th>
-                  <th className="text-left px-4 py-2 text-[#9ca3af] font-['Roboto'] font-medium text-xs uppercase">Type</th>
-                  <th className="text-left px-4 py-2 text-[#9ca3af] font-['Roboto'] font-medium text-xs uppercase">Dernière synchro</th>
-                  <th className="text-center px-4 py-2 text-[#9ca3af] font-['Roboto'] font-medium text-xs uppercase">Statut</th>
+                <tr className="border-b border-border/40">
+                  <th className="text-left px-4 py-2 text-muted-foreground font-['Roboto'] font-medium text-xs uppercase">Fichier</th>
+                  <th className="text-left px-4 py-2 text-muted-foreground font-['Roboto'] font-medium text-xs uppercase">Type</th>
+                  <th className="text-left px-4 py-2 text-muted-foreground font-['Roboto'] font-medium text-xs uppercase">Dernière synchro</th>
+                  <th className="text-center px-4 py-2 text-muted-foreground font-['Roboto'] font-medium text-xs uppercase">Statut</th>
                 </tr>
               </thead>
               <tbody>
                 {files.map((f) => (
-                  <tr key={f.id} className="border-b border-white/5 hover:bg-white/[0.02]">
-                    <td className="px-4 py-3 text-white font-['Roboto'] flex items-center gap-2">
+                  <tr key={f.id} className="border-b border-border/20 hover:bg-gray-50">
+                    <td className="px-4 py-3 text-foreground font-['Roboto'] flex items-center gap-2">
                       <FileSpreadsheet className="h-4 w-4 text-[#22c55e]" />
                       {f.filename}
                     </td>
-                    <td className="px-4 py-3 text-[#9ca3af] font-['Roboto'] capitalize">{f.file_type}</td>
-                    <td className="px-4 py-3 text-[#9ca3af] font-['Roboto']">
+                    <td className="px-4 py-3 text-muted-foreground font-['Roboto'] capitalize">{f.file_type}</td>
+                    <td className="px-4 py-3 text-muted-foreground font-['Roboto']">
                       {f.last_synced
                         ? new Date(f.last_synced).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
                         : '—'}
@@ -859,7 +859,7 @@ export default function LagostinaAdmin() {
                       <span className="inline-flex items-center gap-1.5">
                         {STATUS_ICONS[f.status] || STATUS_ICONS.pending}
                         <span className={`font-['Roboto'] text-xs capitalize ${
-                          f.status === 'synced' ? 'text-[#22c55e]' : f.status === 'error' ? 'text-[#ef4444]' : 'text-[#E8FF4C]'
+                          f.status === 'synced' ? 'text-[#22c55e]' : f.status === 'error' ? 'text-[#ef4444]' : 'text-black font-semibold'
                         }`}>
                           {f.status}
                         </span>

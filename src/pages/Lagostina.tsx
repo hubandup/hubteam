@@ -43,13 +43,13 @@ const EXPORT_CONFIG: Record<string, { tabName: string; showPdf: boolean; chartsI
 function TabSkeleton() {
   return (
     <div className="space-y-4 animate-pulse">
-      <div className="h-8 bg-[#1a1f2e] w-1/3" />
+      <div className="h-8 bg-black/5 w-1/3" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-24 bg-[#1a1f2e]" />
+          <div key={i} className="h-24 bg-black/5" />
         ))}
       </div>
-      <div className="h-64 bg-[#1a1f2e]" />
+      <div className="h-64 bg-black/5" />
     </div>
   );
 }
@@ -58,10 +58,10 @@ function EmptyState({ section, role }: { section: string; role: string | null })
   return (
     <div className="flex flex-col items-center justify-center py-24 gap-4">
       <Database className="h-12 w-12 text-[#9ca3af]" />
-      <p className="text-white font-['Roboto'] text-sm">Données {section} non disponibles</p>
-      <p className="text-[#6b7280] font-['Roboto'] text-xs">En attente de synchronisation</p>
+      <p className="text-black font-['Roboto'] text-sm">Données {section} non disponibles</p>
+      <p className="text-[#9ca3af] font-['Roboto'] text-xs">En attente de synchronisation</p>
       {(role === 'admin' || role === 'team') ? (
-        <a href="/lagostina-admin" className="px-4 py-2 border border-[#E8FF4C] text-[#E8FF4C] font-['Roboto'] text-sm hover:bg-[#E8FF4C] hover:text-black transition-colors">
+        <a href="/lagostina-admin" className="px-4 py-2 border border-black text-black font-['Roboto'] text-sm hover:bg-black hover:text-white transition-colors">
           Synchroniser
         </a>
       ) : (
@@ -107,14 +107,14 @@ export default function Lagostina() {
   const exportCfg = EXPORT_CONFIG[activeTab];
 
   return (
-    <div className="min-h-screen bg-[#0a0e1a]">
+    <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="px-6 pt-6 pb-2 flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white font-['Instrument_Sans'] tracking-tight">
+          <h1 className="text-2xl font-bold text-black font-['Instrument_Sans'] tracking-tight">
             Lagostina
           </h1>
-          <p className="text-[#9ca3af] font-['Roboto'] text-sm mt-1">
+          <p className="text-[#6b7280] font-['Roboto'] text-sm mt-1">
             Dashboard de pilotage — Groupe SEB
           </p>
         </div>
@@ -130,7 +130,7 @@ export default function Lagostina() {
       </div>
 
       {/* Tabs */}
-      <div className="px-6 border-b border-white/10">
+      <div className="px-6 border-b border-black/10">
         <div className="flex gap-0 overflow-x-auto scrollbar-hide">
           {TABS.map((tab) => (
             <button
@@ -139,8 +139,8 @@ export default function Lagostina() {
               className={`
                 px-4 py-3 text-sm font-['Roboto'] whitespace-nowrap transition-all duration-150 border-b-2
                 ${activeTab === tab.id
-                  ? 'text-[#E8FF4C] border-[#E8FF4C] font-medium'
-                  : 'text-[#6b7280] border-transparent hover:text-[#9ca3af]'}
+                  ? 'text-black border-black font-medium'
+                  : 'text-[#9ca3af] border-transparent hover:text-[#6b7280]'}
               `}
             >
               {tab.label}
@@ -151,9 +151,9 @@ export default function Lagostina() {
 
       {/* Priority selector */}
       {priorityOptions.length > 1 && (
-        <div className="px-6 py-3 border-b border-white/5 flex items-center gap-3">
-          <BarChart3 className="h-4 w-4 text-[#9ca3af]" />
-          <span className="text-[#9ca3af] font-['Roboto'] text-xs">Priorité :</span>
+        <div className="px-6 py-3 border-b border-black/5 flex items-center gap-3">
+          <BarChart3 className="h-4 w-4 text-[#6b7280]" />
+          <span className="text-[#6b7280] font-['Roboto'] text-xs">Priorité :</span>
           <div className="flex gap-1">
             {priorityOptions.map((opt) => (
               <button
@@ -161,8 +161,8 @@ export default function Lagostina() {
                 onClick={() => setSelectedPriority(opt.key)}
                 className={`px-3 py-1 text-xs font-['Roboto'] transition-colors ${
                   selectedPriority === opt.key
-                    ? 'bg-[#E8FF4C] text-black font-medium'
-                    : 'bg-white/5 text-[#9ca3af] hover:bg-white/10'
+                    ? 'bg-black text-white font-medium'
+                    : 'bg-black/5 text-[#6b7280] hover:bg-black/10'
                 }`}
               >
                 {opt.label}

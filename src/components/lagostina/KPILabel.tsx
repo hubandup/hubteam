@@ -48,11 +48,11 @@ export function KPILabel({ kpi, className = '' }: KPILabelProps) {
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
       >
-        <Info className="h-3 w-3 text-[#6b7280] hover:text-[#E8FF4C] cursor-help transition-colors" />
+        <Info className="h-3 w-3 text-muted-foreground hover:text-foreground cursor-help transition-colors" />
         {showTooltip && (
           <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-[#0f1422] border border-[#E8FF4C] p-3 text-xs font-['Roboto']">
             <p className="text-white mb-1">{entry.definition}</p>
-            {entry.source && <p className="text-[#9ca3af] text-[10px]">Source : {entry.source}</p>}
+            {entry.source && <p className="text-gray-400 text-[10px]">Source : {entry.source}</p>}
           </div>
         )}
       </span>

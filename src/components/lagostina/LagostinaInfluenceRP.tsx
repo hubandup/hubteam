@@ -36,7 +36,7 @@ function getCondColor(actual: number | null, obj: number | null): string {
   if (actual == null || obj == null || obj === 0) return '';
   const ratio = actual / obj;
   if (ratio >= 1) return 'text-[#22c55e]';
-  if (ratio >= 0.8) return 'text-[#E8FF4C]';
+  if (ratio >= 0.8) return 'text-black font-semibold';
   return 'text-[#ef4444]';
 }
 
@@ -64,7 +64,7 @@ function Sparkline({ data }: { data: number[] }) {
 
 const TONALITY_STYLES: Record<string, { bg: string; text: string; label: string }> = {
   positive: { bg: 'bg-[#22c55e]/20', text: 'text-[#22c55e]', label: 'Positif' },
-  neutral: { bg: 'bg-white/10', text: 'text-[#9ca3af]', label: 'Neutre' },
+  neutral: { bg: 'bg-gray-200', text: 'text-muted-foreground', label: 'Neutre' },
   negative: { bg: 'bg-[#ef4444]/20', text: 'text-[#ef4444]', label: 'Négatif' },
 };
 
@@ -129,7 +129,7 @@ export function LagostinaInfluenceRP() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-16 bg-white/5 animate-pulse" />)}
+        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-16 bg-gray-100 animate-pulse" />)}
       </div>
     );
   }
@@ -137,9 +137,9 @@ export function LagostinaInfluenceRP() {
   if (isEmpty) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <Database className="h-16 w-16 text-[#9ca3af]" />
-        <p className="text-white font-['Instrument_Sans'] text-lg font-bold">Données Influence & RP non disponibles</p>
-        <p className="text-[#9ca3af] font-['Roboto'] text-sm">Importez un fichier Influence & RP depuis l'admin</p>
+        <Database className="h-16 w-16 text-muted-foreground" />
+        <p className="text-foreground font-['Instrument_Sans'] text-lg font-bold">Données Influence & RP non disponibles</p>
+        <p className="text-muted-foreground font-['Roboto'] text-sm">Importez un fichier Influence & RP depuis l'admin</p>
       </div>
     );
   }
@@ -149,17 +149,17 @@ export function LagostinaInfluenceRP() {
       {/* Influence KPI cards */}
       {kpis.length > 0 && (
         <div>
-          <h2 className="text-white text-sm font-['Instrument_Sans'] font-bold mb-4">Influence</h2>
+          <h2 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Influence</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {kpis.map((kpi) => (
-              <div key={kpi.label} className={`bg-[#0f1422] border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
-                <p className="text-[#9ca3af] text-xs font-['Roboto'] uppercase tracking-wider mb-1">{kpi.label}</p>
+              <div key={kpi.label} className={`bg-white border border-border/30 border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
+                <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-1">{kpi.label}</p>
                 <div className="flex items-end gap-2">
-                  <span className={`text-xl font-bold font-['Instrument_Sans'] ${getCondColor(kpi.actual, kpi.obj) || 'text-white'}`}>
+                  <span className={`text-xl font-bold font-['Instrument_Sans'] ${getCondColor(kpi.actual, kpi.obj) || 'text-foreground'}`}>
                     {kpi.actual != null ? kpi.actual.toLocaleString('fr-FR') : '—'}
                   </span>
                   {kpi.obj != null && (
-                    <span className="text-[#9ca3af] text-xs font-['Roboto'] mb-0.5">/ {kpi.obj.toLocaleString('fr-FR')}</span>
+                    <span className="text-muted-foreground text-xs font-['Roboto'] mb-0.5">/ {kpi.obj.toLocaleString('fr-FR')}</span>
                   )}
                 </div>
                 <Sparkline data={kpi.vals} />
@@ -172,7 +172,7 @@ export function LagostinaInfluenceRP() {
       {/* Press review */}
       {pressData && pressData.length > 0 && (
         <div>
-          <h2 className="text-white text-sm font-['Instrument_Sans'] font-bold mb-4">Revue de presse</h2>
+          <h2 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Revue de presse</h2>
 
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-3 mb-4">
@@ -183,7 +183,7 @@ export function LagostinaInfluenceRP() {
                   key={t}
                   onClick={() => { setTonalityFilter(t); setPage(0); }}
                   className={`px-3 py-1.5 text-xs font-['Roboto'] transition-colors ${
-                    tonalityFilter === t ? 'bg-[#E8FF4C] text-[#0f1422] font-medium' : 'bg-white/5 text-[#9ca3af] hover:text-white'
+                    tonalityFilter === t ? 'bg-black text-[#0f1422] font-medium' : 'bg-gray-100 text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {label}
@@ -194,41 +194,41 @@ export function LagostinaInfluenceRP() {
 
           {/* Counters */}
           <div className="flex gap-6 mb-4">
-            <div className="text-[#9ca3af] text-xs font-['Roboto']">
-              <span className="text-white font-bold text-sm">{filteredPress.length}</span> retombées
+            <div className="text-muted-foreground text-xs font-['Roboto']">
+              <span className="text-foreground font-bold text-sm">{filteredPress.length}</span> retombées
             </div>
-            <div className="text-[#9ca3af] text-xs font-['Roboto']">
-              <span className="text-white font-bold text-sm">{uniqueJournalists}</span> journalistes
+            <div className="text-muted-foreground text-xs font-['Roboto']">
+              <span className="text-foreground font-bold text-sm">{uniqueJournalists}</span> journalistes
             </div>
-            <div className="text-[#9ca3af] text-xs font-['Roboto']">
-              Reach cumulé : <span className="text-white font-bold text-sm">{totalReach >= 1000000 ? `${(totalReach / 1000000).toFixed(1)}M` : totalReach >= 1000 ? `${(totalReach / 1000).toFixed(0)}K` : totalReach}</span>
+            <div className="text-muted-foreground text-xs font-['Roboto']">
+              Reach cumulé : <span className="text-foreground font-bold text-sm">{totalReach >= 1000000 ? `${(totalReach / 1000000).toFixed(1)}M` : totalReach >= 1000 ? `${(totalReach / 1000).toFixed(0)}K` : totalReach}</span>
             </div>
           </div>
 
           {/* Table */}
-          <div className="bg-[#0f1422] overflow-x-auto">
+          <div className="bg-white border border-border/30 overflow-x-auto">
             <table className="w-full text-xs font-['Roboto']">
               <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left px-3 py-2 text-[#9ca3af] font-medium uppercase tracking-wider">Date</th>
-                  <th className="text-left px-3 py-2 text-[#9ca3af] font-medium uppercase tracking-wider">Média</th>
-                  <th className="text-left px-3 py-2 text-[#9ca3af] font-medium uppercase tracking-wider">Titre</th>
-                  <th className="text-center px-3 py-2 text-[#9ca3af] font-medium uppercase tracking-wider">Tonalité</th>
-                  <th className="text-right px-3 py-2 text-[#9ca3af] font-medium uppercase tracking-wider">Reach</th>
+                <tr className="border-b border-border/40">
+                  <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider">Date</th>
+                  <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider">Média</th>
+                  <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider">Titre</th>
+                  <th className="text-center px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider">Tonalité</th>
+                  <th className="text-right px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider">Reach</th>
                 </tr>
               </thead>
               <tbody>
                 {pagedPress.map((p) => {
                   const style = TONALITY_STYLES[p.tonality] || TONALITY_STYLES.neutral;
                   return (
-                    <tr key={p.id} className="border-b border-white/5 hover:bg-white/[0.02]">
-                      <td className="px-3 py-2 text-[#9ca3af] whitespace-nowrap">
+                    <tr key={p.id} className="border-b border-border/20 hover:bg-gray-50">
+                      <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
                         {new Date(p.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                       </td>
-                      <td className="px-3 py-2 text-white font-medium">{p.media_name}</td>
-                      <td className="px-3 py-2 text-white max-w-xs truncate">
+                      <td className="px-3 py-2 text-foreground font-medium">{p.media_name}</td>
+                      <td className="px-3 py-2 text-foreground max-w-xs truncate">
                         {p.url ? (
-                          <a href={p.url} target="_blank" rel="noopener noreferrer" className="hover:text-[#E8FF4C] flex items-center gap-1">
+                          <a href={p.url} target="_blank" rel="noopener noreferrer" className="hover:text-black font-semibold flex items-center gap-1">
                             {p.title}
                             <ExternalLink className="h-3 w-3 flex-shrink-0" />
                           </a>
@@ -239,7 +239,7 @@ export function LagostinaInfluenceRP() {
                           {style.label}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-right text-white">
+                      <td className="px-3 py-2 text-right text-foreground">
                         {p.estimated_reach ? p.estimated_reach.toLocaleString('fr-FR') : '—'}
                       </td>
                     </tr>
@@ -255,17 +255,17 @@ export function LagostinaInfluenceRP() {
               <button
                 onClick={() => setPage(Math.max(0, page - 1))}
                 disabled={page === 0}
-                className="p-1 text-[#9ca3af] hover:text-white disabled:opacity-30"
+                className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <span className="text-[#9ca3af] text-xs font-['Roboto']">
+              <span className="text-muted-foreground text-xs font-['Roboto']">
                 {page + 1} / {totalPages}
               </span>
               <button
                 onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
                 disabled={page >= totalPages - 1}
-                className="p-1 text-[#9ca3af] hover:text-white disabled:opacity-30"
+                className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
