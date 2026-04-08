@@ -58,10 +58,10 @@ function EmptyState({ section, role }: { section: string; role: string | null })
   return (
     <div className="flex flex-col items-center justify-center py-24 gap-4">
       <Database className="h-12 w-12 text-[#9ca3af]" />
-      <p className="text-white font-['Roboto'] text-sm">Données {section} non disponibles</p>
-      <p className="text-[#6b7280] font-['Roboto'] text-xs">En attente de synchronisation</p>
+      <p className="text-black font-['Roboto'] text-sm">Données {section} non disponibles</p>
+      <p className="text-[#9ca3af] font-['Roboto'] text-xs">En attente de synchronisation</p>
       {(role === 'admin' || role === 'team') ? (
-        <a href="/lagostina-admin" className="px-4 py-2 border border-[#E8FF4C] text-[#E8FF4C] font-['Roboto'] text-sm hover:bg-[#E8FF4C] hover:text-black transition-colors">
+        <a href="/lagostina-admin" className="px-4 py-2 border border-black text-black font-['Roboto'] text-sm hover:bg-black hover:text-white transition-colors">
           Synchroniser
         </a>
       ) : (
