@@ -140,7 +140,9 @@ export default function ClientDetails() {
 
   // Determine if this client has a board (based on email domain)
   const clientEmailDomain = client.email ? client.email.split('@')[1] : '';
-  const hasBoardTab = ['groupeseb.com', 'hubandup.com'].includes(clientEmailDomain);
+  const hasBoardDomain = ['groupeseb.com', 'hubandup.com'].includes(clientEmailDomain);
+  const canManageBoard = role === 'admin' || role === 'team' || role === 'agency';
+  const hasBoardTab = hasBoardDomain && canManageBoard;
 
   const allTabs: TabItem[] = [
     {
