@@ -394,6 +394,217 @@ async function parseInfluenceRPFile(workbook: XLSX.WorkBook) {
   return count;
 }
 
+// ── MEDIA PARSER ──
+async function parseMediaFile(workbook: XLSX.WorkBook) {
+  const records: Array<{ channel: string; kpi_name: string; week: string; actual: number | null; objective: number | null; budget_spent: number | null; budget_allocated: number | null }> = [];
+  const channelMap: Record<string, string> = { sea: 'sea', sma: 'sma', tiktok: 'tiktok' };
+
+  for (const sheetName of workbook.SheetNames) {
+    const lowerSheet = sheetName.toLowerCase();
+    const channel = Object.keys(channelMap).find((k) => lowerSheet.includes(k));
+    if (!channel) continue;
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) continue;
+    const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { header: 1 }) as any[][];
+    if (rows.length < 2) continue;
+
+    // First row = headers, detect week columns
+    const headers = rows[0] || [];
+    const weekCols: Record<number, string> = {};
+    for (let c = 0; c < headers.length; c++) {
+      const val = String(headers[c] || '').trim();
+      if (val.match(/^S\d+$/i)) weekCols[c] = val.toUpperCase();
+    }
+
+    for (let r = 1; r < rows.length; r++) {
+      const row = rows[r];
+      if (!row || !row[0]) continue;
+      const kpiName = String(row[0]).trim().toLowerCase().replace(/\s+/g, '_');
+      const type = row[1] ? String(row[1]).trim().toLowerCase() : 'actual';
+      const isActual = !type.includes('obj');
+
+      for (const [colIdx, week] of Object.entries(weekCols)) {
+        const val = Number(row[Number(colIdx)]);
+        if (isNaN(val)) continue;
+        records.push({
+          channel: channelMap[channel],
+          kpi_name: kpiName,
+          week,
+          actual: isActual ? val : null,
+          objective: !isActual ? val : null,
+          budget_spent: null,
+          budget_allocated: null,
+        });
+      }
+    }
+  }
+
+  if (records.length === 0) throw new Error('Aucune donnée média trouvée dans le fichier.');
+
+  // Merge actual/objective for same key
+  const merged = new Map<string, typeof records[0]>();
+  for (const r of records) {
+    const key = `${r.channel}|${r.kpi_name}|${r.week}`;
+    const ex = merged.get(key);
+    if (ex) {
+      if (r.actual != null) ex.actual = r.actual;
+      if (r.objective != null) ex.objective = r.objective;
+    } else {
+      merged.set(key, { ...r });
+    }
+  }
+
+  const final = Array.from(merged.values());
+  await supabase.from('lagostina_media_kpis').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  for (let i = 0; i < final.length; i += 500) {
+    const batch = final.slice(i, i + 500);
+    const { error } = await supabase.from('lagostina_media_kpis').insert(batch);
+    if (error) throw error;
+  }
+  return final.length;
+}
+
+// ── CONSUMER PARSER ──
+async function parseConsumerFile(workbook: XLSX.WorkBook) {
+  let count = 0;
+  const consumerRecords: Array<{ section: string; metric_name: string; scope: string | null; value_current: string | null; vs_reference: string | null; vs_brand: string | null; comment: string | null }> = [];
+  const rnrRecords: Array<{ platform: string; product_name: string; week: string; avg_score: number | null; review_count: number | null; comments_summary: string | null }> = [];
+
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) continue;
+    const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { header: 1 }) as any[][];
+    const lowerSheet = sheetName.toLowerCase();
+
+    if (lowerSheet.includes('r&r') || lowerSheet.includes('review') || lowerSheet.includes('rnr')) {
+      for (let r = 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row || !row[0]) continue;
+        rnrRecords.push({
+          platform: String(row[0]).trim(),
+          product_name: String(row[1] || '').trim(),
+          week: String(row[2] || '').trim(),
+          avg_score: row[3] != null ? Number(row[3]) : null,
+          review_count: row[4] != null ? Number(row[4]) : null,
+          comments_summary: row[5] ? String(row[5]).trim() : null,
+        });
+      }
+    } else {
+      // Consumer data sheets
+      let currentSection = 'sample';
+      for (let r = 0; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row || !row[0]) continue;
+        const first = String(row[0]).trim().toLowerCase();
+        if (first.includes('échantillon') || first.includes('sample')) { currentSection = 'sample'; continue; }
+        if (first.includes('valeur') || first.includes('value')) { currentSection = 'value'; continue; }
+        if (first.includes('cuisine')) { currentSection = 'cuisine'; continue; }
+        if (first.includes('brand') || first.includes('monitoring')) { currentSection = 'brand_monitoring'; continue; }
+        if (first.includes('business')) { currentSection = 'business_opp'; continue; }
+
+        const metricName = String(row[0]).trim();
+        if (metricName.length > 1) {
+          consumerRecords.push({
+            section: currentSection,
+            metric_name: metricName,
+            scope: row[1] ? String(row[1]).trim() : null,
+            value_current: row[2] != null ? String(row[2]).trim() : (row[1] != null ? String(row[1]).trim() : null),
+            vs_reference: row[3] ? String(row[3]).trim() : null,
+            vs_brand: row[4] ? String(row[4]).trim() : null,
+            comment: row[5] ? String(row[5]).trim() : null,
+          });
+        }
+      }
+    }
+  }
+
+  if (consumerRecords.length > 0) {
+    await supabase.from('lagostina_consumer').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    const { error } = await supabase.from('lagostina_consumer').insert(consumerRecords);
+    if (error) throw error;
+    count += consumerRecords.length;
+  }
+  if (rnrRecords.length > 0) {
+    await supabase.from('lagostina_rnr').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    const { error } = await supabase.from('lagostina_rnr').insert(rnrRecords);
+    if (error) throw error;
+    count += rnrRecords.length;
+  }
+
+  if (count === 0) throw new Error('Aucune donnée consumer trouvée dans le fichier.');
+  return count;
+}
+
+// ── CONTENUS PARSER ──
+async function parseContenusFile(workbook: XLSX.WorkBook) {
+  let count = 0;
+  const contenus: Array<{ content_type: string; count: number; ready: boolean; quality_assessment: string; variations: string | null }> = [];
+  const socialMix: Array<{ category: string; count: number }> = [];
+  const learnings: Array<{ learning: string; associated_metric: string | null; action: string | null }> = [];
+
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) continue;
+    const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { header: 1 }) as any[][];
+    const lowerSheet = sheetName.toLowerCase();
+
+    if (lowerSheet.includes('learning')) {
+      for (let r = 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row || !row[0]) continue;
+        learnings.push({
+          learning: String(row[0]).trim(),
+          associated_metric: row[1] ? String(row[1]).trim() : null,
+          action: row[2] ? String(row[2]).trim() : null,
+        });
+      }
+    } else if (lowerSheet.includes('social') || lowerSheet.includes('mix')) {
+      for (let r = 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row || !row[0]) continue;
+        socialMix.push({
+          category: String(row[0]).trim().toLowerCase().replace(/\s+/g, '_'),
+          count: Number(row[1]) || 0,
+        });
+      }
+    } else {
+      for (let r = 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row || !row[0]) continue;
+        contenus.push({
+          content_type: String(row[0]).trim().toLowerCase().replace(/\s+/g, '_'),
+          count: Number(row[1]) || 0,
+          ready: row[2] ? String(row[2]).trim().toLowerCase() === 'oui' || String(row[2]).trim().toLowerCase() === 'yes' || row[2] === true : false,
+          quality_assessment: row[3] ? String(row[3]).trim().toLowerCase().replace(/\s+/g, '_') : 'not_assessed',
+          variations: row[4] ? String(row[4]).trim() : null,
+        });
+      }
+    }
+  }
+
+  if (contenus.length > 0) {
+    await supabase.from('lagostina_contenus').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    const { error } = await supabase.from('lagostina_contenus').insert(contenus);
+    if (error) throw error;
+    count += contenus.length;
+  }
+  if (socialMix.length > 0) {
+    await supabase.from('lagostina_social_mix').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    const { error } = await supabase.from('lagostina_social_mix').insert(socialMix);
+    if (error) throw error;
+    count += socialMix.length;
+  }
+  if (learnings.length > 0) {
+    await supabase.from('lagostina_content_learnings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    const { error } = await supabase.from('lagostina_content_learnings').insert(learnings);
+    if (error) throw error;
+    count += learnings.length;
+  }
+
+  if (count === 0) throw new Error('Aucune donnée contenus trouvée dans le fichier.');
+  return count;
+}
+
 const STATUS_ICONS: Record<string, React.ReactNode> = {
   synced: <CheckCircle2 className="h-3.5 w-3.5 text-[#22c55e]" />,
   error: <AlertCircle className="h-3.5 w-3.5 text-[#ef4444]" />,
