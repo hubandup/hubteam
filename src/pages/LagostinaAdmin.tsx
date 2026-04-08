@@ -680,6 +680,12 @@ export default function LagostinaAdmin() {
         insertedCount += await parseBudgetFile(workbook);
       } else if (selectedType === 'influence_rp') {
         insertedCount += await parseInfluenceRPFile(workbook);
+      } else if (selectedType === 'media') {
+        insertedCount += await parseMediaFile(workbook);
+      } else if (selectedType === 'consumer') {
+        insertedCount += await parseConsumerFile(workbook);
+      } else if (selectedType === 'contenus') {
+        insertedCount += await parseContenusFile(workbook);
       } else {
         toast.info(`Le parsing des fichiers "${selectedType}" sera disponible dans une prochaine phase.`);
       }
