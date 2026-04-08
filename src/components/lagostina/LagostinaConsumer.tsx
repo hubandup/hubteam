@@ -163,7 +163,7 @@ export function LagostinaConsumer() {
             <div className="flex gap-1">
               <button
                 onClick={() => { setPlatformFilter('all'); setRnrPage(0); }}
-                className={`px-3 py-1 text-xs font-['Roboto'] ${platformFilter === 'all' ? 'bg-black text-black' : 'bg-gray-100 text-muted-foreground hover:text-foreground'}`}
+                className={`px-3 py-1 text-xs font-['Roboto'] ${platformFilter === 'all' ? 'bg-black text-white' : 'bg-gray-100 text-muted-foreground hover:text-foreground'}`}
               >
                 Tout
               </button>
@@ -171,7 +171,7 @@ export function LagostinaConsumer() {
                 <button
                   key={p}
                   onClick={() => { setPlatformFilter(p); setRnrPage(0); }}
-                  className={`px-3 py-1 text-xs font-['Roboto'] capitalize ${platformFilter === p ? 'bg-black text-black' : 'bg-gray-100 text-muted-foreground hover:text-foreground'}`}
+                  className={`px-3 py-1 text-xs font-['Roboto'] capitalize ${platformFilter === p ? 'bg-black text-white' : 'bg-gray-100 text-muted-foreground hover:text-foreground'}`}
                 >
                   {p}
                 </button>
@@ -220,7 +220,7 @@ export function LagostinaConsumer() {
                   <button
                     key={i}
                     onClick={() => setRnrPage(i)}
-                    className={`w-7 h-7 text-xs font-['Roboto'] ${rnrPage === i ? 'bg-black text-black' : 'bg-gray-100 text-muted-foreground hover:text-foreground'}`}
+                    className={`w-7 h-7 text-xs font-['Roboto'] ${rnrPage === i ? 'bg-black text-white' : 'bg-gray-100 text-muted-foreground hover:text-foreground'}`}
                   >
                     {i + 1}
                   </button>
