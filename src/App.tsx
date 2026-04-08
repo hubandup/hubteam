@@ -35,6 +35,8 @@ const SetPassword = lazy(() => import("./pages/SetPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Install = lazy(() => import("./pages/Install"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
+const Lagostina = lazy(() => import("./pages/Lagostina"));
+const LagostinaAdmin = lazy(() => import("./pages/LagostinaAdmin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Minimal page-level loading skeleton
