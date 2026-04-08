@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import * as XLSX from 'xlsx';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface BudgetRow {
   month: string;
@@ -28,8 +29,10 @@ export function ClientBoardTab({ clientId, clientEmailDomain }: ClientBoardTabPr
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { role } = useUserRole();
 
   const domain = clientEmailDomain || 'groupeseb.com';
+  const canManageBoard = role === 'admin' || role === 'team' || role === 'agency';
 
   useEffect(() => {
     fetchData();
@@ -57,6 +60,12 @@ export function ClientBoardTab({ clientId, clientEmailDomain }: ClientBoardTabPr
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!canManageBoard) {
+      toast.error("Vous n’avez pas les droits pour modifier ce board");
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -132,6 +141,11 @@ export function ClientBoardTab({ clientId, clientEmailDomain }: ClientBoardTabPr
   };
 
   const handleDeleteAll = async () => {
+    if (!canManageBoard) {
+      toast.error("Vous n’avez pas les droits pour modifier ce board");
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('client_budget_data')
@@ -169,14 +183,14 @@ export function ClientBoardTab({ clientId, clientEmailDomain }: ClientBoardTabPr
             />
             <Button
               onClick={() => fileInputRef.current?.click()}
-              disabled={importing}
+              disabled={importing || !canManageBoard}
               className="gap-2"
             >
               {importing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               {data.length > 0 ? 'Remplacer les données (Excel)' : 'Importer un fichier Excel'}
             </Button>
 
-            {data.length > 0 && (
+            {data.length > 0 && canManageBoard && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="outline" className="gap-2 text-destructive hover:text-destructive">
@@ -202,7 +216,9 @@ export function ClientBoardTab({ clientId, clientEmailDomain }: ClientBoardTabPr
             )}
 
             <p className="text-xs text-muted-foreground ml-auto">
-              Format attendu : Mois | SEA | Meta | TikTok | Total | Cumul
+              {canManageBoard
+                ? 'Format attendu : Mois | SEA | Meta | TikTok | Total | Cumul'
+                : 'Visualisation seule pour ce profil'}
             </p>
           </div>
         </CardContent>
