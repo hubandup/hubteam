@@ -335,6 +335,9 @@ export default function Home() {
         </Card>}
       </div>
 
+      {/* Client budget chart - only for specific domains */}
+      <ClientBudgetChart />
+
       {/* Recent activity - hidden for client/agency */}
       {!isAgency && !isClient && recentActivities.length > 0 && (
         <Card>
