@@ -100,6 +100,12 @@ export default function Lagostina() {
     return opts;
   }, [priorities]);
 
+  if (role !== 'admin' && role !== 'team' && role !== 'client') {
+    return <Navigate to="/" replace />;
+  }
+
+  const exportCfg = EXPORT_CONFIG[activeTab];
+
   return (
     <div className="min-h-screen bg-[#0a0e1a]">
       {/* Header */}
