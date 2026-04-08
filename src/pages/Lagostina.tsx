@@ -96,9 +96,12 @@ export default function Lagostina() {
         {activeTab === 'overview' && <LagostinaOverview />}
         {activeTab === 'activation' && <ActivationPersonas />}
         {activeTab === 'scorecard' && <ScorecardRECC />}
-        {activeTab === 'budget' && <LagostinaBudget />}
+        {activeTab === 'contenus' && <LagostinaContenus />}
         {activeTab === 'influence' && <LagostinaInfluenceRP />}
-        {!['overview', 'activation', 'scorecard', 'budget', 'influence'].includes(activeTab) && <PlaceholderTab />}
+        {activeTab === 'mediatisation' && <LagostinaMediatisation />}
+        {activeTab === 'budget' && <LagostinaBudget />}
+        {activeTab === 'consumer' && <LagostinaConsumer />}
+        {!['overview', 'activation', 'scorecard', 'contenus', 'influence', 'mediatisation', 'budget', 'consumer'].includes(activeTab) && <PlaceholderTab />}
       </div>
     </div>
   );
