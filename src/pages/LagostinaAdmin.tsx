@@ -267,17 +267,6 @@ export default function LagostinaAdmin() {
     },
   });
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) processFile(file);
-  }, [selectedType]);
-
-  if (role !== 'admin' && role !== 'team') {
-    return <Navigate to="/" replace />;
-  }
-
   const processFile = async (file: File) => {
     if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
       toast.error('Seuls les fichiers Excel (.xlsx) sont acceptés');
@@ -314,7 +303,6 @@ export default function LagostinaAdmin() {
 
       if (selectedType === 'scorecard') {
         const records = await parseScorecardFile(workbook);
-        // Also try to parse activation sheets from the same file
         const { personas, activations } = await parseActivationFile(workbook);
         if (records.length === 0 && personas.length === 0 && activations.length === 0) {
           throw new Error('Aucune donnée trouvée dans le fichier. Vérifiez le format.');
@@ -358,12 +346,22 @@ export default function LagostinaAdmin() {
     }
   };
 
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) processFile(file);
+  }, [selectedType]);
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) processFile(file);
     e.target.value = '';
   };
+
+  if (role !== 'admin' && role !== 'team') {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0e1a] p-6">
