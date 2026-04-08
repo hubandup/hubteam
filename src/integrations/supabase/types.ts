@@ -1292,6 +1292,33 @@ export type Database = {
         }
         Relationships: []
       }
+      lagostina_glossary: {
+        Row: {
+          definition: string
+          id: string
+          kpi_name: string
+          levier: string | null
+          recc_category: string | null
+          source: string | null
+        }
+        Insert: {
+          definition: string
+          id?: string
+          kpi_name: string
+          levier?: string | null
+          recc_category?: string | null
+          source?: string | null
+        }
+        Update: {
+          definition?: string
+          id?: string
+          kpi_name?: string
+          levier?: string | null
+          recc_category?: string | null
+          source?: string | null
+        }
+        Relationships: []
+      }
       lagostina_influence: {
         Row: {
           conversion_rate: number | null
@@ -1343,6 +1370,33 @@ export type Database = {
           vtf?: number | null
           vtf_obj?: number | null
           week?: string
+        }
+        Relationships: []
+      }
+      lagostina_learnings: {
+        Row: {
+          does_not_work: string | null
+          id: string
+          levier: string
+          updated_at: string | null
+          updated_by: string | null
+          works: string | null
+        }
+        Insert: {
+          does_not_work?: string | null
+          id?: string
+          levier: string
+          updated_at?: string | null
+          updated_by?: string | null
+          works?: string | null
+        }
+        Update: {
+          does_not_work?: string | null
+          id?: string
+          levier?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          works?: string | null
         }
         Relationships: []
       }
