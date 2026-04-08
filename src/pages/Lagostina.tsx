@@ -6,6 +6,9 @@ import { ScorecardRECC } from '@/components/lagostina/ScorecardRECC';
 import { ActivationPersonas } from '@/components/lagostina/ActivationPersonas';
 import { LagostinaBudget } from '@/components/lagostina/LagostinaBudget';
 import { LagostinaInfluenceRP } from '@/components/lagostina/LagostinaInfluenceRP';
+import { LagostinaMediatisation } from '@/components/lagostina/LagostinaMediatisation';
+import { LagostinaConsumer } from '@/components/lagostina/LagostinaConsumer';
+import { LagostinaContenus } from '@/components/lagostina/LagostinaContenus';
 import { LagostinaExportButtons } from '@/components/lagostina/LagostinaExportButtons';
 import { Clock } from 'lucide-react';
 
