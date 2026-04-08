@@ -35,6 +35,8 @@ const SetPassword = lazy(() => import("./pages/SetPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Install = lazy(() => import("./pages/Install"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
+const Lagostina = lazy(() => import("./pages/Lagostina"));
+const LagostinaAdmin = lazy(() => import("./pages/LagostinaAdmin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Minimal page-level loading skeleton
@@ -101,6 +103,8 @@ function AppInner() {
         <Route path="/settings" element={<ProtectedRoute><Layout><PageSuspense><Settings /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="/install" element={<Suspense fallback={<AppSkeleton />}><Install /></Suspense>} />
         <Route path="/unsubscribe" element={<Suspense fallback={<AppSkeleton />}><Unsubscribe /></Suspense>} />
+        <Route path="/lagostina" element={<ProtectedRoute><Layout><PageSuspense><Lagostina /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/admin/lagostina" element={<ProtectedRoute><Layout><PageSuspense><LagostinaAdmin /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="*" element={<Suspense fallback={null}><NotFound /></Suspense>} />
         </Routes>
       </AuthProvider>

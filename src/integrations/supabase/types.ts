@@ -1088,6 +1088,132 @@ export type Database = {
           },
         ]
       }
+      lagostina_budget: {
+        Row: {
+          created_at: string | null
+          engaged: number | null
+          id: string
+          invoiced: number | null
+          levier: string
+          month: string
+          planned: number | null
+          remaining: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          engaged?: number | null
+          id?: string
+          invoiced?: number | null
+          levier: string
+          month: string
+          planned?: number | null
+          remaining?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          engaged?: number | null
+          id?: string
+          invoiced?: number | null
+          levier?: string
+          month?: string
+          planned?: number | null
+          remaining?: number | null
+        }
+        Relationships: []
+      }
+      lagostina_category_status: {
+        Row: {
+          axis: string
+          id: string
+          priority: string
+          priority_label: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          axis: string
+          id?: string
+          priority: string
+          priority_label: string
+          status: string
+          updated_at?: string | null
+        }
+        Update: {
+          axis?: string
+          id?: string
+          priority?: string
+          priority_label?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      lagostina_files_sync: {
+        Row: {
+          created_at: string | null
+          file_type: string
+          filename: string
+          id: string
+          last_synced: string | null
+          source: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_type: string
+          filename: string
+          id?: string
+          last_synced?: string | null
+          source?: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          file_type?: string
+          filename?: string
+          id?: string
+          last_synced?: string | null
+          source?: string
+          status?: string | null
+        }
+        Relationships: []
+      }
+      lagostina_scorecards: {
+        Row: {
+          actual: number | null
+          created_at: string | null
+          id: string
+          kpi_name: string
+          levier: string
+          month: string | null
+          objective: number | null
+          priority: string
+          week: string
+        }
+        Insert: {
+          actual?: number | null
+          created_at?: string | null
+          id?: string
+          kpi_name: string
+          levier: string
+          month?: string | null
+          objective?: number | null
+          priority: string
+          week: string
+        }
+        Update: {
+          actual?: number | null
+          created_at?: string | null
+          id?: string
+          kpi_name?: string
+          levier?: string
+          month?: string | null
+          objective?: number | null
+          priority?: string
+          week?: string
+        }
+        Relationships: []
+      }
       linkedin_posts: {
         Row: {
           content: string
