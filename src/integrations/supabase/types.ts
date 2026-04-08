@@ -1172,6 +1172,96 @@ export type Database = {
         }
         Relationships: []
       }
+      lagostina_consumer: {
+        Row: {
+          comment: string | null
+          id: string
+          metric_name: string
+          scope: string | null
+          section: string
+          updated_at: string | null
+          value_current: string | null
+          vs_brand: string | null
+          vs_reference: string | null
+        }
+        Insert: {
+          comment?: string | null
+          id?: string
+          metric_name: string
+          scope?: string | null
+          section: string
+          updated_at?: string | null
+          value_current?: string | null
+          vs_brand?: string | null
+          vs_reference?: string | null
+        }
+        Update: {
+          comment?: string | null
+          id?: string
+          metric_name?: string
+          scope?: string | null
+          section?: string
+          updated_at?: string | null
+          value_current?: string | null
+          vs_brand?: string | null
+          vs_reference?: string | null
+        }
+        Relationships: []
+      }
+      lagostina_content_learnings: {
+        Row: {
+          action: string | null
+          associated_metric: string | null
+          created_at: string | null
+          id: string
+          learning: string
+        }
+        Insert: {
+          action?: string | null
+          associated_metric?: string | null
+          created_at?: string | null
+          id?: string
+          learning: string
+        }
+        Update: {
+          action?: string | null
+          associated_metric?: string | null
+          created_at?: string | null
+          id?: string
+          learning?: string
+        }
+        Relationships: []
+      }
+      lagostina_contenus: {
+        Row: {
+          content_type: string
+          count: number | null
+          id: string
+          quality_assessment: string | null
+          ready: boolean | null
+          updated_at: string | null
+          variations: string | null
+        }
+        Insert: {
+          content_type: string
+          count?: number | null
+          id?: string
+          quality_assessment?: string | null
+          ready?: boolean | null
+          updated_at?: string | null
+          variations?: string | null
+        }
+        Update: {
+          content_type?: string
+          count?: number | null
+          id?: string
+          quality_assessment?: string | null
+          ready?: boolean | null
+          updated_at?: string | null
+          variations?: string | null
+        }
+        Relationships: []
+      }
       lagostina_files_sync: {
         Row: {
           created_at: string | null
@@ -1256,6 +1346,42 @@ export type Database = {
         }
         Relationships: []
       }
+      lagostina_media_kpis: {
+        Row: {
+          actual: number | null
+          budget_allocated: number | null
+          budget_spent: number | null
+          channel: string
+          created_at: string | null
+          id: string
+          kpi_name: string
+          objective: number | null
+          week: string
+        }
+        Insert: {
+          actual?: number | null
+          budget_allocated?: number | null
+          budget_spent?: number | null
+          channel: string
+          created_at?: string | null
+          id?: string
+          kpi_name: string
+          objective?: number | null
+          week: string
+        }
+        Update: {
+          actual?: number | null
+          budget_allocated?: number | null
+          budget_spent?: number | null
+          channel?: string
+          created_at?: string | null
+          id?: string
+          kpi_name?: string
+          objective?: number | null
+          week?: string
+        }
+        Relationships: []
+      }
       lagostina_personas: {
         Row: {
           age_range: string | null
@@ -1334,6 +1460,39 @@ export type Database = {
         }
         Relationships: []
       }
+      lagostina_rnr: {
+        Row: {
+          avg_score: number | null
+          comments_summary: string | null
+          created_at: string | null
+          id: string
+          platform: string
+          product_name: string
+          review_count: number | null
+          week: string
+        }
+        Insert: {
+          avg_score?: number | null
+          comments_summary?: string | null
+          created_at?: string | null
+          id?: string
+          platform: string
+          product_name: string
+          review_count?: number | null
+          week: string
+        }
+        Update: {
+          avg_score?: number | null
+          comments_summary?: string | null
+          created_at?: string | null
+          id?: string
+          platform?: string
+          product_name?: string
+          review_count?: number | null
+          week?: string
+        }
+        Relationships: []
+      }
       lagostina_scorecards: {
         Row: {
           actual: number | null
@@ -1367,6 +1526,27 @@ export type Database = {
           objective?: number | null
           priority?: string
           week?: string
+        }
+        Relationships: []
+      }
+      lagostina_social_mix: {
+        Row: {
+          category: string
+          count: number | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          count?: number | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          count?: number | null
+          id?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
