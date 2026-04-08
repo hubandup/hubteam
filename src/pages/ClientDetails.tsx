@@ -11,6 +11,7 @@ import { ClientMeetingNotesTab } from '@/components/client-details/ClientMeeting
 import { ClientProjectsTab } from '@/components/client-details/ClientProjectsTab';
 import { ClientKDriveTab } from '@/components/client-details/ClientKDriveTab';
 import { ClientInvoicesTab } from '@/components/client-details/ClientInvoicesTab';
+import { ClientBoardTab } from '@/components/client-details/ClientBoardTab';
 import { useUserRole } from '@/hooks/useUserRole';
 
 export default function ClientDetails() {
