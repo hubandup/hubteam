@@ -30,6 +30,9 @@ const EXPORT_CONFIG: Record<string, { tabName: string; showPdf: boolean; chartsI
   activation: { tabName: 'Activation & Personas', showPdf: false },
   budget: { tabName: 'Budget', showPdf: true, chartsId: 'lagostina-budget-charts' },
   influence: { tabName: 'Influence & RP', showPdf: false },
+  mediatisation: { tabName: 'Médiatisation', showPdf: false },
+  consumer: { tabName: 'Voice of Consumer', showPdf: false },
+  contenus: { tabName: 'Contenus & Social', showPdf: false },
 };
 
 function PlaceholderTab() {
