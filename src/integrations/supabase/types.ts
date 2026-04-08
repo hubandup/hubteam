@@ -1088,6 +1088,30 @@ export type Database = {
           },
         ]
       }
+      lagostina_activation: {
+        Row: {
+          data: Json
+          id: string
+          priority: string
+          section: string
+          updated_at: string | null
+        }
+        Insert: {
+          data?: Json
+          id?: string
+          priority: string
+          section: string
+          updated_at?: string | null
+        }
+        Update: {
+          data?: Json
+          id?: string
+          priority?: string
+          section?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       lagostina_budget: {
         Row: {
           created_at: string | null
@@ -1175,6 +1199,48 @@ export type Database = {
           last_synced?: string | null
           source?: string
           status?: string | null
+        }
+        Relationships: []
+      }
+      lagostina_personas: {
+        Row: {
+          age_range: string | null
+          barriers: Json | null
+          created_at: string | null
+          has_children: string | null
+          id: string
+          market_weight: string | null
+          motivators: Json | null
+          persona_name: string
+          persona_type: string | null
+          preferred_media: string | null
+          priority: string
+        }
+        Insert: {
+          age_range?: string | null
+          barriers?: Json | null
+          created_at?: string | null
+          has_children?: string | null
+          id?: string
+          market_weight?: string | null
+          motivators?: Json | null
+          persona_name: string
+          persona_type?: string | null
+          preferred_media?: string | null
+          priority: string
+        }
+        Update: {
+          age_range?: string | null
+          barriers?: Json | null
+          created_at?: string | null
+          has_children?: string | null
+          id?: string
+          market_weight?: string | null
+          motivators?: Json | null
+          persona_name?: string
+          persona_type?: string | null
+          preferred_media?: string | null
+          priority?: string
         }
         Relationships: []
       }
