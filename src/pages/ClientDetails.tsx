@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, FileText, Receipt, Users, FolderKanban, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, FileText, Receipt, Users, FolderKanban, Trash2, BarChart3 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { ResponsiveTabs, type TabItem } from '@/components/ui/responsive-tabs';
@@ -11,6 +11,7 @@ import { ClientMeetingNotesTab } from '@/components/client-details/ClientMeeting
 import { ClientProjectsTab } from '@/components/client-details/ClientProjectsTab';
 import { ClientKDriveTab } from '@/components/client-details/ClientKDriveTab';
 import { ClientInvoicesTab } from '@/components/client-details/ClientInvoicesTab';
+import { ClientBoardTab } from '@/components/client-details/ClientBoardTab';
 import { useUserRole } from '@/hooks/useUserRole';
 
 export default function ClientDetails() {
@@ -137,6 +138,10 @@ export default function ClientDetails() {
     );
   }
 
+  // Determine if this client has a board (based on email domain)
+  const clientEmailDomain = client.email ? client.email.split('@')[1] : '';
+  const hasBoardTab = ['groupeseb.com', 'hubandup.com'].includes(clientEmailDomain);
+
   const allTabs: TabItem[] = [
     {
       value: 'info',
@@ -171,7 +176,13 @@ export default function ClientDetails() {
       icon: <Receipt className="h-4 w-4" />,
       badge: invoicesCount,
       content: <ClientInvoicesTab clientId={client.id} />
-    }
+    },
+    ...(hasBoardTab ? [{
+      value: 'board',
+      label: 'Board',
+      icon: <BarChart3 className="h-4 w-4" />,
+      content: <ClientBoardTab clientId={client.id} clientEmailDomain={clientEmailDomain} />
+    }] : []),
   ];
 
   // Filter out invoices tab for agency role
