@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, HelpCircle, Rss, Euro, MessageSquare, ArrowUpFromLine } from 'lucide-react';
+import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, HelpCircle, Rss, Euro, MessageSquare, ArrowUpFromLine, BarChart3 } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
