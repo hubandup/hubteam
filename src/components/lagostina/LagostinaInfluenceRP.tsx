@@ -44,7 +44,7 @@ function getCondBg(actual: number | null, obj: number | null): string {
   if (actual == null || obj == null || obj === 0) return 'border-l-[#9ca3af]';
   const ratio = actual / obj;
   if (ratio >= 1) return 'border-l-[#22c55e]';
-  if (ratio >= 0.8) return 'border-l-[#E8FF4C]';
+  if (ratio >= 0.8) return 'border-l-black';
   return 'border-l-[#ef4444]';
 }
 
