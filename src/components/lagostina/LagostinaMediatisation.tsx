@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Clock, TrendingUp, TrendingDown } from 'lucide-react';
@@ -11,36 +11,54 @@ type SubTab = typeof SUB_TABS[number];
 
 const CHANNEL_MAP: Record<SubTab, string> = { SEA: 'sea', SMA: 'sma', TikTok: 'tiktok' };
 
-const SEA_KPIS = ['roas', 'cpc', 'ctr', 'impressions', 'conversions', 'budget_ratio'];
-const SMA_KPIS = ['reach', 'completion', 'traffic', 'cpm', 'cpv', 'cpc', 'conversion_rate', 'roas'];
+// Map DB kpi_names to display keys
+const SEA_KPIS = ['roas', 'cpc_moyen', 'ctr', 'impressions', 'conversions', 'budget_ratio'];
+const SMA_KPIS = ['reach_(3s_views)', 'complétion_vidéo', 'traffic_qualifié_(visites_site)', 'cpm_reach_attentif', 'cpvisite', 'cpc', 'conversion_rate', 'roas'];
 const TIKTOK_KPIS = ['reach', 'completion', 'engagement_rate', 'cpv', 'cpc', 'roas'];
 
 const KPI_LABELS: Record<string, string> = {
-  roas: 'ROAS', cpc: 'CPC', ctr: 'CTR', impressions: 'Impressions', conversions: 'Conversions',
-  budget_ratio: 'Budget dépensé / alloué', reach: 'Reach 3s', completion: 'Complétion vidéo',
-  traffic: 'Traffic qualifié', cpm: 'CPM', cpv: 'CPV', conversion_rate: 'Taux conversion',
-  engagement_rate: 'Engagement rate', followers_evol: 'Évol. followers',
+  roas: 'ROAS', cpc_moyen: 'CPC', cpc: 'CPC', ctr: 'CTR', impressions: 'Impressions', conversions: 'Conversions',
+  budget_ratio: 'Budget dépensé / alloué', 'reach_(3s_views)': 'Reach 3s', reach: 'Reach 3s',
+  'complétion_vidéo': 'Complétion vidéo', completion: 'Complétion vidéo',
+  'traffic_qualifié_(visites_site)': 'Traffic qualifié', traffic: 'Traffic qualifié',
+  'cpm_reach_attentif': 'CPM', cpm: 'CPM', cpvisite: 'CPVisite', cpv: 'CPV',
+  conversion_rate: 'Taux conversion', engagement_rate: 'Engagement rate',
+  followers_evol: 'Évol. followers', taux_de_conversion: 'Taux conversion',
+  'coût_/_conversion': 'Coût / conversion',
+  'budget_dépensé': 'Budget dépensé', 'budget_alloué': 'Budget alloué',
 };
+
+// KPIs where values are already in percentage (don't multiply by 100)
+const ALREADY_PERCENT_KPIS = ['ctr', 'engagement_rate', 'conversion_rate', 'completion', 'complétion_vidéo', 'taux_de_conversion'];
 
 function getCondColor(actual: number | null, objective: number | null) {
   if (!actual || !objective) return '';
   const ratio = actual / objective;
   if (ratio >= 1) return 'border-[#22c55e]';
-  if (ratio >= 0.8) return 'border-black';
+  if (ratio >= 0.8) return 'border-black dark:border-[#E8FF4C]';
   return 'border-[#ef4444]';
 }
 
 function formatVal(val: number | null | undefined, kpi: string): string {
   if (val == null) return '—';
-  if (['ctr', 'engagement_rate', 'conversion_rate', 'completion'].includes(kpi)) return `${(val * 100).toFixed(1)}%`;
+  // Bug 1 fix: values are already in percentage, just append %
+  if (ALREADY_PERCENT_KPIS.includes(kpi)) return `${val.toFixed(1)}%`;
   if (['roas'].includes(kpi)) return val.toFixed(2);
-  if (['cpc', 'cpm', 'cpv'].includes(kpi)) return `€${val.toFixed(2)}`;
-  if (['impressions', 'reach', 'conversions', 'traffic'].includes(kpi)) {
+  if (['cpc_moyen', 'cpc', 'cpm', 'cpm_reach_attentif', 'cpv', 'cpvisite', 'coût_/_conversion'].includes(kpi)) return `€${val.toFixed(2)}`;
+  if (['impressions', 'reach', 'reach_(3s_views)', 'conversions', 'traffic', 'traffic_qualifié_(visites_site)', 'clics'].includes(kpi)) {
     if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
     if (val >= 1_000) return `${(val / 1_000).toFixed(0)}K`;
     return val.toFixed(0);
   }
   return String(val);
+}
+
+function sortWeeksNumerically(weeks: { week: string; actual: number | null; objective: number | null }[]) {
+  return [...weeks].sort((a, b) => {
+    const numA = parseInt(a.week.replace(/\D/g, ''), 10);
+    const numB = parseInt(b.week.replace(/\D/g, ''), 10);
+    return numA - numB;
+  });
 }
 
 const chartTooltipStyle = {
@@ -58,8 +76,29 @@ interface KpiData {
 
 function buildKpiData(rows: any[], kpis: string[]): KpiData[] {
   return kpis.map((kpi) => {
-    const kpiRows = rows.filter((r: any) => r.kpi_name === kpi).sort((a: any, b: any) => a.week.localeCompare(b.week));
-    const weeks = kpiRows.map((r: any) => ({ week: r.week, actual: r.actual, objective: r.objective }));
+    // Special case: budget_ratio is computed from budget_dépensé / budget_alloué
+    if (kpi === 'budget_ratio') {
+      const spentRows = rows.filter((r: any) => r.kpi_name === 'budget_dépensé');
+      const allocRows = rows.filter((r: any) => r.kpi_name === 'budget_alloué');
+      const allWeeks = [...new Set(spentRows.map((r: any) => r.week))];
+      const weeks = sortWeeksNumerically(allWeeks.map((w) => {
+        const spent = spentRows.find((r: any) => r.week === w)?.actual ?? null;
+        const alloc = allocRows.find((r: any) => r.week === w)?.actual ?? null;
+        const ratio = spent != null && alloc != null && alloc > 0 ? spent / alloc : null;
+        return { week: w, actual: ratio != null ? Math.round(ratio * 100) : null, objective: 100 };
+      }));
+      const actuals = weeks.filter((w) => w.actual != null);
+      const latest = actuals.length ? actuals[actuals.length - 1] : null;
+      const prev = actuals.length > 1 ? actuals[actuals.length - 2] : null;
+      let trend: 'up' | 'down' | null = null;
+      if (latest && prev && latest.actual != null && prev.actual != null) {
+        trend = latest.actual >= prev.actual ? 'up' : 'down';
+      }
+      return { kpi_name: kpi, weeks, latestActual: latest?.actual ?? null, latestObjective: 100, trend };
+    }
+
+    const kpiRows = rows.filter((r: any) => r.kpi_name === kpi);
+    const weeks = sortWeeksNumerically(kpiRows.map((r: any) => ({ week: r.week, actual: r.actual, objective: r.objective })));
     const actuals = weeks.filter((w) => w.actual != null);
     const latest = actuals.length ? actuals[actuals.length - 1] : null;
     const prev = actuals.length > 1 ? actuals[actuals.length - 2] : null;
@@ -73,12 +112,16 @@ function buildKpiData(rows: any[], kpis: string[]): KpiData[] {
 
 function KpiCard({ data }: { data: KpiData }) {
   const cond = getCondColor(data.latestActual, data.latestObjective);
+  const formatFn = data.kpi_name === 'budget_ratio'
+    ? (v: number | null | undefined) => v != null ? `${v}%` : '—'
+    : (v: number | null | undefined) => formatVal(v, data.kpi_name);
+
   return (
-    <div className={`bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] ${cond || 'border-black'} p-4 flex flex-col gap-1`}>
+    <div className={`bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] ${cond || 'border-black dark:border-[#E8FF4C]'} p-4 flex flex-col gap-1`}>
       <div className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">{KPI_LABELS[data.kpi_name] || data.kpi_name}</div>
-      <div className="text-foreground text-xl font-bold font-['Instrument_Sans']">{formatVal(data.latestActual, data.kpi_name)}</div>
+      <div className="text-foreground text-xl font-bold font-['Instrument_Sans']">{formatFn(data.latestActual)}</div>
       {data.latestObjective != null && (
-        <div className="text-muted-foreground text-[10px] font-['Roboto']">Obj: {formatVal(data.latestObjective, data.kpi_name)}</div>
+        <div className="text-muted-foreground text-[10px] font-['Roboto']">Obj: {formatFn(data.latestObjective)}</div>
       )}
       {data.trend && (
         <div className={`flex items-center gap-1 text-[10px] ${data.trend === 'up' ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
@@ -146,12 +189,12 @@ function FunnelStep({ label, value, color, ratio }: { label: string; value: stri
 
 function SMATab({ rows }: { rows: any[] }) {
   const kpis = buildKpiData(rows, SMA_KPIS);
-  const reach = kpis.find((k) => k.kpi_name === 'reach')?.latestActual;
-  const traffic = kpis.find((k) => k.kpi_name === 'traffic')?.latestActual;
+  const reach = kpis.find((k) => k.kpi_name === 'reach_(3s_views)')?.latestActual;
+  const traffic = kpis.find((k) => k.kpi_name === 'traffic_qualifié_(visites_site)')?.latestActual;
   const conversions = kpis.find((k) => k.kpi_name === 'conversion_rate')?.latestActual;
 
   const awarenessToConsid = reach && traffic ? `${((traffic / reach) * 100).toFixed(1)}%` : undefined;
-  const considToPurchase = traffic && conversions ? `${(conversions * 100).toFixed(1)}%` : undefined;
+  const considToPurchase = traffic && conversions ? `${conversions.toFixed(1)}%` : undefined;
 
   return (
     <div className="space-y-6">
@@ -161,9 +204,9 @@ function SMATab({ rows }: { rows: any[] }) {
       <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-6">
         <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Funnel SMA</h3>
         <div className="flex gap-2 items-end">
-          <FunnelStep label="Awareness" value={formatVal(reach, 'reach')} color="#E8FF4C" ratio={awarenessToConsid} />
-          <FunnelStep label="Considération" value={formatVal(traffic, 'traffic')} color="#38bdf8" ratio={considToPurchase} />
-          <FunnelStep label="Purchase" value={conversions != null ? `${(conversions * 100).toFixed(1)}%` : '—'} color="#22c55e" />
+          <FunnelStep label="Awareness" value={formatVal(reach, 'reach_(3s_views)')} color="#E8FF4C" ratio={awarenessToConsid} />
+          <FunnelStep label="Considération" value={formatVal(traffic, 'traffic_qualifié_(visites_site)')} color="#38bdf8" ratio={considToPurchase} />
+          <FunnelStep label="Purchase" value={conversions != null ? `${conversions.toFixed(1)}%` : '—'} color="#22c55e" />
         </div>
       </div>
       {kpis[0]?.weeks.length > 1 && (
@@ -182,7 +225,7 @@ function SMATab({ rows }: { rows: any[] }) {
             <tbody>
               {kpis.map((k) => (
                 <tr key={k.kpi_name} className="border-b border-border/20">
-                  <td className="py-2 px-2 text-foreground" rowSpan={1}>{KPI_LABELS[k.kpi_name]}</td>
+                  <td className="py-2 px-2 text-foreground" rowSpan={1}>{KPI_LABELS[k.kpi_name] || k.kpi_name}</td>
                   <td className="py-2 px-2 text-muted-foreground">Act.</td>
                   {k.weeks.map((w) => (
                     <td key={w.week} className="py-2 px-1 text-center text-foreground">{formatVal(w.actual, k.kpi_name)}</td>
@@ -199,10 +242,11 @@ function SMATab({ rows }: { rows: any[] }) {
 
 function TikTokTab({ rows }: { rows: any[] }) {
   const kpis = buildKpiData(rows, TIKTOK_KPIS);
-  const followersData = rows
-    .filter((r: any) => r.kpi_name === 'followers_evol')
-    .sort((a: any, b: any) => a.week.localeCompare(b.week))
-    .map((r: any) => ({ week: r.week, value: r.actual }));
+  const followersData = sortWeeksNumerically(
+    rows
+      .filter((r: any) => r.kpi_name === 'followers_evol')
+      .map((r: any) => ({ week: r.week, actual: r.actual, objective: null }))
+  ).map((r) => ({ week: r.week, value: r.actual }));
 
   return (
     <div className="space-y-6">
