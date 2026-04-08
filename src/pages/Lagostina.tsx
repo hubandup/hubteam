@@ -151,9 +151,9 @@ export default function Lagostina() {
 
       {/* Priority selector */}
       {priorityOptions.length > 1 && (
-        <div className="px-6 py-3 border-b border-white/5 flex items-center gap-3">
-          <BarChart3 className="h-4 w-4 text-[#9ca3af]" />
-          <span className="text-[#9ca3af] font-['Roboto'] text-xs">Priorité :</span>
+        <div className="px-6 py-3 border-b border-black/5 flex items-center gap-3">
+          <BarChart3 className="h-4 w-4 text-[#6b7280]" />
+          <span className="text-[#6b7280] font-['Roboto'] text-xs">Priorité :</span>
           <div className="flex gap-1">
             {priorityOptions.map((opt) => (
               <button
@@ -161,8 +161,8 @@ export default function Lagostina() {
                 onClick={() => setSelectedPriority(opt.key)}
                 className={`px-3 py-1 text-xs font-['Roboto'] transition-colors ${
                   selectedPriority === opt.key
-                    ? 'bg-[#E8FF4C] text-black font-medium'
-                    : 'bg-white/5 text-[#9ca3af] hover:bg-white/10'
+                    ? 'bg-black text-white font-medium'
+                    : 'bg-black/5 text-[#6b7280] hover:bg-black/10'
                 }`}
               >
                 {opt.label}
