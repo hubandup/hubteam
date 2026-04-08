@@ -486,6 +486,8 @@ export default function LagostinaAdmin() {
       queryClient.invalidateQueries({ queryKey: ['lagostina-last-sync'] });
       queryClient.invalidateQueries({ queryKey: ['lagostina-personas'] });
       queryClient.invalidateQueries({ queryKey: ['lagostina-activation'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-influence'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-press'] });
     } catch (err: any) {
       console.error('Upload error:', err);
       toast.error(`Erreur : ${err.message || 'Impossible de traiter le fichier'}`);
