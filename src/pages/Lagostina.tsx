@@ -130,7 +130,7 @@ export default function Lagostina() {
       </div>
 
       {/* Tabs */}
-      <div className="px-6 border-b border-white/10">
+      <div className="px-6 border-b border-black/10">
         <div className="flex gap-0 overflow-x-auto scrollbar-hide">
           {TABS.map((tab) => (
             <button
@@ -139,8 +139,8 @@ export default function Lagostina() {
               className={`
                 px-4 py-3 text-sm font-['Roboto'] whitespace-nowrap transition-all duration-150 border-b-2
                 ${activeTab === tab.id
-                  ? 'text-[#E8FF4C] border-[#E8FF4C] font-medium'
-                  : 'text-[#6b7280] border-transparent hover:text-[#9ca3af]'}
+                  ? 'text-black border-black font-medium'
+                  : 'text-[#9ca3af] border-transparent hover:text-[#6b7280]'}
               `}
             >
               {tab.label}
