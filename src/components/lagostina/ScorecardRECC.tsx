@@ -340,7 +340,7 @@ export function ScorecardRECC() {
             <table className="w-full text-xs font-['Roboto']">
               <thead>
                 <tr className="border-b border-border/40">
-                  <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white dark:bg-[#0f1422] dark:bg-[#0f1422] border border-border/30 z-10 min-w-[120px]">Levier</th>
+                  <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10 min-w-[120px]">Levier</th>
                   <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[60px]">RECC</th>
                   <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[140px]">KPI</th>
                   <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[40px]">Type</th>
@@ -352,7 +352,7 @@ export function ScorecardRECC() {
                   <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[80px]">Trend</th>
                 </tr>
                 <tr className="border-b border-border/20">
-                  <th colSpan={4} className="sticky left-0 bg-white dark:bg-[#0f1422] dark:bg-[#0f1422] border border-border/30 z-10" />
+                  <th colSpan={4} className="sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10" />
                   {weeks.map((w) => (
                     <th key={w} className="text-center px-1 py-1 text-muted-foreground/60 text-[10px]">{w}</th>
                   ))}
@@ -372,7 +372,7 @@ export function ScorecardRECC() {
                         {ki === 0 && (
                           <td
                             rowSpan={group.kpis.length * 2}
-                            className="px-3 py-2 text-foreground font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white dark:bg-[#0f1422] dark:bg-[#0f1422] border border-border/30 z-10 border-l-2"
+                            className="px-3 py-2 text-foreground font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10 border-l-2"
                             style={{ borderLeftColor: LEVIER_COLORS[group.levier] || '#E8FF4C' }}
                           >
                             {group.label}

@@ -137,7 +137,7 @@ export function LagostinaConsumer() {
         {brandMetrics.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {brandMetrics.map((m) => (
-              <div key={m.id} className="bg-white dark:bg-[#0f1422] p-3 border-l-[3px] border-black dark:border-white dark:border-white">
+              <div key={m.id} className="bg-white dark:bg-[#0f1422] p-3 border-l-[3px] border-black dark:border-white">
                 <div className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">{m.metric_name}</div>
                 <div className="text-foreground text-lg font-bold font-['Instrument_Sans'] mt-1">{m.value_current || '—'}</div>
                 {m.vs_brand && <div className="text-muted-foreground text-[10px] font-['Roboto']">vs. {m.vs_brand}</div>}

@@ -204,7 +204,7 @@ export function ActivationPersonas() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredPersonas.map((persona) => (
-              <div key={persona.id} className="bg-gray-50 dark:bg-[#141928] border-t-[3px] border-black dark:border-white dark:border-white">
+              <div key={persona.id} className="bg-gray-50 dark:bg-[#141928] border-t-[3px] border-black dark:border-white">
                 <div className="p-4 space-y-3">
                   <div className="flex items-start justify-between">
                     <div>

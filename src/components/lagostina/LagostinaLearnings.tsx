@@ -139,7 +139,7 @@ export function LagostinaLearnings() {
                 <tr key={l.key} className="border-b border-border/20">
                   <td className="px-4 py-3 text-foreground font-['Instrument_Sans'] font-bold text-sm align-top">{l.label}</td>
                   <td className="px-2 py-2">
-                    <div className="bg-green-50 p-2">
+                    <div className="bg-green-50 dark:bg-green-900/20 p-2">
                       <textarea
                         value={row.works}
                         onChange={(e) => handleChange(l.key, 'works', e.target.value)}
@@ -152,7 +152,7 @@ export function LagostinaLearnings() {
                     </div>
                   </td>
                   <td className="px-2 py-2">
-                    <div className="bg-red-50 p-2">
+                    <div className="bg-red-50 dark:bg-red-900/20 p-2">
                       <textarea
                         value={row.does_not_work}
                         onChange={(e) => handleChange(l.key, 'does_not_work', e.target.value)}
