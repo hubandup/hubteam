@@ -323,7 +323,7 @@ async function parseInfluenceRPFile(workbook: XLSX.WorkBook) {
     const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { header: 1 }) as any[][];
 
     if (sheetName.toLowerCase().includes('influence')) {
-      const influenceRecords: Array<Record<string, any>> = [];
+      const influenceRecords: Array<{ week: string; influencer_count: number | null; influencer_count_obj: number | null; reach_millions: number | null; reach_millions_obj: number | null; engagement_rate: number | null; engagement_rate_obj: number | null; vtf: number | null; vtf_obj: number | null; conversion_rate: number | null; conversion_rate_obj: number | null; cost_per_reach: number | null; cost_per_reach_obj: number | null }> = [];
       // Expect header in first few rows with week column
       for (let r = 1; r < rows.length; r++) {
         const row = rows[r];
