@@ -138,6 +138,10 @@ export default function ClientDetails() {
     );
   }
 
+  // Determine if this client has a board (based on email domain)
+  const clientEmailDomain = client.email ? client.email.split('@')[1] : '';
+  const hasBoardTab = ['groupeseb.com', 'hubandup.com'].includes(clientEmailDomain);
+
   const allTabs: TabItem[] = [
     {
       value: 'info',
@@ -172,7 +176,13 @@ export default function ClientDetails() {
       icon: <Receipt className="h-4 w-4" />,
       badge: invoicesCount,
       content: <ClientInvoicesTab clientId={client.id} />
-    }
+    },
+    ...(hasBoardTab ? [{
+      value: 'board',
+      label: 'Board',
+      icon: <BarChart3 className="h-4 w-4" />,
+      content: <ClientBoardTab clientId={client.id} clientEmailDomain={clientEmailDomain} />
+    }] : []),
   ];
 
   // Filter out invoices tab for agency role
