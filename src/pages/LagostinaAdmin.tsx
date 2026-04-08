@@ -711,6 +711,9 @@ export default function LagostinaAdmin() {
       queryClient.invalidateQueries({ queryKey: ['lagostina-contenus'] });
       queryClient.invalidateQueries({ queryKey: ['lagostina-social-mix'] });
       queryClient.invalidateQueries({ queryKey: ['lagostina-content-learnings'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-learnings'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-glossary'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-priorities'] });
     } catch (err: any) {
       console.error('Upload error:', err);
       toast.error(`Erreur : ${err.message || 'Impossible de traiter le fichier'}`);
