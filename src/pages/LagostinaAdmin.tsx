@@ -307,10 +307,17 @@ export default function LagostinaAdmin() {
 
       if (selectedType === 'scorecard') {
         const records = await parseScorecardFile(workbook);
-        if (records.length === 0) {
+        // Also try to parse activation sheets from the same file
+        const { personas, activations } = await parseActivationFile(workbook);
+        if (records.length === 0 && personas.length === 0 && activations.length === 0) {
           throw new Error('Aucune donnée trouvée dans le fichier. Vérifiez le format.');
         }
-        insertedCount = await mergeAndInsertScorecard(records);
+        if (records.length > 0) {
+          insertedCount += await mergeAndInsertScorecard(records);
+        }
+        if (personas.length > 0 || activations.length > 0) {
+          insertedCount += await insertActivationData(personas, activations);
+        }
       } else {
         toast.info(`Le parsing des fichiers "${selectedType}" sera disponible dans une prochaine phase.`);
       }
