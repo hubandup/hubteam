@@ -77,9 +77,13 @@ export function LagostinaInfluenceRP() {
   const { data: influenceData, isLoading: loadingInfluence } = useQuery({
     queryKey: ['lagostina-influence'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('lagostina_influence').select('*').order('week');
+      const { data, error } = await supabase.from('lagostina_influence').select('*');
       if (error) throw error;
-      return data as Influence[];
+      return (data as Influence[]).sort((a, b) => {
+        const numA = parseInt(a.week.replace(/\D/g, ''), 10);
+        const numB = parseInt(b.week.replace(/\D/g, ''), 10);
+        return numA - numB;
+      });
     },
   });
 
