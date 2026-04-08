@@ -154,7 +154,7 @@ export default function LagostinaAdmin() {
     },
   });
 
-  if (role !== 'admin' && role !== 'hub_manager') {
+  if (role !== 'admin' && role !== 'team') {
     return <Navigate to="/" replace />;
   }
 
