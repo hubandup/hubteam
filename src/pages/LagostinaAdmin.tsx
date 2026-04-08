@@ -705,6 +705,12 @@ export default function LagostinaAdmin() {
       queryClient.invalidateQueries({ queryKey: ['lagostina-activation'] });
       queryClient.invalidateQueries({ queryKey: ['lagostina-influence'] });
       queryClient.invalidateQueries({ queryKey: ['lagostina-press'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-media-kpis'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-consumer'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-rnr'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-contenus'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-social-mix'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-content-learnings'] });
     } catch (err: any) {
       console.error('Upload error:', err);
       toast.error(`Erreur : ${err.message || 'Impossible de traiter le fichier'}`);
