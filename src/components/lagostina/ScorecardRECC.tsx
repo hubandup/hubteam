@@ -1,0 +1,673 @@
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Database } from 'lucide-react';
+import {
+  LineChart, Line, BarChart, Bar, AreaChart, Area,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
+} from 'recharts';
+
+type Scorecard = {
+  id: string;
+  priority: string;
+  levier: string;
+  kpi_name: string;
+  week: string;
+  month: string | null;
+  actual: number | null;
+  objective: number | null;
+};
+
+// ── FRAMEWORK RECC STRUCTURE ──
+const SYNTHESE_STRUCTURE = [
+  {
+    levier: 'media',
+    label: 'Media',
+    kpis: [
+      { recc: 'Reach', name: 'Potentiel en Millions' },
+      { recc: 'Engagement', name: 'Visites D2C' },
+      { recc: 'Conversion', name: 'ROAS' },
+      { recc: 'Coûts', name: 'Coût complétion vidéo' },
+      { recc: 'Coûts', name: 'CPV' },
+    ],
+  },
+  {
+    levier: 'event',
+    label: 'Event',
+    kpis: [
+      { recc: 'Influence', name: 'Nb influenceurs' },
+      { recc: 'Influence', name: 'Reach' },
+      { recc: 'RP', name: 'Nb journalistes' },
+    ],
+  },
+  {
+    levier: 'influence',
+    label: 'Influence',
+    kpis: [
+      { recc: 'Reach', name: 'Reach' },
+      { recc: 'Engagement', name: 'Engagement' },
+      { recc: 'Conversion', name: 'Conversion' },
+      { recc: 'Coûts', name: 'Coûts' },
+    ],
+  },
+  {
+    levier: 'social_media',
+    label: 'Social Media',
+    kpis: [
+      { recc: 'Engagement', name: 'Engagement' },
+      { recc: 'Rétention', name: 'Evol followers TikTok' },
+      { recc: 'Rétention', name: 'Evol followers Instagram' },
+    ],
+  },
+  {
+    levier: 'crm',
+    label: 'CRM',
+    kpis: [
+      { recc: 'Engagement', name: 'Open rate' },
+      { recc: 'Engagement', name: 'CTR' },
+      { recc: 'Engagement', name: 'CTOR' },
+      { recc: 'Rétention', name: 'Unsub rate' },
+    ],
+  },
+  {
+    levier: 'seo',
+    label: 'SEO',
+    kpis: [
+      { recc: 'Reach', name: 'Sessions' },
+      { recc: 'Reach', name: 'Impressions' },
+      { recc: 'Engagement', name: 'Clics' },
+      { recc: 'Engagement', name: 'CTR' },
+      { recc: 'Engagement', name: 'Position moyenne' },
+    ],
+  },
+  {
+    levier: 'promo_shopper',
+    label: 'Promo Shopper',
+    kpis: [
+      { recc: 'Conversion', name: 'Sell-out volume' },
+    ],
+  },
+];
+
+const PAR_LEVIER_STRUCTURE = [
+  { levier: 'media_one_video_social', label: 'Media One Video + Social' },
+  { levier: 'media_vol', label: 'Media VOL' },
+  { levier: 'media_social', label: 'Media Social' },
+  { levier: 'media_sea', label: 'Media SEA' },
+  { levier: 'media_affiliation', label: 'Media Affiliation' },
+];
+
+const FULL_DETAIL_SECTIONS = [
+  {
+    section: 'Awareness',
+    kpis: ['Reach', 'Evol w/w Reach', 'Complétion vidéo 100%', 'c/Reach point'],
+  },
+  {
+    section: 'Considération',
+    kpis: ['DPV AMZ', 'Trafic D2C', 'Evol w/w D2C', 'CTR', 'CPV'],
+  },
+  {
+    section: 'Purchase',
+    kpis: ['Ventes K€', 'Evol w/w Ventes', 'CVR', 'ROAS', 'CPA'],
+  },
+];
+
+const LEVIER_COLORS: Record<string, string> = {
+  media: '#E8FF4C',
+  event: '#38bdf8',
+  influence: '#a78bfa',
+  social_media: '#f472b6',
+  crm: '#fb923c',
+  seo: '#34d399',
+  promo_shopper: '#fbbf24',
+};
+
+function getCondColor(actual: number | null, objective: number | null): string {
+  if (actual == null || objective == null || objective === 0) return '';
+  const ratio = actual / objective;
+  if (ratio >= 1) return 'bg-[#22c55e]/20 text-[#22c55e]';
+  if (ratio >= 0.8) return 'bg-[#E8FF4C]/20 text-[#E8FF4C]';
+  return 'bg-[#ef4444]/20 text-[#ef4444]';
+}
+
+function formatNum(n: number | null): string {
+  if (n == null) return '—';
+  if (Math.abs(n) >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+  if (Math.abs(n) >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  if (n % 1 !== 0) return n.toFixed(2);
+  return String(n);
+}
+
+// ── SPARKLINE ──
+function Sparkline({ data }: { data: number[] }) {
+  if (!data.length) return <span className="text-[#9ca3af]/40">—</span>;
+  const chartData = data.map((v, i) => ({ i, v }));
+  return (
+    <div className="w-16 h-6">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={chartData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
+          <Line type="monotone" dataKey="v" stroke="#E8FF4C" strokeWidth={1.5} dot={false} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// ── CUSTOM TOOLTIP ──
+function CustomTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-[#0f1422] border border-[#E8FF4C] px-3 py-2 font-['Roboto'] text-xs">
+      <p className="text-white font-medium mb-1">{label}</p>
+      {payload.map((p: any) => (
+        <p key={p.dataKey} style={{ color: p.color }}>
+          {p.name}: {formatNum(p.value)}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+// ── GAUGE ──
+function GaugeChart({ value, target }: { value: number; target: number }) {
+  const pct = Math.min(value / (target * 2), 1);
+  const angle = -90 + pct * 180;
+  const isGood = value <= target;
+  return (
+    <div className="flex flex-col items-center">
+      <svg viewBox="0 0 200 120" className="w-full max-w-[200px]">
+        <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1e293b" strokeWidth="16" strokeLinecap="butt" />
+        <path d="M 20 100 A 80 80 0 0 1 100 20" fill="none" stroke="#22c55e" strokeWidth="16" strokeLinecap="butt" />
+        <path d="M 100 20 A 80 80 0 0 1 180 100" fill="none" stroke="#ef4444" strokeWidth="16" strokeLinecap="butt" />
+        <line
+          x1="100" y1="100"
+          x2={100 + 60 * Math.cos((angle * Math.PI) / 180)}
+          y2={100 + 60 * Math.sin((angle * Math.PI) / 180)}
+          stroke="white" strokeWidth="2"
+        />
+        <circle cx="100" cy="100" r="4" fill="white" />
+      </svg>
+      <div className={`text-lg font-bold font-['Instrument_Sans'] ${isGood ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
+        {value.toFixed(2)}€
+      </div>
+      <div className="text-[#9ca3af] text-xs font-['Roboto']">Target: {target}€</div>
+    </div>
+  );
+}
+
+// ── MAIN COMPONENT ──
+export function ScorecardRECC() {
+  const [subTab, setSubTab] = useState<'synthese' | 'par_levier' | 'full_detail'>('synthese');
+
+  const { data: scorecards, isLoading } = useQuery({
+    queryKey: ['lagostina-scorecards'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lagostina_scorecards')
+        .select('*')
+        .order('week');
+      if (error) throw error;
+      return data as Scorecard[];
+    },
+  });
+
+  // Derive weeks/months
+  const { weeks, monthGroups } = useMemo(() => {
+    if (!scorecards?.length) return { weeks: [], monthGroups: [] as { month: string; weeks: string[] }[] };
+    const weekSet = new Set<string>();
+    const weekMonth = new Map<string, string>();
+    scorecards.forEach((s) => {
+      weekSet.add(s.week);
+      if (s.month) weekMonth.set(s.week, s.month);
+    });
+    const sortedWeeks = [...weekSet].sort((a, b) => {
+      const na = parseInt(a.replace(/\D/g, ''));
+      const nb = parseInt(b.replace(/\D/g, ''));
+      return na - nb;
+    });
+    const groups: { month: string; weeks: string[] }[] = [];
+    let current = '';
+    sortedWeeks.forEach((w) => {
+      const m = weekMonth.get(w) || current;
+      if (m !== current) {
+        groups.push({ month: m, weeks: [w] });
+        current = m;
+      } else if (groups.length) {
+        groups[groups.length - 1].weeks.push(w);
+      } else {
+        groups.push({ month: m || '?', weeks: [w] });
+        current = m;
+      }
+    });
+    return { weeks: sortedWeeks, monthGroups: groups };
+  }, [scorecards]);
+
+  // Build lookup
+  const lookup = useMemo(() => {
+    const map = new Map<string, Scorecard>();
+    scorecards?.forEach((s) => {
+      map.set(`${s.levier}|${s.kpi_name}|${s.week}`, s);
+    });
+    return map;
+  }, [scorecards]);
+
+  const getVal = (levier: string, kpi: string, week: string) => lookup.get(`${levier}|${kpi}|${week}`);
+
+  // Charts data
+  const reachChartData = useMemo(() => {
+    return weeks.map((w) => {
+      const reachEntries = scorecards?.filter(
+        (s) => s.week === w && (s.kpi_name.toLowerCase().includes('reach') || s.kpi_name.toLowerCase().includes('potentiel'))
+      ) || [];
+      return {
+        week: w,
+        actual: reachEntries.reduce((sum, s) => sum + (Number(s.actual) || 0), 0) || null,
+        objective: reachEntries.reduce((sum, s) => sum + (Number(s.objective) || 0), 0) || null,
+      };
+    });
+  }, [scorecards, weeks]);
+
+  const budgetByLevier = useMemo(() => {
+    if (!scorecards?.length) return [];
+    const leviers = [...new Set(scorecards.map((s) => s.levier))];
+    return leviers.map((l) => ({
+      levier: l,
+      total: scorecards.filter((s) => s.levier === l).reduce((sum, s) => sum + (Number(s.actual) || 0), 0),
+    })).sort((a, b) => b.total - a.total).slice(0, 8);
+  }, [scorecards]);
+
+  const roasChartData = useMemo(() => {
+    return weeks.map((w) => {
+      const entries = scorecards?.filter((s) => s.week === w && s.kpi_name.toLowerCase().includes('roas')) || [];
+      const vals = entries.filter((e) => e.actual != null).map((e) => Number(e.actual));
+      return { week: w, roas: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null };
+    });
+  }, [scorecards, weeks]);
+
+  const cpvData = useMemo(() => {
+    const entries = scorecards?.filter((s) => s.kpi_name.toLowerCase().includes('cpv')) || [];
+    const vals = entries.filter((e) => e.actual != null);
+    return vals.length ? vals.reduce((sum, e) => sum + Number(e.actual), 0) / vals.length : 0;
+  }, [scorecards]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-12 bg-white/5 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!scorecards?.length) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-4">
+        <Database className="h-16 w-16 text-[#9ca3af]" />
+        <p className="text-white font-['Instrument_Sans'] text-lg font-bold">Données Scorecard non disponibles</p>
+        <p className="text-[#9ca3af] font-['Roboto'] text-sm">Importez un fichier Scorecard depuis l'admin</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Sub-tab toggle */}
+      <div className="flex gap-0 bg-[#0f1422] inline-flex">
+        {[
+          { id: 'synthese' as const, label: 'Synthèse' },
+          { id: 'par_levier' as const, label: 'Par levier' },
+          { id: 'full_detail' as const, label: 'Full détail' },
+        ].map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setSubTab(t.id)}
+            className={`px-5 py-2.5 text-sm font-['Roboto'] transition-colors ${
+              subTab === t.id
+                ? 'bg-[#E8FF4C] text-[#0f1422] font-medium'
+                : 'text-[#9ca3af] hover:text-white'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* SYNTHÈSE */}
+      {subTab === 'synthese' && (
+        <>
+          <div className="bg-[#0f1422] overflow-x-auto">
+            <table className="w-full text-xs font-['Roboto']">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left px-3 py-2 text-[#9ca3af] font-medium uppercase tracking-wider sticky left-0 bg-[#0f1422] z-10 min-w-[120px]">Levier</th>
+                  <th className="text-left px-2 py-2 text-[#9ca3af] font-medium uppercase tracking-wider min-w-[60px]">RECC</th>
+                  <th className="text-left px-2 py-2 text-[#9ca3af] font-medium uppercase tracking-wider min-w-[140px]">KPI</th>
+                  <th className="text-center px-2 py-2 text-[#9ca3af] font-medium uppercase tracking-wider min-w-[40px]">Type</th>
+                  {monthGroups.map((mg) => (
+                    <th key={mg.month} colSpan={mg.weeks.length} className="text-center px-1 py-2 text-[#E8FF4C] font-bold uppercase tracking-wider border-l border-white/5">
+                      {mg.month}
+                    </th>
+                  ))}
+                  <th className="text-center px-2 py-2 text-[#9ca3af] font-medium uppercase tracking-wider min-w-[80px]">Trend</th>
+                </tr>
+                <tr className="border-b border-white/5">
+                  <th colSpan={4} className="sticky left-0 bg-[#0f1422] z-10" />
+                  {weeks.map((w) => (
+                    <th key={w} className="text-center px-1 py-1 text-[#9ca3af]/60 text-[10px]">{w}</th>
+                  ))}
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {SYNTHESE_STRUCTURE.map((group) => (
+                  group.kpis.map((kpi, ki) => {
+                    const actualVals = weeks.map((w) => getVal(group.levier, kpi.name, w)?.actual ?? null);
+                    const objVals = weeks.map((w) => getVal(group.levier, kpi.name, w)?.objective ?? null);
+                    const sparkData = actualVals.filter((v): v is number => v != null);
+
+                    return [
+                      // Actuals row
+                      <tr key={`${group.levier}-${kpi.name}-actual`} className="border-b border-white/5 hover:bg-white/[0.02]">
+                        {ki === 0 && (
+                          <td
+                            rowSpan={group.kpis.length * 2}
+                            className="px-3 py-2 text-white font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-[#0f1422] z-10 border-l-2"
+                            style={{ borderLeftColor: LEVIER_COLORS[group.levier] || '#E8FF4C' }}
+                          >
+                            {group.label}
+                          </td>
+                        )}
+                        <td className="px-2 py-1.5 text-[#9ca3af] text-[10px]" rowSpan={2}>{kpi.recc}</td>
+                        <td className="px-2 py-1.5 text-white text-xs" rowSpan={2}>{kpi.name}</td>
+                        <td className="px-2 py-1.5 text-center text-[#22c55e] text-[10px] font-medium">A</td>
+                        {weeks.map((w, wi) => {
+                          const val = actualVals[wi];
+                          const obj = objVals[wi];
+                          const color = getCondColor(val, obj);
+                          return (
+                            <td key={w} className={`px-1 py-1.5 text-center text-[11px] ${color}`}>
+                              {formatNum(val)}
+                            </td>
+                          );
+                        })}
+                        <td className="px-2 py-1.5 text-center" rowSpan={2}>
+                          <Sparkline data={sparkData} />
+                        </td>
+                      </tr>,
+                      // Objectives row
+                      <tr key={`${group.levier}-${kpi.name}-obj`} className="border-b border-white/10 hover:bg-white/[0.02]">
+                        <td className="px-2 py-1.5 text-center text-[#6b7280] text-[10px] font-medium">O</td>
+                        {weeks.map((w, wi) => (
+                          <td key={w} className="px-1 py-1.5 text-center text-[11px] text-[#6b7280]">
+                            {formatNum(objVals[wi])}
+                          </td>
+                        ))}
+                      </tr>,
+                    ];
+                  }).flat()
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Charts 2x2 grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Reach Actuals vs Objectifs */}
+            <div className="bg-[#0f1422] p-4">
+              <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold mb-4">Reach — Actuals vs Objectifs</h3>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={reachChartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+                    <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
+                    <XAxis dataKey="week" tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                    <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Line type="monotone" dataKey="actual" name="Actuals" stroke="#E8FF4C" strokeWidth={2} dot={{ fill: '#E8FF4C', r: 3 }} />
+                    <Line type="monotone" dataKey="objective" name="Objectifs" stroke="#6b7280" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Budget par levier */}
+            <div className="bg-[#0f1422] p-4">
+              <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold mb-4">Répartition par levier</h3>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={budgetByLevier} layout="vertical" margin={{ top: 5, right: 10, bottom: 5, left: 60 }}>
+                    <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" horizontal={false} />
+                    <XAxis type="number" tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                    <YAxis dataKey="levier" type="category" tick={{ fill: '#9ca3af', fontSize: 10 }} width={55} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="total" name="Total">
+                      {budgetByLevier.map((entry) => (
+                        <Cell key={entry.levier} fill={LEVIER_COLORS[entry.levier] || '#E8FF4C'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* ROAS Evolution */}
+            <div className="bg-[#0f1422] p-4">
+              <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold mb-4">Évolution ROAS</h3>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={roasChartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+                    <defs>
+                      <linearGradient id="roasGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#E8FF4C" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="#E8FF4C" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
+                    <XAxis dataKey="week" tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                    <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area type="monotone" dataKey="roas" name="ROAS" stroke="white" strokeWidth={2} fill="url(#roasGrad)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* CPV Gauge */}
+            <div className="bg-[#0f1422] p-4">
+              <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold mb-4">CPV vs Target</h3>
+              <div className="flex items-center justify-center h-48">
+                <GaugeChart value={cpvData} target={1} />
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* PAR LEVIER */}
+      {subTab === 'par_levier' && (
+        <div className="space-y-6">
+          {PAR_LEVIER_STRUCTURE.map((block) => {
+            const matchingData = scorecards?.filter((s) =>
+              s.levier.toLowerCase().includes(block.levier.replace('media_', '').replace('_', ' ')) ||
+              s.levier === block.levier
+            ) || [];
+            const kpiNames = [...new Set(matchingData.map((s) => s.kpi_name))];
+
+            return (
+              <div key={block.levier} className="bg-[#0f1422]">
+                <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-[#E8FF4C]" />
+                  <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold">{block.label}</h3>
+                </div>
+                {kpiNames.length === 0 ? (
+                  <div className="p-4 text-[#9ca3af] text-xs font-['Roboto']">Aucune donnée pour ce levier</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs font-['Roboto']">
+                      <thead>
+                        <tr className="border-b border-white/5">
+                          <th className="text-left px-3 py-2 text-[#9ca3af] font-medium min-w-[160px]">KPI</th>
+                          <th className="text-center px-2 py-2 text-[#9ca3af] font-medium min-w-[40px]">Type</th>
+                          {weeks.map((w) => (
+                            <th key={w} className="text-center px-1 py-2 text-[#9ca3af]/60 text-[10px]">{w}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {kpiNames.map((kn) => {
+                          const actualVals = weeks.map((w) => {
+                            const entry = matchingData.find((s) => s.kpi_name === kn && s.week === w);
+                            return entry?.actual ?? null;
+                          });
+                          const objVals = weeks.map((w) => {
+                            const entry = matchingData.find((s) => s.kpi_name === kn && s.week === w);
+                            return entry?.objective ?? null;
+                          });
+                          return [
+                            <tr key={`${kn}-a`} className="border-b border-white/5">
+                              <td className="px-3 py-1.5 text-white" rowSpan={2}>{kn}</td>
+                              <td className="px-2 py-1.5 text-center text-[#22c55e] text-[10px] font-medium">A</td>
+                              {weeks.map((w, wi) => (
+                                <td key={w} className={`px-1 py-1.5 text-center text-[11px] ${getCondColor(actualVals[wi], objVals[wi])}`}>
+                                  {formatNum(actualVals[wi])}
+                                </td>
+                              ))}
+                            </tr>,
+                            <tr key={`${kn}-o`} className="border-b border-white/10">
+                              <td className="px-2 py-1.5 text-center text-[#6b7280] text-[10px] font-medium">O</td>
+                              {weeks.map((w, wi) => (
+                                <td key={w} className="px-1 py-1.5 text-center text-[11px] text-[#6b7280]">
+                                  {formatNum(objVals[wi])}
+                                </td>
+                              ))}
+                            </tr>,
+                          ];
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* FULL DÉTAIL */}
+      {subTab === 'full_detail' && (
+        <div className="space-y-6">
+          {FULL_DETAIL_SECTIONS.map((section) => (
+            <div key={section.section} className="bg-[#0f1422]">
+              <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2">
+                <div className="w-2 h-2 bg-[#E8FF4C]" />
+                <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold">{section.section}</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs font-['Roboto']">
+                  <thead>
+                    <tr className="border-b border-white/5">
+                      <th className="text-left px-3 py-2 text-[#9ca3af] font-medium min-w-[160px]">KPI</th>
+                      {weeks.map((w) => (
+                        <th key={w} className="text-center px-1 py-2 text-[#9ca3af]/60 text-[10px]">{w}</th>
+                      ))}
+                      {monthGroups.map((mg) => (
+                        <th key={mg.month} className="text-center px-2 py-2 text-[#E8FF4C] text-[10px] font-bold border-l border-white/10">{mg.month}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {section.kpis.map((kpiName) => {
+                      const matching = scorecards?.filter((s) =>
+                        s.kpi_name.toLowerCase().includes(kpiName.toLowerCase().replace('evol w/w ', ''))
+                      ) || [];
+                      
+                      const weeklyVals = weeks.map((w) => {
+                        const entry = matching.find((s) => s.week === w);
+                        return entry?.actual ?? null;
+                      });
+
+                      // Monthly aggregates
+                      const monthlyVals = monthGroups.map((mg) => {
+                        const monthEntries = matching.filter((s) => mg.weeks.includes(s.week) && s.actual != null);
+                        if (!monthEntries.length) return null;
+                        return monthEntries.reduce((sum, e) => sum + Number(e.actual), 0) / monthEntries.length;
+                      });
+
+                      const isEvol = kpiName.toLowerCase().includes('evol');
+
+                      return (
+                        <tr key={kpiName} className="border-b border-white/5 hover:bg-white/[0.02]">
+                          <td className="px-3 py-1.5 text-white">{kpiName}</td>
+                          {weeklyVals.map((v, i) => {
+                            let cls = '';
+                            if (isEvol && v != null) {
+                              cls = v >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]';
+                            }
+                            return (
+                              <td key={i} className={`px-1 py-1.5 text-center text-[11px] ${cls || 'text-white'}`}>
+                                {v != null ? (isEvol ? `${v >= 0 ? '↑' : '↓'}${Math.abs(v).toFixed(1)}%` : formatNum(v)) : '—'}
+                              </td>
+                            );
+                          })}
+                          {monthlyVals.map((v, i) => (
+                            <td key={i} className="px-2 py-1.5 text-center text-[11px] text-[#E8FF4C] font-medium border-l border-white/10">
+                              {formatNum(v)}
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+
+          {/* Influence & Social Media sections */}
+          {['influence', 'social_media'].map((lev) => {
+            const data = scorecards?.filter((s) => s.levier === lev) || [];
+            const kpiNames = [...new Set(data.map((s) => s.kpi_name))];
+            if (!kpiNames.length) return null;
+            return (
+              <div key={lev} className="bg-[#0f1422]">
+                <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2">
+                  <div className="w-2 h-2" style={{ backgroundColor: LEVIER_COLORS[lev] || '#E8FF4C' }} />
+                  <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold">
+                    {lev === 'influence' ? 'Influence' : 'Social Media'}
+                  </h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs font-['Roboto']">
+                    <thead>
+                      <tr className="border-b border-white/5">
+                        <th className="text-left px-3 py-2 text-[#9ca3af] font-medium min-w-[160px]">KPI</th>
+                        {weeks.map((w) => (
+                          <th key={w} className="text-center px-1 py-2 text-[#9ca3af]/60 text-[10px]">{w}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {kpiNames.map((kn) => (
+                        <tr key={kn} className="border-b border-white/5">
+                          <td className="px-3 py-1.5 text-white">{kn}</td>
+                          {weeks.map((w) => {
+                            const entry = data.find((s) => s.kpi_name === kn && s.week === w);
+                            return (
+                              <td key={w} className="px-1 py-1.5 text-center text-[11px] text-white">
+                                {formatNum(entry?.actual ?? null)}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

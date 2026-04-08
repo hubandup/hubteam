@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Navigate } from 'react-router-dom';
 import { LagostinaOverview } from '@/components/lagostina/LagostinaOverview';
+import { ScorecardRECC } from '@/components/lagostina/ScorecardRECC';
+import { ActivationPersonas } from '@/components/lagostina/ActivationPersonas';
 import { Clock } from 'lucide-react';
 
 const TABS = [
@@ -66,7 +68,10 @@ export default function Lagostina() {
 
       {/* Content */}
       <div className="p-6">
-        {activeTab === 'overview' ? <LagostinaOverview /> : <PlaceholderTab />}
+        {activeTab === 'overview' && <LagostinaOverview />}
+        {activeTab === 'activation' && <ActivationPersonas />}
+        {activeTab === 'scorecard' && <ScorecardRECC />}
+        {!['overview', 'activation', 'scorecard'].includes(activeTab) && <PlaceholderTab />}
       </div>
     </div>
   );
