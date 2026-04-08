@@ -51,8 +51,8 @@ export function KPILabel({ kpi, className = '' }: KPILabelProps) {
         <Info className="h-3 w-3 text-muted-foreground hover:text-foreground cursor-help transition-colors" />
         {showTooltip && (
           <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-[#0f1422] border border-[#E8FF4C] p-3 text-xs font-['Roboto']">
-            <p className="text-foreground mb-1">{entry.definition}</p>
-            {entry.source && <p className="text-muted-foreground text-[10px]">Source : {entry.source}</p>}
+            <p className="text-white mb-1">{entry.definition}</p>
+            {entry.source && <p className="text-gray-400 text-[10px]">Source : {entry.source}</p>}
           </div>
         )}
       </span>
