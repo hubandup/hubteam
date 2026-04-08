@@ -6,6 +6,9 @@ import { ScorecardRECC } from '@/components/lagostina/ScorecardRECC';
 import { ActivationPersonas } from '@/components/lagostina/ActivationPersonas';
 import { LagostinaBudget } from '@/components/lagostina/LagostinaBudget';
 import { LagostinaInfluenceRP } from '@/components/lagostina/LagostinaInfluenceRP';
+import { LagostinaMediatisation } from '@/components/lagostina/LagostinaMediatisation';
+import { LagostinaConsumer } from '@/components/lagostina/LagostinaConsumer';
+import { LagostinaContenus } from '@/components/lagostina/LagostinaContenus';
 import { LagostinaExportButtons } from '@/components/lagostina/LagostinaExportButtons';
 import { Clock } from 'lucide-react';
 
@@ -27,6 +30,9 @@ const EXPORT_CONFIG: Record<string, { tabName: string; showPdf: boolean; chartsI
   activation: { tabName: 'Activation & Personas', showPdf: false },
   budget: { tabName: 'Budget', showPdf: true, chartsId: 'lagostina-budget-charts' },
   influence: { tabName: 'Influence & RP', showPdf: false },
+  mediatisation: { tabName: 'Médiatisation', showPdf: false },
+  consumer: { tabName: 'Voice of Consumer', showPdf: false },
+  contenus: { tabName: 'Contenus & Social', showPdf: false },
 };
 
 function PlaceholderTab() {
@@ -93,9 +99,12 @@ export default function Lagostina() {
         {activeTab === 'overview' && <LagostinaOverview />}
         {activeTab === 'activation' && <ActivationPersonas />}
         {activeTab === 'scorecard' && <ScorecardRECC />}
-        {activeTab === 'budget' && <LagostinaBudget />}
+        {activeTab === 'contenus' && <LagostinaContenus />}
         {activeTab === 'influence' && <LagostinaInfluenceRP />}
-        {!['overview', 'activation', 'scorecard', 'budget', 'influence'].includes(activeTab) && <PlaceholderTab />}
+        {activeTab === 'mediatisation' && <LagostinaMediatisation />}
+        {activeTab === 'budget' && <LagostinaBudget />}
+        {activeTab === 'consumer' && <LagostinaConsumer />}
+        {!['overview', 'activation', 'scorecard', 'contenus', 'influence', 'mediatisation', 'budget', 'consumer'].includes(activeTab) && <PlaceholderTab />}
       </div>
     </div>
   );
