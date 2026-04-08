@@ -6,19 +6,19 @@ import { useUserRole } from '@/hooks/useUserRole';
 
 function KpiCardSkeleton() {
   return (
-    <div className="bg-[#0f1422] border-l-[3px] border-[#E8FF4C] p-5 animate-pulse">
-      <div className="h-3 w-20 bg-white/10 mb-3" />
-      <div className="h-8 w-32 bg-white/10 mb-2" />
-      <div className="h-3 w-16 bg-white/10" />
+    <div className="bg-white border border-border/30 border-l-[3px] border-black p-5 animate-pulse">
+      <div className="h-3 w-20 bg-gray-200 mb-3" />
+      <div className="h-8 w-32 bg-gray-200 mb-2" />
+      <div className="h-3 w-16 bg-gray-200" />
     </div>
   );
 }
 
 function TableSkeleton() {
   return (
-    <div className="bg-[#0f1422] p-4 animate-pulse">
+    <div className="bg-white border border-border/30 p-4 animate-pulse">
       {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="h-10 bg-white/5 mb-2" />
+        <div key={i} className="h-10 bg-gray-100 mb-2" />
       ))}
     </div>
   );
@@ -34,12 +34,12 @@ interface KpiCardProps {
 
 function KpiCard({ label, value, icon, trend, color }: KpiCardProps) {
   return (
-    <div className="bg-[#0f1422] border-l-[3px] border-[#E8FF4C] p-5 flex flex-col gap-1">
-      <div className="flex items-center gap-2 text-[#9ca3af] text-xs font-['Roboto'] uppercase tracking-wider">
+    <div className="bg-white border border-border/30 border-l-[3px] border-black p-5 flex flex-col gap-1">
+      <div className="flex items-center gap-2 text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">
         {icon}
         {label}
       </div>
-      <div className="text-white text-2xl font-bold font-['Instrument_Sans']">{value}</div>
+      <div className="text-foreground text-2xl font-bold font-['Instrument_Sans']">{value}</div>
       {trend && (
         <div className={`flex items-center gap-1 text-xs font-['Roboto'] ${trend.direction === 'up' ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
           {trend.direction === 'up' ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
@@ -52,7 +52,7 @@ function KpiCard({ label, value, icon, trend, color }: KpiCardProps) {
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   ok: { bg: 'bg-[#22c55e]/20', text: 'text-[#22c55e]' },
-  alert: { bg: 'bg-[#E8FF4C]/20', text: 'text-[#E8FF4C]' },
+  alert: { bg: 'bg-black/20', text: 'text-black font-semibold' },
   blocked: { bg: 'bg-[#ef4444]/20', text: 'text-[#ef4444]' },
 };
 
@@ -67,7 +67,7 @@ const AXES = [
 ];
 
 function StatusBadge({ status }: { status: string }) {
-  const style = STATUS_STYLES[status] || { bg: 'bg-white/10', text: 'text-[#9ca3af]' };
+  const style = STATUS_STYLES[status] || { bg: 'bg-gray-200', text: 'text-muted-foreground' };
   const displayText = status === 'ok' ? 'OK' : status === 'alert' ? 'Alerte' : status === 'blocked' ? 'Bloqué' : status;
   return (
     <span className={`inline-block px-2 py-0.5 text-xs font-['Roboto'] font-medium ${style.bg} ${style.text}`}>
@@ -163,13 +163,13 @@ export function LagostinaOverview() {
   if (isEmpty && !isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <Database className="h-16 w-16 text-[#9ca3af]" />
-        <p className="text-white font-['Instrument_Sans'] text-lg font-bold">Données non disponibles</p>
-        <p className="text-[#9ca3af] font-['Roboto'] text-sm">En attente de la première synchronisation</p>
+        <Database className="h-16 w-16 text-muted-foreground" />
+        <p className="text-foreground font-['Instrument_Sans'] text-lg font-bold">Données non disponibles</p>
+        <p className="text-muted-foreground font-['Roboto'] text-sm">En attente de la première synchronisation</p>
         {(role === 'admin' || role === 'team') && (
           <button
             onClick={() => navigate('/admin/lagostina')}
-            className="mt-2 px-4 py-2 bg-[#E8FF4C] text-[#0f1422] font-['Roboto'] font-medium text-sm hover:bg-[#d4eb3d] transition-colors"
+            className="mt-2 px-4 py-2 bg-black text-[#0f1422] font-['Roboto'] font-medium text-sm hover:bg-[#d4eb3d] transition-colors"
           >
             Aller à l'admin
           </button>
@@ -211,13 +211,13 @@ export function LagostinaOverview() {
             value={roasMoyen.toFixed(2)}
             icon={<DollarSign className="h-3.5 w-3.5" />}
           />
-          <div className="bg-[#0f1422] border-l-[3px] border-[#E8FF4C] p-5 flex flex-col gap-1">
-            <div className="flex items-center gap-2 text-[#9ca3af] text-xs font-['Roboto'] uppercase tracking-wider">
+          <div className="bg-white border border-border/30 border-l-[3px] border-black p-5 flex flex-col gap-1">
+            <div className="flex items-center gap-2 text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">
               <PieChart className="h-3.5 w-3.5" />
               Budget engagé
             </div>
-            <div className="text-white text-2xl font-bold font-['Instrument_Sans']">{budgetPct}%</div>
-            <div className="w-full h-1.5 bg-white/10 mt-1">
+            <div className="text-foreground text-2xl font-bold font-['Instrument_Sans']">{budgetPct}%</div>
+            <div className="w-full h-1.5 bg-gray-200 mt-1">
               <div
                 className="h-full transition-all"
                 style={{
@@ -226,7 +226,7 @@ export function LagostinaOverview() {
                 }}
               />
             </div>
-            <div className="text-[#9ca3af] text-xs font-['Roboto'] mt-0.5">
+            <div className="text-muted-foreground text-xs font-['Roboto'] mt-0.5">
               {totalEngaged.toLocaleString('fr-FR')}€ / {totalPlanned.toLocaleString('fr-FR')}€
             </div>
           </div>
@@ -237,13 +237,13 @@ export function LagostinaOverview() {
       {loadingCategory ? (
         <TableSkeleton />
       ) : Object.keys(priorityGroups).length > 0 ? (
-        <div className="bg-[#0f1422] overflow-x-auto">
+        <div className="bg-white border border-border/30 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left px-4 py-3 text-[#9ca3af] font-['Roboto'] font-medium text-xs uppercase tracking-wider">Priorité</th>
+              <tr className="border-b border-border/40">
+                <th className="text-left px-4 py-3 text-muted-foreground font-['Roboto'] font-medium text-xs uppercase tracking-wider">Priorité</th>
                 {AXES.map((axis) => (
-                  <th key={axis.key} className="text-center px-3 py-3 text-[#9ca3af] font-['Roboto'] font-medium text-xs uppercase tracking-wider">
+                  <th key={axis.key} className="text-center px-3 py-3 text-muted-foreground font-['Roboto'] font-medium text-xs uppercase tracking-wider">
                     {axis.label}
                   </th>
                 ))}
@@ -251,17 +251,17 @@ export function LagostinaOverview() {
             </thead>
             <tbody>
               {Object.entries(priorityGroups).map(([priority, group]) => (
-                <tr key={priority} className="border-b border-white/5 hover:bg-white/[0.02]">
+                <tr key={priority} className="border-b border-border/20 hover:bg-gray-50">
                   <td className="px-4 py-3">
-                    <div className="text-white font-['Instrument_Sans'] font-medium text-sm">{group.label}</div>
-                    <div className="text-[#9ca3af] font-['Roboto'] text-xs">{priority}</div>
+                    <div className="text-foreground font-['Instrument_Sans'] font-medium text-sm">{group.label}</div>
+                    <div className="text-muted-foreground font-['Roboto'] text-xs">{priority}</div>
                   </td>
                   {AXES.map((axis) => (
                     <td key={axis.key} className="text-center px-3 py-3">
                       {group.axes[axis.key] ? (
                         <StatusBadge status={group.axes[axis.key]} />
                       ) : (
-                        <span className="text-[#9ca3af]/40 text-xs">—</span>
+                        <span className="text-muted-foreground/40 text-xs">—</span>
                       )}
                     </td>
                   ))}
@@ -274,7 +274,7 @@ export function LagostinaOverview() {
 
       {/* Last sync timestamp */}
       {lastSync && (
-        <div className="text-[#9ca3af] text-xs font-['Roboto'] flex items-center gap-1">
+        <div className="text-muted-foreground text-xs font-['Roboto'] flex items-center gap-1">
           Dernière mise à jour : {new Date(lastSync.last_synced).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} — Source : {lastSync.filename}
         </div>
       )}

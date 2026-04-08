@@ -26,7 +26,7 @@ function getCondColor(actual: number | null, objective: number | null) {
   if (!actual || !objective) return '';
   const ratio = actual / objective;
   if (ratio >= 1) return 'border-[#22c55e]';
-  if (ratio >= 0.8) return 'border-[#E8FF4C]';
+  if (ratio >= 0.8) return 'border-black';
   return 'border-[#ef4444]';
 }
 
@@ -74,11 +74,11 @@ function buildKpiData(rows: any[], kpis: string[]): KpiData[] {
 function KpiCard({ data }: { data: KpiData }) {
   const cond = getCondColor(data.latestActual, data.latestObjective);
   return (
-    <div className={`bg-[#0f1422] border-l-[3px] ${cond || 'border-[#E8FF4C]'} p-4 flex flex-col gap-1`}>
-      <div className="text-[#9ca3af] text-[10px] font-['Roboto'] uppercase tracking-wider">{KPI_LABELS[data.kpi_name] || data.kpi_name}</div>
-      <div className="text-white text-xl font-bold font-['Instrument_Sans']">{formatVal(data.latestActual, data.kpi_name)}</div>
+    <div className={`bg-white border border-border/30 border-l-[3px] ${cond || 'border-black'} p-4 flex flex-col gap-1`}>
+      <div className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">{KPI_LABELS[data.kpi_name] || data.kpi_name}</div>
+      <div className="text-foreground text-xl font-bold font-['Instrument_Sans']">{formatVal(data.latestActual, data.kpi_name)}</div>
       {data.latestObjective != null && (
-        <div className="text-[#9ca3af] text-[10px] font-['Roboto']">Obj: {formatVal(data.latestObjective, data.kpi_name)}</div>
+        <div className="text-muted-foreground text-[10px] font-['Roboto']">Obj: {formatVal(data.latestObjective, data.kpi_name)}</div>
       )}
       {data.trend && (
         <div className={`flex items-center gap-1 text-[10px] ${data.trend === 'up' ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
@@ -110,8 +110,8 @@ function SEATab({ rows }: { rows: any[] }) {
       </div>
       {roasData && roasData.weeks.length > 1 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-[#0f1422] p-4">
-            <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold mb-3">Évolution ROAS</h3>
+          <div className="bg-white border border-border/30 p-4">
+            <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Évolution ROAS</h3>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={roasData.weeks}>
                 <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
@@ -123,8 +123,8 @@ function SEATab({ rows }: { rows: any[] }) {
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <div className="bg-[#0f1422] p-4 flex items-center justify-center">
-            <div className="text-[#9ca3af] text-sm font-['Roboto']">Top keywords — données non disponibles</div>
+          <div className="bg-white border border-border/30 p-4 flex items-center justify-center">
+            <div className="text-muted-foreground text-sm font-['Roboto']">Top keywords — données non disponibles</div>
           </div>
         </div>
       )}
@@ -135,11 +135,11 @@ function SEATab({ rows }: { rows: any[] }) {
 function FunnelStep({ label, value, color, ratio }: { label: string; value: string; color: string; ratio?: string }) {
   return (
     <div className="flex-1 flex flex-col items-center gap-2">
-      <div className="text-[#9ca3af] text-[10px] font-['Roboto'] uppercase tracking-wider">{label}</div>
+      <div className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">{label}</div>
       <div className="w-full py-6 flex items-center justify-center" style={{ background: color }}>
         <span className="text-black text-lg font-bold font-['Instrument_Sans']">{value}</span>
       </div>
-      {ratio && <div className="text-[#9ca3af] text-[10px] font-['Roboto']">→ {ratio}</div>}
+      {ratio && <div className="text-muted-foreground text-[10px] font-['Roboto']">→ {ratio}</div>}
     </div>
   );
 }
@@ -158,8 +158,8 @@ function SMATab({ rows }: { rows: any[] }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {kpis.map((k) => <KpiCard key={k.kpi_name} data={k} />)}
       </div>
-      <div className="bg-[#0f1422] p-6">
-        <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold mb-4">Funnel SMA</h3>
+      <div className="bg-white border border-border/30 p-6">
+        <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Funnel SMA</h3>
         <div className="flex gap-2 items-end">
           <FunnelStep label="Awareness" value={formatVal(reach, 'reach')} color="#E8FF4C" ratio={awarenessToConsid} />
           <FunnelStep label="Considération" value={formatVal(traffic, 'traffic')} color="#38bdf8" ratio={considToPurchase} />
@@ -167,25 +167,25 @@ function SMATab({ rows }: { rows: any[] }) {
         </div>
       </div>
       {kpis[0]?.weeks.length > 1 && (
-        <div className="bg-[#0f1422] p-4 overflow-x-auto">
-          <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold mb-3">Détail par semaine</h3>
+        <div className="bg-white border border-border/30 p-4 overflow-x-auto">
+          <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Détail par semaine</h3>
           <table className="w-full text-[11px] font-['Roboto']">
             <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left py-2 px-2 text-[#9ca3af]">KPI</th>
-                <th className="text-left py-2 px-2 text-[#9ca3af]">Type</th>
+              <tr className="border-b border-border/40">
+                <th className="text-left py-2 px-2 text-muted-foreground">KPI</th>
+                <th className="text-left py-2 px-2 text-muted-foreground">Type</th>
                 {kpis[0].weeks.map((w) => (
-                  <th key={w.week} className="text-center py-2 px-1 text-[#9ca3af]">{w.week}</th>
+                  <th key={w.week} className="text-center py-2 px-1 text-muted-foreground">{w.week}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {kpis.map((k) => (
-                <tr key={k.kpi_name} className="border-b border-white/5">
-                  <td className="py-2 px-2 text-white" rowSpan={1}>{KPI_LABELS[k.kpi_name]}</td>
-                  <td className="py-2 px-2 text-[#9ca3af]">Act.</td>
+                <tr key={k.kpi_name} className="border-b border-border/20">
+                  <td className="py-2 px-2 text-foreground" rowSpan={1}>{KPI_LABELS[k.kpi_name]}</td>
+                  <td className="py-2 px-2 text-muted-foreground">Act.</td>
                   {k.weeks.map((w) => (
-                    <td key={w.week} className="py-2 px-1 text-center text-white">{formatVal(w.actual, k.kpi_name)}</td>
+                    <td key={w.week} className="py-2 px-1 text-center text-foreground">{formatVal(w.actual, k.kpi_name)}</td>
                   ))}
                 </tr>
               ))}
@@ -210,8 +210,8 @@ function TikTokTab({ rows }: { rows: any[] }) {
         {kpis.map((k) => <KpiCard key={k.kpi_name} data={k} />)}
       </div>
       {followersData.length > 1 && (
-        <div className="bg-[#0f1422] p-4">
-          <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold mb-3">Évolution followers</h3>
+        <div className="bg-white border border-border/30 p-4">
+          <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Évolution followers</h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={followersData}>
               <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
@@ -227,15 +227,15 @@ function TikTokTab({ rows }: { rows: any[] }) {
           </ResponsiveContainer>
         </div>
       )}
-      <div className="bg-[#0f1422] p-4">
-        <h3 className="text-white text-sm font-['Instrument_Sans'] font-bold mb-3">Top Creatives</h3>
+      <div className="bg-white border border-border/30 p-4">
+        <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Top Creatives</h3>
         <div className="grid grid-cols-3 gap-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-[#1a1f2e] p-3">
-              <div className="aspect-video bg-[#0a0e1a] flex items-center justify-center mb-2">
-                <span className="text-[#9ca3af] text-xs font-['Roboto']">Creative #{i}</span>
+            <div key={i} className="bg-gray-50 p-3">
+              <div className="aspect-video bg-white flex items-center justify-center mb-2">
+                <span className="text-muted-foreground text-xs font-['Roboto']">Creative #{i}</span>
               </div>
-              <div className="text-[#9ca3af] text-[10px] font-['Roboto']">Données non disponibles</div>
+              <div className="text-muted-foreground text-[10px] font-['Roboto']">Données non disponibles</div>
             </div>
           ))}
         </div>
@@ -262,7 +262,7 @@ export function LagostinaMediatisation() {
     return (
       <div className="space-y-4">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-20 bg-[#0f1422] animate-pulse" />
+          <div key={i} className="h-20 bg-white border border-border/30 animate-pulse" />
         ))}
       </div>
     );
@@ -270,13 +270,13 @@ export function LagostinaMediatisation() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-0 border-b border-white/10">
+      <div className="flex gap-0 border-b border-border/40">
         {SUB_TABS.map((t) => (
           <button
             key={t}
             onClick={() => setSubTab(t)}
             className={`px-4 py-2 text-sm font-['Roboto'] border-b-2 transition-colors ${
-              subTab === t ? 'text-[#E8FF4C] border-[#E8FF4C] font-medium' : 'text-[#9ca3af] border-transparent hover:text-white'
+              subTab === t ? 'text-black font-semibold border-black font-medium' : 'text-muted-foreground border-transparent hover:text-foreground'
             }`}
           >
             {t}
@@ -286,8 +286,8 @@ export function LagostinaMediatisation() {
 
       {channelRows.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <Clock className="h-10 w-10 text-[#9ca3af]" />
-          <p className="text-[#9ca3af] font-['Roboto'] text-sm">Données non disponibles — en attente d'import</p>
+          <Clock className="h-10 w-10 text-muted-foreground" />
+          <p className="text-muted-foreground font-['Roboto'] text-sm">Données non disponibles — en attente d'import</p>
         </div>
       ) : (
         <>
