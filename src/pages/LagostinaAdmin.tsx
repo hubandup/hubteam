@@ -267,6 +267,13 @@ export default function LagostinaAdmin() {
     },
   });
 
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) processFile(file);
+  }, [selectedType]);
+
   if (role !== 'admin' && role !== 'team') {
     return <Navigate to="/" replace />;
   }
