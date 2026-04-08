@@ -479,6 +479,45 @@ export type Database = {
           },
         ]
       }
+      client_budget_data: {
+        Row: {
+          client_email_domain: string
+          created_at: string
+          cumul: number
+          id: string
+          meta: number
+          month: string
+          sea: number
+          tiktok: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          client_email_domain: string
+          created_at?: string
+          cumul?: number
+          id?: string
+          meta?: number
+          month: string
+          sea?: number
+          tiktok?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          client_email_domain?: string
+          created_at?: string
+          cumul?: number
+          id?: string
+          meta?: number
+          month?: string
+          sea?: number
+          tiktok?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       client_contacts: {
         Row: {
           client_id: string
