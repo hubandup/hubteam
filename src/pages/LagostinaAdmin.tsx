@@ -313,6 +313,10 @@ export default function LagostinaAdmin() {
         if (personas.length > 0 || activations.length > 0) {
           insertedCount += await insertActivationData(personas, activations);
         }
+      } else if (selectedType === 'budget') {
+        insertedCount += await parseBudgetFile(workbook);
+      } else if (selectedType === 'influence_rp') {
+        insertedCount += await parseInfluenceRPFile(workbook);
       } else {
         toast.info(`Le parsing des fichiers "${selectedType}" sera disponible dans une prochaine phase.`);
       }
