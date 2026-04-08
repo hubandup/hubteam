@@ -28,7 +28,7 @@ const LEVIER_COLORS: Record<string, string> = {
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-border/30 border border-black px-3 py-2 font-['Roboto'] text-xs">
+    <div className="bg-white dark:bg-[#0f1422] border border-border/30 border border-black dark:border-white px-3 py-2 font-['Roboto'] text-xs">
       <p className="text-foreground font-medium mb-1">{label}</p>
       {payload.map((p: any) => (
         <p key={p.dataKey} style={{ color: p.color }}>
@@ -135,7 +135,7 @@ export function LagostinaBudget() {
   return (
     <div className="space-y-6">
       {/* Global gauge */}
-      <div className="bg-white border border-border/30 p-6">
+      <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-6">
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">Budget consommé</p>
@@ -171,7 +171,7 @@ export function LagostinaBudget() {
       {/* Donut + Burn rate */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Donut */}
-        <div className="bg-white border border-border/30 p-4">
+        <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
           <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Répartition par levier</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -194,7 +194,7 @@ export function LagostinaBudget() {
                   content={({ active, payload }) => {
                     if (!active || !payload?.length) return null;
                     return (
-                      <div className="bg-white border border-border/30 border border-black px-3 py-2 font-['Roboto'] text-xs">
+                      <div className="bg-white dark:bg-[#0f1422] border border-border/30 border border-black dark:border-white px-3 py-2 font-['Roboto'] text-xs">
                         <p className="text-foreground">{payload[0].name}: {Number(payload[0].value).toLocaleString('fr-FR')}€</p>
                       </div>
                     );
@@ -212,7 +212,7 @@ export function LagostinaBudget() {
         </div>
 
         {/* Burn rate */}
-        <div className="bg-white border border-border/30 p-4">
+        <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
           <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Burn rate cumulé</h3>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
@@ -233,16 +233,16 @@ export function LagostinaBudget() {
       </div>
 
       {/* Monthly table */}
-      <div className="bg-white border border-border/30 overflow-x-auto">
+      <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
         <table className="w-full text-xs font-['Roboto']">
           <thead>
             <tr className="border-b border-border/40">
-              <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white border border-border/30 z-10 min-w-[120px]">Levier</th>
+              <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white dark:bg-[#0f1422] dark:bg-[#0f1422] border border-border/30 z-10 min-w-[120px]">Levier</th>
               <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[60px]">Type</th>
               {MONTHS.map((m) => (
                 <th key={m} className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[60px]">{m}</th>
               ))}
-              <th className="text-center px-2 py-2 text-black font-semibold font-bold uppercase tracking-wider min-w-[70px]">Total</th>
+              <th className="text-center px-2 py-2 text-black dark:text-white font-semibold font-bold uppercase tracking-wider min-w-[70px]">Total</th>
             </tr>
           </thead>
           <tbody>
@@ -252,11 +252,11 @@ export function LagostinaBudget() {
               return rows.map((type, ti) => {
                 const total = MONTHS.reduce((s, m) => s + getMonthVal(levier, m, type), 0);
                 return (
-                  <tr key={`${levier}-${type}`} className={`border-b ${ti === 3 ? 'border-border/40' : 'border-border/20'} hover:bg-gray-50`}>
+                  <tr key={`${levier}-${type}`} className={`border-b ${ti === 3 ? 'border-border/40' : 'border-border/20'} hover:bg-gray-50 dark:bg-[#141928]`}>
                     {ti === 0 && (
                       <td
                         rowSpan={4}
-                        className="px-3 py-2 text-foreground font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white border border-border/30 z-10 border-l-2 capitalize"
+                        className="px-3 py-2 text-foreground font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white dark:bg-[#0f1422] dark:bg-[#0f1422] border border-border/30 z-10 border-l-2 capitalize"
                         style={{ borderLeftColor: LEVIER_COLORS[levier] || '#E8FF4C' }}
                       >
                         {levier}
@@ -281,17 +281,17 @@ export function LagostinaBudget() {
             })}
             {/* Total row */}
             <tr className="border-t-2 border-black/30 bg-white/[0.02]">
-              <td className="px-3 py-2 text-black font-semibold font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white border border-border/30 z-10">TOTAL</td>
+              <td className="px-3 py-2 text-black dark:text-white font-semibold font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white dark:bg-[#0f1422] dark:bg-[#0f1422] border border-border/30 z-10">TOTAL</td>
               <td className="px-2 py-1.5 text-muted-foreground text-[10px]">Engagé</td>
               {MONTHS.map((m) => {
                 const total = leviers.reduce((s, l) => s + getMonthVal(l, m, 'engaged'), 0);
                 return (
-                  <td key={m} className="px-2 py-1.5 text-center text-[11px] text-black font-semibold font-medium">
+                  <td key={m} className="px-2 py-1.5 text-center text-[11px] text-black dark:text-white font-semibold font-medium">
                     {total > 0 ? total.toLocaleString('fr-FR') : '—'}
                   </td>
                 );
               })}
-              <td className="px-2 py-1.5 text-center text-[11px] text-black font-semibold font-bold">
+              <td className="px-2 py-1.5 text-center text-[11px] text-black dark:text-white font-semibold font-bold">
                 {totalEngaged.toLocaleString('fr-FR')}
               </td>
             </tr>

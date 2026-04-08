@@ -114,7 +114,7 @@ export function LagostinaLearnings() {
     return (
       <div className="space-y-3">
         {Array.from({ length: 7 }).map((_, i) => (
-          <div key={i} className="h-20 bg-gray-50 animate-pulse" />
+          <div key={i} className="h-20 bg-gray-50 dark:bg-[#141928] animate-pulse" />
         ))}
       </div>
     );
