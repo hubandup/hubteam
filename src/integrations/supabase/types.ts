@@ -1202,6 +1202,60 @@ export type Database = {
         }
         Relationships: []
       }
+      lagostina_influence: {
+        Row: {
+          conversion_rate: number | null
+          conversion_rate_obj: number | null
+          cost_per_reach: number | null
+          cost_per_reach_obj: number | null
+          created_at: string | null
+          engagement_rate: number | null
+          engagement_rate_obj: number | null
+          id: string
+          influencer_count: number | null
+          influencer_count_obj: number | null
+          reach_millions: number | null
+          reach_millions_obj: number | null
+          vtf: number | null
+          vtf_obj: number | null
+          week: string
+        }
+        Insert: {
+          conversion_rate?: number | null
+          conversion_rate_obj?: number | null
+          cost_per_reach?: number | null
+          cost_per_reach_obj?: number | null
+          created_at?: string | null
+          engagement_rate?: number | null
+          engagement_rate_obj?: number | null
+          id?: string
+          influencer_count?: number | null
+          influencer_count_obj?: number | null
+          reach_millions?: number | null
+          reach_millions_obj?: number | null
+          vtf?: number | null
+          vtf_obj?: number | null
+          week: string
+        }
+        Update: {
+          conversion_rate?: number | null
+          conversion_rate_obj?: number | null
+          cost_per_reach?: number | null
+          cost_per_reach_obj?: number | null
+          created_at?: string | null
+          engagement_rate?: number | null
+          engagement_rate_obj?: number | null
+          id?: string
+          influencer_count?: number | null
+          influencer_count_obj?: number | null
+          reach_millions?: number | null
+          reach_millions_obj?: number | null
+          vtf?: number | null
+          vtf_obj?: number | null
+          week?: string
+        }
+        Relationships: []
+      }
       lagostina_personas: {
         Row: {
           age_range: string | null
@@ -1241,6 +1295,42 @@ export type Database = {
           persona_type?: string | null
           preferred_media?: string | null
           priority?: string
+        }
+        Relationships: []
+      }
+      lagostina_press: {
+        Row: {
+          created_at: string | null
+          date: string
+          estimated_reach: number | null
+          id: string
+          journalist_name: string | null
+          media_name: string
+          title: string
+          tonality: string
+          url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          estimated_reach?: number | null
+          id?: string
+          journalist_name?: string | null
+          media_name: string
+          title: string
+          tonality?: string
+          url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          estimated_reach?: number | null
+          id?: string
+          journalist_name?: string | null
+          media_name?: string
+          title?: string
+          tonality?: string
+          url?: string | null
         }
         Relationships: []
       }

@@ -242,6 +242,158 @@ async function mergeAndInsertScorecard(records: Array<{
   return finalRecords.length;
 }
 
+// ── BUDGET PARSER ──
+async function parseBudgetFile(workbook: XLSX.WorkBook) {
+  const records: Array<{ levier: string; month: string; planned: number; engaged: number; invoiced: number; remaining: number }> = [];
+  const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) continue;
+    const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { header: 1 }) as any[][];
+    if (!rows.length) continue;
+
+    // Find month header row
+    let monthRow = -1;
+    let monthCols: Record<number, string> = {};
+    for (let r = 0; r < Math.min(5, rows.length); r++) {
+      const row = rows[r];
+      if (!row) continue;
+      for (let c = 0; c < row.length; c++) {
+        const val = String(row[c] || '').trim();
+        const matchedMonth = MONTHS.find((m) => val.toLowerCase().startsWith(m.toLowerCase().slice(0, 3)));
+        if (matchedMonth) {
+          monthCols[c] = matchedMonth;
+          monthRow = r;
+        }
+      }
+      if (monthRow >= 0) break;
+    }
+
+    if (monthRow < 0) continue;
+
+    let currentLevier = '';
+    for (let r = monthRow + 1; r < rows.length; r++) {
+      const row = rows[r];
+      if (!row) continue;
+      const firstCell = String(row[0] || '').trim();
+      if (!firstCell) continue;
+
+      const lower = firstCell.toLowerCase();
+      if (!lower.includes('prévu') && !lower.includes('engagé') && !lower.includes('facturé') && !lower.includes('budget') && !lower.includes('planned') && !lower.includes('engaged') && !lower.includes('invoiced')) {
+        currentLevier = firstCell.toLowerCase().replace(/\s+/g, '_');
+        continue;
+      }
+
+      if (!currentLevier) continue;
+
+      for (const [colIdx, month] of Object.entries(monthCols)) {
+        const val = Number(row[Number(colIdx)]) || 0;
+        let existing = records.find((rec) => rec.levier === currentLevier && rec.month === month);
+        if (!existing) {
+          existing = { levier: currentLevier, month, planned: 0, engaged: 0, invoiced: 0, remaining: 0 };
+          records.push(existing);
+        }
+        if (lower.includes('prévu') || lower.includes('planned') || lower.includes('budget')) existing.planned = val;
+        else if (lower.includes('engagé') || lower.includes('engaged')) existing.engaged = val;
+        else if (lower.includes('facturé') || lower.includes('invoiced')) existing.invoiced = val;
+      }
+    }
+  }
+
+  // Calculate remaining
+  records.forEach((r) => { r.remaining = r.planned - r.engaged; });
+
+  if (records.length === 0) throw new Error('Aucune donnée budget trouvée dans le fichier.');
+
+  // Clear and insert
+  await supabase.from('lagostina_budget').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  const { error } = await supabase.from('lagostina_budget').insert(records);
+  if (error) throw error;
+  return records.length;
+}
+
+// ── INFLUENCE & RP PARSER ──
+async function parseInfluenceRPFile(workbook: XLSX.WorkBook) {
+  let count = 0;
+
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) continue;
+    const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { header: 1 }) as any[][];
+
+    if (sheetName.toLowerCase().includes('influence')) {
+      const influenceRecords: Array<{ week: string; influencer_count: number | null; influencer_count_obj: number | null; reach_millions: number | null; reach_millions_obj: number | null; engagement_rate: number | null; engagement_rate_obj: number | null; vtf: number | null; vtf_obj: number | null; conversion_rate: number | null; conversion_rate_obj: number | null; cost_per_reach: number | null; cost_per_reach_obj: number | null }> = [];
+      // Expect header in first few rows with week column
+      for (let r = 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row || !row[0]) continue;
+        const week = String(row[0]).trim();
+        if (!week.match(/^S\d+$/i)) continue;
+
+        influenceRecords.push({
+          week: week.toUpperCase(),
+          influencer_count: Number(row[1]) || null,
+          influencer_count_obj: Number(row[2]) || null,
+          reach_millions: Number(row[3]) || null,
+          reach_millions_obj: Number(row[4]) || null,
+          engagement_rate: Number(row[5]) || null,
+          engagement_rate_obj: Number(row[6]) || null,
+          vtf: Number(row[7]) || null,
+          vtf_obj: Number(row[8]) || null,
+          conversion_rate: Number(row[9]) || null,
+          conversion_rate_obj: Number(row[10]) || null,
+          cost_per_reach: Number(row[11]) || null,
+          cost_per_reach_obj: Number(row[12]) || null,
+        });
+      }
+
+      if (influenceRecords.length > 0) {
+        await supabase.from('lagostina_influence').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        const { error } = await supabase.from('lagostina_influence').insert(influenceRecords);
+        if (error) throw error;
+        count += influenceRecords.length;
+      }
+    }
+
+    if (sheetName.toLowerCase().includes('presse') || sheetName.toLowerCase().includes('press')) {
+      const pressRecords: Array<{ date: string; media_name: string; title: string; url: string | null; tonality: string; estimated_reach: number | null; journalist_name: string | null }> = [];
+      for (let r = 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row || !row[0]) continue;
+
+        let dateVal: string;
+        if (typeof row[0] === 'number') {
+          const d = new Date((row[0] - 25569) * 86400 * 1000);
+          dateVal = d.toISOString().slice(0, 10);
+        } else {
+          dateVal = String(row[0]);
+        }
+
+        pressRecords.push({
+          date: dateVal,
+          media_name: String(row[1] || '').trim(),
+          title: String(row[2] || '').trim(),
+          url: row[3] ? String(row[3]).trim() : null,
+          tonality: String(row[4] || 'neutral').trim().toLowerCase(),
+          estimated_reach: Number(row[5]) || null,
+          journalist_name: row[6] ? String(row[6]).trim() : null,
+        });
+      }
+
+      if (pressRecords.length > 0) {
+        await supabase.from('lagostina_press').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        const { error } = await supabase.from('lagostina_press').insert(pressRecords);
+        if (error) throw error;
+        count += pressRecords.length;
+      }
+    }
+  }
+
+  if (count === 0) throw new Error('Aucune donnée influence/RP trouvée dans le fichier.');
+  return count;
+}
+
 const STATUS_ICONS: Record<string, React.ReactNode> = {
   synced: <CheckCircle2 className="h-3.5 w-3.5 text-[#22c55e]" />,
   error: <AlertCircle className="h-3.5 w-3.5 text-[#ef4444]" />,
@@ -313,6 +465,10 @@ export default function LagostinaAdmin() {
         if (personas.length > 0 || activations.length > 0) {
           insertedCount += await insertActivationData(personas, activations);
         }
+      } else if (selectedType === 'budget') {
+        insertedCount += await parseBudgetFile(workbook);
+      } else if (selectedType === 'influence_rp') {
+        insertedCount += await parseInfluenceRPFile(workbook);
       } else {
         toast.info(`Le parsing des fichiers "${selectedType}" sera disponible dans une prochaine phase.`);
       }
@@ -330,6 +486,8 @@ export default function LagostinaAdmin() {
       queryClient.invalidateQueries({ queryKey: ['lagostina-last-sync'] });
       queryClient.invalidateQueries({ queryKey: ['lagostina-personas'] });
       queryClient.invalidateQueries({ queryKey: ['lagostina-activation'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-influence'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-press'] });
     } catch (err: any) {
       console.error('Upload error:', err);
       toast.error(`Erreur : ${err.message || 'Impossible de traiter le fichier'}`);

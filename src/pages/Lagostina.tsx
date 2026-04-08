@@ -4,6 +4,9 @@ import { Navigate } from 'react-router-dom';
 import { LagostinaOverview } from '@/components/lagostina/LagostinaOverview';
 import { ScorecardRECC } from '@/components/lagostina/ScorecardRECC';
 import { ActivationPersonas } from '@/components/lagostina/ActivationPersonas';
+import { LagostinaBudget } from '@/components/lagostina/LagostinaBudget';
+import { LagostinaInfluenceRP } from '@/components/lagostina/LagostinaInfluenceRP';
+import { LagostinaExportButtons } from '@/components/lagostina/LagostinaExportButtons';
 import { Clock } from 'lucide-react';
 
 const TABS = [
@@ -17,6 +20,14 @@ const TABS = [
   { id: 'consumer', label: 'Voice of Consumer' },
   { id: 'learnings', label: 'Learnings' },
 ] as const;
+
+const EXPORT_CONFIG: Record<string, { tabName: string; showPdf: boolean; chartsId?: string }> = {
+  overview: { tabName: 'Overview', showPdf: false },
+  scorecard: { tabName: 'Scorecard RECC', showPdf: true, chartsId: 'lagostina-scorecard-charts' },
+  activation: { tabName: 'Activation & Personas', showPdf: false },
+  budget: { tabName: 'Budget', showPdf: true, chartsId: 'lagostina-budget-charts' },
+  influence: { tabName: 'Influence & RP', showPdf: false },
+};
 
 function PlaceholderTab() {
   return (
@@ -35,15 +46,26 @@ export default function Lagostina() {
     return <Navigate to="/" replace />;
   }
 
+  const exportCfg = EXPORT_CONFIG[activeTab];
+
   return (
     <div className="min-h-screen bg-[#0a0e1a]">
-      <div className="px-6 pt-6 pb-2">
-        <h1 className="text-2xl font-bold text-white font-['Instrument_Sans'] tracking-tight">
-          Lagostina
-        </h1>
-        <p className="text-[#9ca3af] font-['Roboto'] text-sm mt-1">
-          Dashboard de pilotage — Groupe SEB
-        </p>
+      <div className="px-6 pt-6 pb-2 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white font-['Instrument_Sans'] tracking-tight">
+            Lagostina
+          </h1>
+          <p className="text-[#9ca3af] font-['Roboto'] text-sm mt-1">
+            Dashboard de pilotage — Groupe SEB
+          </p>
+        </div>
+        {exportCfg && (
+          <LagostinaExportButtons
+            tabName={exportCfg.tabName}
+            showPdf={exportCfg.showPdf}
+            chartsContainerId={exportCfg.chartsId}
+          />
+        )}
       </div>
 
       {/* Tabs */}
@@ -71,7 +93,9 @@ export default function Lagostina() {
         {activeTab === 'overview' && <LagostinaOverview />}
         {activeTab === 'activation' && <ActivationPersonas />}
         {activeTab === 'scorecard' && <ScorecardRECC />}
-        {!['overview', 'activation', 'scorecard'].includes(activeTab) && <PlaceholderTab />}
+        {activeTab === 'budget' && <LagostinaBudget />}
+        {activeTab === 'influence' && <LagostinaInfluenceRP />}
+        {!['overview', 'activation', 'scorecard', 'budget', 'influence'].includes(activeTab) && <PlaceholderTab />}
       </div>
     </div>
   );
