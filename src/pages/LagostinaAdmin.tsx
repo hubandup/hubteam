@@ -357,7 +357,7 @@ async function parseInfluenceRPFile(workbook: XLSX.WorkBook) {
     }
 
     if (sheetName.toLowerCase().includes('presse') || sheetName.toLowerCase().includes('press')) {
-      const pressRecords: Array<Record<string, any>> = [];
+      const pressRecords: Array<{ date: string; media_name: string; title: string; url: string | null; tonality: string; estimated_reach: number | null; journalist_name: string | null }> = [];
       for (let r = 1; r < rows.length; r++) {
         const row = rows[r];
         if (!row || !row[0]) continue;
