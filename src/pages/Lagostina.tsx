@@ -68,7 +68,10 @@ export default function Lagostina() {
 
       {/* Content */}
       <div className="p-6">
-        {activeTab === 'overview' ? <LagostinaOverview /> : <PlaceholderTab />}
+        {activeTab === 'overview' && <LagostinaOverview />}
+        {activeTab === 'activation' && <ActivationPersonas />}
+        {activeTab === 'scorecard' && <ScorecardRECC />}
+        {!['overview', 'activation', 'scorecard'].includes(activeTab) && <PlaceholderTab />}
       </div>
     </div>
   );
