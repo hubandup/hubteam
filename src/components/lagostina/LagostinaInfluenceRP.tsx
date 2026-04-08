@@ -36,7 +36,7 @@ function getCondColor(actual: number | null, obj: number | null): string {
   if (actual == null || obj == null || obj === 0) return '';
   const ratio = actual / obj;
   if (ratio >= 1) return 'text-[#22c55e]';
-  if (ratio >= 0.8) return 'text-black font-semibold';
+  if (ratio >= 0.8) return 'text-black dark:text-white font-semibold';
   return 'text-[#ef4444]';
 }
 
@@ -152,7 +152,7 @@ export function LagostinaInfluenceRP() {
           <h2 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Influence</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {kpis.map((kpi) => (
-              <div key={kpi.label} className={`bg-white border border-border/30 border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
+              <div key={kpi.label} className={`bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
                 <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-1">{kpi.label}</p>
                 <div className="flex items-end gap-2">
                   <span className={`text-xl font-bold font-['Instrument_Sans'] ${getCondColor(kpi.actual, kpi.obj) || 'text-foreground'}`}>
@@ -206,7 +206,7 @@ export function LagostinaInfluenceRP() {
           </div>
 
           {/* Table */}
-          <div className="bg-white border border-border/30 overflow-x-auto">
+          <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
             <table className="w-full text-xs font-['Roboto']">
               <thead>
                 <tr className="border-b border-border/40">
@@ -221,14 +221,14 @@ export function LagostinaInfluenceRP() {
                 {pagedPress.map((p) => {
                   const style = TONALITY_STYLES[p.tonality] || TONALITY_STYLES.neutral;
                   return (
-                    <tr key={p.id} className="border-b border-border/20 hover:bg-gray-50">
+                    <tr key={p.id} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
                       <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
                         {new Date(p.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                       </td>
                       <td className="px-3 py-2 text-foreground font-medium">{p.media_name}</td>
                       <td className="px-3 py-2 text-foreground max-w-xs truncate">
                         {p.url ? (
-                          <a href={p.url} target="_blank" rel="noopener noreferrer" className="hover:text-black font-semibold flex items-center gap-1">
+                          <a href={p.url} target="_blank" rel="noopener noreferrer" className="hover:text-black dark:text-white font-semibold flex items-center gap-1">
                             {p.title}
                             <ExternalLink className="h-3 w-3 flex-shrink-0" />
                           </a>

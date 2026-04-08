@@ -43,7 +43,7 @@ const AXES = [
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   ok: { bg: 'bg-[#22c55e]/20', text: 'text-[#22c55e]' },
-  alert: { bg: 'bg-black/20', text: 'text-black font-semibold' },
+  alert: { bg: 'bg-black/20 dark:bg-white/20', text: 'text-black dark:text-white font-semibold' },
   blocked: { bg: 'bg-[#ef4444]/20', text: 'text-[#ef4444]' },
 };
 
@@ -135,7 +135,7 @@ export function ActivationPersonas() {
             className={`px-4 py-2 text-sm font-['Roboto'] transition-colors ${
               selectedPriority === p
                 ? 'bg-black text-[#0f1422] font-medium'
-                : 'bg-white border border-border/30 text-muted-foreground hover:text-foreground'
+                : 'bg-white dark:bg-[#0f1422] border border-border/30 text-muted-foreground hover:text-foreground'
             }`}
           >
             {p.replace('_', ' ').toUpperCase()}
@@ -149,7 +149,7 @@ export function ActivationPersonas() {
                 className={`px-4 py-2 text-sm font-['Roboto'] transition-colors ${
                   selectedPriority === p
                     ? 'bg-black text-[#0f1422] font-medium'
-                    : 'bg-white border border-border/30 text-muted-foreground hover:text-foreground'
+                    : 'bg-white dark:bg-[#0f1422] border border-border/30 text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {p.replace('_', ' ').toUpperCase()}
@@ -161,7 +161,7 @@ export function ActivationPersonas() {
 
       {/* Status bar */}
       {filteredStatus.length > 0 && (
-        <div className="bg-white border border-border/30 overflow-x-auto">
+        <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
           <table className="w-full text-xs font-['Roboto']">
             <thead>
               <tr className="border-b border-border/40">
@@ -194,17 +194,17 @@ export function ActivationPersonas() {
       {/* Personas */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <Users className="h-4 w-4 text-black font-semibold" />
+          <Users className="h-4 w-4 text-black dark:text-white font-semibold" />
           <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">Personas</h3>
         </div>
         {filteredPersonas.length === 0 ? (
-          <div className="bg-white border border-border/30 p-6 text-center text-muted-foreground font-['Roboto'] text-sm">
+          <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-6 text-center text-muted-foreground font-['Roboto'] text-sm">
             Aucun persona défini pour cette priorité
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredPersonas.map((persona) => (
-              <div key={persona.id} className="bg-gray-50 border-t-[3px] border-black">
+              <div key={persona.id} className="bg-gray-50 dark:bg-[#141928] border-t-[3px] border-black dark:border-white">
                 <div className="p-4 space-y-3">
                   <div className="flex items-start justify-between">
                     <div>
@@ -227,7 +227,7 @@ export function ActivationPersonas() {
                       <ol className="space-y-0.5">
                         {jsonToArray(persona.motivators).map((m, i) => (
                           <li key={i} className="text-foreground text-xs font-['Roboto'] flex gap-1.5">
-                            <span className="text-black font-semibold font-bold">{i + 1}.</span> {m}
+                            <span className="text-black dark:text-white font-semibold font-bold">{i + 1}.</span> {m}
                           </li>
                         ))}
                       </ol>
@@ -268,10 +268,10 @@ export function ActivationPersonas() {
         return (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Package className="h-4 w-4 text-black font-semibold" />
+              <Package className="h-4 w-4 text-black dark:text-white font-semibold" />
               <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">Produit</h3>
             </div>
-            <div className="bg-white border border-border/30 p-4">
+            <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
               <div className="grid grid-cols-2 gap-4">
                 {d.flagship && (
                   <div className="col-span-2">
@@ -307,12 +307,12 @@ export function ActivationPersonas() {
               {(d.marge_std || d.prix_conso) && (
                 <div className="flex gap-3 mt-4 pt-3 border-t border-border/40">
                   {d.marge_std && (
-                    <span className="bg-black/20 text-black font-semibold px-3 py-1 text-xs font-['Roboto'] font-medium">
+                    <span className="bg-black/20 dark:bg-white/20 text-black dark:text-white font-semibold px-3 py-1 text-xs font-['Roboto'] font-medium">
                       Marge std: {String(d.marge_std)}
                     </span>
                   )}
                   {d.prix_conso && (
-                    <span className="bg-black/20 text-black font-semibold px-3 py-1 text-xs font-['Roboto'] font-medium">
+                    <span className="bg-black/20 dark:bg-white/20 text-black dark:text-white font-semibold px-3 py-1 text-xs font-['Roboto'] font-medium">
                       Prix conso: {String(d.prix_conso)}
                     </span>
                   )}
@@ -332,10 +332,10 @@ export function ActivationPersonas() {
         return (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Store className="h-4 w-4 text-black font-semibold" />
+              <Store className="h-4 w-4 text-black dark:text-white font-semibold" />
               <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">Distribution</h3>
             </div>
-            <div className="bg-white border border-border/30 overflow-x-auto">
+            <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
               {channels && channels.length > 0 ? (
                 <table className="w-full text-xs font-['Roboto']">
                   <thead>
@@ -381,12 +381,12 @@ export function ActivationPersonas() {
         return (
           <div key={section}>
             <div className="flex items-center gap-2 mb-3">
-              {section === 'sell_in' ? <TrendingUp className="h-4 w-4 text-black font-semibold" /> : <TrendingDown className="h-4 w-4 text-black font-semibold" />}
+              {section === 'sell_in' ? <TrendingUp className="h-4 w-4 text-black dark:text-white font-semibold" /> : <TrendingDown className="h-4 w-4 text-black dark:text-white font-semibold" />}
               <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">
                 {section === 'sell_in' ? 'Sell-in' : 'Sell-out'}
               </h3>
             </div>
-            <div className="bg-white border border-border/30 overflow-x-auto">
+            <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
               {rows && rows.length > 0 ? (
                 <table className="w-full text-xs font-['Roboto']">
                   <thead>
@@ -396,7 +396,7 @@ export function ActivationPersonas() {
                         <th key={m} className="text-center px-2 py-2 text-muted-foreground font-medium">{m}</th>
                       ))}
                       {quarters.map((q) => (
-                        <th key={q} className="text-center px-2 py-2 text-black font-semibold font-bold border-l border-border/40">{q}</th>
+                        <th key={q} className="text-center px-2 py-2 text-black dark:text-white font-semibold font-bold border-l border-border/40">{q}</th>
                       ))}
                     </tr>
                   </thead>
@@ -404,7 +404,7 @@ export function ActivationPersonas() {
                     {rows.map((row: any, ri: number) => {
                       const isEvol = String(row.label || '').toLowerCase().includes('évol') || String(row.label || '').toLowerCase().includes('evol');
                       return (
-                        <tr key={ri} className="border-b border-border/20 hover:bg-gray-50">
+                        <tr key={ri} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
                           <td className="px-3 py-2 text-foreground font-medium">{row.label || '—'}</td>
                           {months.map((m) => {
                             const val = row[m.toLowerCase()] ?? row[m] ?? null;
@@ -423,7 +423,7 @@ export function ActivationPersonas() {
                             const val = row[q.toLowerCase()] ?? row[q] ?? null;
                             const numVal = val != null ? Number(val) : null;
                             return (
-                              <td key={q} className="px-2 py-2 text-center text-black font-semibold font-medium border-l border-border/40">
+                              <td key={q} className="px-2 py-2 text-center text-black dark:text-white font-semibold font-medium border-l border-border/40">
                                 {numVal != null ? formatNum(numVal) : '—'}
                               </td>
                             );

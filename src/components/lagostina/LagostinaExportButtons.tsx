@@ -141,7 +141,7 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
       <button
         onClick={exportExcel}
         disabled={exporting}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-['Roboto'] text-black border border-black bg-transparent hover:bg-black hover:text-white transition-colors disabled:opacity-50"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-['Roboto'] text-black border border-black dark:border-white bg-transparent hover:bg-black hover:text-white transition-colors disabled:opacity-50"
       >
         <FileSpreadsheet className="h-3.5 w-3.5" />
         Exporter Excel
@@ -150,7 +150,7 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
         <button
           onClick={exportPdf}
           disabled={exporting}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-['Roboto'] text-black border border-black bg-transparent hover:bg-black hover:text-white transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-['Roboto'] text-black border border-black dark:border-white bg-transparent hover:bg-black hover:text-white transition-colors disabled:opacity-50"
         >
           <FileText className="h-3.5 w-3.5" />
           Exporter PDF

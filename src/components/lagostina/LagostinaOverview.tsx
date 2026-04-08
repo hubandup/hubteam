@@ -6,7 +6,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 
 function KpiCardSkeleton() {
   return (
-    <div className="bg-white border border-border/30 border-l-[3px] border-black p-5 animate-pulse">
+    <div className="bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] border-black dark:border-white p-5 animate-pulse">
       <div className="h-3 w-20 bg-gray-200 mb-3" />
       <div className="h-8 w-32 bg-gray-200 mb-2" />
       <div className="h-3 w-16 bg-gray-200" />
@@ -16,7 +16,7 @@ function KpiCardSkeleton() {
 
 function TableSkeleton() {
   return (
-    <div className="bg-white border border-border/30 p-4 animate-pulse">
+    <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4 animate-pulse">
       {Array.from({ length: 5 }).map((_, i) => (
         <div key={i} className="h-10 bg-gray-100 mb-2" />
       ))}
@@ -34,7 +34,7 @@ interface KpiCardProps {
 
 function KpiCard({ label, value, icon, trend, color }: KpiCardProps) {
   return (
-    <div className="bg-white border border-border/30 border-l-[3px] border-black p-5 flex flex-col gap-1">
+    <div className="bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] border-black dark:border-white p-5 flex flex-col gap-1">
       <div className="flex items-center gap-2 text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">
         {icon}
         {label}
@@ -52,7 +52,7 @@ function KpiCard({ label, value, icon, trend, color }: KpiCardProps) {
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   ok: { bg: 'bg-[#22c55e]/20', text: 'text-[#22c55e]' },
-  alert: { bg: 'bg-black/20', text: 'text-black font-semibold' },
+  alert: { bg: 'bg-black/20 dark:bg-white/20', text: 'text-black dark:text-white font-semibold' },
   blocked: { bg: 'bg-[#ef4444]/20', text: 'text-[#ef4444]' },
 };
 
@@ -211,7 +211,7 @@ export function LagostinaOverview() {
             value={roasMoyen.toFixed(2)}
             icon={<DollarSign className="h-3.5 w-3.5" />}
           />
-          <div className="bg-white border border-border/30 border-l-[3px] border-black p-5 flex flex-col gap-1">
+          <div className="bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] border-black dark:border-white p-5 flex flex-col gap-1">
             <div className="flex items-center gap-2 text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">
               <PieChart className="h-3.5 w-3.5" />
               Budget engagé
@@ -237,7 +237,7 @@ export function LagostinaOverview() {
       {loadingCategory ? (
         <TableSkeleton />
       ) : Object.keys(priorityGroups).length > 0 ? (
-        <div className="bg-white border border-border/30 overflow-x-auto">
+        <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/40">
@@ -251,7 +251,7 @@ export function LagostinaOverview() {
             </thead>
             <tbody>
               {Object.entries(priorityGroups).map(([priority, group]) => (
-                <tr key={priority} className="border-b border-border/20 hover:bg-gray-50">
+                <tr key={priority} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
                   <td className="px-4 py-3">
                     <div className="text-foreground font-['Instrument_Sans'] font-medium text-sm">{group.label}</div>
                     <div className="text-muted-foreground font-['Roboto'] text-xs">{priority}</div>

@@ -748,7 +748,7 @@ export default function LagostinaAdmin() {
   }
 
   return (
-    <div className="min-h-screen bg-white p-6">
+    <div className="min-h-screen bg-white dark:bg-[#0a0e1a] p-6">
       <div className="max-w-5xl mx-auto space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground font-['Instrument_Sans'] tracking-tight">

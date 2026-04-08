@@ -74,7 +74,7 @@ function buildKpiData(rows: any[], kpis: string[]): KpiData[] {
 function KpiCard({ data }: { data: KpiData }) {
   const cond = getCondColor(data.latestActual, data.latestObjective);
   return (
-    <div className={`bg-white border border-border/30 border-l-[3px] ${cond || 'border-black'} p-4 flex flex-col gap-1`}>
+    <div className={`bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] ${cond || 'border-black'} p-4 flex flex-col gap-1`}>
       <div className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">{KPI_LABELS[data.kpi_name] || data.kpi_name}</div>
       <div className="text-foreground text-xl font-bold font-['Instrument_Sans']">{formatVal(data.latestActual, data.kpi_name)}</div>
       {data.latestObjective != null && (
@@ -110,7 +110,7 @@ function SEATab({ rows }: { rows: any[] }) {
       </div>
       {roasData && roasData.weeks.length > 1 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white border border-border/30 p-4">
+          <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
             <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Évolution ROAS</h3>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={roasData.weeks}>
@@ -123,7 +123,7 @@ function SEATab({ rows }: { rows: any[] }) {
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <div className="bg-white border border-border/30 p-4 flex items-center justify-center">
+          <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4 flex items-center justify-center">
             <div className="text-muted-foreground text-sm font-['Roboto']">Top keywords — données non disponibles</div>
           </div>
         </div>
@@ -158,7 +158,7 @@ function SMATab({ rows }: { rows: any[] }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {kpis.map((k) => <KpiCard key={k.kpi_name} data={k} />)}
       </div>
-      <div className="bg-white border border-border/30 p-6">
+      <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-6">
         <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Funnel SMA</h3>
         <div className="flex gap-2 items-end">
           <FunnelStep label="Awareness" value={formatVal(reach, 'reach')} color="#E8FF4C" ratio={awarenessToConsid} />
@@ -167,7 +167,7 @@ function SMATab({ rows }: { rows: any[] }) {
         </div>
       </div>
       {kpis[0]?.weeks.length > 1 && (
-        <div className="bg-white border border-border/30 p-4 overflow-x-auto">
+        <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4 overflow-x-auto">
           <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Détail par semaine</h3>
           <table className="w-full text-[11px] font-['Roboto']">
             <thead>
@@ -210,7 +210,7 @@ function TikTokTab({ rows }: { rows: any[] }) {
         {kpis.map((k) => <KpiCard key={k.kpi_name} data={k} />)}
       </div>
       {followersData.length > 1 && (
-        <div className="bg-white border border-border/30 p-4">
+        <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
           <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Évolution followers</h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={followersData}>
@@ -227,12 +227,12 @@ function TikTokTab({ rows }: { rows: any[] }) {
           </ResponsiveContainer>
         </div>
       )}
-      <div className="bg-white border border-border/30 p-4">
+      <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
         <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Top Creatives</h3>
         <div className="grid grid-cols-3 gap-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-gray-50 p-3">
-              <div className="aspect-video bg-white flex items-center justify-center mb-2">
+            <div key={i} className="bg-gray-50 dark:bg-[#141928] p-3">
+              <div className="aspect-video bg-white dark:bg-[#141928] flex items-center justify-center mb-2">
                 <span className="text-muted-foreground text-xs font-['Roboto']">Creative #{i}</span>
               </div>
               <div className="text-muted-foreground text-[10px] font-['Roboto']">Données non disponibles</div>
@@ -262,7 +262,7 @@ export function LagostinaMediatisation() {
     return (
       <div className="space-y-4">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-20 bg-white border border-border/30 animate-pulse" />
+          <div key={i} className="h-20 bg-white dark:bg-[#0f1422] border border-border/30 animate-pulse" />
         ))}
       </div>
     );
@@ -276,7 +276,7 @@ export function LagostinaMediatisation() {
             key={t}
             onClick={() => setSubTab(t)}
             className={`px-4 py-2 text-sm font-['Roboto'] border-b-2 transition-colors ${
-              subTab === t ? 'text-black font-semibold border-black font-medium' : 'text-muted-foreground border-transparent hover:text-foreground'
+              subTab === t ? 'text-black dark:text-white font-semibold border-black dark:border-white font-medium' : 'text-muted-foreground border-transparent hover:text-foreground'
             }`}
           >
             {t}
