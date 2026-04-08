@@ -103,6 +103,8 @@ function AppInner() {
         <Route path="/settings" element={<ProtectedRoute><Layout><PageSuspense><Settings /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="/install" element={<Suspense fallback={<AppSkeleton />}><Install /></Suspense>} />
         <Route path="/unsubscribe" element={<Suspense fallback={<AppSkeleton />}><Unsubscribe /></Suspense>} />
+        <Route path="/lagostina" element={<ProtectedRoute><Layout><PageSuspense><Lagostina /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/admin/lagostina" element={<ProtectedRoute><Layout><PageSuspense><LagostinaAdmin /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="*" element={<Suspense fallback={null}><NotFound /></Suspense>} />
         </Routes>
       </AuthProvider>
