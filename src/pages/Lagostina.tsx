@@ -107,14 +107,14 @@ export default function Lagostina() {
   const exportCfg = EXPORT_CONFIG[activeTab];
 
   return (
-    <div className="min-h-screen bg-[#0a0e1a]">
+    <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="px-6 pt-6 pb-2 flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white font-['Instrument_Sans'] tracking-tight">
+          <h1 className="text-2xl font-bold text-black font-['Instrument_Sans'] tracking-tight">
             Lagostina
           </h1>
-          <p className="text-[#9ca3af] font-['Roboto'] text-sm mt-1">
+          <p className="text-[#6b7280] font-['Roboto'] text-sm mt-1">
             Dashboard de pilotage — Groupe SEB
           </p>
         </div>
