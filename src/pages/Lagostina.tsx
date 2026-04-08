@@ -43,13 +43,13 @@ const EXPORT_CONFIG: Record<string, { tabName: string; showPdf: boolean; chartsI
 function TabSkeleton() {
   return (
     <div className="space-y-4 animate-pulse">
-      <div className="h-8 bg-[#1a1f2e] w-1/3" />
+      <div className="h-8 bg-black/5 w-1/3" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-24 bg-[#1a1f2e]" />
+          <div key={i} className="h-24 bg-black/5" />
         ))}
       </div>
-      <div className="h-64 bg-[#1a1f2e]" />
+      <div className="h-64 bg-black/5" />
     </div>
   );
 }
