@@ -120,7 +120,7 @@ const FULL_DETAIL_SECTIONS = [
 ];
 
 const LEVIER_COLORS: Record<string, string> = {
-  media: getChartAccent(),
+  media: '#6366f1',
   event: '#38bdf8',
   influence: '#a78bfa',
   social_media: '#f472b6',
