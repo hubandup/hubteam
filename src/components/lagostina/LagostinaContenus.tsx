@@ -75,7 +75,7 @@ export function LagostinaContenus() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-[11px] font-['Roboto']">
+            <table className="w-full text-[13px] font-['Roboto']">
               <thead>
                 <tr className="border-b border-border/40">
                   <th className="text-left py-2 px-3 text-muted-foreground uppercase">Type</th>
@@ -98,7 +98,7 @@ export function LagostinaContenus() {
                           : <XCircle className="h-4 w-4 text-[#ef4444] inline" />}
                       </td>
                       <td className="py-2.5 px-3 text-center">
-                        <span className={`px-2 py-0.5 text-[10px] ${qb.color}`}>{qb.label}</span>
+                        <span className={`px-2 py-0.5 text-xs ${qb.color}`}>{qb.label}</span>
                       </td>
                       <td className="py-2.5 px-3 text-muted-foreground">{c.variations || '—'}</td>
                     </tr>
@@ -124,7 +124,7 @@ export function LagostinaContenus() {
               {(socialMix || []).map((s) => (
                 <div key={s.id} className="bg-white dark:bg-[#0f1422] p-4 flex flex-col items-center gap-1">
                   <span className="text-foreground text-2xl font-bold font-['Instrument_Sans']">{s.count}</span>
-                  <span className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">
+                  <span className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">
                     {SOCIAL_CATEGORY_LABELS[s.category] || s.category}
                   </span>
                 </div>
@@ -142,7 +142,7 @@ export function LagostinaContenus() {
                   <span className="text-muted-foreground text-xs font-['Roboto']">#{i}</span>
                 </div>
                 <div className="p-2">
-                  <div className="text-muted-foreground text-[10px] font-['Roboto']">Données non disponibles</div>
+                  <div className="text-muted-foreground text-xs font-['Roboto']">Données non disponibles</div>
                 </div>
               </div>
             ))}
@@ -160,7 +160,7 @@ export function LagostinaContenus() {
           <div className="text-muted-foreground text-xs font-['Roboto'] py-8 text-center">Aucun learning enregistré</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-[11px] font-['Roboto']">
+            <table className="w-full text-[13px] font-['Roboto']">
               <thead>
                 <tr className="border-b border-border/40">
                   <th className="text-left py-2 px-3 text-muted-foreground uppercase">Learning</th>

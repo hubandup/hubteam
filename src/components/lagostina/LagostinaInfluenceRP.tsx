@@ -211,7 +211,7 @@ export function LagostinaInfluenceRP() {
 
           {/* Table */}
           <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
-            <table className="w-full text-xs font-['Roboto']">
+            <table className="w-full text-sm font-['Roboto']">
               <thead>
                 <tr className="border-b border-border/40">
                   <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider">Date</th>
@@ -239,7 +239,7 @@ export function LagostinaInfluenceRP() {
                         ) : p.title}
                       </td>
                       <td className="px-3 py-2 text-center">
-                        <span className={`inline-block px-2 py-0.5 text-[10px] font-medium ${style.bg} ${style.text}`}>
+                        <span className={`inline-block px-2 py-0.5 text-xs font-medium ${style.bg} ${style.text}`}>
                           {style.label}
                         </span>
                       </td>

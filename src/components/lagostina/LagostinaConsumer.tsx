@@ -21,7 +21,7 @@ function MetricRow({ label, value, sub }: { label: string; value: string; sub?: 
       <span className="text-muted-foreground text-xs font-['Roboto']">{label}</span>
       <div className="text-right">
         <span className="text-foreground text-sm font-['Instrument_Sans'] font-bold">{value}</span>
-        {sub && <span className="text-muted-foreground text-[10px] font-['Roboto'] ml-2">{sub}</span>}
+        {sub && <span className="text-muted-foreground text-xs font-['Roboto'] ml-2">{sub}</span>}
       </div>
     </div>
   );
@@ -115,7 +115,7 @@ export function LagostinaConsumer() {
               ))}
               {cuisineMetrics.filter((m) => m.comment).length > 0 && (
                 <div className="mt-3 bg-white dark:bg-[#0f1422] p-3 max-h-24 overflow-y-auto">
-                  <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Verbatims</p>
+                  <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-1">Verbatims</p>
                   {cuisineMetrics.filter((m) => m.comment).map((m) => (
                     <p key={m.id} className="text-foreground text-xs font-['Roboto'] italic">"{m.comment}"</p>
                   ))}
@@ -138,9 +138,9 @@ export function LagostinaConsumer() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {brandMetrics.map((m) => (
               <div key={m.id} className="bg-white dark:bg-[#0f1422] p-3 border-l-[3px] border-black dark:border-white">
-                <div className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">{m.metric_name}</div>
+                <div className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">{m.metric_name}</div>
                 <div className="text-foreground text-lg font-bold font-['Instrument_Sans'] mt-1">{m.value_current || '—'}</div>
-                {m.vs_brand && <div className="text-muted-foreground text-[10px] font-['Roboto']">vs. {m.vs_brand}</div>}
+                {m.vs_brand && <div className="text-muted-foreground text-xs font-['Roboto']">vs. {m.vs_brand}</div>}
               </div>
             ))}
           </div>
@@ -187,7 +187,7 @@ export function LagostinaConsumer() {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-[11px] font-['Roboto']">
+              <table className="w-full text-[13px] font-['Roboto']">
                 <thead>
                   <tr className="border-b border-border/40">
                     <th className="text-left py-2 px-2 text-muted-foreground uppercase">Plateforme</th>

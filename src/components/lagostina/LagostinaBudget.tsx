@@ -162,9 +162,9 @@ export function LagostinaBudget() {
           />
         </div>
         <div className="flex justify-between mt-1">
-          <span className="text-muted-foreground text-[10px] font-['Roboto']">0%</span>
-          <span className="text-muted-foreground text-[10px] font-['Roboto']">Progression année : {yearProgress.toFixed(0)}%</span>
-          <span className="text-muted-foreground text-[10px] font-['Roboto']">100%</span>
+          <span className="text-muted-foreground text-xs font-['Roboto']">0%</span>
+          <span className="text-muted-foreground text-xs font-['Roboto']">Progression année : {yearProgress.toFixed(0)}%</span>
+          <span className="text-muted-foreground text-xs font-['Roboto']">100%</span>
         </div>
       </div>
 
@@ -234,7 +234,7 @@ export function LagostinaBudget() {
 
       {/* Monthly table */}
       <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
-        <table className="w-full text-xs font-['Roboto']">
+        <table className="w-full text-sm font-['Roboto']">
           <thead>
             <tr className="border-b border-border/40">
               <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10 min-w-[120px]">Levier</th>
@@ -262,17 +262,17 @@ export function LagostinaBudget() {
                         {levier}
                       </td>
                     )}
-                    <td className="px-2 py-1.5 text-muted-foreground text-[10px]">{labels[type]}</td>
+                    <td className="px-2 py-1.5 text-muted-foreground text-xs">{labels[type]}</td>
                     {MONTHS.map((m) => {
                       const val = getMonthVal(levier, m, type);
                       const isOver = type === 'engaged' && val > getMonthVal(levier, m, 'planned') && getMonthVal(levier, m, 'planned') > 0;
                       return (
-                        <td key={m} className={`px-2 py-1.5 text-center text-[11px] ${isOver ? 'bg-[#ef4444]/20 text-[#ef4444]' : 'text-foreground'}`}>
+                        <td key={m} className={`px-2 py-1.5 text-center text-[13px] ${isOver ? 'bg-[#ef4444]/20 text-[#ef4444]' : 'text-foreground'}`}>
                           {val > 0 ? val.toLocaleString('fr-FR') : '—'}
                         </td>
                       );
                     })}
-                    <td className="px-2 py-1.5 text-center text-[11px] text-foreground font-medium">
+                    <td className="px-2 py-1.5 text-center text-[13px] text-foreground font-medium">
                       {total > 0 ? total.toLocaleString('fr-FR') : '—'}
                     </td>
                   </tr>
@@ -282,16 +282,16 @@ export function LagostinaBudget() {
             {/* Total row */}
             <tr className="border-t-2 border-black/30 bg-white/[0.02]">
               <td className="px-3 py-2 text-black dark:text-white font-semibold font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10">TOTAL</td>
-              <td className="px-2 py-1.5 text-muted-foreground text-[10px]">Engagé</td>
+              <td className="px-2 py-1.5 text-muted-foreground text-xs">Engagé</td>
               {MONTHS.map((m) => {
                 const total = leviers.reduce((s, l) => s + getMonthVal(l, m, 'engaged'), 0);
                 return (
-                  <td key={m} className="px-2 py-1.5 text-center text-[11px] text-black dark:text-white font-semibold font-medium">
+                  <td key={m} className="px-2 py-1.5 text-center text-[13px] text-black dark:text-white font-semibold font-medium">
                     {total > 0 ? total.toLocaleString('fr-FR') : '—'}
                   </td>
                 );
               })}
-              <td className="px-2 py-1.5 text-center text-[11px] text-black dark:text-white font-semibold font-bold">
+              <td className="px-2 py-1.5 text-center text-[13px] text-black dark:text-white font-semibold font-bold">
                 {totalEngaged.toLocaleString('fr-FR')}
               </td>
             </tr>
