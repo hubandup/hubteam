@@ -38,7 +38,7 @@ function Stars({ score }: { score: number }) {
   return (
     <span className="inline-flex gap-0.5">
       {[1, 2, 3, 4, 5].map((s) => (
-        <Star key={s} className={`h-3 w-3 ${s <= Math.round(score) ? 'text-black dark:text-white font-semibold fill-[#E8FF4C]' : 'text-muted-foreground'}`} />
+        <Star key={s} className={`h-3 w-3 ${s <= Math.round(score) ? 'text-black dark:text-white font-semibold fill-black dark:fill-[#E8FF4C]' : 'text-muted-foreground'}`} />
       ))}
     </span>
   );
