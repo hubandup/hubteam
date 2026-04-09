@@ -148,7 +148,7 @@ export function LagostinaLearnings() {
                         placeholder={canEdit ? 'Ajouter…' : '—'}
                         rows={3}
                       />
-                      {info && <p className="text-muted-foreground text-[10px] font-['Roboto'] mt-1">{info}</p>}
+                      {info && <p className="text-muted-foreground text-xs font-['Roboto'] mt-1">{info}</p>}
                     </div>
                   </td>
                   <td className="px-2 py-2">
@@ -161,7 +161,7 @@ export function LagostinaLearnings() {
                         placeholder={canEdit ? 'Ajouter…' : '—'}
                         rows={3}
                       />
-                      {info && <p className="text-muted-foreground text-[10px] font-['Roboto'] mt-1">{info}</p>}
+                      {info && <p className="text-muted-foreground text-xs font-['Roboto'] mt-1">{info}</p>}
                     </div>
                   </td>
                 </tr>

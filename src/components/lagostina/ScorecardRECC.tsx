@@ -337,7 +337,7 @@ export function ScorecardRECC() {
       {subTab === 'synthese' && (
         <>
           <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
-            <table className="w-full text-xs font-['Roboto']">
+            <table className="w-full text-sm font-['Roboto']">
               <thead>
                 <tr className="border-b border-border/40">
                   <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10 min-w-[120px]">Levier</th>
@@ -354,7 +354,7 @@ export function ScorecardRECC() {
                 <tr className="border-b border-border/20">
                   <th colSpan={4} className="sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10" />
                   {weeks.map((w) => (
-                    <th key={w} className="text-center px-1 py-1 text-muted-foreground/60 text-[10px]">{w}</th>
+                    <th key={w} className="text-center px-1 py-1 text-muted-foreground/60 text-xs">{w}</th>
                   ))}
                   <th />
                 </tr>
@@ -378,15 +378,15 @@ export function ScorecardRECC() {
                             {group.label}
                           </td>
                         )}
-                        <td className="px-2 py-1.5 text-muted-foreground text-[10px]" rowSpan={2}>{kpi.recc}</td>
+                        <td className="px-2 py-1.5 text-muted-foreground text-xs" rowSpan={2}>{kpi.recc}</td>
                         <td className="px-2 py-1.5 text-foreground text-xs" rowSpan={2}>{kpi.name}</td>
-                        <td className="px-2 py-1.5 text-center text-[#22c55e] text-[10px] font-medium">A</td>
+                        <td className="px-2 py-1.5 text-center text-[#22c55e] text-xs font-medium">A</td>
                         {weeks.map((w, wi) => {
                           const val = actualVals[wi];
                           const obj = objVals[wi];
                           const color = getCondColor(val, obj);
                           return (
-                            <td key={w} className={`px-1 py-1.5 text-center text-[11px] ${color}`}>
+                            <td key={w} className={`px-1 py-1.5 text-center text-[13px] ${color}`}>
                               {formatNum(val)}
                             </td>
                           );
@@ -397,9 +397,9 @@ export function ScorecardRECC() {
                       </tr>,
                       // Objectives row
                       <tr key={`${group.levier}-${kpi.name}-obj`} className="border-b border-border/40 hover:bg-gray-50 dark:bg-[#141928]">
-                        <td className="px-2 py-1.5 text-center text-muted-foreground text-[10px] font-medium">O</td>
+                        <td className="px-2 py-1.5 text-center text-muted-foreground text-xs font-medium">O</td>
                         {weeks.map((w, wi) => (
-                          <td key={w} className="px-1 py-1.5 text-center text-[11px] text-muted-foreground">
+                          <td key={w} className="px-1 py-1.5 text-center text-[13px] text-muted-foreground">
                             {formatNum(objVals[wi])}
                           </td>
                         ))}
@@ -503,13 +503,13 @@ export function ScorecardRECC() {
                   <div className="p-4 text-muted-foreground text-xs font-['Roboto']">Aucune donnée pour ce levier</div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-xs font-['Roboto']">
+                    <table className="w-full text-sm font-['Roboto']">
                       <thead>
                         <tr className="border-b border-border/20">
                           <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
                           <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[40px]">Type</th>
                           {weeks.map((w) => (
-                            <th key={w} className="text-center px-1 py-2 text-muted-foreground/60 text-[10px]">{w}</th>
+                            <th key={w} className="text-center px-1 py-2 text-muted-foreground/60 text-xs">{w}</th>
                           ))}
                         </tr>
                       </thead>
@@ -526,17 +526,17 @@ export function ScorecardRECC() {
                           return [
                             <tr key={`${kn}-a`} className="border-b border-border/20">
                               <td className="px-3 py-1.5 text-foreground" rowSpan={2}>{kn}</td>
-                              <td className="px-2 py-1.5 text-center text-[#22c55e] text-[10px] font-medium">A</td>
+                              <td className="px-2 py-1.5 text-center text-[#22c55e] text-xs font-medium">A</td>
                               {weeks.map((w, wi) => (
-                                <td key={w} className={`px-1 py-1.5 text-center text-[11px] ${getCondColor(actualVals[wi], objVals[wi])}`}>
+                                <td key={w} className={`px-1 py-1.5 text-center text-[13px] ${getCondColor(actualVals[wi], objVals[wi])}`}>
                                   {formatNum(actualVals[wi])}
                                 </td>
                               ))}
                             </tr>,
                             <tr key={`${kn}-o`} className="border-b border-border/40">
-                              <td className="px-2 py-1.5 text-center text-muted-foreground text-[10px] font-medium">O</td>
+                              <td className="px-2 py-1.5 text-center text-muted-foreground text-xs font-medium">O</td>
                               {weeks.map((w, wi) => (
-                                <td key={w} className="px-1 py-1.5 text-center text-[11px] text-muted-foreground">
+                                <td key={w} className="px-1 py-1.5 text-center text-[13px] text-muted-foreground">
                                   {formatNum(objVals[wi])}
                                 </td>
                               ))}
@@ -563,15 +563,15 @@ export function ScorecardRECC() {
                 <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">{section.section}</h3>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-xs font-['Roboto']">
+                <table className="w-full text-sm font-['Roboto']">
                   <thead>
                     <tr className="border-b border-border/20">
                       <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
                       {weeks.map((w) => (
-                        <th key={w} className="text-center px-1 py-2 text-muted-foreground/60 text-[10px]">{w}</th>
+                        <th key={w} className="text-center px-1 py-2 text-muted-foreground/60 text-xs">{w}</th>
                       ))}
                       {monthGroups.map((mg) => (
-                        <th key={mg.month} className="text-center px-2 py-2 text-black dark:text-white font-semibold text-[10px] font-bold border-l border-border/40">{mg.month}</th>
+                        <th key={mg.month} className="text-center px-2 py-2 text-black dark:text-white font-semibold text-xs font-bold border-l border-border/40">{mg.month}</th>
                       ))}
                     </tr>
                   </thead>
@@ -604,13 +604,13 @@ export function ScorecardRECC() {
                               cls = v >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]';
                             }
                             return (
-                              <td key={i} className={`px-1 py-1.5 text-center text-[11px] ${cls || 'text-foreground'}`}>
+                              <td key={i} className={`px-1 py-1.5 text-center text-[13px] ${cls || 'text-foreground'}`}>
                                 {v != null ? (isEvol ? `${v >= 0 ? '↑' : '↓'}${Math.abs(v).toFixed(1)}%` : formatNum(v)) : '—'}
                               </td>
                             );
                           })}
                           {monthlyVals.map((v, i) => (
-                            <td key={i} className="px-2 py-1.5 text-center text-[11px] text-black dark:text-white font-semibold font-medium border-l border-border/40">
+                            <td key={i} className="px-2 py-1.5 text-center text-[13px] text-black dark:text-white font-semibold font-medium border-l border-border/40">
                               {formatNum(v)}
                             </td>
                           ))}
@@ -637,12 +637,12 @@ export function ScorecardRECC() {
                   </h3>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-xs font-['Roboto']">
+                  <table className="w-full text-sm font-['Roboto']">
                     <thead>
                       <tr className="border-b border-border/20">
                         <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
                         {weeks.map((w) => (
-                          <th key={w} className="text-center px-1 py-2 text-muted-foreground/60 text-[10px]">{w}</th>
+                          <th key={w} className="text-center px-1 py-2 text-muted-foreground/60 text-xs">{w}</th>
                         ))}
                       </tr>
                     </thead>
@@ -653,7 +653,7 @@ export function ScorecardRECC() {
                           {weeks.map((w) => {
                             const entry = data.find((s) => s.kpi_name === kn && s.week === w);
                             return (
-                              <td key={w} className="px-1 py-1.5 text-center text-[11px] text-foreground">
+                              <td key={w} className="px-1 py-1.5 text-center text-[13px] text-foreground">
                                 {formatNum(entry?.actual ?? null)}
                               </td>
                             );
