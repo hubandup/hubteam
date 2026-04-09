@@ -194,7 +194,7 @@ export function LagostinaInfluenceRP() {
                   key={t}
                   onClick={() => { setTonalityFilter(t); setPage(0); }}
                   className={`px-3 py-1.5 text-xs font-['Roboto'] transition-colors ${
-                    tonalityFilter === t ? 'bg-black text-[#0f1422] font-medium' : 'bg-gray-100 text-muted-foreground hover:text-foreground'
+                    tonalityFilter === t ? 'bg-black dark:bg-[#E8FF4C] text-white dark:text-black font-medium' : 'bg-gray-100 dark:bg-[#1a1f2e] text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {label}
