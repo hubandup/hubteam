@@ -324,7 +324,7 @@ export function ScorecardRECC() {
             onClick={() => setSubTab(t.id)}
             className={`px-5 py-2.5 text-sm font-['Roboto'] transition-colors ${
               subTab === t.id
-                ? 'bg-black text-[#0f1422] font-medium'
+                ? 'bg-black text-white dark:bg-[#E8FF4C] dark:text-black font-medium'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
