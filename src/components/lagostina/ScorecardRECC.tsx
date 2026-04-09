@@ -5,14 +5,13 @@ import { Database } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
+} from 'recharts';
 
 // Theme-aware chart accent: dark=#E8FF4C, light=#0f1422
 function getChartAccent(): string {
   if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) return '#E8FF4C';
   return '#0f1422';
 }
-
-} from 'recharts';
 
 type Scorecard = {
   id: string;
