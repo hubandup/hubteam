@@ -117,7 +117,7 @@ function buildKpiData(rows: any[], kpis: string[]): KpiData[] {
   });
 }
 
-function KpiCard({ data, accent }: { data: KpiData; accent: string }) {
+function KpiCard({ data }: { data: KpiData }) {
   const cond = getCondColor(data.latestActual, data.latestObjective);
   const formatFn = data.kpi_name === 'budget_ratio'
     ? (v: number | null | undefined) => v != null ? `${v}%` : '—'

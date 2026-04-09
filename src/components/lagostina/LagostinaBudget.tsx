@@ -18,7 +18,7 @@ function getChartAccent(): string {
 const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
 
 const LEVIER_COLORS: Record<string, string> = {
-  digital: '#E8FF4C',
+  digital: getChartAccent(),
   tv: '#38bdf8',
   influence: '#a78bfa',
   rp: '#f87171',
@@ -27,7 +27,7 @@ const LEVIER_COLORS: Record<string, string> = {
   sea: '#e879f9',
   affiliation: '#94a3b8',
   promo_shopper: '#fbbf24',
-  media: '#E8FF4C',
+  media: getChartAccent(),
   event: '#38bdf8',
   seo: '#34d399',
 };
