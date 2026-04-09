@@ -164,7 +164,7 @@ export function LagostinaBudget() {
             className="h-full transition-all"
             style={{
               width: `${Math.min(pct, 100)}%`,
-              background: pct >= 100 ? '#ef4444' : pct >= yearProgress ? `linear-gradient(90deg, #22c55e, #E8FF4C, #ef4444)` : `linear-gradient(90deg, #22c55e, #E8FF4C)`,
+              background: pct >= 100 ? '#ef4444' : pct >= yearProgress ? `linear-gradient(90deg, #22c55e, #fbbf24, #ef4444)` : `linear-gradient(90deg, #22c55e, #fbbf24)`,
             }}
           />
         </div>
