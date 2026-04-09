@@ -2,8 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
-import { LineChart, Line, ResponsiveContainer } from 'recharts';
-
+import { LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 // Theme-aware chart accent: dark=#E8FF4C, light=#0f1422
 function getChartAccent(): string {
@@ -75,9 +74,16 @@ const TONALITY_STYLES: Record<string, { bg: string; text: string; label: string 
   negative: { bg: 'bg-[#ef4444]/20', text: 'text-[#ef4444]', label: 'Négatif' },
 };
 
+const TONALITY_COLORS: Record<string, string> = {
+  positive: '#22c55e',
+  neutral: '#9ca3af',
+  negative: '#ef4444',
+};
+
 const PAGE_SIZE = 20;
 
 export function LagostinaInfluenceRP() {
+  const [activeTab, setActiveTab] = useState<'influence' | 'presse'>('influence');
   const [tonalityFilter, setTonalityFilter] = useState<string>('all');
   const [page, setPage] = useState(0);
 
@@ -103,7 +109,6 @@ export function LagostinaInfluenceRP() {
     },
   });
 
-  // Latest influence data
   const latest = useMemo(() => {
     if (!influenceData?.length) return null;
     return influenceData[influenceData.length - 1];
@@ -121,7 +126,23 @@ export function LagostinaInfluenceRP() {
     ];
   }, [latest, influenceData]);
 
-  // Filtered press
+  // Tonality pie chart data
+  const tonalityPieData = useMemo(() => {
+    if (!pressData?.length) return [];
+    const counts: Record<string, number> = { positive: 0, neutral: 0, negative: 0 };
+    pressData.forEach((p) => {
+      if (counts[p.tonality] !== undefined) counts[p.tonality]++;
+      else counts.neutral++;
+    });
+    return Object.entries(counts)
+      .filter(([, v]) => v > 0)
+      .map(([key, value]) => ({
+        name: TONALITY_STYLES[key]?.label || key,
+        value,
+        color: TONALITY_COLORS[key] || '#9ca3af',
+      }));
+  }, [pressData]);
+
   const filteredPress = useMemo(() => {
     if (!pressData) return [];
     if (tonalityFilter === 'all') return pressData;
@@ -140,7 +161,7 @@ export function LagostinaInfluenceRP() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-16 bg-gray-100 animate-pulse" />)}
+        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-16 bg-gray-100 dark:bg-[#1a1f2e] animate-pulse" />)}
       </div>
     );
   }
@@ -155,133 +176,196 @@ export function LagostinaInfluenceRP() {
     );
   }
 
+  const tabs = [
+    { key: 'influence' as const, label: 'Influence' },
+    { key: 'presse' as const, label: 'Revue de presse' },
+  ];
+
   return (
-    <div className="space-y-8">
-      {/* Influence KPI cards */}
-      {kpis.length > 0 && (
-        <div>
-          <h2 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Influence</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {kpis.map((kpi) => (
-              <div key={kpi.label} className={`bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
-                <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-1">{kpi.label}</p>
-                <div className="flex items-end gap-2">
-                  <span className={`text-xl font-bold font-['Instrument_Sans'] ${getCondColor(kpi.actual, kpi.obj) || 'text-foreground'}`}>
-                    {kpi.actual != null ? kpi.actual.toLocaleString('fr-FR') : '—'}
-                  </span>
-                  {kpi.obj != null && (
-                    <span className="text-muted-foreground text-xs font-['Roboto'] mb-0.5">/ {kpi.obj.toLocaleString('fr-FR')}</span>
-                  )}
-                </div>
-                <Sparkline data={kpi.vals} />
+    <div className="space-y-6">
+      {/* Tab navigation */}
+      <div className="flex gap-0 border-b border-border/40">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`px-5 py-3 text-base font-['Instrument_Sans'] font-bold transition-colors border-b-2 -mb-px ${
+              activeTab === tab.key
+                ? 'border-black dark:border-[#E8FF4C] text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Influence tab */}
+      {activeTab === 'influence' && kpis.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {kpis.map((kpi) => (
+            <div key={kpi.label} className={`bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
+              <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-1">{kpi.label}</p>
+              <div className="flex items-end gap-2">
+                <span className={`text-xl font-bold font-['Instrument_Sans'] ${getCondColor(kpi.actual, kpi.obj) || 'text-foreground'}`}>
+                  {kpi.actual != null ? kpi.actual.toLocaleString('fr-FR') : '—'}
+                </span>
+                {kpi.obj != null && (
+                  <span className="text-muted-foreground text-xs font-['Roboto'] mb-0.5">/ {kpi.obj.toLocaleString('fr-FR')}</span>
+                )}
               </div>
-            ))}
-          </div>
+              <Sparkline data={kpi.vals} />
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Press review */}
-      {pressData && pressData.length > 0 && (
-        <div>
-          <h2 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Revue de presse</h2>
-
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-3 mb-4">
-            {['all', 'positive', 'neutral', 'negative'].map((t) => {
-              const label = t === 'all' ? 'Tout' : TONALITY_STYLES[t]?.label || t;
-              return (
-                <button
-                  key={t}
-                  onClick={() => { setTonalityFilter(t); setPage(0); }}
-                  className={`px-3 py-1.5 text-xs font-['Roboto'] transition-colors ${
-                    tonalityFilter === t ? 'bg-black dark:bg-[#E8FF4C] text-white dark:text-black font-medium' : 'bg-gray-100 dark:bg-[#1a1f2e] text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Counters */}
-          <div className="flex gap-6 mb-4">
-            <div className="text-muted-foreground text-xs font-['Roboto']">
-              <span className="text-foreground font-bold text-sm">{filteredPress.length}</span> retombées
+      {/* Presse tab */}
+      {activeTab === 'presse' && pressData && pressData.length > 0 && (
+        <div className="space-y-6">
+          {/* Tonality pie chart + counters */}
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Pie chart */}
+            <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-5 flex flex-col items-center w-full md:w-72 shrink-0">
+              <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-3">Répartition tonalité</p>
+              <div className="w-48 h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={tonalityPieData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      innerRadius={40}
+                      strokeWidth={2}
+                      stroke="var(--background)"
+                    >
+                      {tonalityPieData.map((entry, idx) => (
+                        <Cell key={idx} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number, name: string) => [`${value} retombées`, name]}
+                      contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 13, fontFamily: 'Roboto' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              {/* Legend */}
+              <div className="flex flex-wrap gap-3 mt-2 justify-center">
+                {tonalityPieData.map((entry) => (
+                  <div key={entry.name} className="flex items-center gap-1.5 text-xs font-['Roboto']">
+                    <span className="w-2.5 h-2.5 inline-block" style={{ backgroundColor: entry.color }} />
+                    <span className="text-foreground">{entry.name}</span>
+                    <span className="text-muted-foreground">({entry.value})</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="text-muted-foreground text-xs font-['Roboto']">
-              <span className="text-foreground font-bold text-sm">{uniqueJournalists}</span> journalistes
-            </div>
-            <div className="text-muted-foreground text-xs font-['Roboto']">
-              Reach cumulé : <span className="text-foreground font-bold text-sm">{totalReach >= 1000000 ? `${(totalReach / 1000000).toFixed(1)}M` : totalReach >= 1000 ? `${(totalReach / 1000).toFixed(0)}K` : totalReach}</span>
-            </div>
-          </div>
 
-          {/* Table */}
-          <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
-            <table className="w-full text-sm font-['Roboto']">
-              <thead>
-                <tr className="border-b border-border/40">
-                  <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider">Date</th>
-                  <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider">Média</th>
-                  <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider">Titre</th>
-                  <th className="text-center px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider">Tonalité</th>
-                  <th className="text-right px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider">Reach</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pagedPress.map((p) => {
-                  const style = TONALITY_STYLES[p.tonality] || TONALITY_STYLES.neutral;
+            {/* Right side: filters + counters + table */}
+            <div className="flex-1 min-w-0 space-y-4">
+              {/* Filters */}
+              <div className="flex flex-wrap items-center gap-3">
+                {['all', 'positive', 'neutral', 'negative'].map((t) => {
+                  const label = t === 'all' ? 'Tout' : TONALITY_STYLES[t]?.label || t;
                   return (
-                    <tr key={p.id} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
-                      <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
-                        {new Date(p.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
-                      </td>
-                      <td className="px-3 py-2 text-foreground font-medium">{p.media_name}</td>
-                      <td className="px-3 py-2 text-foreground max-w-xs truncate">
-                        {p.url ? (
-                          <a href={p.url} target="_blank" rel="noopener noreferrer" className="hover:text-black dark:text-white font-semibold flex items-center gap-1">
-                            {p.title}
-                            <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                          </a>
-                        ) : p.title}
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        <span className={`inline-block px-2 py-0.5 text-xs font-medium ${style.bg} ${style.text}`}>
-                          {style.label}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-right text-foreground">
-                        {p.estimated_reach ? p.estimated_reach.toLocaleString('fr-FR') : '—'}
-                      </td>
-                    </tr>
+                    <button
+                      key={t}
+                      onClick={() => { setTonalityFilter(t); setPage(0); }}
+                      className={`px-3 py-1.5 text-xs font-['Roboto'] transition-colors ${
+                        tonalityFilter === t ? 'bg-black dark:bg-[#E8FF4C] text-white dark:text-black font-medium' : 'bg-gray-100 dark:bg-[#1a1f2e] text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {label}
+                    </button>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
+              </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-4 mt-4">
-              <button
-                onClick={() => setPage(Math.max(0, page - 1))}
-                disabled={page === 0}
-                className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <span className="text-muted-foreground text-xs font-['Roboto']">
-                {page + 1} / {totalPages}
-              </span>
-              <button
-                onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-                disabled={page >= totalPages - 1}
-                className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
+              {/* Counters */}
+              <div className="flex gap-6">
+                <div className="text-muted-foreground text-xs font-['Roboto']">
+                  <span className="text-foreground font-bold text-sm">{filteredPress.length}</span> retombées
+                </div>
+                <div className="text-muted-foreground text-xs font-['Roboto']">
+                  <span className="text-foreground font-bold text-sm">{uniqueJournalists}</span> journalistes
+                </div>
+                <div className="text-muted-foreground text-xs font-['Roboto']">
+                  Reach cumulé : <span className="text-foreground font-bold text-sm">{totalReach >= 1000000 ? `${(totalReach / 1000000).toFixed(1)}M` : totalReach >= 1000 ? `${(totalReach / 1000).toFixed(0)}K` : totalReach}</span>
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
+                <table className="w-full text-sm font-['Roboto']">
+                  <thead>
+                    <tr className="border-b border-border/40">
+                      <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider">Date</th>
+                      <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider">Média</th>
+                      <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider">Titre</th>
+                      <th className="text-center px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider">Tonalité</th>
+                      <th className="text-right px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider">Reach</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pagedPress.map((p) => {
+                      const style = TONALITY_STYLES[p.tonality] || TONALITY_STYLES.neutral;
+                      return (
+                        <tr key={p.id} className="border-b border-border/20 hover:bg-gray-50 dark:hover:bg-[#141928]">
+                          <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                            {new Date(p.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                          </td>
+                          <td className="px-3 py-2 text-foreground font-medium">{p.media_name}</td>
+                          <td className="px-3 py-2 text-foreground max-w-xs truncate">
+                            {p.url ? (
+                              <a href={p.url} target="_blank" rel="noopener noreferrer" className="hover:text-black dark:hover:text-white font-semibold flex items-center gap-1">
+                                {p.title}
+                                <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                              </a>
+                            ) : p.title}
+                          </td>
+                          <td className="px-3 py-2 text-center">
+                            <span className={`inline-block px-2 py-0.5 text-xs font-medium ${style.bg} ${style.text}`}>
+                              {style.label}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 text-right text-foreground">
+                            {p.estimated_reach ? p.estimated_reach.toLocaleString('fr-FR') : '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-4">
+                  <button
+                    onClick={() => setPage(Math.max(0, page - 1))}
+                    disabled={page === 0}
+                    className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <span className="text-muted-foreground text-xs font-['Roboto']">
+                    {page + 1} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+                    disabled={page >= totalPages - 1}
+                    className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>
