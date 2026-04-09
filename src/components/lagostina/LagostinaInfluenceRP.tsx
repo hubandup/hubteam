@@ -4,6 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { Database, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 
+
+// Theme-aware chart accent: dark=#E8FF4C, light=#0f1422
+function getChartAccent(): string {
+  if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) return '#E8FF4C';
+  return '#0f1422';
+}
+
 type Influence = {
   id: string;
   week: string;
@@ -55,7 +62,7 @@ function Sparkline({ data }: { data: number[] }) {
     <div className="w-16 h-5 mt-1">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={chartData} margin={{ top: 1, right: 1, bottom: 1, left: 1 }}>
-          <Line type="monotone" dataKey="v" stroke="#E8FF4C" strokeWidth={1.5} dot={false} />
+          <Line type="monotone" dataKey="v" stroke={getChartAccent()} strokeWidth={1.5} dot={false} />
         </LineChart>
       </ResponsiveContainer>
     </div>

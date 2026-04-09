@@ -4,6 +4,13 @@ import { TrendingUp, TrendingDown, Eye, MousePointerClick, DollarSign, PieChart,
 import { useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
 
+
+// Theme-aware chart accent: dark=#E8FF4C, light=#0f1422
+function getChartAccent(): string {
+  if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) return '#E8FF4C';
+  return '#0f1422';
+}
+
 function KpiCardSkeleton() {
   return (
     <div className="bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] border-black dark:border-white p-5 animate-pulse">
@@ -222,7 +229,7 @@ export function LagostinaOverview() {
                 className="h-full transition-all"
                 style={{
                   width: `${Math.min(budgetPct, 100)}%`,
-                  backgroundColor: budgetPct >= 100 ? '#ef4444' : budgetPct >= 80 ? '#E8FF4C' : '#22c55e',
+                  backgroundColor: budgetPct >= 100 ? '#ef4444' : budgetPct >= 80 ? getChartAccent() : '#22c55e',
                 }}
               />
             </div>

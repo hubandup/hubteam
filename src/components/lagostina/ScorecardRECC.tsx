@@ -5,6 +5,13 @@ import { Database } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
+
+// Theme-aware chart accent: dark=#E8FF4C, light=#0f1422
+function getChartAccent(): string {
+  if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) return '#E8FF4C';
+  return '#0f1422';
+}
+
 } from 'recharts';
 
 type Scorecard = {
@@ -113,7 +120,7 @@ const FULL_DETAIL_SECTIONS = [
 ];
 
 const LEVIER_COLORS: Record<string, string> = {
-  media: '#E8FF4C',
+  media: '#6366f1',
   event: '#38bdf8',
   influence: '#a78bfa',
   social_media: '#f472b6',
@@ -146,7 +153,7 @@ function Sparkline({ data }: { data: number[] }) {
     <div className="w-16 h-6">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={chartData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
-          <Line type="monotone" dataKey="v" stroke="#E8FF4C" strokeWidth={1.5} dot={false} />
+          <Line type="monotone" dataKey="v" stroke={getChartAccent()} strokeWidth={1.5} dot={false} />
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -423,7 +430,7 @@ export function ScorecardRECC() {
                     <XAxis dataKey="week" tick={{ fill: '#9ca3af', fontSize: 10 }} />
                     <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} />
                     <Tooltip content={<CustomTooltip />} />
-                    <Line type="monotone" dataKey="actual" name="Actuals" stroke="#E8FF4C" strokeWidth={2} dot={{ fill: '#E8FF4C', r: 3 }} />
+                    <Line type="monotone" dataKey="actual" name="Actuals" stroke={getChartAccent()} strokeWidth={2} dot={{ fill: getChartAccent(), r: 3 }} />
                     <Line type="monotone" dataKey="objective" name="Objectifs" stroke="#6b7280" strokeWidth={2} strokeDasharray="5 5" dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
@@ -458,8 +465,8 @@ export function ScorecardRECC() {
                   <AreaChart data={roasChartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
                     <defs>
                       <linearGradient id="roasGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#E8FF4C" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="#E8FF4C" stopOpacity={0} />
+                        <stop offset="0%" stopColor={getChartAccent()} stopOpacity={0.3} />
+                        <stop offset="100%" stopColor={getChartAccent()} stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" />

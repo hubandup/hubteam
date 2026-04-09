@@ -6,12 +6,19 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   LineChart, Line, XAxis, YAxis, CartesianGrid, AreaChart, Area,
   Legend,
+
+// Theme-aware chart accent: dark=#E8FF4C, light=#0f1422
+function getChartAccent(): string {
+  if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) return '#E8FF4C';
+  return '#0f1422';
+}
+
 } from 'recharts';
 
 const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
 
 const LEVIER_COLORS: Record<string, string> = {
-  digital: '#E8FF4C',
+  digital: '#6366f1',
   tv: '#38bdf8',
   influence: '#a78bfa',
   rp: '#f87171',
@@ -20,7 +27,7 @@ const LEVIER_COLORS: Record<string, string> = {
   sea: '#e879f9',
   affiliation: '#94a3b8',
   promo_shopper: '#fbbf24',
-  media: '#E8FF4C',
+  media: '#6366f1',
   event: '#38bdf8',
   seo: '#34d399',
 };
@@ -157,7 +164,7 @@ export function LagostinaBudget() {
             className="h-full transition-all"
             style={{
               width: `${Math.min(pct, 100)}%`,
-              background: pct >= 100 ? '#ef4444' : pct >= yearProgress ? `linear-gradient(90deg, #22c55e, #E8FF4C, #ef4444)` : `linear-gradient(90deg, #22c55e, #E8FF4C)`,
+              background: pct >= 100 ? '#ef4444' : pct >= yearProgress ? `linear-gradient(90deg, #22c55e, #fbbf24, #ef4444)` : `linear-gradient(90deg, #22c55e, #fbbf24)`,
             }}
           />
         </div>
@@ -222,7 +229,7 @@ export function LagostinaBudget() {
                 <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
                 <Tooltip content={<CustomTooltip />} />
                 <Area type="monotone" dataKey="planned" name="Prévu" stroke="#6b7280" strokeWidth={2} strokeDasharray="5 5" fill="transparent" />
-                <Area type="monotone" dataKey="engaged" name="Engagé" stroke="#E8FF4C" strokeWidth={2} fill="#E8FF4C" fillOpacity={0.1} />
+                <Area type="monotone" dataKey="engaged" name="Engagé" stroke={getChartAccent()} strokeWidth={2} fill={getChartAccent()} fillOpacity={0.1} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
