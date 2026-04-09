@@ -35,7 +35,7 @@ function getCondColor(actual: number | null, objective: number | null) {
   if (!actual || !objective) return '';
   const ratio = actual / objective;
   if (ratio >= 1) return 'border-[#22c55e]';
-  if (ratio >= 0.8) return 'border-black dark:border-[#E8FF4C]';
+  if (ratio >= 0.8) return 'border-foreground';
   return 'border-[#ef4444]';
 }
 
@@ -117,7 +117,7 @@ function KpiCard({ data }: { data: KpiData }) {
     : (v: number | null | undefined) => formatVal(v, data.kpi_name);
 
   return (
-    <div className={`bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] ${cond || 'border-black dark:border-[#E8FF4C]'} p-4 flex flex-col gap-1`}>
+    <div className={`bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] ${cond || 'border-foreground'} p-4 flex flex-col gap-1`}>
       <div className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">{KPI_LABELS[data.kpi_name] || data.kpi_name}</div>
       <div className="text-foreground text-xl font-bold font-['Instrument_Sans']">{formatFn(data.latestActual)}</div>
       {data.latestObjective != null && (
