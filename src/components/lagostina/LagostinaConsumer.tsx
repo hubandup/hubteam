@@ -3,6 +3,13 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Clock, Star, MessageSquare, Users, ShoppingCart, ChefHat, Eye } from 'lucide-react';
 
+
+// Theme-aware chart accent: dark=#E8FF4C, light=#0f1422
+function getChartAccent(): string {
+  if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) return '#E8FF4C';
+  return '#0f1422';
+}
+
 function SectionCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-5">

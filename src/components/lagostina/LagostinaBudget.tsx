@@ -1,4 +1,3 @@
-import { useTheme } from 'next-themes';
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,6 +6,13 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   LineChart, Line, XAxis, YAxis, CartesianGrid, AreaChart, Area,
   Legend,
+
+// Theme-aware chart accent: dark=#E8FF4C, light=#0f1422
+function getChartAccent(): string {
+  if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) return '#E8FF4C';
+  return '#0f1422';
+}
+
 } from 'recharts';
 
 const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
@@ -223,7 +229,7 @@ export function LagostinaBudget() {
                 <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
                 <Tooltip content={<CustomTooltip />} />
                 <Area type="monotone" dataKey="planned" name="Prévu" stroke="#6b7280" strokeWidth={2} strokeDasharray="5 5" fill="transparent" />
-                <Area type="monotone" dataKey="engaged" name="Engagé" stroke="#E8FF4C" strokeWidth={2} fill="#E8FF4C" fillOpacity={0.1} />
+                <Area type="monotone" dataKey="engaged" name="Engagé" stroke={getChartAccent()} strokeWidth={2} fill={getChartAccent()} fillOpacity={0.1} />
               </AreaChart>
             </ResponsiveContainer>
           </div>

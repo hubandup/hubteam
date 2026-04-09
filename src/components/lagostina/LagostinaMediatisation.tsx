@@ -1,10 +1,16 @@
-import { useTheme } from 'next-themes';
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Clock, TrendingUp, TrendingDown } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+
+// Theme-aware chart accent: dark=#E8FF4C, light=#0f1422
+function getChartAccent(): string {
+  if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) return '#E8FF4C';
+  return '#0f1422';
+}
+
 } from 'recharts';
 
 const SUB_TABS = ['SEA', 'SMA', 'TikTok'] as const;
@@ -134,7 +140,7 @@ function KpiCard({ data, accent }: { data: KpiData; accent: string }) {
         <div className="h-8 mt-1">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data.weeks}>
-              <Line type="monotone" dataKey="actual" stroke={accent} strokeWidth={1.5} dot={false} />
+              <Line type="monotone" dataKey="actual" stroke={getChartAccent()} strokeWidth={1.5} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -162,7 +168,7 @@ function SEATab({ rows }: { rows: any[] }) {
                 <XAxis dataKey="week" tick={{ fill: '#9ca3af', fontSize: 10, fontFamily: 'Roboto' }} />
                 <YAxis tick={{ fill: '#9ca3af', fontSize: 10, fontFamily: 'Roboto' }} />
                 <Tooltip {...chartTooltipStyle} />
-                <Line type="monotone" dataKey="actual" stroke={accent} strokeWidth={2} dot={false} name="Actuals" />
+                <Line type="monotone" dataKey="actual" stroke={getChartAccent()} strokeWidth={2} dot={false} name="Actuals" />
                 <Line type="monotone" dataKey="objective" stroke="#6b7280" strokeWidth={1.5} strokeDasharray="5 5" dot={false} name="Objectifs" />
               </LineChart>
             </ResponsiveContainer>
@@ -205,7 +211,7 @@ function SMATab({ rows }: { rows: any[] }) {
       <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-6">
         <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Funnel SMA</h3>
         <div className="flex gap-2 items-end">
-          <FunnelStep label="Awareness" value={formatVal(reach, 'reach_(3s_views)')} color={accent} ratio={awarenessToConsid} />
+          <FunnelStep label="Awareness" value={formatVal(reach, 'reach_(3s_views)')} color={getChartAccent()} ratio={awarenessToConsid} />
           <FunnelStep label="Considération" value={formatVal(traffic, 'traffic_qualifié_(visites_site)')} color="#38bdf8" ratio={considToPurchase} />
           <FunnelStep label="Purchase" value={conversions != null ? `${conversions.toFixed(1)}%` : '—'} color="#22c55e" />
         </div>
