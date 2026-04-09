@@ -176,7 +176,7 @@ function GaugeChart({ value, target }: { value: number; target: number }) {
   return (
     <div className="flex flex-col items-center">
       <svg viewBox="0 0 200 120" className="w-full max-w-[200px]">
-        <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1e293b" strokeWidth="16" strokeLinecap="butt" />
+        <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#d1d5db" className="dark:stroke-[#1e293b]" strokeWidth="16" strokeLinecap="butt" />
         <path d="M 20 100 A 80 80 0 0 1 100 20" fill="none" stroke="#22c55e" strokeWidth="16" strokeLinecap="butt" />
         <path d="M 100 20 A 80 80 0 0 1 180 100" fill="none" stroke="#ef4444" strokeWidth="16" strokeLinecap="butt" />
         <line
@@ -419,7 +419,7 @@ export function ScorecardRECC() {
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={reachChartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
-                    <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
+                    <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" />
                     <XAxis dataKey="week" tick={{ fill: '#9ca3af', fontSize: 10 }} />
                     <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} />
                     <Tooltip content={<CustomTooltip />} />
@@ -436,7 +436,7 @@ export function ScorecardRECC() {
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={budgetByLevier} layout="vertical" margin={{ top: 5, right: 10, bottom: 5, left: 60 }}>
-                    <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" horizontal={false} />
+                    <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" horizontal={false} />
                     <XAxis type="number" tick={{ fill: '#9ca3af', fontSize: 10 }} />
                     <YAxis dataKey="levier" type="category" tick={{ fill: '#9ca3af', fontSize: 10 }} width={55} />
                     <Tooltip content={<CustomTooltip />} />
@@ -462,7 +462,7 @@ export function ScorecardRECC() {
                         <stop offset="100%" stopColor="#E8FF4C" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
+                    <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" />
                     <XAxis dataKey="week" tick={{ fill: '#9ca3af', fontSize: 10 }} />
                     <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} />
                     <Tooltip content={<CustomTooltip />} />
