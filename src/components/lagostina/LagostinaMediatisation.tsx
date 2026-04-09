@@ -63,7 +63,7 @@ function sortWeeksNumerically(weeks: { week: string; actual: number | null; obje
 }
 
 const chartTooltipStyle = {
-  contentStyle: { background: '#0f1422', border: '1px solid #E8FF4C', borderRadius: 0, fontSize: 12, fontFamily: 'Roboto' },
+  contentStyle: { background: '#0f1422', border: '1px solid currentColor', borderRadius: 0, fontSize: 12, fontFamily: 'Roboto' },
   labelStyle: { color: '#9ca3af' },
 };
 
@@ -111,7 +111,7 @@ function buildKpiData(rows: any[], kpis: string[]): KpiData[] {
   });
 }
 
-function KpiCard({ data }: { data: KpiData }) {
+function KpiCard({ data, accent }: { data: KpiData; accent: string }) {
   const cond = getCondColor(data.latestActual, data.latestObjective);
   const formatFn = data.kpi_name === 'budget_ratio'
     ? (v: number | null | undefined) => v != null ? `${v}%` : '—'
@@ -134,7 +134,7 @@ function KpiCard({ data }: { data: KpiData }) {
         <div className="h-8 mt-1">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data.weeks}>
-              <Line type="monotone" dataKey="actual" stroke="#E8FF4C" strokeWidth={1.5} dot={false} />
+              <Line type="monotone" dataKey="actual" stroke={accent} strokeWidth={1.5} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -162,7 +162,7 @@ function SEATab({ rows }: { rows: any[] }) {
                 <XAxis dataKey="week" tick={{ fill: '#9ca3af', fontSize: 10, fontFamily: 'Roboto' }} />
                 <YAxis tick={{ fill: '#9ca3af', fontSize: 10, fontFamily: 'Roboto' }} />
                 <Tooltip {...chartTooltipStyle} />
-                <Line type="monotone" dataKey="actual" stroke="#E8FF4C" strokeWidth={2} dot={false} name="Actuals" />
+                <Line type="monotone" dataKey="actual" stroke={accent} strokeWidth={2} dot={false} name="Actuals" />
                 <Line type="monotone" dataKey="objective" stroke="#6b7280" strokeWidth={1.5} strokeDasharray="5 5" dot={false} name="Objectifs" />
               </LineChart>
             </ResponsiveContainer>
@@ -205,7 +205,7 @@ function SMATab({ rows }: { rows: any[] }) {
       <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-6">
         <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Funnel SMA</h3>
         <div className="flex gap-2 items-end">
-          <FunnelStep label="Awareness" value={formatVal(reach, 'reach_(3s_views)')} color="#E8FF4C" ratio={awarenessToConsid} />
+          <FunnelStep label="Awareness" value={formatVal(reach, 'reach_(3s_views)')} color={accent} ratio={awarenessToConsid} />
           <FunnelStep label="Considération" value={formatVal(traffic, 'traffic_qualifié_(visites_site)')} color="#38bdf8" ratio={considToPurchase} />
           <FunnelStep label="Purchase" value={conversions != null ? `${conversions.toFixed(1)}%` : '—'} color="#22c55e" />
         </div>
