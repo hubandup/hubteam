@@ -259,7 +259,7 @@ function NoteEditor({
         </button>
       </div>
       {/* Arrow */}
-      <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-border/40" />
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-border/40" />
     </div>
   );
 }
