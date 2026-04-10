@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useBrisachAccess } from '@/hooks/useBrisachAccess';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Navigate } from 'react-router-dom';
@@ -13,11 +13,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Clock, FolderKanban, Calendar, Trash2, Flame } from 'lucide-react';
+import { Plus, Clock, FolderKanban, Calendar, Trash2, Flame, FileDown, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
-import { format, parseISO, startOfMonth } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
 
 const FORFAIT_DAYS_PER_MONTH = 2;
 const HOURS_PER_DAY = 7;
@@ -38,8 +41,8 @@ export default function Brisach() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
-  // Form state
   const [entryDate, setEntryDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [durationHours, setDurationHours] = useState('');
   const [description, setDescription] = useState('');
@@ -94,13 +97,9 @@ export default function Brisach() {
     onError: () => toast.error('Erreur lors de la suppression'),
   });
 
-  // Compute monthly data
   const monthlyData = useMemo(() => {
-    const months = Array.from({ length: 12 }, (_, i) => {
-      const monthEntries = entries.filter(e => {
-        const d = parseISO(e.entry_date);
-        return d.getMonth() === i;
-      });
+    return Array.from({ length: 12 }, (_, i) => {
+      const monthEntries = entries.filter(e => parseISO(e.entry_date).getMonth() === i);
       const totalHours = monthEntries.reduce((sum, e) => sum + Number(e.duration_hours), 0);
       const projects = new Set(monthEntries.map(e => e.project_name).filter(Boolean));
       return {
@@ -114,13 +113,15 @@ export default function Brisach() {
         overBudget: totalHours > FORFAIT_HOURS_PER_MONTH,
       };
     });
-    return months;
   }, [entries]);
 
   const yearTotals = useMemo(() => {
     const totalHours = entries.reduce((sum, e) => sum + Number(e.duration_hours), 0);
     const projects = new Set(entries.map(e => e.project_name).filter(Boolean));
     const forfaitAnnuel = FORFAIT_HOURS_PER_MONTH * 12;
+    const activeMonths = monthlyData.filter(m => m.totalHours > 0).length;
+    const avgDaysPerMonth = activeMonths > 0 ? +(totalHours / HOURS_PER_DAY / activeMonths).toFixed(2) : 0;
+    const avgHoursPerMonth = activeMonths > 0 ? +(totalHours / activeMonths).toFixed(1) : 0;
     return {
       totalHours,
       totalDays: +(totalHours / HOURS_PER_DAY).toFixed(2),
@@ -129,8 +130,176 @@ export default function Brisach() {
       remaining: +(forfaitAnnuel - totalHours).toFixed(2),
       remainingDays: +((forfaitAnnuel - totalHours) / HOURS_PER_DAY).toFixed(2),
       projectCount: projects.size,
+      avgDaysPerMonth,
+      avgHoursPerMonth,
+      activeMonths,
     };
-  }, [entries]);
+  }, [entries, monthlyData]);
+
+  const exportPdf = useCallback(async () => {
+    setExporting(true);
+    try {
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const margin = 15;
+      const contentW = pageW - margin * 2;
+
+      // -- Header bar --
+      doc.setFillColor(30, 30, 30);
+      doc.rect(0, 0, pageW, 40, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(22);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Brisach — Suivi Forfait PAO', margin, 26);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Année ${selectedYear}  •  Forfait : ${FORFAIT_DAYS_PER_MONTH}j / mois (${FORFAIT_HOURS_PER_MONTH}h)`, margin, 35);
+
+      // -- KPI Section --
+      let y = 52;
+      doc.setTextColor(60, 60, 60);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+
+      const kpis = [
+        { label: 'Consommé', value: `${yearTotals.totalDays}j (${yearTotals.totalHours}h)` },
+        { label: 'Forfait annuel', value: `${yearTotals.forfaitDays}j (${yearTotals.forfaitHours}h)` },
+        { label: 'Restant', value: `${yearTotals.remainingDays}j (${yearTotals.remaining}h)` },
+        { label: 'Projets', value: `${yearTotals.projectCount}` },
+        { label: 'Moyenne / mois', value: `${yearTotals.avgDaysPerMonth}j (${yearTotals.avgHoursPerMonth}h)` },
+      ];
+
+      const kpiW = contentW / kpis.length;
+      kpis.forEach((kpi, i) => {
+        const x = margin + i * kpiW;
+        doc.setFillColor(245, 245, 245);
+        doc.roundedRect(x, y, kpiW - 4, 22, 3, 3, 'F');
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(120, 120, 120);
+        doc.text(kpi.label, x + 5, y + 8);
+        doc.setFontSize(13);
+        doc.setFont('helvetica', 'bold');
+        if (kpi.label === 'Restant' && yearTotals.remaining < 0) {
+          doc.setTextColor(220, 50, 50);
+        } else {
+          doc.setTextColor(30, 30, 30);
+        }
+        doc.text(kpi.value, x + 5, y + 18);
+      });
+
+      // -- Chart capture --
+      y = 82;
+      const chartEl = document.getElementById('brisach-chart');
+      if (chartEl) {
+        const canvas = await html2canvas(chartEl, { scale: 2, backgroundColor: '#ffffff' });
+        const imgData = canvas.toDataURL('image/png');
+        const imgH = (contentW * canvas.height) / canvas.width;
+        doc.addImage(imgData, 'PNG', margin, y, contentW, imgH);
+        y += imgH + 8;
+      }
+
+      // -- Monthly table --
+      if (y > pageH - 80) {
+        doc.addPage();
+        y = 20;
+      }
+
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 30, 30);
+      doc.text('Détail par mois', margin, y);
+      y += 4;
+
+      autoTable(doc, {
+        startY: y,
+        margin: { left: margin, right: margin },
+        head: [['Mois', 'Consommé', 'Forfait', 'Restant', 'Projets']],
+        body: [
+          ...monthlyData.map(m => [
+            m.month,
+            `${m.totalDays}j (${m.totalHours}h)`,
+            `${FORFAIT_DAYS_PER_MONTH}j`,
+            `${m.remainingDays}j`,
+            String(m.projectCount),
+          ]),
+          [
+            'Moyenne / mois',
+            `${yearTotals.avgDaysPerMonth}j (${yearTotals.avgHoursPerMonth}h)`,
+            `${FORFAIT_DAYS_PER_MONTH}j`,
+            '',
+            '',
+          ],
+          [
+            'Total',
+            `${yearTotals.totalDays}j (${yearTotals.totalHours}h)`,
+            `${yearTotals.forfaitDays}j`,
+            `${yearTotals.remainingDays}j`,
+            String(yearTotals.projectCount),
+          ],
+        ],
+        headStyles: {
+          fillColor: [30, 30, 30],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 9,
+        },
+        bodyStyles: { fontSize: 9, textColor: [50, 50, 50] },
+        alternateRowStyles: { fillColor: [248, 248, 248] },
+        styles: { cellPadding: 3 },
+        didParseCell: (data) => {
+          const rowIdx = data.row.index;
+          const isAvgRow = rowIdx === monthlyData.length;
+          const isTotalRow = rowIdx === monthlyData.length + 1;
+          if (isAvgRow) {
+            data.cell.styles.fontStyle = 'italic';
+            data.cell.styles.fillColor = [235, 245, 255];
+            data.cell.styles.textColor = [60, 60, 60];
+          }
+          if (isTotalRow) {
+            data.cell.styles.fontStyle = 'bold';
+            data.cell.styles.fillColor = [230, 230, 230];
+            data.cell.styles.textColor = [20, 20, 20];
+          }
+          // Red for negative remaining
+          if (data.column.index === 3 && data.section === 'body' && !isAvgRow) {
+            const m = monthlyData[rowIdx];
+            if (m && m.remaining < 0) {
+              data.cell.styles.textColor = [220, 50, 50];
+              data.cell.styles.fontStyle = 'bold';
+            }
+            if (isTotalRow && yearTotals.remaining < 0) {
+              data.cell.styles.textColor = [220, 50, 50];
+            }
+          }
+        },
+      });
+
+      // -- Footer --
+      const pages = doc.getNumberOfPages();
+      for (let i = 1; i <= pages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+          `Brisach PAO — ${selectedYear}  •  Généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm')}  •  Page ${i}/${pages}`,
+          pageW / 2,
+          pageH - 8,
+          { align: 'center' }
+        );
+      }
+
+      doc.save(`Brisach_PAO_${selectedYear}.pdf`);
+      toast.success('PDF exporté avec succès');
+    } catch (err) {
+      console.error('PDF export error:', err);
+      toast.error("Erreur lors de l'export PDF");
+    } finally {
+      setExporting(false);
+    }
+  }, [selectedYear, monthlyData, yearTotals]);
 
   if (accessLoading) {
     return (
@@ -164,6 +333,10 @@ export default function Brisach() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={exportPdf} disabled={exporting}>
+            <FileDown className="h-4 w-4 mr-2" />
+            {exporting ? 'Export...' : 'Export PDF'}
+          </Button>
           <Select value={String(selectedYear)} onValueChange={v => setSelectedYear(Number(v))}>
             <SelectTrigger className="w-[120px]">
               <SelectValue />
@@ -236,7 +409,7 @@ export default function Brisach() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -278,6 +451,18 @@ export default function Brisach() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
+              <TrendingUp className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm text-muted-foreground">Moyenne / mois</p>
+                <p className="text-2xl font-bold">{yearTotals.avgDaysPerMonth}j</p>
+                <p className="text-xs text-muted-foreground">{yearTotals.avgHoursPerMonth}h ({yearTotals.activeMonths} mois actifs)</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
               <FolderKanban className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="text-sm text-muted-foreground">Projets</p>
@@ -294,7 +479,7 @@ export default function Brisach() {
           <CardTitle className="text-base">Consommation mensuelle (jours)</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[280px]">
+          <div id="brisach-chart" className="h-[280px] bg-background">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -350,6 +535,14 @@ export default function Brisach() {
                   <TableCell className="text-right">{m.projectCount}</TableCell>
                 </TableRow>
               ))}
+              {/* Average row */}
+              <TableRow className="border-t bg-muted/30">
+                <TableCell className="font-medium italic">Moyenne / mois</TableCell>
+                <TableCell className="text-right italic">{yearTotals.avgDaysPerMonth}j ({yearTotals.avgHoursPerMonth}h)</TableCell>
+                <TableCell className="text-right italic">{FORFAIT_DAYS_PER_MONTH}j</TableCell>
+                <TableCell className="text-right italic">—</TableCell>
+                <TableCell className="text-right italic">—</TableCell>
+              </TableRow>
               {/* Total row */}
               <TableRow className="font-bold border-t-2">
                 <TableCell>Total</TableCell>
