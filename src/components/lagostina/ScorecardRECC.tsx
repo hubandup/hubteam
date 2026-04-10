@@ -317,31 +317,18 @@ export function ScorecardRECC() {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Sub-tab toggle */}
-      <div className="flex gap-0 bg-white dark:bg-[#0f1422] border border-border/30 inline-flex">
-        {[
-          { id: 'synthese' as const, label: 'Synthèse' },
-          { id: 'par_levier' as const, label: 'Par levier' },
-          { id: 'full_detail' as const, label: 'Full détail' },
-        ].map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setSubTab(t.id)}
-            className={`px-5 py-2.5 text-sm font-['Roboto'] transition-colors ${
-              subTab === t.id
-                ? 'bg-black text-white dark:bg-[#E8FF4C] dark:text-black font-medium'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+  const scorecardSubTabs = [
+    { id: 'synthese', label: 'Synthèse' },
+    { id: 'par_levier', label: 'Par levier' },
+    { id: 'full_detail', label: 'Full détail' },
+  ];
 
+  return (
+    <LagostinaSubTabs tabs={scorecardSubTabs} defaultTab={subTab}>
+      {(tab) => (
+        <>
       {/* SYNTHÈSE */}
-      {subTab === 'synthese' && (
+      {tab === 'synthese' && (
         <>
           <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
             <table className="w-full text-sm font-['Roboto']">
@@ -675,6 +662,8 @@ export function ScorecardRECC() {
           })}
         </div>
       )}
-    </div>
+        </>
+      )}
+    </LagostinaSubTabs>
   );
 }
