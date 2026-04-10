@@ -456,7 +456,7 @@ export function ScorecardRECC() {
                           const obj = objVals[wi];
                           const color = getCondColor(val, obj);
                           return (
-                            <NoteableCell key={w} levier={group.levier} kpiName={kpi.name} week={w} notesMap={cellNotesMap} className={`px-1 py-1.5 text-center text-[13px] ${color}`}>
+                            <NoteableCell key={w} levier={group.levier} kpiName={kpi.name} week={w} notesMap={cellNotesMap} levierColor={LEVIER_COLORS[group.levier]} className={`px-1 py-1.5 text-center text-[13px] ${color}`}>
                               {formatNum(val)}
                             </NoteableCell>
                           );
@@ -619,7 +619,7 @@ export function ScorecardRECC() {
                               {visibleWeeks.map((w) => {
                                 const wi = weeks.indexOf(w);
                                 return (
-                                <NoteableCell key={w} levier={block.levier} kpiName={kn} week={w} notesMap={cellNotesMap} className={`px-1 py-1.5 text-center text-[13px] ${getCondColor(actualVals[wi], objVals[wi])}`}>
+                                <NoteableCell key={w} levier={block.levier} kpiName={kn} week={w} notesMap={cellNotesMap} levierColor={LEVIER_COLORS[block.levier]} className={`px-1 py-1.5 text-center text-[13px] ${getCondColor(actualVals[wi], objVals[wi])}`}>
                                   {formatNum(actualVals[wi])}
                                 </NoteableCell>
                                 );
@@ -710,7 +710,7 @@ export function ScorecardRECC() {
                               cls = v >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]';
                             }
                             return (
-                              <NoteableCell key={w} levier={`detail_${section.section}`} kpiName={kpiName} week={w} notesMap={cellNotesMap} className={`px-1 py-1.5 text-center text-[13px] ${cls || 'text-foreground'}`}>
+                              <NoteableCell key={w} levier={`detail_${section.section}`} kpiName={kpiName} week={w} notesMap={cellNotesMap} levierColor={LEVIER_COLORS[section.section]} className={`px-1 py-1.5 text-center text-[13px] ${cls || 'text-foreground'}`}>
                                 {v != null ? (isEvol ? `${v >= 0 ? '↑' : '↓'}${Math.abs(v).toFixed(1)}%` : formatNum(v)) : '—'}
                               </NoteableCell>
                             );
@@ -771,7 +771,7 @@ export function ScorecardRECC() {
                           {visibleWeeks.map((w) => {
                             const entry = data.find((s) => s.kpi_name === kn && s.week === w);
                             return (
-                              <NoteableCell key={w} levier={lev} kpiName={kn} week={w} notesMap={cellNotesMap} className="px-1 py-1.5 text-center text-[13px] text-foreground">
+                              <NoteableCell key={w} levier={lev} kpiName={kn} week={w} notesMap={cellNotesMap} levierColor={LEVIER_COLORS[lev]} className="px-1 py-1.5 text-center text-[13px] text-foreground">
                                 {formatNum(entry?.actual ?? null)}
                               </NoteableCell>
                             );
