@@ -324,7 +324,7 @@ export function ScorecardRECC() {
   ];
 
   return (
-    <LagostinaSubTabs tabs={scorecardSubTabs} defaultTab={subTab}>
+    <LagostinaSubTabs tabs={scorecardSubTabs} defaultTab="synthese">
       {(tab) => (
         <>
       {/* SYNTHÈSE */}
