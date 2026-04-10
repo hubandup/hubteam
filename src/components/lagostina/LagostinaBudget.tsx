@@ -178,8 +178,8 @@ export function LagostinaBudget() {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie data={donutData} cx="40%" cy="50%" innerRadius={50} outerRadius={90} dataKey="value" nameKey="levier" stroke="none">
-                        {donutData.map((entry) => (
-                          <Cell key={entry.levier} fill={LEVIER_COLORS[entry.levier] || '#E8FF4C'} />
+                        {donutData.map((entry, index) => (
+                          <Cell key={entry.levier} fill={getLevierColor(entry.levier, index)} />
                         ))}
                       </Pie>
                       <Tooltip
