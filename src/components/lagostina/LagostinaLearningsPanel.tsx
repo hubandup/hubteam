@@ -168,10 +168,10 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
   const commentFilter = 'all';
 
   const addComment = useMutation({
-    mutationFn: async (content: string) => {
+    mutationFn: async ({ content, parentId }: { content: string; parentId?: string }) => {
       const { error } = await supabase
         .from('lagostina_comments')
-        .insert({ tab: activeTab, content, user_id: user!.id });
+        .insert({ tab: activeTab, content, user_id: user!.id, parent_id: parentId || null });
       if (error) throw error;
     },
     onSuccess: () => {
