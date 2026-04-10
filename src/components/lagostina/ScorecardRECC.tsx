@@ -97,27 +97,14 @@ const SYNTHESE_STRUCTURE = [
   },
 ];
 
-const PAR_LEVIER_STRUCTURE = [
+const DETAIL_PAR_LEVIER_STRUCTURE = [
   { levier: 'media_one_video_social', label: 'Media One Video + Social' },
   { levier: 'media_vol', label: 'Media VOL' },
   { levier: 'media_social', label: 'Media Social' },
   { levier: 'media_sea', label: 'Media SEA' },
   { levier: 'media_affiliation', label: 'Media Affiliation' },
-];
-
-const FULL_DETAIL_SECTIONS = [
-  {
-    section: 'Awareness',
-    kpis: ['Reach', 'Evol w/w Reach', 'Complétion vidéo 100%', 'c/Reach point'],
-  },
-  {
-    section: 'Considération',
-    kpis: ['DPV AMZ', 'Trafic D2C', 'Evol w/w D2C', 'CTR', 'CPV'],
-  },
-  {
-    section: 'Purchase',
-    kpis: ['Ventes K€', 'Evol w/w Ventes', 'CVR', 'ROAS', 'CPA'],
-  },
+  { levier: 'influence', label: 'Influence' },
+  { levier: 'social_media', label: 'Social Media' },
 ];
 
 const LEVIER_COLORS: Record<string, string> = {
