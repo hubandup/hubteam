@@ -154,7 +154,7 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
   }, [activeTab, queryClient]);
 
   const [newComment, setNewComment] = useState('');
-  const [commentFilter, setCommentFilter] = useState<'all' | 'unresolved'>('all');
+  const commentFilter = 'all';
 
   const addComment = useMutation({
     mutationFn: async (content: string) => {
@@ -189,11 +189,7 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lagostina-comments', activeTab] }),
   });
 
-  const filteredComments = commentFilter === 'unresolved'
-    ? comments.filter(c => !c.resolved)
-    : comments;
-
-  const unresolvedCount = comments.filter(c => !c.resolved).length;
+  const filteredComments = comments;
 
   return (
     <div className="border border-border/20 bg-background dark:bg-[#111827] mt-4 rounded-[7px] shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
@@ -232,35 +228,6 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
         {/* Comments */}
         <div className="p-5 space-y-4">
           <h3 className="text-foreground font-['Instrument_Sans'] font-bold text-base">Comments</h3>
-
-          {/* Filter tabs */}
-          <div className="flex gap-4 border-b border-border/30 pb-2">
-            <button
-              onClick={() => setCommentFilter('all')}
-              className={`text-sm font-['Roboto'] pb-1 border-b-2 transition-colors ${
-                commentFilter === 'all'
-                  ? 'text-primary border-primary font-medium'
-                  : 'text-muted-foreground border-transparent hover:text-foreground'
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setCommentFilter('unresolved')}
-              className={`text-sm font-['Roboto'] pb-1 border-b-2 transition-colors flex items-center gap-1.5 ${
-                commentFilter === 'unresolved'
-                  ? 'text-primary border-primary font-medium'
-                  : 'text-muted-foreground border-transparent hover:text-foreground'
-              }`}
-            >
-              Unresolved
-              {unresolvedCount > 0 && (
-                <span className="bg-muted text-muted-foreground text-xs px-1.5 py-0.5 rounded-full font-medium">
-                  {unresolvedCount}
-                </span>
-              )}
-            </button>
-          </div>
 
           {/* Comment input */}
           <div className="flex gap-2">
