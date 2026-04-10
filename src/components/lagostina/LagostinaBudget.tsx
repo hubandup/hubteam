@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Database, AlertTriangle } from 'lucide-react';
+import { Database, AlertTriangle, TrendingUp, Users, Megaphone } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   XAxis, YAxis, CartesianGrid, AreaChart, Area,
@@ -59,6 +59,18 @@ export function LagostinaBudget() {
     queryKey: ['lagostina-budget'],
     queryFn: async () => {
       const { data, error } = await supabase.from('lagostina_budget').select('*');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: scorecardData } = useQuery({
+    queryKey: ['lagostina-scorecard-budget'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lagostina_scorecards')
+        .select('*')
+        .in('levier', ['media_affiliation', 'influence', 'media_one_video_social', 'media_social', 'media_sea', 'media_vol']);
       if (error) throw error;
       return data;
     },
@@ -138,6 +150,7 @@ export function LagostinaBudget() {
         <>
           {activeTab === 'global' && (
             <>
+              {/* Budget consommé global */}
               <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-6">
                 <div className="flex items-center justify-between mb-3">
                   <div>
@@ -170,7 +183,182 @@ export function LagostinaBudget() {
                   <span className="text-muted-foreground text-xs font-['Roboto']">100%</span>
                 </div>
               </div>
+
+              {/* Budget consommé du mois en cours */}
+              {(() => {
+                const currentMonthLabel = MONTHS[now.getMonth()];
+                const monthPlanned = budgetData?.filter(b => b.month === currentMonthLabel).reduce((s, b) => s + (Number(b.planned) || 0), 0) || 0;
+                const monthEngaged = budgetData?.filter(b => b.month === currentMonthLabel).reduce((s, b) => s + (Number(b.engaged) || 0), 0) || 0;
+                const monthInvoiced = budgetData?.filter(b => b.month === currentMonthLabel).reduce((s, b) => s + (Number(b.invoiced) || 0), 0) || 0;
+                const monthPct = monthPlanned > 0 ? (monthEngaged / monthPlanned) * 100 : 0;
+                const dayProgress = (now.getDate() / new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()) * 100;
+
+                return (
+                  <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-6">
+                    <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-2">
+                      Budget consommé — {currentMonthLabel} {now.getFullYear()}
+                    </p>
+                    <div className="grid grid-cols-3 gap-6 mb-4">
+                      <div>
+                        <p className="text-muted-foreground text-xs font-['Roboto']">Prévu</p>
+                        <p className="text-foreground text-xl font-bold font-['Instrument_Sans']">
+                          {monthPlanned >= 1000 ? `€${(monthPlanned / 1000).toFixed(1)}K` : `€${monthPlanned}`}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs font-['Roboto']">Engagé</p>
+                        <p className="text-foreground text-xl font-bold font-['Instrument_Sans']">
+                          {monthEngaged >= 1000 ? `€${(monthEngaged / 1000).toFixed(1)}K` : `€${monthEngaged}`}
+                          <span className="text-sm font-normal text-muted-foreground ml-1">({monthPct.toFixed(0)}%)</span>
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs font-['Roboto']">Facturé</p>
+                        <p className="text-foreground text-xl font-bold font-['Instrument_Sans']">
+                          {monthInvoiced >= 1000 ? `€${(monthInvoiced / 1000).toFixed(1)}K` : `€${monthInvoiced}`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="w-full h-2 bg-gray-200">
+                      <div
+                        className="h-full transition-all"
+                        style={{
+                          width: `${Math.min(monthPct, 100)}%`,
+                          background: monthPct > dayProgress * 1.2 ? '#ef4444' : '#22c55e',
+                        }}
+                      />
+                    </div>
+                    <p className="text-muted-foreground text-xs font-['Roboto'] mt-1 text-right">
+                      Progression du mois : {dayProgress.toFixed(0)}%
+                    </p>
+                  </div>
+                );
+              })()}
+
               <ClientBudgetChart />
+
+              {/* 3 colonnes : Affiliation / Influence / Médiatisation */}
+              {(() => {
+                const formatVal = (n: number | null) => {
+                  if (n == null) return '—';
+                  if (Math.abs(n) >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+                  if (Math.abs(n) >= 1000) return `${(n / 1000).toFixed(1)}K`;
+                  if (n % 1 !== 0) return n.toFixed(2);
+                  return String(n);
+                };
+
+                const getLatestKpis = (levier: string) => {
+                  if (!scorecardData?.length) return [];
+                  const levierData = scorecardData.filter(s => s.levier === levier);
+                  const kpiNames = [...new Set(levierData.map(s => s.kpi_name))];
+                  return kpiNames.map(name => {
+                    const entries = levierData.filter(s => s.kpi_name === name).sort((a, b) => (b.week || '').localeCompare(a.week || ''));
+                    const latest = entries[0];
+                    return {
+                      name,
+                      actual: latest?.actual ?? null,
+                      objective: latest?.objective ?? null,
+                    };
+                  });
+                };
+
+                const getBudgetForLevier = (levierKey: string) => {
+                  if (!budgetData?.length) return { planned: 0, engaged: 0, invoiced: 0 };
+                  const rows = budgetData.filter(b => b.levier === levierKey);
+                  return {
+                    planned: rows.reduce((s, b) => s + (Number(b.planned) || 0), 0),
+                    engaged: rows.reduce((s, b) => s + (Number(b.engaged) || 0), 0),
+                    invoiced: rows.reduce((s, b) => s + (Number(b.invoiced) || 0), 0),
+                  };
+                };
+
+                const categories = [
+                  {
+                    title: 'Affiliation',
+                    icon: <TrendingUp className="h-4 w-4" />,
+                    levierBudget: 'affiliation',
+                    levierScorecard: 'media_affiliation',
+                    color: '#94a3b8',
+                  },
+                  {
+                    title: 'Influence',
+                    icon: <Users className="h-4 w-4" />,
+                    levierBudget: 'influence',
+                    levierScorecard: 'influence',
+                    color: '#a78bfa',
+                  },
+                  {
+                    title: 'Médiatisation',
+                    icon: <Megaphone className="h-4 w-4" />,
+                    levierBudget: 'media',
+                    levierScorecard: 'media_one_video_social',
+                    color: '#6366f1',
+                  },
+                ];
+
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {categories.map(cat => {
+                      const budget = getBudgetForLevier(cat.levierBudget);
+                      const kpis = getLatestKpis(cat.levierScorecard);
+                      const budgetPct = budget.planned > 0 ? (budget.engaged / budget.planned) * 100 : 0;
+
+                      return (
+                        <div key={cat.title} className="bg-white dark:bg-[#0f1422] border border-border/30 p-5">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="p-1.5 rounded" style={{ backgroundColor: `${cat.color}20`, color: cat.color }}>
+                              {cat.icon}
+                            </div>
+                            <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">{cat.title}</h3>
+                          </div>
+
+                          {/* Budget summary */}
+                          <div className="space-y-2 mb-4">
+                            <div className="flex justify-between text-xs font-['Roboto']">
+                              <span className="text-muted-foreground">Budget engagé</span>
+                              <span className="text-foreground font-medium">
+                                €{budget.engaged >= 1000 ? `${(budget.engaged / 1000).toFixed(0)}K` : budget.engaged}
+                                <span className="text-muted-foreground font-normal"> / €{budget.planned >= 1000 ? `${(budget.planned / 1000).toFixed(0)}K` : budget.planned}</span>
+                              </span>
+                            </div>
+                            <div className="w-full h-1.5 bg-gray-200">
+                              <div className="h-full transition-all" style={{ width: `${Math.min(budgetPct, 100)}%`, backgroundColor: cat.color }} />
+                            </div>
+                            <div className="flex justify-between text-xs font-['Roboto']">
+                              <span className="text-muted-foreground">Facturé</span>
+                              <span className="text-foreground">€{budget.invoiced >= 1000 ? `${(budget.invoiced / 1000).toFixed(0)}K` : budget.invoiced}</span>
+                            </div>
+                          </div>
+
+                          {/* KPIs from scorecard */}
+                          {kpis.length > 0 && (
+                            <div className="border-t border-border/20 pt-3 space-y-2">
+                              <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">KPIs Scorecard</p>
+                              {kpis.map(kpi => {
+                                const completion = kpi.actual != null && kpi.objective != null && kpi.objective !== 0
+                                  ? (kpi.actual / kpi.objective) * 100 : null;
+                                return (
+                                  <div key={kpi.name} className="flex justify-between items-center text-xs font-['Roboto']">
+                                    <span className="text-muted-foreground truncate mr-2">{kpi.name}</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-foreground font-medium">{formatVal(kpi.actual)}</span>
+                                      {completion != null && (
+                                        <span className={`text-[10px] px-1.5 py-0.5 rounded-sm ${completion >= 100 ? 'bg-[#22c55e]/20 text-[#22c55e]' : completion >= 70 ? 'bg-[#fbbf24]/20 text-[#fbbf24]' : 'bg-[#ef4444]/20 text-[#ef4444]'}`}>
+                                          {completion.toFixed(0)}%
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </>
           )}
 
