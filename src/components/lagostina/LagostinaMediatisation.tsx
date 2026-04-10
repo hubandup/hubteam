@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Clock, TrendingUp, TrendingDown } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
+import { LagostinaSubTabs } from './LagostinaSubTabs';
 
 // Theme-aware chart accent: dark=#E8FF4C, light=#0f1422
 function getChartAccent(): string {
@@ -295,8 +296,6 @@ function TikTokTab({ rows }: { rows: any[] }) {
 }
 
 export function LagostinaMediatisation() {
-  const [subTab, setSubTab] = useState<SubTab>('SEA');
-
   const { data: mediaKpis, isLoading } = useQuery({
     queryKey: ['lagostina-media-kpis'],
     queryFn: async () => {
@@ -305,8 +304,6 @@ export function LagostinaMediatisation() {
       return data;
     },
   });
-
-  const channelRows = (mediaKpis || []).filter((r) => r.channel === CHANNEL_MAP[subTab]);
 
   if (isLoading) {
     return (
@@ -318,34 +315,25 @@ export function LagostinaMediatisation() {
     );
   }
 
-  return (
-    <div className="space-y-4">
-      <div className="flex gap-0 border-b border-border/40">
-        {SUB_TABS.map((t) => (
-          <button
-            key={t}
-            onClick={() => setSubTab(t)}
-            className={`px-4 py-2 text-sm font-['Roboto'] border-b-2 transition-colors ${
-              subTab === t ? 'text-black dark:text-white font-semibold border-black dark:border-white font-medium' : 'text-muted-foreground border-transparent hover:text-foreground'
-            }`}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
+  const subTabItems = SUB_TABS.map((t) => ({ id: t, label: t }));
 
-      {channelRows.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <Clock className="h-10 w-10 text-muted-foreground" />
-          <p className="text-muted-foreground font-['Roboto'] text-sm">Données non disponibles — en attente d'import</p>
-        </div>
-      ) : (
-        <>
-          {subTab === 'SEA' && <SEATab rows={channelRows} />}
-          {subTab === 'SMA' && <SMATab rows={channelRows} />}
-          {subTab === 'TikTok' && <TikTokTab rows={channelRows} />}
-        </>
-      )}
-    </div>
+  return (
+    <LagostinaSubTabs tabs={subTabItems} defaultTab="SEA">
+      {(tab) => {
+        const rows = (mediaKpis || []).filter((r) => r.channel === CHANNEL_MAP[tab as SubTab]);
+        return rows.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Clock className="h-10 w-10 text-muted-foreground" />
+            <p className="text-muted-foreground font-['Roboto'] text-sm">Données non disponibles — en attente d'import</p>
+          </div>
+        ) : (
+          <>
+            {tab === 'SEA' && <SEATab rows={rows} />}
+            {tab === 'SMA' && <SMATab rows={rows} />}
+            {tab === 'TikTok' && <TikTokTab rows={rows} />}
+          </>
+        );
+      }}
+    </LagostinaSubTabs>
   );
 }

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { LagostinaSubTabs } from './LagostinaSubTabs';
 
 // Theme-aware chart accent: dark=#E8FF4C, light=#0f1422
 function getChartAccent(): string {
@@ -83,7 +84,6 @@ const TONALITY_COLORS: Record<string, string> = {
 const PAGE_SIZE = 20;
 
 export function LagostinaInfluenceRP() {
-  const [activeTab, setActiveTab] = useState<'influence' | 'presse'>('influence');
   const [tonalityFilter, setTonalityFilter] = useState<string>('all');
   const [page, setPage] = useState(0);
 
@@ -177,31 +177,16 @@ export function LagostinaInfluenceRP() {
   }
 
   const tabs = [
-    { key: 'influence' as const, label: 'Influence' },
-    { key: 'presse' as const, label: 'Revue de presse' },
+    { id: 'influence', label: 'Influence' },
+    { id: 'presse', label: 'Revue de presse' },
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Tab navigation */}
-      <div className="flex gap-0 border-b border-border/40">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-5 py-3 text-base font-['Instrument_Sans'] font-bold transition-colors border-b-2 -mb-px ${
-              activeTab === tab.key
-                ? 'border-black dark:border-[#E8FF4C] text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
+    <LagostinaSubTabs tabs={tabs} defaultTab="influence">
+      {(tab) => (
+        <>
       {/* Influence tab */}
-      {activeTab === 'influence' && kpis.length > 0 && (
+      {tab === 'influence' && kpis.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {kpis.map((kpi) => (
             <div key={kpi.label} className={`bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
@@ -221,7 +206,7 @@ export function LagostinaInfluenceRP() {
       )}
 
       {/* Presse tab */}
-      {activeTab === 'presse' && pressData && pressData.length > 0 && (
+      {tab === 'presse' && pressData && pressData.length > 0 && (
         <div className="space-y-6">
           {/* Tonality pie chart + counters */}
           <div className="flex flex-col md:flex-row gap-6">
@@ -368,6 +353,8 @@ export function LagostinaInfluenceRP() {
           </div>
         </div>
       )}
-    </div>
+        </>
+      )}
+    </LagostinaSubTabs>
   );
 }
