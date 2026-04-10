@@ -19,8 +19,19 @@ const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep',
 const LEVIER_COLORS: Record<string, string> = {
   digital: '#6366f1', tv: '#38bdf8', influence: '#a78bfa', rp: '#f87171',
   crm: '#34d399', social: '#fb923c', sea: '#e879f9', affiliation: '#94a3b8',
-  promo_shopper: '#fbbf24', media: '#6366f1', event: '#38bdf8', seo: '#34d399',
+  promo_shopper: '#fbbf24', media: '#0ea5e9', event: '#f59e0b', seo: '#10b981',
+  tiktok: '#ec4899', print: '#8b5cf6', ooh: '#14b8a6', sampling: '#f43f5e',
+  content: '#84cc16', partnerships: '#d946ef', programmatique: '#06b6d4',
 };
+
+const FALLBACK_PALETTE = [
+  '#6366f1', '#38bdf8', '#a78bfa', '#f87171', '#34d399', '#fb923c',
+  '#e879f9', '#fbbf24', '#0ea5e9', '#ec4899', '#8b5cf6', '#14b8a6',
+];
+
+function getLevierColor(levier: string, index: number): string {
+  return LEVIER_COLORS[levier] || FALLBACK_PALETTE[index % FALLBACK_PALETTE.length];
+}
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
@@ -167,8 +178,8 @@ export function LagostinaBudget() {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie data={donutData} cx="40%" cy="50%" innerRadius={50} outerRadius={90} dataKey="value" nameKey="levier" stroke="none">
-                        {donutData.map((entry) => (
-                          <Cell key={entry.levier} fill={LEVIER_COLORS[entry.levier] || '#E8FF4C'} />
+                        {donutData.map((entry, index) => (
+                          <Cell key={entry.levier} fill={getLevierColor(entry.levier, index)} />
                         ))}
                       </Pie>
                       <Tooltip
@@ -233,7 +244,7 @@ export function LagostinaBudget() {
                             <td
                               rowSpan={4}
                               className="px-3 py-2 text-foreground font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10 border-l-2 capitalize"
-                              style={{ borderLeftColor: LEVIER_COLORS[levier] || '#E8FF4C' }}
+                              style={{ borderLeftColor: getLevierColor(levier, leviers.indexOf(levier)) }}
                             >
                               {levier}
                             </td>
