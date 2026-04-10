@@ -54,7 +54,7 @@ const SUB_TABS = [
   { id: 'detail', label: 'Détail mensuel' },
 ];
 
-export function LagostinaBudget() {
+export function LagostinaBudget({ learningsButton }: { learningsButton?: React.ReactNode }) {
   const { data: budgetData, isLoading } = useQuery({
     queryKey: ['lagostina-budget'],
     queryFn: async () => {
@@ -145,7 +145,7 @@ export function LagostinaBudget() {
   }
 
   return (
-    <LagostinaSubTabs tabs={SUB_TABS}>
+    <LagostinaSubTabs tabs={SUB_TABS} rightAction={learningsButton}>
       {(activeTab) => (
         <>
           {activeTab === 'global' && (

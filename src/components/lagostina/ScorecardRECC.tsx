@@ -227,7 +227,7 @@ function GaugeChart({ value, target }: { value: number; target: number }) {
 }
 
 // ── MAIN COMPONENT ──
-export function ScorecardRECC() {
+export function ScorecardRECC({ learningsButton }: { learningsButton?: React.ReactNode }) {
   const [showPastWeeks, setShowPastWeeks] = useState(false);
   const { data: cellNotesMap } = useCellNotes();
 
@@ -372,7 +372,7 @@ export function ScorecardRECC() {
   ];
 
   return (
-    <LagostinaSubTabs tabs={scorecardSubTabs} defaultTab="synthese">
+    <LagostinaSubTabs tabs={scorecardSubTabs} defaultTab="synthese" rightAction={learningsButton}>
       {(tab) => (
         <>
       {/* SYNTHÈSE */}

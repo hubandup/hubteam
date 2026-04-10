@@ -83,7 +83,7 @@ const TONALITY_COLORS: Record<string, string> = {
 
 const PAGE_SIZE = 20;
 
-export function LagostinaInfluenceRP() {
+export function LagostinaInfluenceRP({ learningsButton }: { learningsButton?: React.ReactNode }) {
   const [tonalityFilter, setTonalityFilter] = useState<string>('all');
   const [page, setPage] = useState(0);
 
@@ -182,7 +182,7 @@ export function LagostinaInfluenceRP() {
   ];
 
   return (
-    <LagostinaSubTabs tabs={tabs} defaultTab="influence">
+    <LagostinaSubTabs tabs={tabs} defaultTab="influence" rightAction={learningsButton}>
       {(tab) => (
         <>
       {/* Influence tab */}
