@@ -244,7 +244,6 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                     </div>
                   </div>
                 );
-                );
               })()}
               </div>
 
