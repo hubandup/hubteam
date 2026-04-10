@@ -8,6 +8,7 @@ import {
   Legend,
 } from 'recharts';
 import { LagostinaSubTabs } from './LagostinaSubTabs';
+import { ClientBudgetChart } from '@/components/home/ClientBudgetChart';
 
 function getChartAccent(): string {
   if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) return '#E8FF4C';
@@ -167,8 +168,9 @@ export function LagostinaBudget() {
                 <span className="text-muted-foreground text-xs font-['Roboto']">Progression année : {yearProgress.toFixed(0)}%</span>
                 <span className="text-muted-foreground text-xs font-['Roboto']">100%</span>
               </div>
-            </div>
-          )}
+             </div>
+              <ClientBudgetChart />
+           )}
 
           {activeTab === 'repartition' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
