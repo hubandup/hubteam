@@ -17,6 +17,27 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // ── CRON_SECRET guard ──
+  const cronSecret = Deno.env.get('CRON_SECRET');
+  if (cronSecret) {
+    const authHeader = req.headers.get('Authorization') || '';
+    const providedSecret = req.headers.get('x-cron-secret') || '';
+    const bearerToken = authHeader.replace('Bearer ', '');
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const isAllowed = providedSecret === cronSecret
+      || bearerToken === cronSecret
+      || bearerToken === serviceKey
+      || bearerToken === anonKey;
+    if (!isAllowed) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+  }
+
+
   try {
     console.log("=== Check Brevo Delivery Request Started ===");
     const brevoApiKey = Deno.env.get("BREVO_API_KEY");
