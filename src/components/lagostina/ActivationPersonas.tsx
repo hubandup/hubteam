@@ -4,6 +4,42 @@ import { supabase } from '@/integrations/supabase/client';
 import { Database, Users, Package, Store, TrendingUp, TrendingDown } from 'lucide-react';
 import type { Json } from '@/integrations/supabase/types';
 import { LagostinaSubTabs } from './LagostinaSubTabs';
+import elenaMarcoImg from '@/assets/personas/elena-marco.jpg';
+import sophieImg from '@/assets/personas/sophie.jpg';
+import thomasImg from '@/assets/personas/thomas.jpg';
+
+const PERSONA_PHOTOS: Record<string, string> = {
+  'Elena & Marco': elenaMarcoImg,
+  'Sophie': sophieImg,
+  'Thomas': thomasImg,
+};
+
+const MEDIA_ICONS: Record<string, { icon: string; color: string }> = {
+  'instagram': { icon: '📸', color: '#E1306C' },
+  'ytb': { icon: '▶️', color: '#FF0000' },
+  'youtube': { icon: '▶️', color: '#FF0000' },
+  'tiktok': { icon: '🎵', color: '#000000' },
+  'pinterest': { icon: '📌', color: '#E60023' },
+  'blogs cuisine': { icon: '📝', color: '#6b7280' },
+  'ytb shorts': { icon: '▶️', color: '#FF0000' },
+};
+
+function MediaBadges({ mediaStr }: { mediaStr: string }) {
+  const parts = mediaStr.split('/').map(s => s.trim().toLowerCase());
+  return (
+    <div className="flex gap-1.5 flex-wrap">
+      {parts.map((m) => {
+        const info = MEDIA_ICONS[m] || { icon: '📡', color: '#6b7280' };
+        return (
+          <span key={m} className="inline-flex items-center gap-1 px-2 py-0.5 bg-black/5 dark:bg-white/10 text-xs font-['Roboto']">
+            <span>{info.icon}</span>
+            <span className="text-foreground capitalize">{m}</span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
 
 type Persona = {
   id: string;
