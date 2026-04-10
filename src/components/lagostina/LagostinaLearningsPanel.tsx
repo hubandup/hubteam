@@ -66,6 +66,33 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
     if (learnings) setLocal(learnings);
   }, [learnings]);
 
+  const saveLearning = useMutation({
+    mutationFn: async (data: LearningsData) => {
+      const { data: existing } = await supabase
+        .from('lagostina_learnings')
+        .select('id')
+        .eq('levier', levierKey)
+        .maybeSingle();
+      if (existing?.id) {
+        const { error } = await supabase
+          .from('lagostina_learnings')
+          .update({ ...data, updated_by: user?.id, updated_at: new Date().toISOString() })
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('lagostina_learnings')
+          .insert({ levier: levierKey, ...data, updated_by: user?.id });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success('Enregistré');
+      queryClient.invalidateQueries({ queryKey: ['lagostina-learnings', levierKey] });
+    },
+    onError: () => toast.error('Erreur lors de la sauvegarde'),
+  });
+
   const handleLearningChange = useCallback((field: 'works' | 'does_not_work', value: string) => {
     setLocal(prev => {
       const next = { ...prev, [field]: value };
