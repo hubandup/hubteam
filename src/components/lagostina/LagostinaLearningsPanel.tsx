@@ -196,7 +196,7 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
   const unresolvedCount = comments.filter(c => !c.resolved).length;
 
   return (
-    <div className="border border-border/30 bg-[#f9f9f9] dark:bg-[#111827] mt-4">
+    <div className="border border-border/20 bg-background dark:bg-[#111827] mt-4 rounded-[7px] shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-border/30">
         {/* Learnings columns */}
         <div className="p-5 space-y-3">
