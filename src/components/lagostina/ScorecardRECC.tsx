@@ -272,7 +272,16 @@ export function ScorecardRECC() {
     return { weeks: sortedWeeks, monthGroups: groups };
   }, [scorecards]);
 
-  // Build lookup
+  // Visible weeks: only latest week unless expanded
+  const { visibleWeeks, visibleMonthGroups } = useMemo(() => {
+    if (showPastWeeks || weeks.length <= 1) return { visibleWeeks: weeks, visibleMonthGroups: monthGroups };
+    const lastWeek = weeks[weeks.length - 1];
+    const filteredGroups = monthGroups
+      .map((mg) => ({ ...mg, weeks: mg.weeks.filter((w) => w === lastWeek) }))
+      .filter((mg) => mg.weeks.length > 0);
+    return { visibleWeeks: [lastWeek], visibleMonthGroups: filteredGroups };
+  }, [weeks, monthGroups, showPastWeeks]);
+
   const lookup = useMemo(() => {
     const map = new Map<string, Scorecard>();
     scorecards?.forEach((s) => {
