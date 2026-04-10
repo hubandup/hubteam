@@ -76,7 +76,7 @@ export function Sidebar() {
     { title: t('nav.projects'), url: '/projects', icon: FolderKanban, module: 'projects' as const, matchParent: true },
     { title: t('nav.messages'), url: '/messages', icon: MessageSquare, module: 'dashboard' as const },
     { title: t('nav.faq'), url: '/faq', icon: HelpCircle, module: 'faq' as const },
-    ...(hasLagostinaAccess ? [{ title: 'Lagostina', url: '/lagostina', icon: BarChart3, module: 'dashboard' as const }] : []),
+    ...(hasLagostinaAccess ? [{ title: 'Lagostina', url: '/lagostina', icon: CookingPot, module: 'dashboard' as const }] : []),
     ...(hasBrisachAccess ? [{ title: 'Brisach', url: '/brisach', icon: Flame, module: 'dashboard' as const }] : []),
   ];
 
