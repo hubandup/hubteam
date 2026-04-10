@@ -60,10 +60,13 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
   });
 
   const [local, setLocal] = useState<LearningsData>({ works: '', does_not_work: '' });
-  const debounceTimer = useRef<NodeJS.Timeout>();
+  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
-    if (learnings) setLocal(learnings);
+    if (learnings) {
+      setLocal(learnings);
+      setIsDirty(false);
+    }
   }, [learnings]);
 
   const saveLearning = useMutation({
