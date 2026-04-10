@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Pencil, Trash2, X, Check } from 'lucide-react';
 import DOMPurify from 'dompurify';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 type CellNote = {
   id: string;
@@ -14,6 +15,11 @@ type CellNote = {
   user_id: string;
   created_at: string;
   updated_at: string;
+  author?: {
+    first_name: string;
+    last_name: string;
+    avatar_url: string | null;
+  };
 };
 
 // Hook to fetch all cell notes (shared across all cells)
@@ -25,9 +31,24 @@ export function useCellNotes() {
         .from('lagostina_cell_notes')
         .select('*');
       if (error) throw error;
+
+      // Fetch profiles for all note authors
+      const userIds = [...new Set((data as any[]).map((n) => n.user_id))];
+      const profilesMap = new Map<string, { first_name: string; last_name: string; avatar_url: string | null }>();
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, avatar_url')
+          .in('id', userIds);
+        profiles?.forEach((p) => profilesMap.set(p.id, p));
+      }
+
       const map = new Map<string, CellNote>();
-      (data as CellNote[]).forEach((n) => {
-        map.set(`${n.levier}|${n.kpi_name}|${n.week}`, n);
+      (data as any[]).forEach((n) => {
+        map.set(`${n.levier}|${n.kpi_name}|${n.week}`, {
+          ...n,
+          author: profilesMap.get(n.user_id),
+        });
       });
       return map;
     },
