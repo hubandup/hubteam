@@ -9,6 +9,7 @@ import {
 } from 'recharts';
 import { LagostinaSubTabs } from './LagostinaSubTabs';
 import { ClientBudgetChart } from '@/components/home/ClientBudgetChart';
+import { NoteableCell, useCellNotes } from './CellNotePopover';
 
 function getChartAccent(): string {
   if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) return '#E8FF4C';
@@ -55,6 +56,8 @@ const SUB_TABS = [
 ];
 
 export function LagostinaBudget({ learningsButton, learningsPanel }: { learningsButton?: React.ReactNode; learningsPanel?: React.ReactNode }) {
+  const { data: cellNotesMap } = useCellNotes();
+
   const { data: budgetData, isLoading } = useQuery({
     queryKey: ['lagostina-budget'],
     queryFn: async () => {
@@ -458,9 +461,9 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                             const val = getMonthVal(levier, m, type);
                             const isOver = type === 'engaged' && val > getMonthVal(levier, m, 'planned') && getMonthVal(levier, m, 'planned') > 0;
                             return (
-                              <td key={m} className={`px-2 py-1.5 text-center text-[13px] ${isOver ? 'bg-[#ef4444]/20 text-[#ef4444]' : 'text-foreground'}`}>
+                              <NoteableCell key={m} levier={`budget_${levier}`} kpiName={type} week={m} notesMap={cellNotesMap} levierColor={getLevierColor(levier, leviers.indexOf(levier))} className={`px-2 py-1.5 text-center text-[13px] ${isOver ? 'bg-[#ef4444]/20 text-[#ef4444]' : 'text-foreground'}`}>
                                 {val > 0 ? val.toLocaleString('fr-FR') : '—'}
-                              </td>
+                              </NoteableCell>
                             );
                           })}
                           <td className="px-2 py-1.5 text-center text-[13px] text-foreground font-medium">
