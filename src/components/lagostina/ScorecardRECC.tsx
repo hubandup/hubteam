@@ -619,9 +619,9 @@ export function ScorecardRECC() {
                               {visibleWeeks.map((w) => {
                                 const wi = weeks.indexOf(w);
                                 return (
-                                <td key={w} className={`px-1 py-1.5 text-center text-[13px] ${getCondColor(actualVals[wi], objVals[wi])}`}>
+                                <NoteableCell key={w} levier={block.levier} kpiName={kn} week={w} notesMap={cellNotesMap} className={`px-1 py-1.5 text-center text-[13px] ${getCondColor(actualVals[wi], objVals[wi])}`}>
                                   {formatNum(actualVals[wi])}
-                                </td>
+                                </NoteableCell>
                                 );
                               })}
                               <td className="px-2 py-1.5 text-center text-xs font-medium">
