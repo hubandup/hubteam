@@ -229,6 +229,7 @@ function GaugeChart({ value, target }: { value: number; target: number }) {
 // ── MAIN COMPONENT ──
 export function ScorecardRECC() {
   const [showPastWeeks, setShowPastWeeks] = useState(false);
+  const { data: cellNotesMap } = useCellNotes();
 
   const { data: scorecards, isLoading } = useQuery({
     queryKey: ['lagostina-scorecards'],
