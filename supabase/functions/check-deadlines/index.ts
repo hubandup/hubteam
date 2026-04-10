@@ -11,24 +11,17 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // ── CRON_SECRET guard ──
+  // ── CRON_SECRET guard (strict: x-cron-secret header only) ──
   const cronSecret = Deno.env.get('CRON_SECRET');
-  if (cronSecret) {
-    const authHeader = req.headers.get('Authorization') || '';
-    const providedSecret = req.headers.get('x-cron-secret') || '';
-    const bearerToken = authHeader.replace('Bearer ', '');
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-    const isAllowed = providedSecret === cronSecret
-      || bearerToken === cronSecret
-      || bearerToken === serviceKey
-      || bearerToken === anonKey;
-    if (!isAllowed) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+  const xCronHeader = req.headers.get('x-cron-secret');
+  console.log('[GUARD] CRON_SECRET env set:', !!cronSecret, 'length:', cronSecret?.length);
+  console.log('[GUARD] x-cron-secret header:', xCronHeader ? `"${xCronHeader.substring(0,5)}..."` : 'null');
+  console.log('[GUARD] match:', xCronHeader === cronSecret);
+  if (!cronSecret || xCronHeader !== cronSecret) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 
 
