@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Check } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -60,10 +62,13 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
   });
 
   const [local, setLocal] = useState<LearningsData>({ works: '', does_not_work: '' });
-  const debounceTimer = useRef<NodeJS.Timeout>();
+  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
-    if (learnings) setLocal(learnings);
+    if (learnings) {
+      setLocal(learnings);
+      setIsDirty(false);
+    }
   }, [learnings]);
 
   const saveLearning = useMutation({
@@ -93,16 +98,15 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
     onError: () => toast.error('Erreur lors de la sauvegarde'),
   });
 
-  const handleLearningChange = useCallback((field: 'works' | 'does_not_work', value: string) => {
-    setLocal(prev => {
-      const next = { ...prev, [field]: value };
-      if (debounceTimer.current) clearTimeout(debounceTimer.current);
-      debounceTimer.current = setTimeout(() => {
-        saveLearning.mutate(next);
-      }, 800);
-      return next;
-    });
-  }, [saveLearning]);
+  const handleLearningChange = (field: 'works' | 'does_not_work', value: string) => {
+    setLocal(prev => ({ ...prev, [field]: value }));
+    setIsDirty(true);
+  };
+
+  const handleValidate = () => {
+    saveLearning.mutate(local);
+    setIsDirty(false);
+  };
 
   // ─── Comments ───
   const { data: comments = [] } = useQuery({
@@ -193,35 +197,46 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
   return (
     <div className="border border-border/20 bg-background dark:bg-[#111827] mt-4 rounded-[7px] shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-border/30">
-        {/* Learnings columns */}
-        <div className="p-5 space-y-3">
-          <h3 className="text-xs font-['Roboto'] font-semibold uppercase tracking-wider text-[#22c55e]">
-            Ce qui fonctionne ✅
-          </h3>
-          <div className="bg-green-50 dark:bg-green-900/20 min-h-[200px] p-3">
-            <textarea
-              value={local.works}
-              onChange={(e) => handleLearningChange('works', e.target.value)}
-              readOnly={!canEdit}
-              className="w-full bg-transparent text-foreground font-['Roboto'] text-sm resize-none min-h-[180px] focus:outline-none placeholder:text-foreground/20"
-              placeholder={canEdit ? 'Ajouter…' : '—'}
-            />
+        {/* Learnings wrapper (2 columns + validate) */}
+        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border/30">
+          <div className="p-5 space-y-3">
+            <h3 className="text-xs font-['Roboto'] font-semibold uppercase tracking-wider text-[#22c55e]">
+              Ce qui fonctionne ✅
+            </h3>
+            <div className="bg-green-50 dark:bg-green-900/20 min-h-[200px] p-3">
+              <textarea
+                value={local.works}
+                onChange={(e) => handleLearningChange('works', e.target.value)}
+                readOnly={!canEdit}
+                className="w-full bg-transparent text-foreground font-['Roboto'] text-sm resize-none min-h-[180px] focus:outline-none placeholder:text-foreground/20"
+                placeholder={canEdit ? 'Ajouter…' : '—'}
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="p-5 space-y-3">
-          <h3 className="text-xs font-['Roboto'] font-semibold uppercase tracking-wider text-[#ef4444]">
-            Ce qui ne fonctionne pas ❌
-          </h3>
-          <div className="bg-red-50 dark:bg-red-900/20 min-h-[200px] p-3">
-            <textarea
-              value={local.does_not_work}
-              onChange={(e) => handleLearningChange('does_not_work', e.target.value)}
-              readOnly={!canEdit}
-              className="w-full bg-transparent text-foreground font-['Roboto'] text-sm resize-none min-h-[180px] focus:outline-none placeholder:text-foreground/20"
-              placeholder={canEdit ? 'Ajouter…' : '—'}
-            />
+          <div className="p-5 space-y-3">
+            <h3 className="text-xs font-['Roboto'] font-semibold uppercase tracking-wider text-[#ef4444]">
+              Ce qui ne fonctionne pas ❌
+            </h3>
+            <div className="bg-red-50 dark:bg-red-900/20 min-h-[200px] p-3">
+              <textarea
+                value={local.does_not_work}
+                onChange={(e) => handleLearningChange('does_not_work', e.target.value)}
+                readOnly={!canEdit}
+                className="w-full bg-transparent text-foreground font-['Roboto'] text-sm resize-none min-h-[180px] focus:outline-none placeholder:text-foreground/20"
+                placeholder={canEdit ? 'Ajouter…' : '—'}
+              />
+            </div>
           </div>
+
+          {canEdit && isDirty && (
+            <div className="sm:col-span-2 flex justify-end px-5 pb-4">
+              <Button size="sm" onClick={handleValidate} disabled={saveLearning.isPending} className="gap-1.5">
+                <Check className="h-4 w-4" />
+                Valider
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Comments */}
