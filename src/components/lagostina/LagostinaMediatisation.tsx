@@ -295,7 +295,7 @@ function TikTokTab({ rows }: { rows: any[] }) {
   );
 }
 
-export function LagostinaMediatisation({ learningsButton }: { learningsButton?: React.ReactNode }) {
+export function LagostinaMediatisation({ learningsButton, learningsPanel }: { learningsButton?: React.ReactNode; learningsPanel?: React.ReactNode }) {
   const { data: mediaKpis, isLoading } = useQuery({
     queryKey: ['lagostina-media-kpis'],
     queryFn: async () => {
@@ -318,7 +318,7 @@ export function LagostinaMediatisation({ learningsButton }: { learningsButton?: 
   const subTabItems = SUB_TABS.map((t) => ({ id: t, label: t }));
 
   return (
-    <LagostinaSubTabs tabs={subTabItems} defaultTab="SEA" rightAction={learningsButton}>
+    <LagostinaSubTabs tabs={subTabItems} defaultTab="SEA" rightAction={learningsButton} belowTabs={learningsPanel}>
       {(tab) => {
         const rows = (mediaKpis || []).filter((r) => r.channel === CHANNEL_MAP[tab as SubTab]);
         return rows.length === 0 ? (
