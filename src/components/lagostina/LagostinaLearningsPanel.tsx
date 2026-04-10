@@ -330,19 +330,31 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
 function CommentItem({
   comment,
   currentUserId,
-  onResolve,
   onDelete,
+  onReply,
+  isReply = false,
 }: {
   comment: Comment;
   currentUserId?: string;
-  onResolve: (id: string, resolved: boolean) => void;
   onDelete: (id: string) => void;
+  onReply: (parentId: string, content: string) => void;
+  isReply?: boolean;
 }) {
+  const [showReplyInput, setShowReplyInput] = useState(false);
+  const [replyText, setReplyText] = useState('');
   const isOwn = currentUserId === comment.user_id;
   const timeAgo = formatDistanceToNow(new Date(comment.created_at), { addSuffix: false, locale: fr });
 
+  const handleReply = () => {
+    if (replyText.trim()) {
+      onReply(comment.id, replyText.trim());
+      setReplyText('');
+      setShowReplyInput(false);
+    }
+  };
+
   return (
-    <div className={`border-l-2 pl-3 py-1 space-y-1 ${comment.resolved ? 'border-green-400 opacity-60' : 'border-border/40'}`}>
+    <div className={`border-l-2 pl-3 py-1 space-y-1 ${isReply ? 'border-primary/20' : 'border-border/40'}`}>
       <div className="flex items-center gap-2">
         <Avatar className="h-6 w-6">
           <AvatarImage src={comment.author?.avatar_url || undefined} />
@@ -357,6 +369,15 @@ function CommentItem({
           {timeAgo}
         </span>
         <div className="ml-auto flex gap-1">
+          {!isReply && (
+            <button
+              onClick={() => setShowReplyInput(!showReplyInput)}
+              className="p-1 text-muted-foreground hover:text-primary transition-colors"
+              title="Répondre"
+            >
+              <Reply className="h-3.5 w-3.5" />
+            </button>
+          )}
           {isOwn && (
             <button
               onClick={() => onDelete(comment.id)}
@@ -373,7 +394,33 @@ function CommentItem({
       {/* Replies */}
       {comment.replies && comment.replies.length > 0 && (
         <div className="ml-4 mt-2 space-y-2">
-          <p className="text-xs text-primary font-['Roboto']">{comment.replies.length} replies</p>
+          {comment.replies.map((reply) => (
+            <CommentItem
+              key={reply.id}
+              comment={reply}
+              currentUserId={currentUserId}
+              onDelete={onDelete}
+              onReply={onReply}
+              isReply
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Reply input */}
+      {showReplyInput && (
+        <div className="ml-4 mt-2 flex gap-2">
+          <input
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            placeholder="Répondre…"
+            className="flex-1 bg-muted/50 border border-border/30 text-foreground font-['Roboto'] text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/30 rounded"
+            onKeyDown={(e) => { if (e.key === 'Enter' && replyText.trim()) { e.preventDefault(); handleReply(); } }}
+            autoFocus
+          />
+          <button onClick={handleReply} disabled={!replyText.trim()} className="p-1.5 text-primary hover:bg-primary/10 transition-colors disabled:opacity-30">
+            <Send className="h-3.5 w-3.5" />
+          </button>
         </div>
       )}
     </div>
