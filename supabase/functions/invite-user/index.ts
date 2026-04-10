@@ -103,23 +103,10 @@ const handler = async (req: Request): Promise<Response> => {
         console.log("User authenticated via auth.getUser:", userId);
       }
       if (authError) {
-        console.log("auth.getUser failed, fallback to JWT decode:", authError.message);
+        console.error("auth.getUser failed:", authError.message);
       }
     } catch (e: any) {
-      console.log("auth.getUser exception, fallback to JWT decode:", e?.message || e);
-    }
-
-    if (!userId) {
-      try {
-        console.log("Attempting JWT payload decode...");
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        userId = payload?.sub || null;
-        if (userId) {
-          console.log("User extracted from JWT:", userId);
-        }
-      } catch (e) {
-        console.error("JWT decode failed:", e);
-      }
+      console.error("auth.getUser exception:", e?.message || e);
     }
 
     if (!userId) {
