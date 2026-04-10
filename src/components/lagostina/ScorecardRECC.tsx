@@ -272,15 +272,29 @@ export function ScorecardRECC() {
     return { weeks: sortedWeeks, monthGroups: groups };
   }, [scorecards]);
 
-  // Visible weeks: only latest week unless expanded
-  const { visibleWeeks, visibleMonthGroups } = useMemo(() => {
-    if (showPastWeeks || weeks.length <= 1) return { visibleWeeks: weeks, visibleMonthGroups: monthGroups };
-    const lastWeek = weeks[weeks.length - 1];
+  // Current week number (ISO)
+  const currentWeekNum = useMemo(() => {
+    const now = new Date();
+    const jan1 = new Date(now.getFullYear(), 0, 1);
+    const days = Math.floor((now.getTime() - jan1.getTime()) / 86400000);
+    return Math.ceil((days + jan1.getDay() + 1) / 7);
+  }, []);
+
+  // Split weeks into past (before current) and current+future
+  const { pastWeeks, currentAndFutureWeeks, visibleWeeks, visibleMonthGroups } = useMemo(() => {
+    const getNum = (w: string) => parseInt(w.replace(/\D/g, ''));
+    const past = weeks.filter((w) => getNum(w) < currentWeekNum);
+    const currentFuture = weeks.filter((w) => getNum(w) >= currentWeekNum);
+    // If no current/future weeks exist, show at least the last week
+    const baseFuture = currentFuture.length > 0 ? currentFuture : weeks.length > 0 ? [weeks[weeks.length - 1]] : [];
+
+    const visible = showPastWeeks ? [...past, ...baseFuture] : baseFuture;
+    const visibleSet = new Set(visible);
     const filteredGroups = monthGroups
-      .map((mg) => ({ ...mg, weeks: mg.weeks.filter((w) => w === lastWeek) }))
+      .map((mg) => ({ ...mg, weeks: mg.weeks.filter((w) => visibleSet.has(w)) }))
       .filter((mg) => mg.weeks.length > 0);
-    return { visibleWeeks: [lastWeek], visibleMonthGroups: filteredGroups };
-  }, [weeks, monthGroups, showPastWeeks]);
+    return { pastWeeks: past, currentAndFutureWeeks: baseFuture, visibleWeeks: visible, visibleMonthGroups: filteredGroups };
+  }, [weeks, monthGroups, showPastWeeks, currentWeekNum]);
 
   const lookup = useMemo(() => {
     const map = new Map<string, Scorecard>();
@@ -370,7 +384,7 @@ export function ScorecardRECC() {
                   <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[60px]">RECC</th>
                   <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[140px]">KPI</th>
                   <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[70px]">Objectif</th>
-                  {weeks.length > 1 && (
+                  {pastWeeks.length > 0 && (
                     <th className="text-center px-2 py-2 whitespace-nowrap">
                       <div className="inline-flex items-center gap-1.5">
                         <button
@@ -380,7 +394,7 @@ export function ScorecardRECC() {
                         >
                           {showPastWeeks ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
                         </button>
-                        <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">Mois précédents</span>
+                        {showPastWeeks && <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">Mois précédents</span>}
                       </div>
                     </th>
                   )}
@@ -395,7 +409,7 @@ export function ScorecardRECC() {
                 </tr>
                 <tr className="border-b border-border/20">
                   <th colSpan={4} className="sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10" />
-                  {weeks.length > 1 && <th />}
+                  {pastWeeks.length > 0 && <th />}
                   {visibleWeeks.map((w) => (
                     <th key={w} className="text-center px-1 py-1 text-muted-foreground/60 text-xs">{w}</th>
                   ))}
@@ -436,7 +450,7 @@ export function ScorecardRECC() {
                         <td className="px-2 py-1.5 text-center text-muted-foreground text-xs">
                           {formatNum(latestObj)}
                         </td>
-                        {weeks.length > 1 && <td />}
+                        {pastWeeks.length > 0 && <td />}
                         {visibleWeeks.map((w) => {
                           const wi = weeks.indexOf(w);
                           const val = actualVals[wi];
@@ -564,7 +578,7 @@ export function ScorecardRECC() {
                         <tr className="border-b border-border/20">
                           <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
                           <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[70px]">Objectif</th>
-                          {weeks.length > 1 && (
+                          {pastWeeks.length > 0 && (
                             <th className="text-center px-1 py-2">
                               <button
                                 onClick={() => setShowPastWeeks(!showPastWeeks)}
@@ -602,7 +616,7 @@ export function ScorecardRECC() {
                             <tr key={kn} className="border-b border-border/20">
                               <td className="px-3 py-1.5 text-foreground">{kn}</td>
                               <td className="px-2 py-1.5 text-center text-muted-foreground text-xs">{formatNum(latestObj)}</td>
-                              {weeks.length > 1 && <td />}
+                              {pastWeeks.length > 0 && <td />}
                               {visibleWeeks.map((w) => {
                                 const wi = weeks.indexOf(w);
                                 return (
@@ -646,7 +660,7 @@ export function ScorecardRECC() {
                   <thead>
                     <tr className="border-b border-border/20">
                       <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
-                      {weeks.length > 1 && (
+                      {pastWeeks.length > 0 && (
                         <th className="text-center px-1 py-2">
                           <button
                             onClick={() => setShowPastWeeks(!showPastWeeks)}
@@ -688,7 +702,7 @@ export function ScorecardRECC() {
                       return (
                         <tr key={kpiName} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
                           <td className="px-3 py-1.5 text-foreground">{kpiName}</td>
-                          {weeks.length > 1 && <td />}
+                          {pastWeeks.length > 0 && <td />}
                           {visibleWeeks.map((w) => {
                             const i = weeks.indexOf(w);
                             const v = weeklyVals[i];
@@ -734,7 +748,7 @@ export function ScorecardRECC() {
                     <thead>
                       <tr className="border-b border-border/20">
                         <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
-                        {weeks.length > 1 && (
+                        {pastWeeks.length > 0 && (
                           <th className="text-center px-1 py-2">
                             <button
                               onClick={() => setShowPastWeeks(!showPastWeeks)}
@@ -754,7 +768,7 @@ export function ScorecardRECC() {
                       {kpiNames.map((kn) => (
                         <tr key={kn} className="border-b border-border/20">
                           <td className="px-3 py-1.5 text-foreground">{kn}</td>
-                          {weeks.length > 1 && <td />}
+                          {pastWeeks.length > 0 && <td />}
                           {visibleWeeks.map((w) => {
                             const entry = data.find((s) => s.kpi_name === kn && s.week === w);
                             return (
