@@ -204,7 +204,7 @@ function GaugeChart({ value, target }: { value: number; target: number }) {
 
 // ── MAIN COMPONENT ──
 export function ScorecardRECC() {
-  const [subTab, setSubTab] = useState<'synthese' | 'par_levier' | 'full_detail'>('synthese');
+  
 
   const { data: scorecards, isLoading } = useQuery({
     queryKey: ['lagostina-scorecards'],
