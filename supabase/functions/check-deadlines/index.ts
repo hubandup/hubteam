@@ -14,8 +14,8 @@ Deno.serve(async (req) => {
   // ── CRON_SECRET guard (strict: x-cron-secret header only) ──
   const cronSecret = Deno.env.get('CRON_SECRET');
   const xCronHeader = req.headers.get('x-cron-secret');
-  console.log('[GUARD] CRON_SECRET env set:', !!cronSecret, 'length:', cronSecret?.length);
-  console.log('[GUARD] x-cron-secret header:', xCronHeader ? `"${xCronHeader.substring(0,5)}..."` : 'null');
+  console.log('[GUARD] env first10:', cronSecret?.substring(0,10));
+  console.log('[GUARD] hdr first10:', xCronHeader?.substring(0,10));
   console.log('[GUARD] match:', xCronHeader === cronSecret);
   if (!cronSecret || xCronHeader !== cronSecret) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
