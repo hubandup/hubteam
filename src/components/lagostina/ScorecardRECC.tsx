@@ -40,15 +40,6 @@ const SYNTHESE_STRUCTURE = [
     ],
   },
   {
-    levier: 'event',
-    label: 'Event',
-    kpis: [
-      { recc: 'Influence', name: 'Nb influenceurs' },
-      { recc: 'Influence', name: 'Reach' },
-      { recc: 'RP', name: 'Nb journalistes' },
-    ],
-  },
-  {
     levier: 'influence',
     label: 'Influence',
     kpis: [
@@ -86,13 +77,6 @@ const SYNTHESE_STRUCTURE = [
       { recc: 'Engagement', name: 'Clics' },
       { recc: 'Engagement', name: 'CTR' },
       { recc: 'Engagement', name: 'Position moyenne' },
-    ],
-  },
-  {
-    levier: 'promo_shopper',
-    label: 'Promo Shopper',
-    kpis: [
-      { recc: 'Conversion', name: 'Sell-out volume' },
     ],
   },
 ];
