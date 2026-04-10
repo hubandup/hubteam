@@ -4,6 +4,42 @@ import { supabase } from '@/integrations/supabase/client';
 import { Database, Users, Package, Store, TrendingUp, TrendingDown } from 'lucide-react';
 import type { Json } from '@/integrations/supabase/types';
 import { LagostinaSubTabs } from './LagostinaSubTabs';
+import elenaMarcoImg from '@/assets/personas/elena-marco.jpg';
+import sophieImg from '@/assets/personas/sophie.jpg';
+import thomasImg from '@/assets/personas/thomas.jpg';
+
+const PERSONA_PHOTOS: Record<string, string> = {
+  'Elena & Marco': elenaMarcoImg,
+  'Sophie': sophieImg,
+  'Thomas': thomasImg,
+};
+
+const MEDIA_ICONS: Record<string, { icon: string; color: string }> = {
+  'instagram': { icon: '📸', color: '#E1306C' },
+  'ytb': { icon: '▶️', color: '#FF0000' },
+  'youtube': { icon: '▶️', color: '#FF0000' },
+  'tiktok': { icon: '🎵', color: '#000000' },
+  'pinterest': { icon: '📌', color: '#E60023' },
+  'blogs cuisine': { icon: '📝', color: '#6b7280' },
+  'ytb shorts': { icon: '▶️', color: '#FF0000' },
+};
+
+function MediaBadges({ mediaStr }: { mediaStr: string }) {
+  const parts = mediaStr.split('/').map(s => s.trim().toLowerCase());
+  return (
+    <div className="flex gap-1.5 flex-wrap">
+      {parts.map((m) => {
+        const info = MEDIA_ICONS[m] || { icon: '📡', color: '#6b7280' };
+        return (
+          <span key={m} className="inline-flex items-center gap-1 px-2 py-0.5 bg-black/5 dark:bg-white/10 text-xs font-['Roboto']">
+            <span>{info.icon}</span>
+            <span className="text-foreground capitalize">{m}</span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
 
 type Persona = {
   id: string;
@@ -215,16 +251,26 @@ export function ActivationPersonas() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredPersonas.map((persona) => (
                       <div key={persona.id} className="bg-gray-50 dark:bg-[#141928] border-t-[3px] border-black dark:border-white">
-                        <div className="p-4 space-y-3">
+                         <div className="p-4 space-y-3">
                           <div className="flex items-start justify-between">
-                            <div>
-                              <h4 className="text-foreground font-['Instrument_Sans'] font-bold text-lg">{persona.persona_name}</h4>
-                              <p className="text-muted-foreground font-['Roboto'] text-xs">
-                                {[persona.persona_type, persona.age_range, persona.has_children].filter(Boolean).join(' • ')}
-                              </p>
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={PERSONA_PHOTOS[persona.persona_name] || ''}
+                                alt={persona.persona_name}
+                                className="w-12 h-12 object-cover flex-shrink-0"
+                                loading="lazy"
+                                width={48}
+                                height={48}
+                              />
+                              <div>
+                                <h4 className="text-foreground font-['Instrument_Sans'] font-bold text-lg">{persona.persona_name}</h4>
+                                <p className="text-muted-foreground font-['Roboto'] text-xs">
+                                  {[persona.persona_type, persona.age_range, persona.has_children].filter(Boolean).join(' • ')}
+                                </p>
+                              </div>
                             </div>
                             {persona.market_weight && (
-                              <span className="bg-black text-white dark:bg-[#E8FF4C] dark:text-black px-2 py-0.5 text-xs font-['Roboto'] font-bold">
+                              <span className="bg-black text-white dark:bg-[#E8FF4C] dark:text-black px-2 py-0.5 text-xs font-['Roboto'] font-bold flex-shrink-0">
                                 {persona.market_weight}
                               </span>
                             )}
@@ -257,9 +303,10 @@ export function ActivationPersonas() {
                           )}
 
                           {persona.preferred_media && (
-                            <p className="text-muted-foreground text-xs font-['Roboto'] italic border-t border-border/20 pt-2">
-                              Média préféré : {persona.preferred_media}
-                            </p>
+                            <div className="border-t border-border/20 pt-2">
+                              <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Médias préférés</p>
+                              <MediaBadges mediaStr={persona.preferred_media} />
+                            </div>
                           )}
                         </div>
                       </div>
