@@ -137,40 +137,42 @@ export function LagostinaBudget() {
       {(activeTab) => (
         <>
           {activeTab === 'global' && (
-            <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-6">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">Budget consommé</p>
-                  <p className="text-foreground text-2xl font-bold font-['Instrument_Sans']">
-                    {totalEngaged >= 1000 ? `€${(totalEngaged / 1000).toFixed(0)}K` : `€${totalEngaged}`}
-                    <span className="text-muted-foreground text-base font-normal"> / {totalPlanned >= 1000 ? `€${(totalPlanned / 1000).toFixed(0)}K` : `€${totalPlanned}`}</span>
-                    <span className="text-muted-foreground text-sm font-normal ml-2">— {pct.toFixed(0)}%</span>
-                  </p>
-                </div>
-                {isOverBudget && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-[#ef4444]/20 text-[#ef4444] text-xs font-['Roboto'] font-medium">
-                    <AlertTriangle className="h-3.5 w-3.5" />
-                    Dépassement prévisionnel
+            <>
+              <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">Budget consommé</p>
+                    <p className="text-foreground text-2xl font-bold font-['Instrument_Sans']">
+                      {totalEngaged >= 1000 ? `€${(totalEngaged / 1000).toFixed(0)}K` : `€${totalEngaged}`}
+                      <span className="text-muted-foreground text-base font-normal"> / {totalPlanned >= 1000 ? `€${(totalPlanned / 1000).toFixed(0)}K` : `€${totalPlanned}`}</span>
+                      <span className="text-muted-foreground text-sm font-normal ml-2">— {pct.toFixed(0)}%</span>
+                    </p>
                   </div>
-                )}
+                  {isOverBudget && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#ef4444]/20 text-[#ef4444] text-xs font-['Roboto'] font-medium">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      Dépassement prévisionnel
+                    </div>
+                  )}
+                </div>
+                <div className="w-full h-3 bg-gray-200">
+                  <div
+                    className="h-full transition-all"
+                    style={{
+                      width: `${Math.min(pct, 100)}%`,
+                      background: pct >= 100 ? '#ef4444' : pct >= yearProgress ? `linear-gradient(90deg, #22c55e, #fbbf24, #ef4444)` : `linear-gradient(90deg, #22c55e, #fbbf24)`,
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className="text-muted-foreground text-xs font-['Roboto']">0%</span>
+                  <span className="text-muted-foreground text-xs font-['Roboto']">Progression année : {yearProgress.toFixed(0)}%</span>
+                  <span className="text-muted-foreground text-xs font-['Roboto']">100%</span>
+                </div>
               </div>
-              <div className="w-full h-3 bg-gray-200">
-                <div
-                  className="h-full transition-all"
-                  style={{
-                    width: `${Math.min(pct, 100)}%`,
-                    background: pct >= 100 ? '#ef4444' : pct >= yearProgress ? `linear-gradient(90deg, #22c55e, #fbbf24, #ef4444)` : `linear-gradient(90deg, #22c55e, #fbbf24)`,
-                  }}
-                />
-              </div>
-              <div className="flex justify-between mt-1">
-                <span className="text-muted-foreground text-xs font-['Roboto']">0%</span>
-                <span className="text-muted-foreground text-xs font-['Roboto']">Progression année : {yearProgress.toFixed(0)}%</span>
-                <span className="text-muted-foreground text-xs font-['Roboto']">100%</span>
-              </div>
-             </div>
               <ClientBudgetChart />
-           )}
+            </>
+          )}
 
           {activeTab === 'repartition' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
