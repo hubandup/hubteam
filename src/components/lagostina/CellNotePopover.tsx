@@ -306,7 +306,8 @@ function NoteEditor({
       <div
         ref={editorRef}
         contentEditable
-        className="min-h-[60px] max-h-[120px] overflow-y-auto text-xs text-foreground font-['Roboto'] p-2 border border-border/30 focus:outline-none focus:ring-1 focus:ring-[#E8FF4C] bg-transparent"
+        className="min-h-[60px] max-h-[120px] overflow-y-auto text-xs text-foreground font-['Roboto'] p-2 border border-border/30 focus:outline-none bg-transparent"
+        style={{ boxShadow: `0 0 0 1px ${noteColor}` }}
         suppressContentEditableWarning
       />
       <div className="flex justify-end mt-2">
