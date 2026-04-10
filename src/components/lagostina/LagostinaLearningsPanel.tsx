@@ -43,7 +43,6 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const canEdit = role === 'admin' || role === 'team';
-  const debounceTimer = useRef<NodeJS.Timeout>();
   const levierKey = TAB_TO_LEVIER[activeTab] || activeTab;
 
   // ─── Learnings ───
@@ -60,10 +59,12 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
     },
   });
 
-  const [local, setLocal] = useState<LearningsData>({ works: '', does_not_work: '' });
-  useEffect(() => {
-    if (learnings) setLocal(learnings);
-  }, [learnings]);
+  // Parse entries from stored newline-separated text
+  const worksEntries = (learnings?.works || '').split('\n').filter(Boolean);
+  const doesNotWorkEntries = (learnings?.does_not_work || '').split('\n').filter(Boolean);
+
+  const [newWorks, setNewWorks] = useState('');
+  const [newDoesNotWork, setNewDoesNotWork] = useState('');
 
   const saveLearning = useMutation({
     mutationFn: async (data: LearningsData) => {
@@ -86,16 +87,26 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lagostina-learnings', levierKey] }),
+    onError: () => toast.error('Erreur lors de la sauvegarde'),
   });
 
-  const handleLearningChange = useCallback((field: 'works' | 'does_not_work', value: string) => {
-    setLocal(prev => {
-      const next = { ...prev, [field]: value };
-      if (debounceTimer.current) clearTimeout(debounceTimer.current);
-      debounceTimer.current = setTimeout(() => saveLearning.mutate(next), 800);
-      return next;
-    });
-  }, [saveLearning]);
+  const addEntry = useCallback((field: 'works' | 'does_not_work', value: string) => {
+    if (!value.trim()) return;
+    const currentEntries = field === 'works' ? worksEntries : doesNotWorkEntries;
+    const updated = [...currentEntries, value.trim()].join('\n');
+    const current = learnings || { works: '', does_not_work: '' };
+    saveLearning.mutate({ ...current, [field]: updated });
+    if (field === 'works') setNewWorks('');
+    else setNewDoesNotWork('');
+  }, [worksEntries, doesNotWorkEntries, learnings, saveLearning]);
+
+  const removeEntry = useCallback((field: 'works' | 'does_not_work', index: number) => {
+    const currentEntries = field === 'works' ? [...worksEntries] : [...doesNotWorkEntries];
+    currentEntries.splice(index, 1);
+    const updated = currentEntries.join('\n');
+    const current = learnings || { works: '', does_not_work: '' };
+    saveLearning.mutate({ ...current, [field]: updated });
+  }, [worksEntries, doesNotWorkEntries, learnings, saveLearning]);
 
   // ─── Comments ───
   const { data: comments = [] } = useQuery({
