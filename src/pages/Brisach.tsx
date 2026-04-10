@@ -163,34 +163,40 @@ export default function Brisach() {
       doc.setFont('helvetica', 'bold');
 
       const kpis = [
-        { label: 'Consommé', value: `${yearTotals.totalDays}j (${yearTotals.totalHours}h)` },
-        { label: 'Forfait annuel', value: `${yearTotals.forfaitDays}j (${yearTotals.forfaitHours}h)` },
-        { label: 'Restant', value: `${yearTotals.remainingDays}j (${yearTotals.remaining}h)` },
-        { label: 'Projets', value: `${yearTotals.projectCount}` },
-        { label: 'Moyenne / mois', value: `${yearTotals.avgDaysPerMonth}j (${yearTotals.avgHoursPerMonth}h)` },
+        { label: 'Consommé', days: `${yearTotals.totalDays}j`, hours: `${yearTotals.totalHours}h` },
+        { label: 'Forfait annuel', days: `${yearTotals.forfaitDays}j`, hours: `${yearTotals.forfaitHours}h` },
+        { label: 'Restant', days: `${yearTotals.remainingDays}j`, hours: `${yearTotals.remaining}h` },
+        { label: 'Projets', days: `${yearTotals.projectCount}`, hours: '' },
+        { label: 'Moyenne / mois', days: `${yearTotals.avgDaysPerMonth}j`, hours: `${yearTotals.avgHoursPerMonth}h` },
       ];
 
       const kpiW = contentW / kpis.length;
       kpis.forEach((kpi, i) => {
         const x = margin + i * kpiW;
         doc.setFillColor(245, 245, 245);
-        doc.roundedRect(x, y, kpiW - 4, 22, 3, 3, 'F');
+        doc.roundedRect(x, y, kpiW - 4, 24, 3, 3, 'F');
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(120, 120, 120);
         doc.text(kpi.label, x + 5, y + 8);
-        doc.setFontSize(13);
+        doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         if (kpi.label === 'Restant' && yearTotals.remaining < 0) {
           doc.setTextColor(220, 50, 50);
         } else {
           doc.setTextColor(30, 30, 30);
         }
-        doc.text(kpi.value, x + 5, y + 18);
+        doc.text(kpi.days, x + 5, y + 17);
+        if (kpi.hours) {
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(120, 120, 120);
+          doc.text(kpi.hours, x + 5, y + 22);
+        }
       });
 
       // -- Chart capture --
-      y = 82;
+      y = 84;
       const chartEl = document.getElementById('brisach-chart');
       if (chartEl) {
         const canvas = await html2canvas(chartEl, { scale: 2, backgroundColor: '#ffffff' });
@@ -262,7 +268,6 @@ export default function Brisach() {
             data.cell.styles.fillColor = [230, 230, 230];
             data.cell.styles.textColor = [20, 20, 20];
           }
-          // Red for negative remaining
           if (data.column.index === 3 && data.section === 'body' && !isAvgRow) {
             const m = monthlyData[rowIdx];
             if (m && m.remaining < 0) {
@@ -273,6 +278,105 @@ export default function Brisach() {
               data.cell.styles.textColor = [220, 50, 50];
             }
           }
+        },
+      });
+
+      // -- Page 2: Détail des projets --
+      doc.addPage();
+      let y2 = 20;
+
+      doc.setFillColor(30, 30, 30);
+      doc.rect(0, 0, pageW, 30, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Détail des entrées par projet', margin, 20);
+
+      y2 = 40;
+
+      // Group entries by project
+      const projectGroups: Record<string, typeof entries> = {};
+      entries.forEach(e => {
+        const pName = e.project_name || 'Sans projet';
+        if (!projectGroups[pName]) projectGroups[pName] = [];
+        projectGroups[pName].push(e);
+      });
+
+      const projectSummary = Object.entries(projectGroups).map(([name, items]) => {
+        const totalH = items.reduce((s, e) => s + Number(e.duration_hours), 0);
+        return {
+          name,
+          entries: items.length,
+          totalHours: +totalH.toFixed(1),
+          totalDays: +(totalH / HOURS_PER_DAY).toFixed(2),
+        };
+      }).sort((a, b) => b.totalHours - a.totalHours);
+
+      // Project summary table
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 30, 30);
+      doc.text('Récapitulatif par projet', margin, y2);
+      y2 += 4;
+
+      autoTable(doc, {
+        startY: y2,
+        margin: { left: margin, right: margin },
+        head: [['Projet', 'Entrées', 'Temps (jours)', 'Temps (heures)', '% du total']],
+        body: projectSummary.map(p => [
+          p.name,
+          String(p.entries),
+          `${p.totalDays}j`,
+          `${p.totalHours}h`,
+          yearTotals.totalHours > 0 ? `${((p.totalHours / yearTotals.totalHours) * 100).toFixed(1)}%` : '0%',
+        ]),
+        headStyles: {
+          fillColor: [30, 30, 30],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 9,
+        },
+        bodyStyles: { fontSize: 9, textColor: [50, 50, 50] },
+        alternateRowStyles: { fillColor: [248, 248, 248] },
+        styles: { cellPadding: 3 },
+      });
+
+      // Detailed entries table
+      const afterSummary = (doc as any).lastAutoTable?.finalY || y2 + 30;
+      let y3 = afterSummary + 12;
+
+      if (y3 > pageH - 40) {
+        doc.addPage();
+        y3 = 20;
+      }
+
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 30, 30);
+      doc.text('Détail chronologique', margin, y3);
+      y3 += 4;
+
+      autoTable(doc, {
+        startY: y3,
+        margin: { left: margin, right: margin },
+        head: [['Date', 'Projet', 'Description', 'Durée']],
+        body: entries.map(e => [
+          format(parseISO(e.entry_date), 'dd/MM/yyyy'),
+          e.project_name || '—',
+          e.description || '—',
+          `${Number(e.duration_hours).toFixed(1)}h`,
+        ]),
+        headStyles: {
+          fillColor: [30, 30, 30],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 9,
+        },
+        bodyStyles: { fontSize: 8, textColor: [50, 50, 50] },
+        alternateRowStyles: { fillColor: [248, 248, 248] },
+        styles: { cellPadding: 3 },
+        columnStyles: {
+          2: { cellWidth: 70 },
         },
       });
 
