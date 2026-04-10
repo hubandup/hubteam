@@ -154,7 +154,7 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
   }, [activeTab, queryClient]);
 
   const [newComment, setNewComment] = useState('');
-  const [commentFilter, setCommentFilter] = useState<'all' | 'unresolved'>('all');
+  const commentFilter = 'all';
 
   const addComment = useMutation({
     mutationFn: async (content: string) => {
