@@ -56,6 +56,8 @@ const SUB_TABS = [
 ];
 
 export function LagostinaBudget({ learningsButton, learningsPanel }: { learningsButton?: React.ReactNode; learningsPanel?: React.ReactNode }) {
+  const { data: cellNotesMap } = useCellNotes();
+
   const { data: budgetData, isLoading } = useQuery({
     queryKey: ['lagostina-budget'],
     queryFn: async () => {
