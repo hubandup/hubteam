@@ -251,16 +251,26 @@ export function ActivationPersonas() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredPersonas.map((persona) => (
                       <div key={persona.id} className="bg-gray-50 dark:bg-[#141928] border-t-[3px] border-black dark:border-white">
-                        <div className="p-4 space-y-3">
+                         <div className="p-4 space-y-3">
                           <div className="flex items-start justify-between">
-                            <div>
-                              <h4 className="text-foreground font-['Instrument_Sans'] font-bold text-lg">{persona.persona_name}</h4>
-                              <p className="text-muted-foreground font-['Roboto'] text-xs">
-                                {[persona.persona_type, persona.age_range, persona.has_children].filter(Boolean).join(' • ')}
-                              </p>
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={PERSONA_PHOTOS[persona.persona_name] || ''}
+                                alt={persona.persona_name}
+                                className="w-12 h-12 object-cover flex-shrink-0"
+                                loading="lazy"
+                                width={48}
+                                height={48}
+                              />
+                              <div>
+                                <h4 className="text-foreground font-['Instrument_Sans'] font-bold text-lg">{persona.persona_name}</h4>
+                                <p className="text-muted-foreground font-['Roboto'] text-xs">
+                                  {[persona.persona_type, persona.age_range, persona.has_children].filter(Boolean).join(' • ')}
+                                </p>
+                              </div>
                             </div>
                             {persona.market_weight && (
-                              <span className="bg-black text-white dark:bg-[#E8FF4C] dark:text-black px-2 py-0.5 text-xs font-['Roboto'] font-bold">
+                              <span className="bg-black text-white dark:bg-[#E8FF4C] dark:text-black px-2 py-0.5 text-xs font-['Roboto'] font-bold flex-shrink-0">
                                 {persona.market_weight}
                               </span>
                             )}
