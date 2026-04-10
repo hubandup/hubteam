@@ -182,7 +182,7 @@ export function LagostinaInfluenceRP() {
   ];
 
   return (
-    <LagostinaSubTabs tabs={tabs} defaultTab={activeTab}>
+    <LagostinaSubTabs tabs={tabs} defaultTab="influence">
       {(tab) => (
         <>
       {/* Influence tab */}
