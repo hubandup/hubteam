@@ -96,16 +96,15 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
     onError: () => toast.error('Erreur lors de la sauvegarde'),
   });
 
-  const handleLearningChange = useCallback((field: 'works' | 'does_not_work', value: string) => {
-    setLocal(prev => {
-      const next = { ...prev, [field]: value };
-      if (debounceTimer.current) clearTimeout(debounceTimer.current);
-      debounceTimer.current = setTimeout(() => {
-        saveLearning.mutate(next);
-      }, 800);
-      return next;
-    });
-  }, [saveLearning]);
+  const handleLearningChange = (field: 'works' | 'does_not_work', value: string) => {
+    setLocal(prev => ({ ...prev, [field]: value }));
+    setIsDirty(true);
+  };
+
+  const handleValidate = () => {
+    saveLearning.mutate(local);
+    setIsDirty(false);
+  };
 
   // ─── Comments ───
   const { data: comments = [] } = useQuery({
