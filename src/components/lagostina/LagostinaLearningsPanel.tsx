@@ -203,12 +203,12 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
             <h3 className="text-xs font-['Roboto'] font-semibold uppercase tracking-wider text-[#22c55e]">
               Ce qui fonctionne ✅
             </h3>
-            <div className="bg-green-50 dark:bg-green-900/20 min-h-[200px] p-3">
+            <div className="bg-green-50 dark:bg-green-900/20 p-3">
               <textarea
                 value={local.works}
                 onChange={(e) => handleLearningChange('works', e.target.value)}
                 readOnly={!canEdit}
-                className="w-full bg-transparent text-foreground font-['Roboto'] text-sm resize-none min-h-[180px] focus:outline-none placeholder:text-foreground/20"
+                className="w-full bg-transparent text-foreground font-['Roboto'] text-sm resize-none min-h-[60px] focus:outline-none placeholder:text-foreground/20"
                 placeholder={canEdit ? 'Ajouter…' : '—'}
               />
             </div>
@@ -218,12 +218,12 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
             <h3 className="text-xs font-['Roboto'] font-semibold uppercase tracking-wider text-[#ef4444]">
               Ce qui ne fonctionne pas ❌
             </h3>
-            <div className="bg-red-50 dark:bg-red-900/20 min-h-[200px] p-3">
+            <div className="bg-red-50 dark:bg-red-900/20 p-3">
               <textarea
                 value={local.does_not_work}
                 onChange={(e) => handleLearningChange('does_not_work', e.target.value)}
                 readOnly={!canEdit}
-                className="w-full bg-transparent text-foreground font-['Roboto'] text-sm resize-none min-h-[180px] focus:outline-none placeholder:text-foreground/20"
+                className="w-full bg-transparent text-foreground font-['Roboto'] text-sm resize-none min-h-[60px] focus:outline-none placeholder:text-foreground/20"
                 placeholder={canEdit ? 'Ajouter…' : '—'}
               />
             </div>
