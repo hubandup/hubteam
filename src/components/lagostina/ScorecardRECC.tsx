@@ -643,10 +643,21 @@ export function ScorecardRECC() {
                   <thead>
                     <tr className="border-b border-border/20">
                       <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
-                      {weeks.map((w) => (
+                      {weeks.length > 1 && (
+                        <th className="text-center px-1 py-2">
+                          <button
+                            onClick={() => setShowPastWeeks(!showPastWeeks)}
+                            className="inline-flex items-center justify-center w-6 h-6 border border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                            title={showPastWeeks ? 'Masquer les semaines précédentes' : 'Afficher les semaines précédentes'}
+                          >
+                            {showPastWeeks ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                          </button>
+                        </th>
+                      )}
+                      {visibleWeeks.map((w) => (
                         <th key={w} className="text-center px-1 py-2 text-muted-foreground/60 text-xs">{w}</th>
                       ))}
-                      {monthGroups.map((mg) => (
+                      {visibleMonthGroups.map((mg) => (
                         <th key={mg.month} className="text-center px-2 py-2 text-black dark:text-white font-semibold text-xs font-bold border-l border-border/40">{mg.month}</th>
                       ))}
                     </tr>
@@ -663,7 +674,7 @@ export function ScorecardRECC() {
                       });
 
                       // Monthly aggregates
-                      const monthlyVals = monthGroups.map((mg) => {
+                      const monthlyVals = visibleMonthGroups.map((mg) => {
                         const monthEntries = matching.filter((s) => mg.weeks.includes(s.week) && s.actual != null);
                         if (!monthEntries.length) return null;
                         return monthEntries.reduce((sum, e) => sum + Number(e.actual), 0) / monthEntries.length;
@@ -674,13 +685,16 @@ export function ScorecardRECC() {
                       return (
                         <tr key={kpiName} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
                           <td className="px-3 py-1.5 text-foreground">{kpiName}</td>
-                          {weeklyVals.map((v, i) => {
+                          {weeks.length > 1 && <td />}
+                          {visibleWeeks.map((w) => {
+                            const i = weeks.indexOf(w);
+                            const v = weeklyVals[i];
                             let cls = '';
                             if (isEvol && v != null) {
                               cls = v >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]';
                             }
                             return (
-                              <td key={i} className={`px-1 py-1.5 text-center text-[13px] ${cls || 'text-foreground'}`}>
+                              <td key={w} className={`px-1 py-1.5 text-center text-[13px] ${cls || 'text-foreground'}`}>
                                 {v != null ? (isEvol ? `${v >= 0 ? '↑' : '↓'}${Math.abs(v).toFixed(1)}%` : formatNum(v)) : '—'}
                               </td>
                             );
