@@ -219,7 +219,7 @@ export function LagostinaBudget() {
                         </p>
                       </div>
                     </div>
-                    <div className="w-full h-2 bg-gray-200">
+                    <div className="w-full h-2 bg-gray-200 relative">
                       <div
                         className="h-full transition-all"
                         style={{
@@ -227,10 +227,20 @@ export function LagostinaBudget() {
                           background: monthPct > dayProgress * 1.2 ? '#ef4444' : '#22c55e',
                         }}
                       />
+                      {/* Day progress marker */}
+                      <div
+                        className="absolute top-0 h-full w-0.5 bg-foreground/60"
+                        style={{ left: `${dayProgress}%` }}
+                      />
                     </div>
-                    <p className="text-muted-foreground text-xs font-['Roboto'] mt-1 text-right">
-                      Progression du mois : {dayProgress.toFixed(0)}%
-                    </p>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-muted-foreground text-xs font-['Roboto']">
+                        Consommé : {monthPct.toFixed(0)}%
+                      </span>
+                      <span className="text-muted-foreground text-xs font-['Roboto']">
+                        Jour {now.getDate()} / {new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()} ({dayProgress.toFixed(0)}%)
+                      </span>
+                    </div>
                   </div>
                 );
               })()}
