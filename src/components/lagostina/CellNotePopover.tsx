@@ -169,7 +169,7 @@ function NoteTooltip({ note, onEdit }: { note: CellNote; onEdit: () => void }) {
         </div>
       )}
       {/* Arrow */}
-      <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#E8FF4C]" />
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-[#E8FF4C]" />
     </div>
   );
 }
