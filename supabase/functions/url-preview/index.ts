@@ -5,8 +5,68 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const BLOCKED_IP_RANGES = [
+  /^127\./,
+  /^10\./,
+  /^172\.(1[6-9]|2\d|3[01])\./,
+  /^192\.168\./,
+  /^169\.254\./,
+  /^0\./,
+  /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./,
+  /^198\.1[89]\./,
+  /^::1$/,
+  /^fc00:/i,
+  /^fe80:/i,
+  /^fd/i,
+];
+
+const BLOCKED_HOSTNAMES = ['localhost', 'metadata.google.internal', 'metadata.google', '169.254.169.254'];
+const ALLOWED_PROTOCOLS = ['http:', 'https:'];
+
+function validateUrl(rawUrl: string): URL {
+  let normalized = rawUrl.trim();
+  if (!/^https?:\/\//i.test(normalized)) {
+    normalized = `https://${normalized}`;
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(normalized);
+  } catch {
+    throw new Error('Invalid URL format');
+  }
+
+  if (!ALLOWED_PROTOCOLS.includes(parsed.protocol)) {
+    throw new Error('Only HTTP(S) URLs are allowed');
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+
+  if (BLOCKED_HOSTNAMES.includes(hostname)) {
+    throw new Error('Blocked hostname');
+  }
+
+  if (BLOCKED_IP_RANGES.some(r => r.test(hostname))) {
+    throw new Error('Access to private/internal IPs is not allowed');
+  }
+
+  return parsed;
+}
+
+async function resolveAndValidate(url: URL): Promise<void> {
+  try {
+    const ips = await Deno.resolveDns(url.hostname, 'A');
+    for (const ip of ips) {
+      if (BLOCKED_IP_RANGES.some(r => r.test(ip))) {
+        throw new Error(`DNS resolved to blocked IP: ${ip}`);
+      }
+    }
+  } catch (e) {
+    if (e instanceof Error && e.message.includes('blocked')) throw e;
+  }
+}
+
 serve(async (req) => {
-  // CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -17,32 +77,23 @@ serve(async (req) => {
     if (req.method === 'GET') {
       const { searchParams } = new URL(req.url);
       urlParam = searchParams.get('url') || undefined;
-      console.log('[URL PREVIEW][GET] Incoming URL param:', urlParam);
     } else {
       const body = await req.json().catch(() => ({}));
       urlParam = body?.url;
-      console.log('[URL PREVIEW][POST] Incoming body:', body);
     }
 
-    console.log('[URL PREVIEW] ===== REQUEST START =====');
-
-    if (!urlParam) {
-      console.log('[URL PREVIEW] Missing url parameter');
+    if (!urlParam || typeof urlParam !== 'string') {
       return new Response(
         JSON.stringify({ success: false, reason: 'missing_url', error: 'URL is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Normalize and parse domain for logging
-    let fetchUrl = urlParam.trim();
-    if (!/^https?:\/\//i.test(fetchUrl)) {
-      fetchUrl = `https://${fetchUrl}`;
-    }
-    const domain = new URL(fetchUrl).hostname.replace('www.', '');
+    const parsed = validateUrl(urlParam);
+    await resolveAndValidate(parsed);
 
-    console.log('[URL PREVIEW] Domain:', domain);
-    console.log('[URL PREVIEW] Fetching URL:', fetchUrl);
+    const fetchUrl = parsed.href;
+    const domain = parsed.hostname.replace('www.', '');
 
     const response = await fetch(fetchUrl, {
       headers: {
@@ -50,16 +101,11 @@ serve(async (req) => {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
       },
+      redirect: 'follow',
     });
 
-    console.log('[URL PREVIEW] HTTP Status:', response.status);
-    console.log('[URL PREVIEW] Content-Type:', response.headers.get('content-type'));
-
     const html = await response.text();
-    console.log('[URL PREVIEW] HTML length:', html.length);
-    console.log('[URL PREVIEW] HTML preview (first 300 chars):', html.substring(0, 300));
 
-    // Extract Open Graph / standard meta
     const getMeta = (htmlText: string, property: string): string | null => {
       const propRegex = new RegExp(`<meta[^>]*property=["']${property}["'][^>]*content=["']([^"']*)["']`, 'i');
       const propMatch = htmlText.match(propRegex);
@@ -74,42 +120,17 @@ serve(async (req) => {
     const image = getMeta(html, 'og:image') || '';
     const siteName = getMeta(html, 'og:site_name') || '';
 
-    console.log('[URL PREVIEW] Parsed metadata:', {
-      title,
-      description_preview: description ? description.substring(0, 100) : '(empty)',
-      image,
-      siteName,
-    });
-
     const hasMetadata = !!(title || description || image);
-    console.log('[URL PREVIEW] Has metadata:', hasMetadata);
 
     if (!hasMetadata) {
-      console.log('[URL PREVIEW] No OG tags found - returning fallback');
       return new Response(
-        JSON.stringify({
-          success: false,
-          url: fetchUrl,
-          domain,
-          reason: 'no_og_tags_or_blocked',
-        }),
+        JSON.stringify({ success: false, url: fetchUrl, domain, reason: 'no_og_tags_or_blocked' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('[URL PREVIEW] Returning success response');
-    console.log('[URL PREVIEW] ===== REQUEST END =====');
-
     return new Response(
-      JSON.stringify({
-        success: true,
-        url: fetchUrl,
-        title,
-        description,
-        image,
-        siteName,
-        domain,
-      }),
+      JSON.stringify({ success: true, url: fetchUrl, title, description, image, siteName, domain }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
