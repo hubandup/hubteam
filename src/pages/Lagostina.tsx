@@ -13,7 +13,7 @@ const LagostinaMediatisation = lazy(() => import('@/components/lagostina/Lagosti
 const LagostinaLearnings = lazy(() => import('@/components/lagostina/LagostinaLearnings').then(m => ({ default: m.LagostinaLearnings })));
 
 const TABS = [
-  { id: 'scorecard', label: 'Scorecard RECC' },
+  { id: 'scorecard', label: 'Scorecard' },
   { id: 'influence', label: 'Influence & RP' },
   { id: 'mediatisation', label: 'Médiatisation' },
   { id: 'budget', label: 'Budget' },
