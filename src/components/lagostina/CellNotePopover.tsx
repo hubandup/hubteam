@@ -108,6 +108,7 @@ export function NoteableCell({
   children,
   className = '',
   notesMap,
+  levierColor,
 }: {
   levier: string;
   kpiName: string;
@@ -115,6 +116,7 @@ export function NoteableCell({
   children: React.ReactNode;
   className?: string;
   notesMap: Map<string, CellNote> | undefined;
+  levierColor?: string;
 }) {
   const key = `${levier}|${kpiName}|${week}`;
   const note = notesMap?.get(key);
@@ -124,6 +126,7 @@ export function NoteableCell({
   const tooltipTimeout = useRef<ReturnType<typeof setTimeout>>(null);
 
   const hasNote = !!note;
+  const noteColor = levierColor || '#E8FF4C';
 
   const handleClick = () => {
     if (!showEditor) setShowEditor(true);
@@ -146,8 +149,8 @@ export function NoteableCell({
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className={`${className} cursor-pointer relative ${hasNote ? 'ring-1 ring-inset ring-[#E8FF4C] dark:ring-[#E8FF4C]' : 'hover:ring-1 hover:ring-inset hover:ring-border/40'}`}
-      style={hasNote ? { borderColor: '#E8FF4C' } : undefined}
+      className={`${className} cursor-pointer relative ${hasNote ? '' : 'hover:ring-1 hover:ring-inset hover:ring-border/40'}`}
+      style={hasNote ? { boxShadow: `inset 0 0 0 1.5px ${noteColor}` } : undefined}
     >
       {children}
 
