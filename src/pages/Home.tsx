@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Bell, Calendar, Clock, Activity, Users, FolderKanban } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { ClientBudgetChart } from '@/components/home/ClientBudgetChart';
+
 
 interface ActiveProject {
   id: string;
@@ -334,9 +334,6 @@ export default function Home() {
           </CardContent>
         </Card>}
       </div>
-
-      {/* Client budget chart - only for specific domains */}
-      <ClientBudgetChart />
 
       {/* Recent activity - hidden for client/agency */}
       {!isAgency && !isClient && recentActivities.length > 0 && (
