@@ -306,13 +306,6 @@ function CommentItem({
           {timeAgo}
         </span>
         <div className="ml-auto flex gap-1">
-          <button
-            onClick={() => onResolve(comment.id, !comment.resolved)}
-            className="p-1 text-muted-foreground hover:text-green-500 transition-colors"
-            title={comment.resolved ? 'Marquer non résolu' : 'Marquer résolu'}
-          >
-            <Check className="h-3.5 w-3.5" />
-          </button>
           {isOwn && (
             <button
               onClick={() => onDelete(comment.id)}
