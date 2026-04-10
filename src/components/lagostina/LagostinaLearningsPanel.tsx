@@ -269,8 +269,8 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
           {/* Comments list */}
           <div className="space-y-3 max-h-[300px] overflow-y-auto">
             {filteredComments.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-8 gap-2">
-                <MessageSquare className="h-8 w-8 text-muted-foreground/40" />
+              <div className="flex items-center justify-center py-3 gap-2">
+                <MessageSquare className="h-5 w-5 text-muted-foreground/40" />
                 <p className="text-muted-foreground font-['Roboto'] text-xs">Aucun commentaire</p>
               </div>
             )}
