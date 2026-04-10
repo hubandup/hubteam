@@ -272,15 +272,29 @@ export function ScorecardRECC() {
     return { weeks: sortedWeeks, monthGroups: groups };
   }, [scorecards]);
 
-  // Visible weeks: only latest week unless expanded
-  const { visibleWeeks, visibleMonthGroups } = useMemo(() => {
-    if (showPastWeeks || weeks.length <= 1) return { visibleWeeks: weeks, visibleMonthGroups: monthGroups };
-    const lastWeek = weeks[weeks.length - 1];
+  // Current week number (ISO)
+  const currentWeekNum = useMemo(() => {
+    const now = new Date();
+    const jan1 = new Date(now.getFullYear(), 0, 1);
+    const days = Math.floor((now.getTime() - jan1.getTime()) / 86400000);
+    return Math.ceil((days + jan1.getDay() + 1) / 7);
+  }, []);
+
+  // Split weeks into past (before current) and current+future
+  const { pastWeeks, currentAndFutureWeeks, visibleWeeks, visibleMonthGroups } = useMemo(() => {
+    const getNum = (w: string) => parseInt(w.replace(/\D/g, ''));
+    const past = weeks.filter((w) => getNum(w) < currentWeekNum);
+    const currentFuture = weeks.filter((w) => getNum(w) >= currentWeekNum);
+    // If no current/future weeks exist, show at least the last week
+    const baseFuture = currentFuture.length > 0 ? currentFuture : weeks.length > 0 ? [weeks[weeks.length - 1]] : [];
+
+    const visible = showPastWeeks ? [...past, ...baseFuture] : baseFuture;
+    const visibleSet = new Set(visible);
     const filteredGroups = monthGroups
-      .map((mg) => ({ ...mg, weeks: mg.weeks.filter((w) => w === lastWeek) }))
+      .map((mg) => ({ ...mg, weeks: mg.weeks.filter((w) => visibleSet.has(w)) }))
       .filter((mg) => mg.weeks.length > 0);
-    return { visibleWeeks: [lastWeek], visibleMonthGroups: filteredGroups };
-  }, [weeks, monthGroups, showPastWeeks]);
+    return { pastWeeks: past, currentAndFutureWeeks: baseFuture, visibleWeeks: visible, visibleMonthGroups: filteredGroups };
+  }, [weeks, monthGroups, showPastWeeks, currentWeekNum]);
 
   const lookup = useMemo(() => {
     const map = new Map<string, Scorecard>();
