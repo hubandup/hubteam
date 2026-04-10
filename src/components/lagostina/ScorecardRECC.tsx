@@ -456,9 +456,9 @@ export function ScorecardRECC() {
                           const obj = objVals[wi];
                           const color = getCondColor(val, obj);
                           return (
-                            <td key={w} className={`px-1 py-1.5 text-center text-[13px] ${color}`}>
+                            <NoteableCell key={w} levier={group.levier} kpiName={kpi.name} week={w} notesMap={cellNotesMap} className={`px-1 py-1.5 text-center text-[13px] ${color}`}>
                               {formatNum(val)}
-                            </td>
+                            </NoteableCell>
                           );
                         })}
                         <td className="px-2 py-1.5 text-center text-xs font-medium">
