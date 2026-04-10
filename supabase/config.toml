@@ -1,8 +1,7 @@
 project_id = "ytjxeypquqkrmbmhzfqi"
 
-# Cron jobs for automatic notifications
-[edge_runtime.cron]
-enabled = true
+# Cron jobs are now managed via pg_cron + pg_net (SQL-level)
+# with x-cron-secret header for authentication
 
 [functions.calculate-client-revenue]
 verify_jwt = false
@@ -15,46 +14,6 @@ verify_jwt = true
 
 [functions.send-pending-badge-notifications]
 verify_jwt = false
-
-[[edge_runtime.cron.jobs]]
-name = "check-deadlines"
-schedule = "0 */6 * * *"  # Every 6 hours
-function = "check-deadlines"
-
-[[edge_runtime.cron.jobs]]
-name = "check-client-deadlines"
-schedule = "0 * * * *"  # Every hour
-function = "check-client-deadlines"
-
-[[edge_runtime.cron.jobs]]
-name = "sync-facturation-pro-clients"
-schedule = "0 */6 * * *"  # Every 6 hours
-function = "sync-facturation-pro-clients"
-
-[[edge_runtime.cron.jobs]]
-name = "sync-facturation-pro-invoices"
-schedule = "0 */6 * * *"  # Every 6 hours
-function = "sync-facturation-pro-invoices"
-
-[[edge_runtime.cron.jobs]]
-name = "check-facturation-pro-quotes"
-schedule = "0 * * * *"  # Every hour
-function = "check-facturation-pro-quotes"
-
-[[edge_runtime.cron.jobs]]
-name = "send-pending-badge-notifications"
-schedule = "*/15 * * * *"  # Every 15 minutes
-function = "send-pending-badge-notifications"
-
-[[edge_runtime.cron.jobs]]
-name = "check-reco-project-deadlines"
-schedule = "0 * * * *"  # Every hour
-function = "check-reco-project-deadlines"
-
-[[edge_runtime.cron.jobs]]
-name = "send-notification-digest"
-schedule = "0 */6 * * *"  # Every 6 hours
-function = "send-notification-digest"
 
 [functions.sync-facturation-pro-clients]
 verify_jwt = false
@@ -102,29 +61,13 @@ verify_jwt = false
 [functions.process-notification-outbox]
 verify_jwt = false
 
-# Project milestones checker - cron only  
+# Project milestones checker - cron only
 [functions.check-project-milestones]
 verify_jwt = false
 
-# Add cron jobs for notification processing
-[[edge_runtime.cron.jobs]]
-name = "process-notification-outbox"
-schedule = "*/2 * * * *"  # Every 2 minutes
-function = "process-notification-outbox"
-
-[[edge_runtime.cron.jobs]]
-name = "check-project-milestones"
-schedule = "0 8 * * *"  # Daily at 8am
-function = "check-project-milestones"
-
-# LinkedIn posts fetch - every hour
+# LinkedIn posts fetch
 [functions.fetch-linkedin-posts]
 verify_jwt = false
 
 [functions.linkedin-oauth-callback]
 verify_jwt = false
-
-[[edge_runtime.cron.jobs]]
-name = "fetch-linkedin-posts"
-schedule = "0 * * * *"  # Every hour
-function = "fetch-linkedin-posts"
