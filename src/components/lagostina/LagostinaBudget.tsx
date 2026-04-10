@@ -150,7 +150,8 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
         <>
           {activeTab === 'global' && (
             <>
-              {/* Budget consommé global */}
+              {/* Budget consommé global + mois en cours — 2 colonnes */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-6">
                 <div className="flex items-center justify-between mb-3">
                   <div>
@@ -244,6 +245,7 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                   </div>
                 );
               })()}
+              </div>
 
               <ClientBudgetChart />
 
