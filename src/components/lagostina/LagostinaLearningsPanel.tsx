@@ -290,12 +290,12 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey && newComment.trim()) {
                   e.preventDefault();
-                  addComment.mutate(newComment.trim());
+                  addComment.mutate({ content: newComment.trim() });
                 }
               }}
             />
             <button
-              onClick={() => newComment.trim() && addComment.mutate(newComment.trim())}
+              onClick={() => newComment.trim() && addComment.mutate({ content: newComment.trim() })}
               disabled={!newComment.trim()}
               className="self-end p-2 text-primary hover:bg-primary/10 transition-colors disabled:opacity-30"
             >
