@@ -354,8 +354,7 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
 
   const scorecardSubTabs = [
     { id: 'synthese', label: 'Synthèse' },
-    { id: 'par_levier', label: 'Par levier' },
-    { id: 'full_detail', label: 'Full détail' },
+    { id: 'detail', label: 'Détail par levier' },
   ];
 
   return (
