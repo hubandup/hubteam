@@ -195,22 +195,20 @@ export default function Brisach() {
         }
       });
 
-      // -- Chart capture --
+      // -- Chart capture (compact to fit table on same page) --
       y = 84;
       const chartEl = document.getElementById('brisach-chart');
       if (chartEl) {
         const canvas = await html2canvas(chartEl, { scale: 2, backgroundColor: '#ffffff' });
         const imgData = canvas.toDataURL('image/png');
-        const imgH = (contentW * canvas.height) / canvas.width;
+        const rawH = (contentW * canvas.height) / canvas.width;
+        const maxChartH = 60; // cap chart height to leave room for table
+        const imgH = Math.min(rawH, maxChartH);
         doc.addImage(imgData, 'PNG', margin, y, contentW, imgH);
-        y += imgH + 8;
+        y += imgH + 6;
       }
 
-      // -- Monthly table --
-      if (y > pageH - 80) {
-        doc.addPage();
-        y = 20;
-      }
+      // -- Monthly table (must stay on page 1) --
 
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
