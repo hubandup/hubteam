@@ -10,9 +10,10 @@ interface LagostinaSubTabsProps {
   defaultTab?: string;
   children: (activeTab: string) => React.ReactNode;
   rightAction?: React.ReactNode;
+  belowTabs?: React.ReactNode;
 }
 
-export function LagostinaSubTabs({ tabs, defaultTab, children, rightAction }: LagostinaSubTabsProps) {
+export function LagostinaSubTabs({ tabs, defaultTab, children, rightAction, belowTabs }: LagostinaSubTabsProps) {
   const [activeTab, setActiveTab] = useState(defaultTab || tabs[0]?.id || '');
 
   return (
@@ -35,6 +36,7 @@ export function LagostinaSubTabs({ tabs, defaultTab, children, rightAction }: La
         </div>
         {rightAction}
       </div>
+      {belowTabs}
       {children(activeTab)}
     </div>
   );

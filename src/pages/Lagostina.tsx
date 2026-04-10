@@ -129,14 +129,11 @@ export default function Lagostina() {
 
       {/* Content */}
       <div className="p-6 transition-opacity duration-150">
-        {/* Learnings Panel */}
-        {showLearnings && <LagostinaLearningsPanel activeTab={activeTab} />}
-
         <Suspense fallback={<TabSkeleton />}>
-          {activeTab === 'scorecard' && <ScorecardRECC learningsButton={learningsButton} />}
-          {activeTab === 'influence' && <LagostinaInfluenceRP learningsButton={learningsButton} />}
-          {activeTab === 'mediatisation' && <LagostinaMediatisation learningsButton={learningsButton} />}
-          {activeTab === 'budget' && <LagostinaBudget learningsButton={learningsButton} />}
+          {activeTab === 'scorecard' && <ScorecardRECC learningsButton={learningsButton} learningsPanel={showLearnings ? <LagostinaLearningsPanel activeTab={activeTab} /> : null} />}
+          {activeTab === 'influence' && <LagostinaInfluenceRP learningsButton={learningsButton} learningsPanel={showLearnings ? <LagostinaLearningsPanel activeTab={activeTab} /> : null} />}
+          {activeTab === 'mediatisation' && <LagostinaMediatisation learningsButton={learningsButton} learningsPanel={showLearnings ? <LagostinaLearningsPanel activeTab={activeTab} /> : null} />}
+          {activeTab === 'budget' && <LagostinaBudget learningsButton={learningsButton} learningsPanel={showLearnings ? <LagostinaLearningsPanel activeTab={activeTab} /> : null} />}
         </Suspense>
       </div>
     </div>
