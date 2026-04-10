@@ -70,6 +70,20 @@ export default function Lagostina() {
 
   const exportCfg = EXPORT_CONFIG[activeTab];
 
+  const learningsButton = (
+    <button
+      onClick={() => setShowLearnings(!showLearnings)}
+      className={`flex items-center gap-2 px-5 py-2.5 text-sm font-['Roboto'] font-medium transition-colors border ${
+        showLearnings
+          ? 'bg-black text-white dark:bg-[#E8FF4C] dark:text-black border-black dark:border-[#E8FF4C]'
+          : 'bg-white dark:bg-[#0f1422] text-foreground border-border/50 hover:bg-muted/50'
+      }`}
+    >
+      <SquarePen className="h-4 w-4" />
+      Learnings
+    </button>
+  );
+
   return (
     <div className="min-h-screen bg-white dark:bg-[#0a0e1a]">
       {/* Header */}
