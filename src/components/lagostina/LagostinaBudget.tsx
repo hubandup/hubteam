@@ -9,6 +9,7 @@ import {
 } from 'recharts';
 import { LagostinaSubTabs } from './LagostinaSubTabs';
 import { ClientBudgetChart } from '@/components/home/ClientBudgetChart';
+import { NoteableCell, useCellNotes } from './CellNotePopover';
 
 function getChartAccent(): string {
   if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) return '#E8FF4C';
