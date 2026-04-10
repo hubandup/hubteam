@@ -26,39 +26,30 @@ export function BrisachAccessTab() {
   const { data: users, isLoading } = useQuery({
     queryKey: ['brisach-access-management'],
     queryFn: async () => {
-      const { data: profiles, error: pErr } = await supabase
-        .from('profiles')
-        .select('id, email, first_name, last_name, avatar_url');
-      if (pErr) throw pErr;
-
-      const { data: roles, error: rErr } = await supabase
-        .from('user_roles')
-        .select('user_id, role');
-      if (rErr) throw rErr;
+      // Use edge function to bypass RLS and get all users
+      const { data: fnData, error: fnErr } = await supabase.functions.invoke('list-users-with-status');
+      if (fnErr) throw fnErr;
+      const allUsers = fnData?.users || [];
 
       const { data: accesses, error: aErr } = await supabase
         .from('brisach_access')
         .select('user_id, granted');
       if (aErr) throw aErr;
 
-      const roleMap = new Map(roles?.map(r => [r.user_id, r.role]) || []);
       const accessMap = new Map(accesses?.map(a => [a.user_id, a.granted]) || []);
 
-      return (profiles || [])
-        .filter(p => {
-          const role = roleMap.get(p.id);
-          return role !== 'admin' && role !== 'team';
-        })
-        .map(p => ({
-          id: p.id,
-          email: p.email || '',
-          first_name: p.first_name,
-          last_name: p.last_name,
-          avatar_url: p.avatar_url,
-          role: roleMap.get(p.id) || null,
-          granted: accessMap.get(p.id) ?? false,
+      return allUsers
+        .filter((u: any) => u.role !== 'admin' && u.role !== 'team')
+        .map((u: any) => ({
+          id: u.id,
+          email: u.email || '',
+          first_name: u.first_name,
+          last_name: u.last_name,
+          avatar_url: null,
+          role: u.role || null,
+          granted: accessMap.get(u.id) ?? false,
         }))
-        .sort((a, b) => {
+        .sort((a: UserWithAccess, b: UserWithAccess) => {
           const nameA = `${a.first_name || ''} ${a.last_name || ''}`.trim();
           const nameB = `${b.first_name || ''} ${b.last_name || ''}`.trim();
           return nameA.localeCompare(nameB);
