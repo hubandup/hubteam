@@ -145,7 +145,7 @@ function NoteTooltip({ note, onEdit }: { note: CellNote; onEdit: () => void }) {
 
   return (
     <div
-      className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-white dark:bg-[#1a1f2e] border border-[#E8FF4C] shadow-lg p-3 text-left"
+      className="absolute z-[100] top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-white dark:bg-[#1a1f2e] border border-[#E8FF4C] shadow-lg p-3 text-left"
       onClick={(e) => e.stopPropagation()}
     >
       <div
