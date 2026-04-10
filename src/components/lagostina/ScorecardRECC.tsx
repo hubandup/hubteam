@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database, Plus, Minus } from 'lucide-react';
 import { LagostinaSubTabs } from './LagostinaSubTabs';
+import { NoteableCell, useCellNotes } from './CellNotePopover';
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
@@ -228,6 +229,7 @@ function GaugeChart({ value, target }: { value: number; target: number }) {
 // ── MAIN COMPONENT ──
 export function ScorecardRECC() {
   const [showPastWeeks, setShowPastWeeks] = useState(false);
+  const { data: cellNotesMap } = useCellNotes();
 
   const { data: scorecards, isLoading } = useQuery({
     queryKey: ['lagostina-scorecards'],
@@ -454,9 +456,9 @@ export function ScorecardRECC() {
                           const obj = objVals[wi];
                           const color = getCondColor(val, obj);
                           return (
-                            <td key={w} className={`px-1 py-1.5 text-center text-[13px] ${color}`}>
+                            <NoteableCell key={w} levier={group.levier} kpiName={kpi.name} week={w} notesMap={cellNotesMap} className={`px-1 py-1.5 text-center text-[13px] ${color}`}>
                               {formatNum(val)}
-                            </td>
+                            </NoteableCell>
                           );
                         })}
                         <td className="px-2 py-1.5 text-center text-xs font-medium">
@@ -617,9 +619,9 @@ export function ScorecardRECC() {
                               {visibleWeeks.map((w) => {
                                 const wi = weeks.indexOf(w);
                                 return (
-                                <td key={w} className={`px-1 py-1.5 text-center text-[13px] ${getCondColor(actualVals[wi], objVals[wi])}`}>
+                                <NoteableCell key={w} levier={block.levier} kpiName={kn} week={w} notesMap={cellNotesMap} className={`px-1 py-1.5 text-center text-[13px] ${getCondColor(actualVals[wi], objVals[wi])}`}>
                                   {formatNum(actualVals[wi])}
-                                </td>
+                                </NoteableCell>
                                 );
                               })}
                               <td className="px-2 py-1.5 text-center text-xs font-medium">
@@ -708,9 +710,9 @@ export function ScorecardRECC() {
                               cls = v >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]';
                             }
                             return (
-                              <td key={w} className={`px-1 py-1.5 text-center text-[13px] ${cls || 'text-foreground'}`}>
+                              <NoteableCell key={w} levier={`detail_${section.section}`} kpiName={kpiName} week={w} notesMap={cellNotesMap} className={`px-1 py-1.5 text-center text-[13px] ${cls || 'text-foreground'}`}>
                                 {v != null ? (isEvol ? `${v >= 0 ? '↑' : '↓'}${Math.abs(v).toFixed(1)}%` : formatNum(v)) : '—'}
-                              </td>
+                              </NoteableCell>
                             );
                           })}
                           {monthlyVals.map((v, i) => (
@@ -769,9 +771,9 @@ export function ScorecardRECC() {
                           {visibleWeeks.map((w) => {
                             const entry = data.find((s) => s.kpi_name === kn && s.week === w);
                             return (
-                              <td key={w} className="px-1 py-1.5 text-center text-[13px] text-foreground">
+                              <NoteableCell key={w} levier={lev} kpiName={kn} week={w} notesMap={cellNotesMap} className="px-1 py-1.5 text-center text-[13px] text-foreground">
                                 {formatNum(entry?.actual ?? null)}
-                              </td>
+                              </NoteableCell>
                             );
                           })}
                         </tr>

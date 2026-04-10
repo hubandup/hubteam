@@ -1196,6 +1196,39 @@ export type Database = {
         }
         Relationships: []
       }
+      lagostina_cell_notes: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          kpi_name: string
+          levier: string
+          updated_at: string
+          user_id: string
+          week: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          kpi_name: string
+          levier: string
+          updated_at?: string
+          user_id: string
+          week: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          kpi_name?: string
+          levier?: string
+          updated_at?: string
+          user_id?: string
+          week?: string
+        }
+        Relationships: []
+      }
       lagostina_consumer: {
         Row: {
           comment: string | null
