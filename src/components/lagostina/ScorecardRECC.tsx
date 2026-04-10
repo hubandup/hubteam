@@ -771,9 +771,9 @@ export function ScorecardRECC() {
                           {visibleWeeks.map((w) => {
                             const entry = data.find((s) => s.kpi_name === kn && s.week === w);
                             return (
-                              <td key={w} className="px-1 py-1.5 text-center text-[13px] text-foreground">
+                              <NoteableCell key={w} levier={lev} kpiName={kn} week={w} notesMap={cellNotesMap} className="px-1 py-1.5 text-center text-[13px] text-foreground">
                                 {formatNum(entry?.actual ?? null)}
-                              </td>
+                              </NoteableCell>
                             );
                           })}
                         </tr>
