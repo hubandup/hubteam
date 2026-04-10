@@ -244,7 +244,7 @@ export function LagostinaBudget() {
                             <td
                               rowSpan={4}
                               className="px-3 py-2 text-foreground font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10 border-l-2 capitalize"
-                              style={{ borderLeftColor: LEVIER_COLORS[levier] || '#E8FF4C' }}
+                              style={{ borderLeftColor: getLevierColor(levier, leviers.indexOf(levier)) }}
                             >
                               {levier}
                             </td>
