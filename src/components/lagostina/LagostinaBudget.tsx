@@ -461,9 +461,9 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                             const val = getMonthVal(levier, m, type);
                             const isOver = type === 'engaged' && val > getMonthVal(levier, m, 'planned') && getMonthVal(levier, m, 'planned') > 0;
                             return (
-                              <td key={m} className={`px-2 py-1.5 text-center text-[13px] ${isOver ? 'bg-[#ef4444]/20 text-[#ef4444]' : 'text-foreground'}`}>
+                              <NoteableCell key={m} levier={`budget_${levier}`} kpiName={type} week={m} notesMap={cellNotesMap} levierColor={getLevierColor(levier, leviers.indexOf(levier))} className={`px-2 py-1.5 text-center text-[13px] ${isOver ? 'bg-[#ef4444]/20 text-[#ef4444]' : 'text-foreground'}`}>
                                 {val > 0 ? val.toLocaleString('fr-FR') : '—'}
-                              </td>
+                              </NoteableCell>
                             );
                           })}
                           <td className="px-2 py-1.5 text-center text-[13px] text-foreground font-medium">
