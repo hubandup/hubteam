@@ -84,7 +84,6 @@ const TONALITY_COLORS: Record<string, string> = {
 const PAGE_SIZE = 20;
 
 export function LagostinaInfluenceRP() {
-  const [activeTab, setActiveTab] = useState<'influence' | 'presse'>('influence');
   const [tonalityFilter, setTonalityFilter] = useState<string>('all');
   const [page, setPage] = useState(0);
 

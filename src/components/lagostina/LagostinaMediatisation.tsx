@@ -318,7 +318,7 @@ export function LagostinaMediatisation() {
   const subTabItems = SUB_TABS.map((t) => ({ id: t, label: t }));
 
   return (
-    <LagostinaSubTabs tabs={subTabItems} defaultTab={subTab}>
+    <LagostinaSubTabs tabs={subTabItems} defaultTab="SEA">
       {(tab) => {
         const rows = (mediaKpis || []).filter((r) => r.channel === CHANNEL_MAP[tab as SubTab]);
         return rows.length === 0 ? (
