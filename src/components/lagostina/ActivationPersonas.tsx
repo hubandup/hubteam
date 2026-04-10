@@ -303,9 +303,10 @@ export function ActivationPersonas() {
                           )}
 
                           {persona.preferred_media && (
-                            <p className="text-muted-foreground text-xs font-['Roboto'] italic border-t border-border/20 pt-2">
-                              Média préféré : {persona.preferred_media}
-                            </p>
+                            <div className="border-t border-border/20 pt-2">
+                              <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Médias préférés</p>
+                              <MediaBadges mediaStr={persona.preferred_media} />
+                            </div>
                           )}
                         </div>
                       </div>
