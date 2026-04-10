@@ -24,6 +24,26 @@ type CellNote = {
 
 // Hook to fetch all cell notes (shared across all cells)
 export function useCellNotes() {
+  const queryClient = useQueryClient();
+
+  // Realtime subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('lagostina-cell-notes-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'lagostina_cell_notes' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['lagostina-cell-notes'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ['lagostina-cell-notes'],
     queryFn: async () => {
@@ -32,7 +52,6 @@ export function useCellNotes() {
         .select('*');
       if (error) throw error;
 
-      // Fetch profiles for all note authors
       const userIds = [...new Set((data as any[]).map((n) => n.user_id))];
       const profilesMap = new Map<string, { first_name: string; last_name: string; avatar_url: string | null }>();
       if (userIds.length > 0) {
