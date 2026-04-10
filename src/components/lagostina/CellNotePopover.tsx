@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Pencil, Trash2, X, Check } from 'lucide-react';
-import DOMPurify from 'dompurify';
+import { createSafeHtml, sanitizeHtml } from '@/lib/sanitize';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 type CellNote = {

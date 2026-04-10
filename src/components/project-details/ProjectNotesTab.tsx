@@ -11,7 +11,7 @@ import { fr } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { RichTextEditor } from '@/components/faq/RichTextEditor';
-import DOMPurify from 'dompurify';
+import { createSafeHtml, sanitizeHtml } from '@/lib/sanitize';
 
 interface ProjectNote {
   id: string;

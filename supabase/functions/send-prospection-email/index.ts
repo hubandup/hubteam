@@ -46,7 +46,7 @@ const APP_URL = "https://hubteam.lovable.app";
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://hubandup.org",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
