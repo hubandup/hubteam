@@ -433,7 +433,9 @@ export function ScorecardRECC() {
                         <td className="px-2 py-1.5 text-center text-muted-foreground text-xs">
                           {formatNum(latestObj)}
                         </td>
-                        {weeks.map((w, wi) => {
+                        {weeks.length > 1 && <td />}
+                        {visibleWeeks.map((w) => {
+                          const wi = weeks.indexOf(w);
                           const val = actualVals[wi];
                           const obj = objVals[wi];
                           const color = getCondColor(val, obj);
