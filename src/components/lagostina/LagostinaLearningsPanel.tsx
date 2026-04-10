@@ -316,8 +316,8 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
                 key={c.id}
                 comment={c}
                 currentUserId={user?.id}
-                onResolve={(id, resolved) => toggleResolved.mutate({ id, resolved })}
                 onDelete={(id) => deleteComment.mutate(id)}
+                onReply={(parentId, content) => addComment.mutate({ content, parentId })}
               />
             ))}
           </div>
