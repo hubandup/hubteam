@@ -394,7 +394,7 @@ export function ScorecardRECC() {
                         >
                           {showPastWeeks ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
                         </button>
-                        <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">Mois précédents</span>
+                        {showPastWeeks && <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">Mois précédents</span>}
                       </div>
                     </th>
                   )}
