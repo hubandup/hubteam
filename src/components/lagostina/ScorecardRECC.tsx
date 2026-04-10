@@ -710,9 +710,9 @@ export function ScorecardRECC() {
                               cls = v >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]';
                             }
                             return (
-                              <td key={w} className={`px-1 py-1.5 text-center text-[13px] ${cls || 'text-foreground'}`}>
+                              <NoteableCell key={w} levier={`detail_${section.section}`} kpiName={kpiName} week={w} notesMap={cellNotesMap} className={`px-1 py-1.5 text-center text-[13px] ${cls || 'text-foreground'}`}>
                                 {v != null ? (isEvol ? `${v >= 0 ? '↑' : '↓'}${Math.abs(v).toFixed(1)}%` : formatNum(v)) : '—'}
-                              </td>
+                              </NoteableCell>
                             );
                           })}
                           {monthlyVals.map((v, i) => (
