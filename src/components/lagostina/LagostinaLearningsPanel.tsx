@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Check } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -225,6 +227,16 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
             />
           </div>
         </div>
+
+        {/* Validate button spanning both columns */}
+        {canEdit && isDirty && (
+          <div className="lg:col-span-2 flex justify-end px-5 pb-4 -mt-2">
+            <Button size="sm" onClick={handleValidate} disabled={saveLearning.isPending} className="gap-1.5">
+              <Check className="h-4 w-4" />
+              Valider
+            </Button>
+          </div>
+        )}
 
         {/* Comments */}
         <div className="p-5 space-y-4">
