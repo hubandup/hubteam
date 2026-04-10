@@ -181,16 +181,8 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
     onError: () => toast.error('Erreur'),
   });
 
-  const toggleResolved = useMutation({
-    mutationFn: async ({ id, resolved }: { id: string; resolved: boolean }) => {
-      const { error } = await supabase
-        .from('lagostina_comments')
-        .update({ resolved })
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lagostina-comments', activeTab] }),
-  });
+
+
 
   const deleteComment = useMutation({
     mutationFn: async (id: string) => {
