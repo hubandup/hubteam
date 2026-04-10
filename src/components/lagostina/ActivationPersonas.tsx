@@ -141,7 +141,7 @@ export function ActivationPersonas() {
             onClick={() => setSelectedPriority(p)}
             className={`px-4 py-2 text-sm font-['Roboto'] transition-colors ${
               selectedPriority === p
-                ? 'bg-black text-[#0f1422] font-medium'
+                ? 'bg-black text-white dark:bg-[#E8FF4C] dark:text-black font-medium'
                 : 'bg-white dark:bg-[#0f1422] border border-border/30 text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -155,7 +155,7 @@ export function ActivationPersonas() {
                 onClick={() => setSelectedPriority(p)}
                 className={`px-4 py-2 text-sm font-['Roboto'] transition-colors ${
                   selectedPriority === p
-                    ? 'bg-black text-[#0f1422] font-medium'
+                    ? 'bg-black text-white dark:bg-[#E8FF4C] dark:text-black font-medium'
                     : 'bg-white dark:bg-[#0f1422] border border-border/30 text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -224,7 +224,7 @@ export function ActivationPersonas() {
                               </p>
                             </div>
                             {persona.market_weight && (
-                              <span className="bg-black text-[#0f1422] px-2 py-0.5 text-xs font-['Roboto'] font-bold">
+                              <span className="bg-black text-white dark:bg-[#E8FF4C] dark:text-black px-2 py-0.5 text-xs font-['Roboto'] font-bold">
                                 {persona.market_weight}
                               </span>
                             )}
