@@ -198,70 +198,30 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
           <h3 className="text-xs font-['Roboto'] font-semibold uppercase tracking-wider text-[#22c55e]">
             Ce qui fonctionne ✅
           </h3>
-          <div className="bg-green-50 dark:bg-green-900/20 min-h-[200px] p-3 space-y-2">
-            {worksEntries.length === 0 && (
-              <p className="text-muted-foreground font-['Roboto'] text-xs italic">Aucun élément</p>
-            )}
-            {worksEntries.map((entry, i) => (
-              <div key={i} className="flex items-start gap-2 group">
-                <p className="flex-1 text-sm font-['Roboto'] text-foreground/80">• {entry}</p>
-                {canEdit && (
-                  <button onClick={() => removeEntry('works', i)} className="p-0.5 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all" title="Supprimer">
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
-            ))}
+          <div className="bg-green-50 dark:bg-green-900/20 min-h-[200px] p-3">
+            <textarea
+              value={local.works}
+              onChange={(e) => handleLearningChange('works', e.target.value)}
+              readOnly={!canEdit}
+              className="w-full bg-transparent text-foreground font-['Roboto'] text-sm resize-none min-h-[180px] focus:outline-none placeholder:text-foreground/20"
+              placeholder={canEdit ? 'Ajouter…' : '—'}
+            />
           </div>
-          {canEdit && (
-            <div className="flex gap-2">
-              <input
-                value={newWorks}
-                onChange={(e) => setNewWorks(e.target.value)}
-                placeholder="Ajouter…"
-                className="flex-1 bg-muted/50 border border-border/30 text-foreground font-['Roboto'] text-sm px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/30 rounded"
-                onKeyDown={(e) => { if (e.key === 'Enter' && newWorks.trim()) { e.preventDefault(); addEntry('works', newWorks); } }}
-              />
-              <button onClick={() => addEntry('works', newWorks)} disabled={!newWorks.trim()} className="p-2 text-primary hover:bg-primary/10 transition-colors disabled:opacity-30">
-                <Send className="h-4 w-4" />
-              </button>
-            </div>
-          )}
         </div>
 
         <div className="p-5 space-y-3">
           <h3 className="text-xs font-['Roboto'] font-semibold uppercase tracking-wider text-[#ef4444]">
             Ce qui ne fonctionne pas ❌
           </h3>
-          <div className="bg-red-50 dark:bg-red-900/20 min-h-[200px] p-3 space-y-2">
-            {doesNotWorkEntries.length === 0 && (
-              <p className="text-muted-foreground font-['Roboto'] text-xs italic">Aucun élément</p>
-            )}
-            {doesNotWorkEntries.map((entry, i) => (
-              <div key={i} className="flex items-start gap-2 group">
-                <p className="flex-1 text-sm font-['Roboto'] text-foreground/80">• {entry}</p>
-                {canEdit && (
-                  <button onClick={() => removeEntry('does_not_work', i)} className="p-0.5 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all" title="Supprimer">
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
-            ))}
+          <div className="bg-red-50 dark:bg-red-900/20 min-h-[200px] p-3">
+            <textarea
+              value={local.does_not_work}
+              onChange={(e) => handleLearningChange('does_not_work', e.target.value)}
+              readOnly={!canEdit}
+              className="w-full bg-transparent text-foreground font-['Roboto'] text-sm resize-none min-h-[180px] focus:outline-none placeholder:text-foreground/20"
+              placeholder={canEdit ? 'Ajouter…' : '—'}
+            />
           </div>
-          {canEdit && (
-            <div className="flex gap-2">
-              <input
-                value={newDoesNotWork}
-                onChange={(e) => setNewDoesNotWork(e.target.value)}
-                placeholder="Ajouter…"
-                className="flex-1 bg-muted/50 border border-border/30 text-foreground font-['Roboto'] text-sm px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/30 rounded"
-                onKeyDown={(e) => { if (e.key === 'Enter' && newDoesNotWork.trim()) { e.preventDefault(); addEntry('does_not_work', newDoesNotWork); } }}
-              />
-              <button onClick={() => addEntry('does_not_work', newDoesNotWork)} disabled={!newDoesNotWork.trim()} className="p-2 text-primary hover:bg-primary/10 transition-colors disabled:opacity-30">
-                <Send className="h-4 w-4" />
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Comments */}
