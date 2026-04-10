@@ -1,5 +1,6 @@
 import { useState, lazy, Suspense, useMemo } from 'react';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useLagostinaAccess } from '@/hooks/useLagostinaAccess';
 import { Navigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -73,6 +74,7 @@ function EmptyState({ section, role }: { section: string; role: string | null })
 
 export default function Lagostina() {
   const { role } = useUserRole();
+  const { hasAccess, isLoading: accessLoading } = useLagostinaAccess();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedPriority, setSelectedPriority] = useState('all');
 
@@ -100,7 +102,8 @@ export default function Lagostina() {
     return opts;
   }, [priorities]);
 
-  if (role !== 'admin' && role !== 'team' && role !== 'client') {
+  if (accessLoading) return <TabSkeleton />;
+  if (!hasAccess) {
     return <Navigate to="/" replace />;
   }
 

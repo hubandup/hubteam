@@ -3,6 +3,7 @@ import { NavLink } from './NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useLagostinaAccess } from '@/hooks/useLagostinaAccess';
 import {
   Sidebar as ShadcnSidebar,
   SidebarContent,
@@ -26,6 +27,7 @@ export function Sidebar() {
   const { signOut, user } = useAuth();
   const { role } = useUserRole();
   const { canRead } = usePermissions();
+  const { hasAccess: hasLagostinaAccess } = useLagostinaAccess();
   const [clientId, setClientId] = useState<string | null>(null);
   const [smashOpen, setSmashOpen] = useState(false);
   const { t } = useTranslation();
@@ -72,7 +74,7 @@ export function Sidebar() {
     { title: t('nav.projects'), url: '/projects', icon: FolderKanban, module: 'projects' as const, matchParent: true },
     { title: t('nav.messages'), url: '/messages', icon: MessageSquare, module: 'dashboard' as const },
     { title: t('nav.faq'), url: '/faq', icon: HelpCircle, module: 'faq' as const },
-    ...(role === 'admin' || role === 'team' || role === 'client' ? [{ title: 'Lagostina', url: '/lagostina', icon: BarChart3, module: 'dashboard' as const }] : []),
+    ...(hasLagostinaAccess ? [{ title: 'Lagostina', url: '/lagostina', icon: BarChart3, module: 'dashboard' as const }] : []),
   ];
 
   const showSettings = role === 'admin' || role === 'team' || role === 'agency';

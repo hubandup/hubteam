@@ -1,6 +1,6 @@
 import { useUserRole } from '@/hooks/useUserRole';
 import { ResponsiveTabs, type TabItem } from '@/components/ui/responsive-tabs';
-import { User, Lock, Users, Shield, Database, Bell, Palette, HelpCircle, Tag, Mail } from 'lucide-react';
+import { User, Lock, Users, Shield, Database, Bell, Palette, HelpCircle, Tag, Mail, BarChart3 } from 'lucide-react';
 import { ProfileTab } from '@/components/settings/ProfileTab';
 import { SecurityTab } from '@/components/settings/SecurityTab';
 import { NotificationPreferencesTab } from '@/components/settings/NotificationPreferencesTab';
@@ -11,6 +11,7 @@ import { DesignTab } from '@/components/settings/DesignTab';
 import { FaqCategoriesTab } from '@/components/settings/FaqCategoriesTab';
 import { AgencyTagsTab } from '@/components/settings/AgencyTagsTab';
 import { TestInvitationEmail } from '@/components/settings/TestInvitationEmail';
+import { LagostinaAccessTab } from '@/components/settings/LagostinaAccessTab';
 import { useTranslation } from 'react-i18next';
 
 export default function Settings() {
@@ -80,6 +81,12 @@ export default function Settings() {
       label: t('settings.tabs.testEmail'),
       icon: <Mail className="h-4 w-4" />,
       content: <TestInvitationEmail />
+    },
+    {
+      value: 'lagostina-access',
+      label: 'Accès Lagostina',
+      icon: <BarChart3 className="h-4 w-4" />,
+      content: <LagostinaAccessTab />
     }
   ] : [];
 
