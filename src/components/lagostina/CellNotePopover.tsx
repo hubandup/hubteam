@@ -230,7 +230,7 @@ function NoteEditor({
 
   return (
     <div
-      className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 bg-white dark:bg-[#1a1f2e] border border-border/40 shadow-lg p-3"
+      className="absolute z-[100] top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-white dark:bg-[#1a1f2e] border border-border/40 shadow-lg p-3"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between mb-2">
