@@ -13,10 +13,10 @@ function getChartAccent(): string {
   return '#0f1422';
 }
 
-const SUB_TABS = ['SEA', 'SMA', 'TikTok'] as const;
+const SUB_TABS = ['SEA', 'META', 'TikTok'] as const;
 type SubTab = typeof SUB_TABS[number];
 
-const CHANNEL_MAP: Record<SubTab, string> = { SEA: 'sea', SMA: 'sma', TikTok: 'tiktok' };
+const CHANNEL_MAP: Record<SubTab, string> = { SEA: 'sea', META: 'sma', TikTok: 'tiktok' };
 
 // Map DB kpi_names to display keys
 const SEA_KPIS = ['roas', 'cpc_moyen', 'ctr', 'impressions', 'conversions', 'budget_ratio'];
