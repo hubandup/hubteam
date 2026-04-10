@@ -156,7 +156,7 @@ export function NoteableCell({
 
       {/* Hover tooltip */}
       {showTooltip && note && !showEditor && (
-        <NoteTooltip note={note} onEdit={() => { setShowTooltip(false); setShowEditor(true); }} />
+        <NoteTooltip note={note} noteColor={noteColor} onEdit={() => { setShowTooltip(false); setShowEditor(true); }} />
       )}
 
       {/* Editor modal */}
@@ -167,6 +167,7 @@ export function NoteableCell({
           week={week}
           existingNote={note}
           onClose={() => setShowEditor(false)}
+          noteColor={noteColor}
         />
       )}
     </td>
