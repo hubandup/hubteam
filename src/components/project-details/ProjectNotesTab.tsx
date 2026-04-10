@@ -11,7 +11,7 @@ import { fr } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { RichTextEditor } from '@/components/faq/RichTextEditor';
-import DOMPurify from 'dompurify';
+import { createSafeHtml, sanitizeHtml } from '@/lib/sanitize';
 
 interface ProjectNote {
   id: string;
@@ -276,7 +276,7 @@ export function ProjectNotesTab({ projectId }: ProjectNotesTabProps) {
                     </div>
                     <div 
                       className="prose prose-sm dark:prose-invert max-w-none"
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(note.content) }}
+                      dangerouslySetInnerHTML={createSafeHtml(note.content)}
                     />
                   </>
                 )}

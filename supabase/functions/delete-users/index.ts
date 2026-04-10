@@ -39,7 +39,7 @@ function rateLimitResponse(retryAfterSeconds: number, corsHeaders: Record<string
 }
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://hubandup.org",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };

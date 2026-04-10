@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Pencil, Trash2, X, Check } from 'lucide-react';
-import DOMPurify from 'dompurify';
+import { createSafeHtml, sanitizeHtml } from '@/lib/sanitize';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 type CellNote = {
@@ -209,7 +209,7 @@ function NoteTooltip({ note, noteColor, onEdit }: { note: CellNote; noteColor: s
       )}
       <div
         className="text-xs text-foreground font-['Roboto'] prose prose-sm dark:prose-invert max-w-none"
-        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(note.content) }}
+        dangerouslySetInnerHTML={createSafeHtml(note.content)}
       />
       {isAuthor && (
         <div className="flex gap-1 mt-2 pt-2 border-t border-border/30">
@@ -262,7 +262,7 @@ function NoteEditor({
   const saveMutation = useMutation({
     mutationFn: async (content: string) => {
       if (!user) throw new Error('Not authenticated');
-      const sanitized = DOMPurify.sanitize(content);
+      const sanitized = sanitizeHtml(content);
       if (existingNote) {
         const { error } = await supabase
           .from('lagostina_cell_notes')
