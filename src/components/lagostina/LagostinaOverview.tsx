@@ -1,11 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { TrendingUp, TrendingDown, Eye, MousePointerClick, DollarSign, PieChart, AlertCircle, Database } from 'lucide-react';
+import { TrendingUp, TrendingDown, Eye, MousePointerClick, DollarSign, PieChart, Database } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
+import { LagostinaSubTabs } from './LagostinaSubTabs';
 
-
-// Theme-aware chart accent: dark=#E8FF4C, light=#0f1422
 function getChartAccent(): string {
   if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) return '#E8FF4C';
   return '#0f1422';
@@ -21,25 +20,14 @@ function KpiCardSkeleton() {
   );
 }
 
-function TableSkeleton() {
-  return (
-    <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4 animate-pulse">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="h-10 bg-gray-100 mb-2" />
-      ))}
-    </div>
-  );
-}
-
 interface KpiCardProps {
   label: string;
   value: string;
   icon: React.ReactNode;
   trend?: { direction: 'up' | 'down'; label: string };
-  color?: string;
 }
 
-function KpiCard({ label, value, icon, trend, color }: KpiCardProps) {
+function KpiCard({ label, value, icon, trend }: KpiCardProps) {
   return (
     <div className="bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] border-black dark:border-white p-5 flex flex-col gap-1">
       <div className="flex items-center gap-2 text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">
@@ -83,68 +71,54 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+const SUB_TABS = [
+  { id: 'kpis', label: 'KPIs clés' },
+  { id: 'status', label: 'Statut par axe' },
+];
+
 export function LagostinaOverview() {
   const navigate = useNavigate();
   const { role } = useUserRole();
 
-  // Fetch scorecards
   const { data: scorecards, isLoading: loadingScorecard } = useQuery({
     queryKey: ['lagostina-scorecards'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('lagostina_scorecards')
-        .select('*')
-        .order('week', { ascending: false });
+      const { data, error } = await supabase.from('lagostina_scorecards').select('*').order('week', { ascending: false });
       if (error) throw error;
       return data;
     },
   });
 
-  // Fetch budget
   const { data: budgetData, isLoading: loadingBudget } = useQuery({
     queryKey: ['lagostina-budget'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('lagostina_budget')
-        .select('*');
+      const { data, error } = await supabase.from('lagostina_budget').select('*');
       if (error) throw error;
       return data;
     },
   });
 
-  // Fetch category status
   const { data: categoryStatus, isLoading: loadingCategory } = useQuery({
     queryKey: ['lagostina-category-status'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('lagostina_category_status')
-        .select('*')
-        .order('priority');
+      const { data, error } = await supabase.from('lagostina_category_status').select('*').order('priority');
       if (error) throw error;
       return data;
     },
   });
 
-  // Fetch last file sync
   const { data: lastSync } = useQuery({
     queryKey: ['lagostina-last-sync'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('lagostina_files_sync')
-        .select('*')
-        .eq('status', 'synced')
-        .order('last_synced', { ascending: false })
-        .limit(1);
+      const { data, error } = await supabase.from('lagostina_files_sync').select('*').eq('status', 'synced').order('last_synced', { ascending: false }).limit(1);
       if (error) throw error;
       return data?.[0] || null;
     },
   });
 
-  // Compute KPIs from scorecards
   const latestWeek = scorecards?.length
     ? scorecards.reduce((max, s) => (s.week > max ? s.week : max), scorecards[0].week)
     : null;
-
   const latestData = scorecards?.filter((s) => s.week === latestWeek) || [];
 
   const reachTotal = latestData
@@ -185,7 +159,6 @@ export function LagostinaOverview() {
     );
   }
 
-  // Group category status by priority
   const priorityGroups = categoryStatus?.reduce((acc, item) => {
     if (!acc[item.priority]) {
       acc[item.priority] = { label: item.priority_label, axes: {} };
@@ -195,96 +168,115 @@ export function LagostinaOverview() {
   }, {} as Record<string, { label: string; axes: Record<string, string> }>) || {};
 
   return (
-    <div className="space-y-6">
-      {/* KPI Cards */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => <KpiCardSkeleton key={i} />)}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <KpiCard
-            label="Reach total"
-            value={reachTotal >= 1000000 ? `${(reachTotal / 1000000).toFixed(1)}M` : reachTotal >= 1000 ? `${(reachTotal / 1000).toFixed(0)}K` : String(reachTotal)}
-            icon={<Eye className="h-3.5 w-3.5" />}
-          />
-          <KpiCard
-            label="Visites D2C"
-            value={visitesD2C >= 1000000 ? `${(visitesD2C / 1000000).toFixed(1)}M` : visitesD2C >= 1000 ? `${(visitesD2C / 1000).toFixed(0)}K` : String(visitesD2C)}
-            icon={<MousePointerClick className="h-3.5 w-3.5" />}
-          />
-          <KpiCard
-            label="ROAS moyen"
-            value={roasMoyen.toFixed(2)}
-            icon={<DollarSign className="h-3.5 w-3.5" />}
-          />
-          <div className="bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] border-black dark:border-white p-5 flex flex-col gap-1">
-            <div className="flex items-center gap-2 text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">
-              <PieChart className="h-3.5 w-3.5" />
-              Budget engagé
-            </div>
-            <div className="text-foreground text-2xl font-bold font-['Instrument_Sans']">{budgetPct}%</div>
-            <div className="w-full h-1.5 bg-gray-200 mt-1">
-              <div
-                className="h-full transition-all"
-                style={{
-                  width: `${Math.min(budgetPct, 100)}%`,
-                  backgroundColor: budgetPct >= 100 ? '#ef4444' : budgetPct >= 80 ? getChartAccent() : '#22c55e',
-                }}
-              />
-            </div>
-            <div className="text-muted-foreground text-xs font-['Roboto'] mt-0.5">
-              {totalEngaged.toLocaleString('fr-FR')}€ / {totalPlanned.toLocaleString('fr-FR')}€
-            </div>
-          </div>
-        </div>
-      )}
+    <LagostinaSubTabs tabs={SUB_TABS}>
+      {(activeTab) => (
+        <>
+          {activeTab === 'kpis' && (
+            <div className="space-y-6">
+              {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {Array.from({ length: 4 }).map((_, i) => <KpiCardSkeleton key={i} />)}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <KpiCard
+                    label="Reach total"
+                    value={reachTotal >= 1000000 ? `${(reachTotal / 1000000).toFixed(1)}M` : reachTotal >= 1000 ? `${(reachTotal / 1000).toFixed(0)}K` : String(reachTotal)}
+                    icon={<Eye className="h-3.5 w-3.5" />}
+                  />
+                  <KpiCard
+                    label="Visites D2C"
+                    value={visitesD2C >= 1000000 ? `${(visitesD2C / 1000000).toFixed(1)}M` : visitesD2C >= 1000 ? `${(visitesD2C / 1000).toFixed(0)}K` : String(visitesD2C)}
+                    icon={<MousePointerClick className="h-3.5 w-3.5" />}
+                  />
+                  <KpiCard
+                    label="ROAS moyen"
+                    value={roasMoyen.toFixed(2)}
+                    icon={<DollarSign className="h-3.5 w-3.5" />}
+                  />
+                  <div className="bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] border-black dark:border-white p-5 flex flex-col gap-1">
+                    <div className="flex items-center gap-2 text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">
+                      <PieChart className="h-3.5 w-3.5" />
+                      Budget engagé
+                    </div>
+                    <div className="text-foreground text-2xl font-bold font-['Instrument_Sans']">{budgetPct}%</div>
+                    <div className="w-full h-1.5 bg-gray-200 mt-1">
+                      <div
+                        className="h-full transition-all"
+                        style={{
+                          width: `${Math.min(budgetPct, 100)}%`,
+                          backgroundColor: budgetPct >= 100 ? '#ef4444' : budgetPct >= 80 ? getChartAccent() : '#22c55e',
+                        }}
+                      />
+                    </div>
+                    <div className="text-muted-foreground text-xs font-['Roboto'] mt-0.5">
+                      {totalEngaged.toLocaleString('fr-FR')}€ / {totalPlanned.toLocaleString('fr-FR')}€
+                    </div>
+                  </div>
+                </div>
+              )}
 
-      {/* Category Status Table */}
-      {loadingCategory ? (
-        <TableSkeleton />
-      ) : Object.keys(priorityGroups).length > 0 ? (
-        <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border/40">
-                <th className="text-left px-4 py-3 text-muted-foreground font-['Roboto'] font-medium text-xs uppercase tracking-wider">Priorité</th>
-                {AXES.map((axis) => (
-                  <th key={axis.key} className="text-center px-3 py-3 text-muted-foreground font-['Roboto'] font-medium text-xs uppercase tracking-wider">
-                    {axis.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(priorityGroups).map(([priority, group]) => (
-                <tr key={priority} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
-                  <td className="px-4 py-3">
-                    <div className="text-foreground font-['Instrument_Sans'] font-medium text-sm">{group.label}</div>
-                    <div className="text-muted-foreground font-['Roboto'] text-xs">{priority}</div>
-                  </td>
-                  {AXES.map((axis) => (
-                    <td key={axis.key} className="text-center px-3 py-3">
-                      {group.axes[axis.key] ? (
-                        <StatusBadge status={group.axes[axis.key]} />
-                      ) : (
-                        <span className="text-muted-foreground/40 text-xs">—</span>
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
+              {lastSync && (
+                <div className="text-muted-foreground text-xs font-['Roboto'] flex items-center gap-1">
+                  Dernière mise à jour : {new Date(lastSync.last_synced).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} — Source : {lastSync.filename}
+                </div>
+              )}
+            </div>
+          )}
 
-      {/* Last sync timestamp */}
-      {lastSync && (
-        <div className="text-muted-foreground text-xs font-['Roboto'] flex items-center gap-1">
-          Dernière mise à jour : {new Date(lastSync.last_synced).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} — Source : {lastSync.filename}
-        </div>
+          {activeTab === 'status' && (
+            <div className="space-y-6">
+              {loadingCategory ? (
+                <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4 animate-pulse">
+                  {Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-10 bg-gray-100 mb-2" />)}
+                </div>
+              ) : Object.keys(priorityGroups).length > 0 ? (
+                <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/40">
+                        <th className="text-left px-4 py-3 text-muted-foreground font-['Roboto'] font-medium text-xs uppercase tracking-wider">Priorité</th>
+                        {AXES.map((axis) => (
+                          <th key={axis.key} className="text-center px-3 py-3 text-muted-foreground font-['Roboto'] font-medium text-xs uppercase tracking-wider">
+                            {axis.label}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(priorityGroups).map(([priority, group]) => (
+                        <tr key={priority} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
+                          <td className="px-4 py-3">
+                            <div className="text-foreground font-['Instrument_Sans'] font-medium text-sm">{group.label}</div>
+                            <div className="text-muted-foreground font-['Roboto'] text-xs">{priority}</div>
+                          </td>
+                          {AXES.map((axis) => (
+                            <td key={axis.key} className="text-center px-3 py-3">
+                              {group.axes[axis.key] ? (
+                                <StatusBadge status={group.axes[axis.key]} />
+                              ) : (
+                                <span className="text-muted-foreground/40 text-xs">—</span>
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-muted-foreground text-xs font-['Roboto'] py-8 text-center">Aucune donnée de statut disponible</div>
+              )}
+
+              {lastSync && (
+                <div className="text-muted-foreground text-xs font-['Roboto'] flex items-center gap-1">
+                  Dernière mise à jour : {new Date(lastSync.last_synced).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} — Source : {lastSync.filename}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
-    </div>
+    </LagostinaSubTabs>
   );
 }
