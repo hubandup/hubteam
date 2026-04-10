@@ -115,29 +115,14 @@ export default function Lagostina() {
 
       {/* Content */}
       <div className="p-6 transition-opacity duration-150">
-        {/* Learnings button - floated right, aligned with sub-tabs */}
-        <div className="flex justify-end mb-4">
-          <button
-            onClick={() => setShowLearnings(!showLearnings)}
-            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-['Roboto'] font-medium transition-colors border ${
-              showLearnings
-                ? 'bg-black text-white dark:bg-[#E8FF4C] dark:text-black border-black dark:border-[#E8FF4C]'
-                : 'bg-white dark:bg-[#0f1422] text-foreground border-border/50 hover:bg-muted/50'
-            }`}
-          >
-            <SquarePen className="h-4 w-4" />
-            Learnings
-          </button>
-        </div>
-
         {/* Learnings Panel */}
         {showLearnings && <LagostinaLearningsPanel activeTab={activeTab} />}
 
         <Suspense fallback={<TabSkeleton />}>
-          {activeTab === 'scorecard' && <ScorecardRECC />}
-          {activeTab === 'influence' && <LagostinaInfluenceRP />}
-          {activeTab === 'mediatisation' && <LagostinaMediatisation />}
-          {activeTab === 'budget' && <LagostinaBudget />}
+          {activeTab === 'scorecard' && <ScorecardRECC learningsButton={learningsButton} />}
+          {activeTab === 'influence' && <LagostinaInfluenceRP learningsButton={learningsButton} />}
+          {activeTab === 'mediatisation' && <LagostinaMediatisation learningsButton={learningsButton} />}
+          {activeTab === 'budget' && <LagostinaBudget learningsButton={learningsButton} />}
         </Suspense>
       </div>
     </div>
