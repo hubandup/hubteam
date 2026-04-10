@@ -174,7 +174,7 @@ export function NoteableCell({
   );
 }
 
-function NoteTooltip({ note, onEdit }: { note: CellNote; onEdit: () => void }) {
+function NoteTooltip({ note, noteColor, onEdit }: { note: CellNote; noteColor: string; onEdit: () => void }) {
   const { user } = useAuth();
   const isAuthor = user?.id === note.user_id;
   const queryClient = useQueryClient();
@@ -189,7 +189,8 @@ function NoteTooltip({ note, onEdit }: { note: CellNote; onEdit: () => void }) {
 
   return (
     <div
-      className="absolute z-[100] top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-white dark:bg-[#1a1f2e] border border-[#E8FF4C] shadow-lg p-3 text-left"
+      className="absolute z-[100] top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-white dark:bg-[#1a1f2e] shadow-lg p-3 text-left"
+      style={{ borderWidth: 1, borderStyle: 'solid', borderColor: noteColor }}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Author info */}
@@ -227,7 +228,7 @@ function NoteTooltip({ note, onEdit }: { note: CellNote; onEdit: () => void }) {
         </div>
       )}
       {/* Arrow */}
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-[#E8FF4C]" />
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px]" style={{ borderBottomColor: noteColor }} />
     </div>
   );
 }
@@ -238,12 +239,14 @@ function NoteEditor({
   week,
   existingNote,
   onClose,
+  noteColor,
 }: {
   levier: string;
   kpiName: string;
   week: string;
   existingNote?: CellNote;
   onClose: () => void;
+  noteColor: string;
 }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
