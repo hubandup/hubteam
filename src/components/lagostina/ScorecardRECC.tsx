@@ -145,6 +145,29 @@ function formatNum(n: number | null): string {
   return String(n);
 }
 
+// ── STATUS LOGIC ──
+function getCompletion(actual: number | null, objective: number | null): number | null {
+  if (actual == null || objective == null || objective === 0) return null;
+  return (actual / objective) * 100;
+}
+
+function getStatus(
+  actual: number | null,
+  objective: number | null,
+  weekIndex: number,
+  totalWeeks: number
+): { label: string; color: string } {
+  if (actual == null) return { label: 'À faire', color: 'bg-muted text-muted-foreground' };
+  if (objective == null) return { label: 'En cours', color: 'bg-[#22c55e]/20 text-[#22c55e]' };
+  const completion = (actual / objective) * 100;
+  // Expected progress based on position in timeline
+  const expectedProgress = totalWeeks > 0 ? ((weekIndex + 1) / totalWeeks) * 100 : 100;
+  if (completion < expectedProgress * 0.7) {
+    return { label: 'En retard', color: 'bg-[#ef4444]/20 text-[#ef4444]' };
+  }
+  return { label: 'En cours', color: 'bg-[#22c55e]/20 text-[#22c55e]' };
+}
+
 // ── SPARKLINE ──
 function Sparkline({ data }: { data: number[] }) {
   if (!data.length) return <span className="text-muted-foreground/40">—</span>;
@@ -337,12 +360,14 @@ export function ScorecardRECC() {
                   <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10 min-w-[120px]">Levier</th>
                   <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[60px]">RECC</th>
                   <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[140px]">KPI</th>
-                  <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[40px]">Type</th>
+                  <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[70px]">Objectif</th>
                   {monthGroups.map((mg) => (
                     <th key={mg.month} colSpan={mg.weeks.length} className="text-center px-1 py-2 text-black dark:text-white font-semibold font-bold uppercase tracking-wider border-l border-border/20">
                       {mg.month}
                     </th>
                   ))}
+                  <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[80px]">Complétion</th>
+                  <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[80px]">Statut</th>
                   <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[80px]">Trend</th>
                 </tr>
                 <tr className="border-b border-border/20">
@@ -350,6 +375,8 @@ export function ScorecardRECC() {
                   {weeks.map((w) => (
                     <th key={w} className="text-center px-1 py-1 text-muted-foreground/60 text-xs">{w}</th>
                   ))}
+                  <th />
+                  <th />
                   <th />
                 </tr>
               </thead>
@@ -360,21 +387,31 @@ export function ScorecardRECC() {
                     const objVals = weeks.map((w) => getVal(group.levier, kpi.name, w)?.objective ?? null);
                     const sparkData = actualVals.filter((v): v is number => v != null);
 
-                    return [
-                      // Actuals row
-                      <tr key={`${group.levier}-${kpi.name}-actual`} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
+                    // Latest objective value (last non-null)
+                    const latestObj = [...objVals].reverse().find((v) => v != null) ?? null;
+                    // Latest actual value
+                    const latestActual = [...actualVals].reverse().find((v) => v != null) ?? null;
+                    // Latest actual index for status
+                    const latestActualIdx = actualVals.lastIndexOf(latestActual);
+                    const completion = getCompletion(latestActual, latestObj);
+                    const status = getStatus(latestActual, latestObj, latestActualIdx >= 0 ? latestActualIdx : 0, weeks.length);
+
+                    return (
+                      <tr key={`${group.levier}-${kpi.name}`} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
                         {ki === 0 && (
                           <td
-                            rowSpan={group.kpis.length * 2}
+                            rowSpan={group.kpis.length}
                             className="px-3 py-2 text-foreground font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10 border-l-2"
                             style={{ borderLeftColor: LEVIER_COLORS[group.levier] || '#E8FF4C' }}
                           >
                             {group.label}
                           </td>
                         )}
-                        <td className="px-2 py-1.5 text-muted-foreground text-xs" rowSpan={2}>{kpi.recc}</td>
-                        <td className="px-2 py-1.5 text-foreground text-xs" rowSpan={2}>{kpi.name}</td>
-                        <td className="px-2 py-1.5 text-center text-[#22c55e] text-xs font-medium">A</td>
+                        <td className="px-2 py-1.5 text-muted-foreground text-xs">{kpi.recc}</td>
+                        <td className="px-2 py-1.5 text-foreground text-xs">{kpi.name}</td>
+                        <td className="px-2 py-1.5 text-center text-muted-foreground text-xs">
+                          {formatNum(latestObj)}
+                        </td>
                         {weeks.map((w, wi) => {
                           const val = actualVals[wi];
                           const obj = objVals[wi];
@@ -385,21 +422,20 @@ export function ScorecardRECC() {
                             </td>
                           );
                         })}
-                        <td className="px-2 py-1.5 text-center" rowSpan={2}>
+                        <td className="px-2 py-1.5 text-center text-xs font-medium">
+                          {completion != null ? `${completion.toFixed(0)}%` : '—'}
+                        </td>
+                        <td className="px-2 py-1.5 text-center">
+                          <span className={`inline-block px-2 py-0.5 text-[11px] font-medium ${status.color}`}>
+                            {status.label}
+                          </span>
+                        </td>
+                        <td className="px-2 py-1.5 text-center">
                           <Sparkline data={sparkData} />
                         </td>
-                      </tr>,
-                      // Objectives row
-                      <tr key={`${group.levier}-${kpi.name}-obj`} className="border-b border-border/40 hover:bg-gray-50 dark:bg-[#141928]">
-                        <td className="px-2 py-1.5 text-center text-muted-foreground text-xs font-medium">O</td>
-                        {weeks.map((w, wi) => (
-                          <td key={w} className="px-1 py-1.5 text-center text-[13px] text-muted-foreground">
-                            {formatNum(objVals[wi])}
-                          </td>
-                        ))}
-                      </tr>,
-                    ];
-                  }).flat()
+                      </tr>
+                    );
+                  })
                 ))}
               </tbody>
             </table>
@@ -501,10 +537,12 @@ export function ScorecardRECC() {
                       <thead>
                         <tr className="border-b border-border/20">
                           <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
-                          <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[40px]">Type</th>
+                          <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[70px]">Objectif</th>
                           {weeks.map((w) => (
                             <th key={w} className="text-center px-1 py-2 text-muted-foreground/60 text-xs">{w}</th>
                           ))}
+                          <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[80px]">Complétion</th>
+                          <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[80px]">Statut</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -517,25 +555,31 @@ export function ScorecardRECC() {
                             const entry = matchingData.find((s) => s.kpi_name === kn && s.week === w);
                             return entry?.objective ?? null;
                           });
-                          return [
-                            <tr key={`${kn}-a`} className="border-b border-border/20">
-                              <td className="px-3 py-1.5 text-foreground" rowSpan={2}>{kn}</td>
-                              <td className="px-2 py-1.5 text-center text-[#22c55e] text-xs font-medium">A</td>
+                          const latestObj = [...objVals].reverse().find((v) => v != null) ?? null;
+                          const latestActual = [...actualVals].reverse().find((v) => v != null) ?? null;
+                          const latestActualIdx = actualVals.lastIndexOf(latestActual);
+                          const completion = getCompletion(latestActual, latestObj);
+                          const status = getStatus(latestActual, latestObj, latestActualIdx >= 0 ? latestActualIdx : 0, weeks.length);
+
+                          return (
+                            <tr key={kn} className="border-b border-border/20">
+                              <td className="px-3 py-1.5 text-foreground">{kn}</td>
+                              <td className="px-2 py-1.5 text-center text-muted-foreground text-xs">{formatNum(latestObj)}</td>
                               {weeks.map((w, wi) => (
                                 <td key={w} className={`px-1 py-1.5 text-center text-[13px] ${getCondColor(actualVals[wi], objVals[wi])}`}>
                                   {formatNum(actualVals[wi])}
                                 </td>
                               ))}
-                            </tr>,
-                            <tr key={`${kn}-o`} className="border-b border-border/40">
-                              <td className="px-2 py-1.5 text-center text-muted-foreground text-xs font-medium">O</td>
-                              {weeks.map((w, wi) => (
-                                <td key={w} className="px-1 py-1.5 text-center text-[13px] text-muted-foreground">
-                                  {formatNum(objVals[wi])}
-                                </td>
-                              ))}
-                            </tr>,
-                          ];
+                              <td className="px-2 py-1.5 text-center text-xs font-medium">
+                                {completion != null ? `${completion.toFixed(0)}%` : '—'}
+                              </td>
+                              <td className="px-2 py-1.5 text-center">
+                                <span className={`inline-block px-2 py-0.5 text-[11px] font-medium ${status.color}`}>
+                                  {status.label}
+                                </span>
+                              </td>
+                            </tr>
+                          );
                         })}
                       </tbody>
                     </table>

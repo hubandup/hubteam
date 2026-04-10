@@ -13,7 +13,7 @@ const LagostinaMediatisation = lazy(() => import('@/components/lagostina/Lagosti
 const LagostinaLearnings = lazy(() => import('@/components/lagostina/LagostinaLearnings').then(m => ({ default: m.LagostinaLearnings })));
 
 const TABS = [
-  { id: 'scorecard', label: 'Scorecard RECC' },
+  { id: 'scorecard', label: 'Scorecard' },
   { id: 'influence', label: 'Influence & RP' },
   { id: 'mediatisation', label: 'Médiatisation' },
   { id: 'budget', label: 'Budget' },
@@ -21,7 +21,7 @@ const TABS = [
 ] as const;
 
 const EXPORT_CONFIG: Record<string, { tabName: string; showPdf: boolean; chartsId?: string }> = {
-  scorecard: { tabName: 'Scorecard RECC', showPdf: true, chartsId: 'lagostina-scorecard-charts' },
+  scorecard: { tabName: 'Scorecard', showPdf: true, chartsId: 'lagostina-scorecard-charts' },
   budget: { tabName: 'Budget', showPdf: true, chartsId: 'lagostina-budget-charts' },
   influence: { tabName: 'Influence & RP', showPdf: false },
   mediatisation: { tabName: 'Médiatisation', showPdf: false },
