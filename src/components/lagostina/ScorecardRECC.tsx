@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from 'lucide-react';
+import { Database, Plus, Minus } from 'lucide-react';
 import { LagostinaSubTabs } from './LagostinaSubTabs';
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area,
@@ -227,7 +227,7 @@ function GaugeChart({ value, target }: { value: number; target: number }) {
 
 // ── MAIN COMPONENT ──
 export function ScorecardRECC() {
-  
+  const [showPastWeeks, setShowPastWeeks] = useState(false);
 
   const { data: scorecards, isLoading } = useQuery({
     queryKey: ['lagostina-scorecards'],
@@ -272,7 +272,16 @@ export function ScorecardRECC() {
     return { weeks: sortedWeeks, monthGroups: groups };
   }, [scorecards]);
 
-  // Build lookup
+  // Visible weeks: only latest week unless expanded
+  const { visibleWeeks, visibleMonthGroups } = useMemo(() => {
+    if (showPastWeeks || weeks.length <= 1) return { visibleWeeks: weeks, visibleMonthGroups: monthGroups };
+    const lastWeek = weeks[weeks.length - 1];
+    const filteredGroups = monthGroups
+      .map((mg) => ({ ...mg, weeks: mg.weeks.filter((w) => w === lastWeek) }))
+      .filter((mg) => mg.weeks.length > 0);
+    return { visibleWeeks: [lastWeek], visibleMonthGroups: filteredGroups };
+  }, [weeks, monthGroups, showPastWeeks]);
+
   const lookup = useMemo(() => {
     const map = new Map<string, Scorecard>();
     scorecards?.forEach((s) => {
@@ -361,7 +370,18 @@ export function ScorecardRECC() {
                   <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[60px]">RECC</th>
                   <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[140px]">KPI</th>
                   <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[70px]">Objectif</th>
-                  {monthGroups.map((mg) => (
+                  {weeks.length > 1 && (
+                    <th className="text-center px-1 py-2">
+                      <button
+                        onClick={() => setShowPastWeeks(!showPastWeeks)}
+                        className="inline-flex items-center justify-center w-6 h-6 border border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                        title={showPastWeeks ? 'Masquer les semaines précédentes' : 'Afficher les semaines précédentes'}
+                      >
+                        {showPastWeeks ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                      </button>
+                    </th>
+                  )}
+                  {visibleMonthGroups.map((mg) => (
                     <th key={mg.month} colSpan={mg.weeks.length} className="text-center px-1 py-2 text-black dark:text-white font-semibold font-bold uppercase tracking-wider border-l border-border/20">
                       {mg.month}
                     </th>
@@ -372,7 +392,8 @@ export function ScorecardRECC() {
                 </tr>
                 <tr className="border-b border-border/20">
                   <th colSpan={4} className="sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10" />
-                  {weeks.map((w) => (
+                  {weeks.length > 1 && <th />}
+                  {visibleWeeks.map((w) => (
                     <th key={w} className="text-center px-1 py-1 text-muted-foreground/60 text-xs">{w}</th>
                   ))}
                   <th />
@@ -412,7 +433,9 @@ export function ScorecardRECC() {
                         <td className="px-2 py-1.5 text-center text-muted-foreground text-xs">
                           {formatNum(latestObj)}
                         </td>
-                        {weeks.map((w, wi) => {
+                        {weeks.length > 1 && <td />}
+                        {visibleWeeks.map((w) => {
+                          const wi = weeks.indexOf(w);
                           const val = actualVals[wi];
                           const obj = objVals[wi];
                           const color = getCondColor(val, obj);
@@ -538,7 +561,18 @@ export function ScorecardRECC() {
                         <tr className="border-b border-border/20">
                           <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
                           <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[70px]">Objectif</th>
-                          {weeks.map((w) => (
+                          {weeks.length > 1 && (
+                            <th className="text-center px-1 py-2">
+                              <button
+                                onClick={() => setShowPastWeeks(!showPastWeeks)}
+                                className="inline-flex items-center justify-center w-6 h-6 border border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                                title={showPastWeeks ? 'Masquer les semaines précédentes' : 'Afficher les semaines précédentes'}
+                              >
+                                {showPastWeeks ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                              </button>
+                            </th>
+                          )}
+                          {visibleWeeks.map((w) => (
                             <th key={w} className="text-center px-1 py-2 text-muted-foreground/60 text-xs">{w}</th>
                           ))}
                           <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[80px]">Complétion</th>
@@ -565,11 +599,15 @@ export function ScorecardRECC() {
                             <tr key={kn} className="border-b border-border/20">
                               <td className="px-3 py-1.5 text-foreground">{kn}</td>
                               <td className="px-2 py-1.5 text-center text-muted-foreground text-xs">{formatNum(latestObj)}</td>
-                              {weeks.map((w, wi) => (
+                              {weeks.length > 1 && <td />}
+                              {visibleWeeks.map((w) => {
+                                const wi = weeks.indexOf(w);
+                                return (
                                 <td key={w} className={`px-1 py-1.5 text-center text-[13px] ${getCondColor(actualVals[wi], objVals[wi])}`}>
                                   {formatNum(actualVals[wi])}
                                 </td>
-                              ))}
+                                );
+                              })}
                               <td className="px-2 py-1.5 text-center text-xs font-medium">
                                 {completion != null ? `${completion.toFixed(0)}%` : '—'}
                               </td>
@@ -605,10 +643,21 @@ export function ScorecardRECC() {
                   <thead>
                     <tr className="border-b border-border/20">
                       <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
-                      {weeks.map((w) => (
+                      {weeks.length > 1 && (
+                        <th className="text-center px-1 py-2">
+                          <button
+                            onClick={() => setShowPastWeeks(!showPastWeeks)}
+                            className="inline-flex items-center justify-center w-6 h-6 border border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                            title={showPastWeeks ? 'Masquer les semaines précédentes' : 'Afficher les semaines précédentes'}
+                          >
+                            {showPastWeeks ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                          </button>
+                        </th>
+                      )}
+                      {visibleWeeks.map((w) => (
                         <th key={w} className="text-center px-1 py-2 text-muted-foreground/60 text-xs">{w}</th>
                       ))}
-                      {monthGroups.map((mg) => (
+                      {visibleMonthGroups.map((mg) => (
                         <th key={mg.month} className="text-center px-2 py-2 text-black dark:text-white font-semibold text-xs font-bold border-l border-border/40">{mg.month}</th>
                       ))}
                     </tr>
@@ -625,7 +674,7 @@ export function ScorecardRECC() {
                       });
 
                       // Monthly aggregates
-                      const monthlyVals = monthGroups.map((mg) => {
+                      const monthlyVals = visibleMonthGroups.map((mg) => {
                         const monthEntries = matching.filter((s) => mg.weeks.includes(s.week) && s.actual != null);
                         if (!monthEntries.length) return null;
                         return monthEntries.reduce((sum, e) => sum + Number(e.actual), 0) / monthEntries.length;
@@ -636,13 +685,16 @@ export function ScorecardRECC() {
                       return (
                         <tr key={kpiName} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
                           <td className="px-3 py-1.5 text-foreground">{kpiName}</td>
-                          {weeklyVals.map((v, i) => {
+                          {weeks.length > 1 && <td />}
+                          {visibleWeeks.map((w) => {
+                            const i = weeks.indexOf(w);
+                            const v = weeklyVals[i];
                             let cls = '';
                             if (isEvol && v != null) {
                               cls = v >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]';
                             }
                             return (
-                              <td key={i} className={`px-1 py-1.5 text-center text-[13px] ${cls || 'text-foreground'}`}>
+                              <td key={w} className={`px-1 py-1.5 text-center text-[13px] ${cls || 'text-foreground'}`}>
                                 {v != null ? (isEvol ? `${v >= 0 ? '↑' : '↓'}${Math.abs(v).toFixed(1)}%` : formatNum(v)) : '—'}
                               </td>
                             );
@@ -679,7 +731,18 @@ export function ScorecardRECC() {
                     <thead>
                       <tr className="border-b border-border/20">
                         <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
-                        {weeks.map((w) => (
+                        {weeks.length > 1 && (
+                          <th className="text-center px-1 py-2">
+                            <button
+                              onClick={() => setShowPastWeeks(!showPastWeeks)}
+                              className="inline-flex items-center justify-center w-6 h-6 border border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                              title={showPastWeeks ? 'Masquer les semaines précédentes' : 'Afficher les semaines précédentes'}
+                            >
+                              {showPastWeeks ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                            </button>
+                          </th>
+                        )}
+                        {visibleWeeks.map((w) => (
                           <th key={w} className="text-center px-1 py-2 text-muted-foreground/60 text-xs">{w}</th>
                         ))}
                       </tr>
@@ -688,7 +751,8 @@ export function ScorecardRECC() {
                       {kpiNames.map((kn) => (
                         <tr key={kn} className="border-b border-border/20">
                           <td className="px-3 py-1.5 text-foreground">{kn}</td>
-                          {weeks.map((w) => {
+                          {weeks.length > 1 && <td />}
+                          {visibleWeeks.map((w) => {
                             const entry = data.find((s) => s.kpi_name === kn && s.week === w);
                             return (
                               <td key={w} className="px-1 py-1.5 text-center text-[13px] text-foreground">
