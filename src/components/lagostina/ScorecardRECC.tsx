@@ -599,11 +599,15 @@ export function ScorecardRECC() {
                             <tr key={kn} className="border-b border-border/20">
                               <td className="px-3 py-1.5 text-foreground">{kn}</td>
                               <td className="px-2 py-1.5 text-center text-muted-foreground text-xs">{formatNum(latestObj)}</td>
-                              {weeks.map((w, wi) => (
+                              {weeks.length > 1 && <td />}
+                              {visibleWeeks.map((w) => {
+                                const wi = weeks.indexOf(w);
+                                return (
                                 <td key={w} className={`px-1 py-1.5 text-center text-[13px] ${getCondColor(actualVals[wi], objVals[wi])}`}>
                                   {formatNum(actualVals[wi])}
                                 </td>
-                              ))}
+                                );
+                              })}
                               <td className="px-2 py-1.5 text-center text-xs font-medium">
                                 {completion != null ? `${completion.toFixed(0)}%` : '—'}
                               </td>
