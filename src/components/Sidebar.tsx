@@ -1,9 +1,10 @@
-import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, HelpCircle, Rss, Euro, MessageSquare, ArrowUpFromLine, BarChart3 } from 'lucide-react';
+import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, HelpCircle, Rss, Euro, MessageSquare, ArrowUpFromLine, BarChart3, Flame } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useLagostinaAccess } from '@/hooks/useLagostinaAccess';
+import { useBrisachAccess } from '@/hooks/useBrisachAccess';
 import {
   Sidebar as ShadcnSidebar,
   SidebarContent,
@@ -28,6 +29,7 @@ export function Sidebar() {
   const { role } = useUserRole();
   const { canRead } = usePermissions();
   const { hasAccess: hasLagostinaAccess } = useLagostinaAccess();
+  const { hasAccess: hasBrisachAccess } = useBrisachAccess();
   const [clientId, setClientId] = useState<string | null>(null);
   const [smashOpen, setSmashOpen] = useState(false);
   const { t } = useTranslation();
@@ -75,6 +77,7 @@ export function Sidebar() {
     { title: t('nav.messages'), url: '/messages', icon: MessageSquare, module: 'dashboard' as const },
     { title: t('nav.faq'), url: '/faq', icon: HelpCircle, module: 'faq' as const },
     ...(hasLagostinaAccess ? [{ title: 'Lagostina', url: '/lagostina', icon: BarChart3, module: 'dashboard' as const }] : []),
+    ...(hasBrisachAccess ? [{ title: 'Brisach', url: '/brisach', icon: Flame, module: 'dashboard' as const }] : []),
   ];
 
   const showSettings = role === 'admin' || role === 'team' || role === 'agency';

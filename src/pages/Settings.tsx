@@ -12,6 +12,7 @@ import { FaqCategoriesTab } from '@/components/settings/FaqCategoriesTab';
 import { AgencyTagsTab } from '@/components/settings/AgencyTagsTab';
 import { TestInvitationEmail } from '@/components/settings/TestInvitationEmail';
 import { LagostinaAccessTab } from '@/components/settings/LagostinaAccessTab';
+import { BrisachAccessTab } from '@/components/settings/BrisachAccessTab';
 import { useTranslation } from 'react-i18next';
 
 export default function Settings() {
@@ -87,6 +88,12 @@ export default function Settings() {
       label: 'Accès Lagostina',
       icon: <BarChart3 className="h-4 w-4" />,
       content: <LagostinaAccessTab />
+    },
+    {
+      value: 'brisach-access',
+      label: 'Accès Brisach',
+      icon: <BarChart3 className="h-4 w-4" />,
+      content: <BrisachAccessTab />
     }
   ] : [];
 
