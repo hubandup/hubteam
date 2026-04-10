@@ -237,8 +237,8 @@ export function LagostinaBudget() {
                       <span className="text-muted-foreground text-xs font-['Roboto']">
                         Consommé : {monthPct.toFixed(0)}%
                       </span>
-                      <span className="text-muted-foreground text-xs font-['Roboto']">
-                        Jour {now.getDate()} / {new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()} ({dayProgress.toFixed(0)}%)
+                      <span className="text-muted-foreground text-xs font-['Roboto'] whitespace-nowrap">
+                        {`Jour ${now.getDate()} / ${new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()} (${dayProgress.toFixed(0)}%)`}
                       </span>
                     </div>
                   </div>
