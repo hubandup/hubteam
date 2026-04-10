@@ -1229,6 +1229,47 @@ export type Database = {
         }
         Relationships: []
       }
+      lagostina_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          parent_id: string | null
+          resolved: boolean
+          tab: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          resolved?: boolean
+          tab: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          resolved?: boolean
+          tab?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lagostina_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "lagostina_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lagostina_consumer: {
         Row: {
           comment: string | null
