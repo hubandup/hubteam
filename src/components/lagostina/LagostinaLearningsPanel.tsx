@@ -229,35 +229,6 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
         <div className="p-5 space-y-4">
           <h3 className="text-foreground font-['Instrument_Sans'] font-bold text-base">Comments</h3>
 
-          {/* Filter tabs */}
-          <div className="flex gap-4 border-b border-border/30 pb-2">
-            <button
-              onClick={() => setCommentFilter('all')}
-              className={`text-sm font-['Roboto'] pb-1 border-b-2 transition-colors ${
-                commentFilter === 'all'
-                  ? 'text-primary border-primary font-medium'
-                  : 'text-muted-foreground border-transparent hover:text-foreground'
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setCommentFilter('unresolved')}
-              className={`text-sm font-['Roboto'] pb-1 border-b-2 transition-colors flex items-center gap-1.5 ${
-                commentFilter === 'unresolved'
-                  ? 'text-primary border-primary font-medium'
-                  : 'text-muted-foreground border-transparent hover:text-foreground'
-              }`}
-            >
-              Unresolved
-              {unresolvedCount > 0 && (
-                <span className="bg-muted text-muted-foreground text-xs px-1.5 py-0.5 rounded-full font-medium">
-                  {unresolvedCount}
-                </span>
-              )}
-            </button>
-          </div>
-
           {/* Comment input */}
           <div className="flex gap-2">
             <textarea
