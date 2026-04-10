@@ -774,21 +774,6 @@ export type Database = {
           },
         ]
       }
-      cron_config: {
-        Row: {
-          key: string
-          value: string
-        }
-        Insert: {
-          key: string
-          value: string
-        }
-        Update: {
-          key?: string
-          value?: string
-        }
-        Relationships: []
-      }
       design_settings: {
         Row: {
           body_font: string
