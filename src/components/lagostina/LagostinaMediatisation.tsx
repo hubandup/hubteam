@@ -296,8 +296,6 @@ function TikTokTab({ rows }: { rows: any[] }) {
 }
 
 export function LagostinaMediatisation() {
-  const [subTab, setSubTab] = useState<SubTab>('SEA');
-
   const { data: mediaKpis, isLoading } = useQuery({
     queryKey: ['lagostina-media-kpis'],
     queryFn: async () => {
@@ -306,8 +304,6 @@ export function LagostinaMediatisation() {
       return data;
     },
   });
-
-  const channelRows = (mediaKpis || []).filter((r) => r.channel === CHANNEL_MAP[subTab]);
 
   if (isLoading) {
     return (
