@@ -17,6 +17,7 @@ interface UserWithAccess {
   avatar_url: string | null;
   role: string | null;
   granted: boolean;
+  hasDefaultAccess: boolean;
 }
 
 export function BrisachAccessTab() {
@@ -39,16 +40,20 @@ export function BrisachAccessTab() {
       const accessMap = new Map(accesses?.map(a => [a.user_id, a.granted]) || []);
 
       return allUsers
-        .filter((u: any) => u.role !== 'admin' && u.role !== 'team')
-        .map((u: any) => ({
-          id: u.id,
-          email: u.email || '',
-          first_name: u.first_name,
-          last_name: u.last_name,
-          avatar_url: null,
-          role: u.role || null,
-          granted: accessMap.get(u.id) ?? false,
-        }))
+        .map((u: any) => {
+          const hasDefaultAccess = u.role === 'admin' || u.role === 'team';
+
+          return {
+            id: u.id,
+            email: u.email || '',
+            first_name: u.first_name,
+            last_name: u.last_name,
+            avatar_url: null,
+            role: u.role || null,
+            granted: hasDefaultAccess ? true : (accessMap.get(u.id) ?? false),
+            hasDefaultAccess,
+          };
+        })
         .sort((a: UserWithAccess, b: UserWithAccess) => {
           const nameA = `${a.first_name || ''} ${a.last_name || ''}`.trim();
           const nameB = `${b.first_name || ''} ${b.last_name || ''}`.trim();
@@ -104,7 +109,7 @@ export function BrisachAccessTab() {
           Accès Brisach
         </h3>
         <p className="text-sm text-muted-foreground mt-1">
-          Gérez les utilisateurs ayant accès au dashboard Brisach. Les administrateurs et l'équipe ont toujours accès.
+          Gérez les utilisateurs ayant accès au dashboard Brisach. Les administrateurs et l'équipe apparaissent aussi ici avec leur accès automatique.
         </p>
       </div>
 
@@ -148,13 +153,18 @@ export function BrisachAccessTab() {
                   <Badge variant="outline" className="text-xs ml-2">
                     {roleLabel(user.role)}
                   </Badge>
+                  {user.hasDefaultAccess ? (
+                    <Badge variant="secondary" className="text-xs">
+                      Accès auto
+                    </Badge>
+                  ) : null}
                 </div>
                 <Switch
                   checked={user.granted}
                   onCheckedChange={(checked) =>
                     toggleMutation.mutate({ userId: user.id, granted: checked })
                   }
-                  disabled={toggleMutation.isPending}
+                  disabled={toggleMutation.isPending || user.hasDefaultAccess}
                 />
               </div>
             );

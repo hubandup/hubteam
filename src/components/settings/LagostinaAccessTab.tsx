@@ -43,22 +43,19 @@ export function LagostinaAccessTab() {
       const accessMap = new Map(accesses?.map(a => [a.user_id, a.granted]) || []);
 
       return allUsers
-        .map((u: any) => ({
-          constHasDefaultAccess: u.role === 'admin' || u.role === 'team',
-        }))
         .map((u: any) => {
           const hasDefaultAccess = u.role === 'admin' || u.role === 'team';
 
           return {
-          id: u.id,
-          email: u.email || '',
-          first_name: u.first_name,
-          last_name: u.last_name,
-          avatar_url: null,
-          role: u.role || null,
-          granted: hasDefaultAccess ? true : (accessMap.get(u.id) ?? false),
-          hasDefaultAccess,
-        };
+            id: u.id,
+            email: u.email || '',
+            first_name: u.first_name,
+            last_name: u.last_name,
+            avatar_url: null,
+            role: u.role || null,
+            granted: hasDefaultAccess ? true : (accessMap.get(u.id) ?? false),
+            hasDefaultAccess,
+          };
         })
         .sort((a: UserWithAccess, b: UserWithAccess) => {
           const nameA = `${a.first_name || ''} ${a.last_name || ''}`.trim();
