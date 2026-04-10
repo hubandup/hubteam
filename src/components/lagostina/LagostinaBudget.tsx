@@ -239,7 +239,7 @@ export function LagostinaBudget() {
                     return rows.map((type, ti) => {
                       const total = MONTHS.reduce((s, m) => s + getMonthVal(levier, m, type), 0);
                       return (
-                        <tr key={`${levier}-${type}`} className={`border-b ${ti === 3 ? 'border-border/40' : 'border-border/20'} hover:bg-gray-50 dark:bg-[#141928]`}>
+                        <tr key={`${levier}-${type}`} className={`${ti === 3 ? 'border-b-2 border-foreground/20' : 'border-b border-border/10'} hover:bg-gray-50 dark:hover:bg-[#141928]`}>
                           {ti === 0 && (
                             <td
                               rowSpan={4}
