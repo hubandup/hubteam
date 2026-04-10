@@ -195,11 +195,11 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
   const filteredComments = comments;
 
   return (
-    <div className="border border-border/20 bg-background dark:bg-[#111827] mt-4 rounded-[7px] shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
+    <div className="border border-border/20 bg-background dark:bg-[#111827] mt-4 rounded-[7px] shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden max-w-full">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-border/30">
         {/* Learnings wrapper (2 columns + validate) */}
         <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border/30">
-          <div className="p-5 space-y-3">
+          <div className="p-4 space-y-2">
             <h3 className="text-xs font-['Roboto'] font-semibold uppercase tracking-wider text-[#22c55e]">
               Ce qui fonctionne ✅
             </h3>
@@ -214,7 +214,7 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
             </div>
           </div>
 
-          <div className="p-5 space-y-3">
+          <div className="p-4 space-y-2">
             <h3 className="text-xs font-['Roboto'] font-semibold uppercase tracking-wider text-[#ef4444]">
               Ce qui ne fonctionne pas ❌
             </h3>
@@ -230,7 +230,7 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
           </div>
 
           {canEdit && isDirty && (
-            <div className="sm:col-span-2 flex justify-end px-5 pb-4">
+            <div className="sm:col-span-2 flex justify-end px-4 pb-3">
               <Button size="sm" onClick={handleValidate} disabled={saveLearning.isPending} className="gap-1.5">
                 <Check className="h-4 w-4" />
                 Valider
@@ -240,8 +240,8 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
         </div>
 
         {/* Comments */}
-        <div className="p-5 space-y-4">
-          <h3 className="text-foreground font-['Instrument_Sans'] font-bold text-base">Comments</h3>
+        <div className="p-4 space-y-3">
+          <h3 className="text-foreground font-['Instrument_Sans'] font-bold text-sm">Comments</h3>
 
           {/* Comment input */}
           <div className="flex gap-2">
@@ -249,7 +249,7 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Ajouter un commentaire…"
-              className="flex-1 bg-muted/50 border border-border/30 text-foreground font-['Roboto'] text-sm p-2 resize-none min-h-[60px] focus:outline-none focus:ring-1 focus:ring-primary/30"
+              className="flex-1 bg-muted/50 border border-border/30 text-foreground font-['Roboto'] text-sm p-2 resize-none min-h-[40px] focus:outline-none focus:ring-1 focus:ring-primary/30"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey && newComment.trim()) {
                   e.preventDefault();
@@ -267,7 +267,7 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
           </div>
 
           {/* Comments list */}
-          <div className="space-y-4 max-h-[400px] overflow-y-auto">
+          <div className="space-y-3 max-h-[300px] overflow-y-auto">
             {filteredComments.length === 0 && (
               <div className="flex flex-col items-center justify-center py-8 gap-2">
                 <MessageSquare className="h-8 w-8 text-muted-foreground/40" />

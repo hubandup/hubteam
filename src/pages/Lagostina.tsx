@@ -85,7 +85,7 @@ export default function Lagostina() {
   );
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0a0e1a]">
+    <div className="bg-white dark:bg-[#0a0e1a]">
       {/* Header */}
       <div className="px-6 pt-6 pb-2 flex items-start justify-between flex-wrap gap-4">
         <div>
