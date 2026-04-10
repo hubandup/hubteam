@@ -3,21 +3,20 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useLagostinaAccess } from '@/hooks/useLagostinaAccess';
 import { Navigate } from 'react-router-dom';
 import { LagostinaExportButtons } from '@/components/lagostina/LagostinaExportButtons';
-import { Database } from 'lucide-react';
+import { LagostinaLearningsPanel } from '@/components/lagostina/LagostinaLearningsPanel';
+import { Database, SquarePen } from 'lucide-react';
 
 // Lazy load tab components
 const ScorecardRECC = lazy(() => import('@/components/lagostina/ScorecardRECC').then(m => ({ default: m.ScorecardRECC })));
 const LagostinaBudget = lazy(() => import('@/components/lagostina/LagostinaBudget').then(m => ({ default: m.LagostinaBudget })));
 const LagostinaInfluenceRP = lazy(() => import('@/components/lagostina/LagostinaInfluenceRP').then(m => ({ default: m.LagostinaInfluenceRP })));
 const LagostinaMediatisation = lazy(() => import('@/components/lagostina/LagostinaMediatisation').then(m => ({ default: m.LagostinaMediatisation })));
-const LagostinaLearnings = lazy(() => import('@/components/lagostina/LagostinaLearnings').then(m => ({ default: m.LagostinaLearnings })));
 
 const TABS = [
   { id: 'scorecard', label: 'Scorecard' },
   { id: 'influence', label: 'Influence & RP' },
   { id: 'mediatisation', label: 'Médiatisation' },
   { id: 'budget', label: 'Budget' },
-  { id: 'learnings', label: 'Learnings' },
 ] as const;
 
 const EXPORT_CONFIG: Record<string, { tabName: string; showPdf: boolean; chartsId?: string }> = {
@@ -62,6 +61,7 @@ export default function Lagostina() {
   const { role } = useUserRole();
   const { hasAccess, isLoading: accessLoading } = useLagostinaAccess();
   const [activeTab, setActiveTab] = useState('scorecard');
+  const [showLearnings, setShowLearnings] = useState(false);
 
   if (accessLoading) return <TabSkeleton />;
   if (!hasAccess) {
@@ -99,7 +99,7 @@ export default function Lagostina() {
           {TABS.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => { setActiveTab(tab.id); setShowLearnings(false); }}
               className={`
                 px-4 py-3 text-sm font-['Roboto'] whitespace-nowrap transition-all duration-150 border-b-2
                 ${activeTab === tab.id
@@ -115,12 +115,29 @@ export default function Lagostina() {
 
       {/* Content */}
       <div className="p-6 transition-opacity duration-150">
+        {/* Learnings button - floated right, aligned with sub-tabs */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={() => setShowLearnings(!showLearnings)}
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-['Roboto'] font-medium transition-colors border ${
+              showLearnings
+                ? 'bg-black text-white dark:bg-[#E8FF4C] dark:text-black border-black dark:border-[#E8FF4C]'
+                : 'bg-white dark:bg-[#0f1422] text-foreground border-border/50 hover:bg-muted/50'
+            }`}
+          >
+            <SquarePen className="h-4 w-4" />
+            Learnings
+          </button>
+        </div>
+
+        {/* Learnings Panel */}
+        {showLearnings && <LagostinaLearningsPanel activeTab={activeTab} />}
+
         <Suspense fallback={<TabSkeleton />}>
           {activeTab === 'scorecard' && <ScorecardRECC />}
           {activeTab === 'influence' && <LagostinaInfluenceRP />}
           {activeTab === 'mediatisation' && <LagostinaMediatisation />}
           {activeTab === 'budget' && <LagostinaBudget />}
-          {activeTab === 'learnings' && <LagostinaLearnings />}
         </Suspense>
       </div>
     </div>
