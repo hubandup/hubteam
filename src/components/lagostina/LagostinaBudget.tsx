@@ -19,8 +19,19 @@ const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep',
 const LEVIER_COLORS: Record<string, string> = {
   digital: '#6366f1', tv: '#38bdf8', influence: '#a78bfa', rp: '#f87171',
   crm: '#34d399', social: '#fb923c', sea: '#e879f9', affiliation: '#94a3b8',
-  promo_shopper: '#fbbf24', media: '#6366f1', event: '#38bdf8', seo: '#34d399',
+  promo_shopper: '#fbbf24', media: '#0ea5e9', event: '#f59e0b', seo: '#10b981',
+  tiktok: '#ec4899', print: '#8b5cf6', ooh: '#14b8a6', sampling: '#f43f5e',
+  content: '#84cc16', partnerships: '#d946ef', programmatique: '#06b6d4',
 };
+
+const FALLBACK_PALETTE = [
+  '#6366f1', '#38bdf8', '#a78bfa', '#f87171', '#34d399', '#fb923c',
+  '#e879f9', '#fbbf24', '#0ea5e9', '#ec4899', '#8b5cf6', '#14b8a6',
+];
+
+function getLevierColor(levier: string, index: number): string {
+  return LEVIER_COLORS[levier] || FALLBACK_PALETTE[index % FALLBACK_PALETTE.length];
+}
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
