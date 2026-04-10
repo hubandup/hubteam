@@ -375,7 +375,7 @@ export function ScorecardRECC() {
                       <button
                         onClick={() => setShowPastWeeks(!showPastWeeks)}
                         className="inline-flex items-center justify-center w-6 h-6 bg-black text-white dark:bg-[#E8FF4C] dark:text-black transition-colors"
-                        title={showPastWeeks ? 'Masquer les semaines précédentes' : 'Afficher les semaines précédentes'}
+                        title={showPastWeeks ? 'Masquer les mois précédents' : 'Mois précédents'}
                       >
                         {showPastWeeks ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
                       </button>
@@ -566,7 +566,7 @@ export function ScorecardRECC() {
                               <button
                                 onClick={() => setShowPastWeeks(!showPastWeeks)}
                                 className="inline-flex items-center justify-center w-6 h-6 bg-black text-white dark:bg-[#E8FF4C] dark:text-black transition-colors"
-                                title={showPastWeeks ? 'Masquer les semaines précédentes' : 'Afficher les semaines précédentes'}
+                                title={showPastWeeks ? 'Masquer les mois précédents' : 'Mois précédents'}
                               >
                                 {showPastWeeks ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
                               </button>
@@ -648,7 +648,7 @@ export function ScorecardRECC() {
                           <button
                             onClick={() => setShowPastWeeks(!showPastWeeks)}
                             className="inline-flex items-center justify-center w-6 h-6 bg-black text-white dark:bg-[#E8FF4C] dark:text-black transition-colors"
-                            title={showPastWeeks ? 'Masquer les semaines précédentes' : 'Afficher les semaines précédentes'}
+                            title={showPastWeeks ? 'Masquer les mois précédents' : 'Mois précédents'}
                           >
                             {showPastWeeks ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
                           </button>
@@ -736,7 +736,7 @@ export function ScorecardRECC() {
                             <button
                               onClick={() => setShowPastWeeks(!showPastWeeks)}
                               className="inline-flex items-center justify-center w-6 h-6 bg-black text-white dark:bg-[#E8FF4C] dark:text-black transition-colors"
-                              title={showPastWeeks ? 'Masquer les semaines précédentes' : 'Afficher les semaines précédentes'}
+                              title={showPastWeeks ? 'Masquer les mois précédents' : 'Mois précédents'}
                             >
                               {showPastWeeks ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
                             </button>
