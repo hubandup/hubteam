@@ -129,15 +129,15 @@ export default function Lagostina() {
 
       {/* Content */}
       <div className="p-6 transition-opacity duration-150">
-        {/* Learnings Panel */}
-        {showLearnings && <LagostinaLearningsPanel activeTab={activeTab} />}
-
         <Suspense fallback={<TabSkeleton />}>
           {activeTab === 'scorecard' && <ScorecardRECC learningsButton={learningsButton} />}
           {activeTab === 'influence' && <LagostinaInfluenceRP learningsButton={learningsButton} />}
           {activeTab === 'mediatisation' && <LagostinaMediatisation learningsButton={learningsButton} />}
           {activeTab === 'budget' && <LagostinaBudget learningsButton={learningsButton} />}
         </Suspense>
+
+        {/* Learnings Panel - after sub-tabs so CTA row stays visible */}
+        {showLearnings && <LagostinaLearningsPanel activeTab={activeTab} />}
       </div>
     </div>
   );
