@@ -303,6 +303,63 @@ export type Database = {
         }
         Relationships: []
       }
+      brisach_access: {
+        Row: {
+          created_at: string
+          granted: boolean
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          granted?: boolean
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          granted?: boolean
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      brisach_pao_entries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration_hours: number
+          entry_date: string
+          id: string
+          project_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_hours?: number
+          entry_date: string
+          id?: string
+          project_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_hours?: number
+          entry_date?: string
+          id?: string
+          project_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chat_message_mentions: {
         Row: {
           created_at: string
