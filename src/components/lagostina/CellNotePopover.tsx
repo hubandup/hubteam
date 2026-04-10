@@ -145,7 +145,7 @@ function NoteTooltip({ note, onEdit }: { note: CellNote; onEdit: () => void }) {
 
   return (
     <div
-      className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-white dark:bg-[#1a1f2e] border border-[#E8FF4C] shadow-lg p-3 text-left"
+      className="absolute z-[100] top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-white dark:bg-[#1a1f2e] border border-[#E8FF4C] shadow-lg p-3 text-left"
       onClick={(e) => e.stopPropagation()}
     >
       <div
@@ -169,7 +169,7 @@ function NoteTooltip({ note, onEdit }: { note: CellNote; onEdit: () => void }) {
         </div>
       )}
       {/* Arrow */}
-      <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#E8FF4C]" />
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-[#E8FF4C]" />
     </div>
   );
 }
@@ -230,7 +230,7 @@ function NoteEditor({
 
   return (
     <div
-      className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 bg-white dark:bg-[#1a1f2e] border border-border/40 shadow-lg p-3"
+      className="absolute z-[100] top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-white dark:bg-[#1a1f2e] border border-border/40 shadow-lg p-3"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between mb-2">
@@ -259,7 +259,7 @@ function NoteEditor({
         </button>
       </div>
       {/* Arrow */}
-      <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-border/40" />
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-border/40" />
     </div>
   );
 }
