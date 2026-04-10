@@ -24,19 +24,23 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
-  // ── CRON_SECRET guard ──
+  // ── CRON_SECRET guard (cron via x-cron-secret, frontend via authenticated JWT) ──
   const cronSecret = Deno.env.get('CRON_SECRET');
-  if (cronSecret) {
+  const xCronHeader = req.headers.get('x-cron-secret');
+  if (xCronHeader) {
+    // Cron path: must match secret exactly
+    if (xCronHeader !== cronSecret) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+  } else {
+    // Frontend path: require a valid user JWT (not anon key)
     const authHeader = req.headers.get('Authorization') || '';
-    const providedSecret = req.headers.get('x-cron-secret') || '';
-    const bearerToken = authHeader.replace('Bearer ', '');
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-    const isAllowed = providedSecret === cronSecret
-      || bearerToken === cronSecret
-      || bearerToken === serviceKey
-      || bearerToken === anonKey;
-    if (!isAllowed) {
+    const token = authHeader.replace('Bearer ', '');
+    if (!token || token === anonKey) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
