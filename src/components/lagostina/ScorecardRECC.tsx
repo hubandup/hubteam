@@ -478,7 +478,7 @@ export function ScorecardRECC() {
       )}
 
       {/* PAR LEVIER */}
-      {subTab === 'par_levier' && (
+      {tab === 'par_levier' && (
         <div className="space-y-6">
           {PAR_LEVIER_STRUCTURE.map((block) => {
             const matchingData = scorecards?.filter((s) =>
@@ -548,7 +548,7 @@ export function ScorecardRECC() {
       )}
 
       {/* FULL DÉTAIL */}
-      {subTab === 'full_detail' && (
+      {tab === 'full_detail' && (
         <div className="space-y-6">
           {FULL_DETAIL_SECTIONS.map((section) => (
             <div key={section.section} className="bg-white dark:bg-[#0f1422] border border-border/30">
