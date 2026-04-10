@@ -21,7 +21,7 @@ const TABS = [
 ] as const;
 
 const EXPORT_CONFIG: Record<string, { tabName: string; showPdf: boolean; chartsId?: string }> = {
-  scorecard: { tabName: 'Scorecard RECC', showPdf: true, chartsId: 'lagostina-scorecard-charts' },
+  scorecard: { tabName: 'Scorecard', showPdf: true, chartsId: 'lagostina-scorecard-charts' },
   budget: { tabName: 'Budget', showPdf: true, chartsId: 'lagostina-budget-charts' },
   influence: { tabName: 'Influence & RP', showPdf: false },
   mediatisation: { tabName: 'Médiatisation', showPdf: false },
