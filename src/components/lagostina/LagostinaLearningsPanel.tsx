@@ -5,7 +5,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Trash2, MessageSquare } from 'lucide-react';
+import { Send, Trash2, MessageSquare, Reply } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -168,10 +168,10 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
   const commentFilter = 'all';
 
   const addComment = useMutation({
-    mutationFn: async (content: string) => {
+    mutationFn: async ({ content, parentId }: { content: string; parentId?: string }) => {
       const { error } = await supabase
         .from('lagostina_comments')
-        .insert({ tab: activeTab, content, user_id: user!.id });
+        .insert({ tab: activeTab, content, user_id: user!.id, parent_id: parentId || null });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -181,16 +181,8 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
     onError: () => toast.error('Erreur'),
   });
 
-  const toggleResolved = useMutation({
-    mutationFn: async ({ id, resolved }: { id: string; resolved: boolean }) => {
-      const { error } = await supabase
-        .from('lagostina_comments')
-        .update({ resolved })
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lagostina-comments', activeTab] }),
-  });
+
+
 
   const deleteComment = useMutation({
     mutationFn: async (id: string) => {
@@ -290,12 +282,12 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey && newComment.trim()) {
                   e.preventDefault();
-                  addComment.mutate(newComment.trim());
+                  addComment.mutate({ content: newComment.trim() });
                 }
               }}
             />
             <button
-              onClick={() => newComment.trim() && addComment.mutate(newComment.trim())}
+              onClick={() => newComment.trim() && addComment.mutate({ content: newComment.trim() })}
               disabled={!newComment.trim()}
               className="self-end p-2 text-primary hover:bg-primary/10 transition-colors disabled:opacity-30"
             >
@@ -316,8 +308,8 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
                 key={c.id}
                 comment={c}
                 currentUserId={user?.id}
-                onResolve={(id, resolved) => toggleResolved.mutate({ id, resolved })}
                 onDelete={(id) => deleteComment.mutate(id)}
+                onReply={(parentId, content) => addComment.mutate({ content, parentId })}
               />
             ))}
           </div>
@@ -330,19 +322,31 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
 function CommentItem({
   comment,
   currentUserId,
-  onResolve,
   onDelete,
+  onReply,
+  isReply = false,
 }: {
   comment: Comment;
   currentUserId?: string;
-  onResolve: (id: string, resolved: boolean) => void;
   onDelete: (id: string) => void;
+  onReply: (parentId: string, content: string) => void;
+  isReply?: boolean;
 }) {
+  const [showReplyInput, setShowReplyInput] = useState(false);
+  const [replyText, setReplyText] = useState('');
   const isOwn = currentUserId === comment.user_id;
   const timeAgo = formatDistanceToNow(new Date(comment.created_at), { addSuffix: false, locale: fr });
 
+  const handleReply = () => {
+    if (replyText.trim()) {
+      onReply(comment.id, replyText.trim());
+      setReplyText('');
+      setShowReplyInput(false);
+    }
+  };
+
   return (
-    <div className={`border-l-2 pl-3 py-1 space-y-1 ${comment.resolved ? 'border-green-400 opacity-60' : 'border-border/40'}`}>
+    <div className={`border-l-2 pl-3 py-1 space-y-1 ${isReply ? 'border-primary/20' : 'border-border/40'}`}>
       <div className="flex items-center gap-2">
         <Avatar className="h-6 w-6">
           <AvatarImage src={comment.author?.avatar_url || undefined} />
@@ -357,6 +361,15 @@ function CommentItem({
           {timeAgo}
         </span>
         <div className="ml-auto flex gap-1">
+          {!isReply && (
+            <button
+              onClick={() => setShowReplyInput(!showReplyInput)}
+              className="p-1 text-muted-foreground hover:text-primary transition-colors"
+              title="Répondre"
+            >
+              <Reply className="h-3.5 w-3.5" />
+            </button>
+          )}
           {isOwn && (
             <button
               onClick={() => onDelete(comment.id)}
@@ -373,7 +386,33 @@ function CommentItem({
       {/* Replies */}
       {comment.replies && comment.replies.length > 0 && (
         <div className="ml-4 mt-2 space-y-2">
-          <p className="text-xs text-primary font-['Roboto']">{comment.replies.length} replies</p>
+          {comment.replies.map((reply) => (
+            <CommentItem
+              key={reply.id}
+              comment={reply}
+              currentUserId={currentUserId}
+              onDelete={onDelete}
+              onReply={onReply}
+              isReply
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Reply input */}
+      {showReplyInput && (
+        <div className="ml-4 mt-2 flex gap-2">
+          <input
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            placeholder="Répondre…"
+            className="flex-1 bg-muted/50 border border-border/30 text-foreground font-['Roboto'] text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/30 rounded"
+            onKeyDown={(e) => { if (e.key === 'Enter' && replyText.trim()) { e.preventDefault(); handleReply(); } }}
+            autoFocus
+          />
+          <button onClick={handleReply} disabled={!replyText.trim()} className="p-1.5 text-primary hover:bg-primary/10 transition-colors disabled:opacity-30">
+            <Send className="h-3.5 w-3.5" />
+          </button>
         </div>
       )}
     </div>
