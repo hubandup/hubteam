@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Pencil, Trash2, X, Check } from 'lucide-react';
 import DOMPurify from 'dompurify';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 type CellNote = {
   id: string;
@@ -14,6 +15,11 @@ type CellNote = {
   user_id: string;
   created_at: string;
   updated_at: string;
+  author?: {
+    first_name: string;
+    last_name: string;
+    avatar_url: string | null;
+  };
 };
 
 // Hook to fetch all cell notes (shared across all cells)
@@ -25,9 +31,24 @@ export function useCellNotes() {
         .from('lagostina_cell_notes')
         .select('*');
       if (error) throw error;
+
+      // Fetch profiles for all note authors
+      const userIds = [...new Set((data as any[]).map((n) => n.user_id))];
+      const profilesMap = new Map<string, { first_name: string; last_name: string; avatar_url: string | null }>();
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, avatar_url')
+          .in('id', userIds);
+        profiles?.forEach((p) => profilesMap.set(p.id, p));
+      }
+
       const map = new Map<string, CellNote>();
-      (data as CellNote[]).forEach((n) => {
-        map.set(`${n.levier}|${n.kpi_name}|${n.week}`, n);
+      (data as any[]).forEach((n) => {
+        map.set(`${n.levier}|${n.kpi_name}|${n.week}`, {
+          ...n,
+          author: profilesMap.get(n.user_id),
+        });
       });
       return map;
     },
@@ -148,6 +169,20 @@ function NoteTooltip({ note, onEdit }: { note: CellNote; onEdit: () => void }) {
       className="absolute z-[100] top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-white dark:bg-[#1a1f2e] border border-[#E8FF4C] shadow-lg p-3 text-left"
       onClick={(e) => e.stopPropagation()}
     >
+      {/* Author info */}
+      {note.author && (
+        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-border/30">
+          <Avatar className="h-5 w-5">
+            <AvatarImage src={note.author.avatar_url || undefined} />
+            <AvatarFallback className="text-[9px] bg-muted">
+              {note.author.first_name?.[0]}{note.author.last_name?.[0]}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-[11px] font-medium text-foreground font-['Roboto']">
+            {note.author.first_name} {note.author.last_name}
+          </span>
+        </div>
+      )}
       <div
         className="text-xs text-foreground font-['Roboto'] prose prose-sm dark:prose-invert max-w-none"
         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(note.content) }}
