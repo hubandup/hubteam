@@ -189,11 +189,7 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lagostina-comments', activeTab] }),
   });
 
-  const filteredComments = commentFilter === 'unresolved'
-    ? comments.filter(c => !c.resolved)
-    : comments;
-
-  const unresolvedCount = comments.filter(c => !c.resolved).length;
+  const filteredComments = comments;
 
   return (
     <div className="border border-border/20 bg-background dark:bg-[#111827] mt-4 rounded-[7px] shadow-[0_2px_12px_rgba(0,0,0,0.08)] overflow-hidden">
