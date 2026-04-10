@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { createSafeHtml } from '@/lib/sanitize';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -394,7 +395,7 @@ export function SendEmailDialog({ open, onOpenChange, recipients }: SendEmailDia
                     )}
                     <div
                       className="text-sm leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: renderPreview() }}
+                      dangerouslySetInnerHTML={createSafeHtml(renderPreview())}
                     />
                   </div>
                 </ScrollArea>
