@@ -371,14 +371,17 @@ export function ScorecardRECC() {
                   <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[140px]">KPI</th>
                   <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[70px]">Objectif</th>
                   {weeks.length > 1 && (
-                    <th className="text-center px-1 py-2">
-                      <button
-                        onClick={() => setShowPastWeeks(!showPastWeeks)}
-                        className="inline-flex items-center justify-center w-6 h-6 bg-black text-white dark:bg-[#E8FF4C] dark:text-black transition-colors"
-                        title={showPastWeeks ? 'Masquer les mois précédents' : 'Mois précédents'}
-                      >
-                        {showPastWeeks ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
-                      </button>
+                    <th className="text-center px-2 py-2 whitespace-nowrap">
+                      <div className="inline-flex items-center gap-1.5">
+                        <button
+                          onClick={() => setShowPastWeeks(!showPastWeeks)}
+                          className="inline-flex items-center justify-center w-6 h-6 bg-black text-white dark:bg-[#E8FF4C] dark:text-black transition-colors"
+                          title={showPastWeeks ? 'Masquer les mois précédents' : 'Mois précédents'}
+                        >
+                          {showPastWeeks ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                        </button>
+                        <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">Mois précédents</span>
+                      </div>
                     </th>
                   )}
                   {visibleMonthGroups.map((mg) => (
