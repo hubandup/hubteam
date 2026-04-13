@@ -372,6 +372,22 @@ export async function parseInfluenceRPFile(workbook: XLSX.WorkBook) {
 
     if (sheetName.toLowerCase().includes('presse') || sheetName.toLowerCase().includes('press')) {
       const pressRecords: Array<{ date: string; media_name: string; title: string; url: string | null; tonality: string; estimated_reach: number | null; journalist_name: string | null }> = [];
+      const normalizeTonality = (value: unknown) => {
+        const normalized = String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (normalized.startsWith('pos')) return 'positive';
+        if (normalized.startsWith('neg')) return 'negative';
+        if (normalized.startsWith('neu')) return 'neutral';
+        return 'neutral';
+      };
+      const parseReach = (value: unknown) => {
+        if (value == null || value === '') return null;
+        if (typeof value === 'number') return Number.isFinite(value) ? Math.round(value) : null;
+        const normalized = String(value).trim().replace(/\s+/g, '').replace(/,/g, '.');
+        if (!normalized || normalized.toLowerCase() === 'nc' || normalized === '-') return null;
+        const parsed = Number(normalized);
+        return Number.isFinite(parsed) ? Math.round(parsed) : null;
+      };
+
       for (let r = 1; r < rows.length; r++) {
         const row = rows[r];
         if (!row || !row[0]) continue;
@@ -380,6 +396,8 @@ export async function parseInfluenceRPFile(workbook: XLSX.WorkBook) {
         if (typeof row[0] === 'number') {
           const d = new Date((row[0] - 25569) * 86400 * 1000);
           dateVal = d.toISOString().slice(0, 10);
+        } else if (row[0] instanceof Date) {
+          dateVal = row[0].toISOString().slice(0, 10);
         } else {
           dateVal = String(row[0]);
         }
@@ -389,8 +407,8 @@ export async function parseInfluenceRPFile(workbook: XLSX.WorkBook) {
           media_name: String(row[1] || '').trim(),
           title: String(row[2] || '').trim(),
           url: row[3] ? String(row[3]).trim() : null,
-          tonality: String(row[4] || 'neutral').trim().toLowerCase(),
-          estimated_reach: Number(row[5]) || null,
+          tonality: normalizeTonality(row[4]),
+          estimated_reach: parseReach(row[5]),
           journalist_name: row[6] ? String(row[6]).trim() : null,
         });
       }
