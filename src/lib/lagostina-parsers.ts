@@ -901,16 +901,16 @@ export async function parseMetaCsvFile(csvText: string): Promise<number> {
 
     const push = (kpi: string, val: number | null) => records.push({ channel: 'sma', kpi_name: kpi, week, actual: val, objective: null, budget_spent: null, budget_allocated: null });
 
-    push('reach_(3s_views)', d.views3s || null);
+    push('reach_3s_views', d.views3s || null);
     push('impressions', d.impressions || null);
     push('cpc', d.clicks > 0 ? d.spend / d.clicks : null);
     push('cpm_reach_attentif', d.impressions > 0 ? (d.spend / d.impressions) * 1000 : null);
-    push('traffic_qualifié_(visites_site)', d.landing > 0 ? d.landing : d.clicks || null);
+    push('traffic_qualifie_visites_site', d.landing > 0 ? d.landing : d.clicks || null);
     push('cpvisite', d.landing > 0 ? d.spend / d.landing : (d.clicks > 0 ? d.spend / d.clicks : null));
     push('conversion_rate', d.landing > 0 && d.purchases > 0 ? (d.purchases / d.landing) * 100 : (d.clicks > 0 && d.purchases > 0 ? (d.purchases / d.clicks) * 100 : null));
     push('roas', d.spend > 0 && d.roas_weighted > 0 ? d.roas_weighted / d.spend : null);
-    push('complétion_vidéo', d.views3s > 0 && d.videoPlays > 0 ? (d.videoPlays / d.views3s) * 100 : null);
-    push('budget_dépensé', d.spend || null);
+    push('completion_video', d.views3s > 0 && d.videoPlays > 0 ? (d.videoPlays / d.views3s) * 100 : null);
+    push('budget_depense', d.spend || null);
   }
 
   if (records.length === 0) throw new Error('Aucune donnée Meta exploitable trouvée dans le CSV.');
