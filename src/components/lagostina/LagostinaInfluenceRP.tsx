@@ -241,7 +241,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
           {/* Tonality pie chart + counters */}
           <div className="flex flex-col md:flex-row gap-6">
             {/* Pie charts side by side */}
-            <div className="flex flex-col sm:flex-row gap-4 shrink-0">
+            <div className="flex flex-col gap-4 shrink-0 w-full md:w-60">
               {/* Pie chart - count */}
               <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-5 flex flex-col items-center w-full sm:w-60">
                 <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-3">Retombées par tonalité</p>
