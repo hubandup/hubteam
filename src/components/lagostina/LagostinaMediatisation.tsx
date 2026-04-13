@@ -20,15 +20,15 @@ const CHANNEL_MAP: Record<SubTab, string> = { SEA: 'sea', META: 'sma', TikTok: '
 
 // Map DB kpi_names to display keys
 const SEA_KPIS = ['roas', 'cpc_moyen', 'ctr', 'impressions', 'conversions', 'budget_ratio'];
-const SMA_KPIS = ['reach_(3s_views)', 'complétion_vidéo', 'traffic_qualifié_(visites_site)', 'cpm_reach_attentif', 'cpvisite', 'cpc', 'conversion_rate', 'roas'];
+const SMA_KPIS = ['reach_3s_views', 'completion_video', 'traffic_qualifie_visites_site', 'cpm_reach_attentif', 'cpvisite', 'cpc', 'conversion_rate', 'roas'];
 const TIKTOK_KPIS = ['reach', 'completion', 'engagement_rate', 'cpv', 'cpc', 'roas'];
 
 const KPI_LABELS: Record<string, string> = {
   roas: 'ROAS', cpc_moyen: 'CPC', cpc: 'CPC', ctr: 'CTR', impressions: 'Impressions', conversions: 'Conversions',
-  budget_ratio: 'Budget dépensé / alloué', 'reach_(3s_views)': 'Reach 3s', reach: 'Reach 3s',
-  'complétion_vidéo': 'Complétion vidéo', completion: 'Complétion vidéo',
-  'traffic_qualifié_(visites_site)': 'Traffic qualifié', traffic: 'Traffic qualifié',
-  'cpm_reach_attentif': 'CPM', cpm: 'CPM', cpvisite: 'CPVisite', cpv: 'CPV',
+  budget_ratio: 'Budget dépensé / alloué', reach_3s_views: 'Reach 3s', 'reach_(3s_views)': 'Reach 3s', reach: 'Reach 3s',
+  completion_video: 'Complétion vidéo', 'complétion_vidéo': 'Complétion vidéo', completion: 'Complétion vidéo',
+  traffic_qualifie_visites_site: 'Traffic qualifié', 'traffic_qualifié_(visites_site)': 'Traffic qualifié', traffic: 'Traffic qualifié',
+  cpm_reach_attentif: 'CPM', cpm: 'CPM', cpvisite: 'CPVisite', cpv: 'CPV',
   conversion_rate: 'Taux conversion', engagement_rate: 'Engagement rate',
   followers_evol: 'Évol. followers', taux_de_conversion: 'Taux conversion',
   'coût_/_conversion': 'Coût / conversion', cout_conversion: 'Coût / conversion',
@@ -37,7 +37,7 @@ const KPI_LABELS: Record<string, string> = {
 };
 
 // KPIs where values are already in percentage (don't multiply by 100)
-const ALREADY_PERCENT_KPIS = ['ctr', 'engagement_rate', 'conversion_rate', 'completion', 'complétion_vidéo', 'taux_de_conversion'];
+const ALREADY_PERCENT_KPIS = ['ctr', 'engagement_rate', 'conversion_rate', 'completion', 'completion_video', 'complétion_vidéo', 'taux_de_conversion'];
 
 function getCondColor(actual: number | null, objective: number | null) {
   if (!actual || !objective) return '';
@@ -53,7 +53,7 @@ function formatVal(val: number | null | undefined, kpi: string): string {
   if (ALREADY_PERCENT_KPIS.includes(kpi)) return `${val.toFixed(1)}%`;
   if (['roas'].includes(kpi)) return val.toFixed(2);
   if (['cpc_moyen', 'cpc', 'cpm', 'cpm_reach_attentif', 'cpv', 'cpvisite', 'coût_/_conversion'].includes(kpi)) return `€${val.toFixed(2)}`;
-  if (['impressions', 'reach', 'reach_(3s_views)', 'conversions', 'traffic', 'traffic_qualifié_(visites_site)', 'clics'].includes(kpi)) {
+  if (['impressions', 'reach', 'reach_3s_views', 'reach_(3s_views)', 'conversions', 'traffic', 'traffic_qualifie_visites_site', 'traffic_qualifié_(visites_site)', 'clics'].includes(kpi)) {
     if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
     if (val >= 1_000) return `${(val / 1_000).toFixed(0)}K`;
     return val.toFixed(0);
@@ -243,8 +243,8 @@ function FunnelStep({ label, value, color, ratio }: { label: string; value: stri
 
 function SMATab({ rows }: { rows: any[] }) {
   const kpis = buildKpiData(rows, SMA_KPIS);
-  const reach = kpis.find((k) => k.kpi_name === 'reach_(3s_views)')?.latestActual;
-  const traffic = kpis.find((k) => k.kpi_name === 'traffic_qualifié_(visites_site)')?.latestActual;
+  const reach = kpis.find((k) => k.kpi_name === 'reach_3s_views')?.latestActual;
+  const traffic = kpis.find((k) => k.kpi_name === 'traffic_qualifie_visites_site')?.latestActual;
   const conversions = kpis.find((k) => k.kpi_name === 'conversion_rate')?.latestActual;
 
   const awarenessToConsid = reach && traffic ? `${((traffic / reach) * 100).toFixed(1)}%` : undefined;
@@ -258,8 +258,8 @@ function SMATab({ rows }: { rows: any[] }) {
       <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-6">
         <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Funnel SMA</h3>
         <div className="flex gap-2 items-end">
-          <FunnelStep label="Awareness" value={formatVal(reach, 'reach_(3s_views)')} color={getChartAccent()} ratio={awarenessToConsid} />
-          <FunnelStep label="Considération" value={formatVal(traffic, 'traffic_qualifié_(visites_site)')} color="#38bdf8" ratio={considToPurchase} />
+          <FunnelStep label="Awareness" value={formatVal(reach, 'reach_3s_views')} color={getChartAccent()} ratio={awarenessToConsid} />
+          <FunnelStep label="Considération" value={formatVal(traffic, 'traffic_qualifie_visites_site')} color="#38bdf8" ratio={considToPurchase} />
           <FunnelStep label="Purchase" value={conversions != null ? `${conversions.toFixed(1)}%` : '—'} color="#22c55e" />
         </div>
       </div>
