@@ -290,6 +290,12 @@ async function parseBudgetFile(workbook: XLSX.WorkBook) {
     console.log(`[Budget] monthRow=${monthRow}, monthCols=`, JSON.stringify(monthCols));
     if (monthRow < 0) continue;
 
+    // Detect if col 0 = "levier" and col 1 = "type" (2-column format)
+    const header0 = String(rows[monthRow]?.[0] || '').trim().toLowerCase();
+    const header1 = String(rows[monthRow]?.[1] || '').trim().toLowerCase();
+    const twoColFormat = (header0 === 'levier' && header1 === 'type');
+    console.log(`[Budget] twoColFormat=${twoColFormat}, header0="${header0}", header1="${header1}"`);
+
     let currentLevier = '';
     for (let r = monthRow + 1; r < rows.length; r++) {
       const row = rows[r];
@@ -297,24 +303,39 @@ async function parseBudgetFile(workbook: XLSX.WorkBook) {
       const firstCell = String(row[0] || '').trim();
       if (!firstCell) continue;
 
-      const lower = firstCell.toLowerCase();
-      if (!lower.includes('prévu') && !lower.includes('engagé') && !lower.includes('facturé') && !lower.includes('budget') && !lower.includes('planned') && !lower.includes('engaged') && !lower.includes('invoiced')) {
-        currentLevier = firstCell.toLowerCase().replace(/\s+/g, '_');
-        continue;
+      let levierName: string;
+      let typeLabel: string;
+
+      if (twoColFormat) {
+        // col 0 = levier name, col 1 = type (Prévu/Engagé/Facturé)
+        levierName = firstCell.toLowerCase().replace(/\s+/g, '_');
+        typeLabel = String(row[1] || '').trim().toLowerCase();
+      } else {
+        // Legacy format: type keywords in col 0, levier detected by absence of keywords
+        const lower = firstCell.toLowerCase();
+        if (!lower.includes('prévu') && !lower.includes('engagé') && !lower.includes('facturé') && !lower.includes('budget') && !lower.includes('planned') && !lower.includes('engaged') && !lower.includes('invoiced')) {
+          currentLevier = firstCell.toLowerCase().replace(/\s+/g, '_');
+          continue;
+        }
+        if (!currentLevier) continue;
+        levierName = currentLevier;
+        typeLabel = firstCell.toLowerCase();
       }
 
-      if (!currentLevier) continue;
+      const dataStartCol = twoColFormat ? 2 : 0;
 
       for (const [colIdx, month] of Object.entries(monthCols)) {
-        const val = Number(row[Number(colIdx)]) || 0;
-        let existing = records.find((rec) => rec.levier === currentLevier && rec.month === month);
+        const ci = Number(colIdx);
+        if (ci < dataStartCol) continue;
+        const val = Number(row[ci]) || 0;
+        let existing = records.find((rec) => rec.levier === levierName && rec.month === month);
         if (!existing) {
-          existing = { levier: currentLevier, month, planned: 0, engaged: 0, invoiced: 0, remaining: 0 };
+          existing = { levier: levierName, month, planned: 0, engaged: 0, invoiced: 0, remaining: 0 };
           records.push(existing);
         }
-        if (lower.includes('prévu') || lower.includes('planned') || lower.includes('budget')) existing.planned = val;
-        else if (lower.includes('engagé') || lower.includes('engaged')) existing.engaged = val;
-        else if (lower.includes('facturé') || lower.includes('invoiced')) existing.invoiced = val;
+        if (typeLabel.includes('prévu') || typeLabel.includes('planned') || typeLabel.includes('budget')) existing.planned = val;
+        else if (typeLabel.includes('engagé') || typeLabel.includes('engaged')) existing.engaged = val;
+        else if (typeLabel.includes('facturé') || typeLabel.includes('invoiced')) existing.invoiced = val;
       }
     }
   }
