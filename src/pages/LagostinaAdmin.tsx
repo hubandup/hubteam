@@ -751,6 +751,141 @@ export default function LagostinaAdmin() {
     }
   };
 
+  const syncFromKDrive = async () => {
+    setSyncing(true);
+    try {
+      // Step 1: Search for LAGOSTINA files on kDrive
+      toast.info('Recherche des fichiers Lagostina sur kDrive…');
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Vous devez être connecté pour synchroniser');
+        return;
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      
+      // Search for files with "LAGOSTINA" in the name
+      const searchResponse = await supabase.functions.invoke('kdrive-api', {
+        body: { action: 'search-folder', folderPath: 'LAGOSTINA' },
+      });
+
+      if (searchResponse.error) {
+        throw new Error(searchResponse.error.message || 'Erreur lors de la recherche kDrive');
+      }
+
+      const searchData = searchResponse.data?.data || searchResponse.data;
+      const files = (Array.isArray(searchData) ? searchData : searchData?.data || [])
+        .filter((f: any) => {
+          const name = (f.name || f.filename || '').toLowerCase();
+          return name.endsWith('.xlsx') && name.includes('lagostina');
+        });
+
+      if (files.length === 0) {
+        toast.warning('Aucun fichier Excel Lagostina trouvé sur kDrive');
+        return;
+      }
+
+      toast.info(`${files.length} fichier(s) trouvé(s), téléchargement en cours…`);
+
+      let totalImported = 0;
+      let errors = 0;
+
+      for (const file of files) {
+        const fileName = file.name || file.filename;
+        const fileType = detectFileType(fileName);
+        
+        if (!fileType) {
+          console.warn('Type non reconnu pour:', fileName);
+          continue;
+        }
+
+        try {
+          // Download file via proxy
+          const driveId = file.drive_id || file.driveId;
+          const fileId = file.id || file.file_id;
+          
+          if (!driveId || !fileId) {
+            console.warn('Missing driveId or fileId for:', fileName);
+            continue;
+          }
+
+          const downloadUrl = `${supabaseUrl}/functions/v1/kdrive-api?action=download&driveId=${driveId}&fileId=${fileId}`;
+          const downloadResponse = await fetch(downloadUrl, {
+            headers: { 'Authorization': `Bearer ${session.access_token}` },
+          });
+
+          if (!downloadResponse.ok) {
+            throw new Error(`Téléchargement échoué: ${downloadResponse.status}`);
+          }
+
+          const arrayBuffer = await downloadResponse.arrayBuffer();
+          const workbook = XLSX.read(arrayBuffer);
+
+          let insertedCount = 0;
+
+          if (fileType === 'scorecard') {
+            const records = await parseScorecardFile(workbook);
+            const { personas, activations } = await parseActivationFile(workbook);
+            if (records.length > 0) insertedCount += await mergeAndInsertScorecard(records);
+            if (personas.length > 0 || activations.length > 0) insertedCount += await insertActivationData(personas, activations);
+          } else if (fileType === 'budget') {
+            insertedCount += await parseBudgetFile(workbook);
+          } else if (fileType === 'influence_rp') {
+            insertedCount += await parseInfluenceRPFile(workbook);
+          } else if (fileType === 'media') {
+            insertedCount += await parseMediaFile(workbook);
+          } else if (fileType === 'consumer') {
+            insertedCount += await parseConsumerFile(workbook);
+          } else if (fileType === 'contenus') {
+            insertedCount += await parseContenusFile(workbook);
+          }
+
+          // Update sync record
+          await supabase.from('lagostina_files_sync').upsert({
+            filename: fileName,
+            file_type: fileType,
+            source: 'kdrive',
+            status: 'synced',
+            last_synced: new Date().toISOString(),
+          }, { onConflict: 'filename' });
+
+          totalImported += insertedCount;
+          toast.success(`${fileName}: ${insertedCount} enregistrements importés`);
+        } catch (err: any) {
+          errors++;
+          console.error(`Erreur sync ${fileName}:`, err);
+          toast.error(`${fileName}: ${err.message}`);
+        }
+      }
+
+      // Invalidate all queries
+      queryClient.invalidateQueries({ queryKey: ['lagostina-files'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-scorecards'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-budget'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-influence'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-press'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-media-kpis'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-consumer'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-rnr'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-contenus'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-social-mix'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-content-learnings'] });
+      queryClient.invalidateQueries({ queryKey: ['lagostina-learnings'] });
+
+      if (errors === 0) {
+        toast.success(`Synchronisation terminée : ${totalImported} enregistrements importés`);
+      } else {
+        toast.warning(`Synchronisation partielle : ${totalImported} importés, ${errors} erreur(s)`);
+      }
+    } catch (err: any) {
+      console.error('kDrive sync error:', err);
+      toast.error(`Erreur de synchronisation : ${err.message || 'Erreur inconnue'}`);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
