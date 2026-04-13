@@ -17,6 +17,7 @@ import {
   parseMediaFile,
   parseConsumerFile,
   parseContenusFile,
+  parseMetaCsvFile,
   detectFileType,
 } from '@/lib/lagostina-parsers';
 import { useLagostinaSync } from '@/hooks/useLagostinaSync';
@@ -26,6 +27,7 @@ const FILE_TYPES = [
   { value: 'budget', label: 'Budget' },
   { value: 'influence_rp', label: 'Influence & RP' },
   { value: 'media', label: 'Médiatisation' },
+  { value: 'meta_csv', label: 'Meta Ads (CSV)' },
   { value: 'consumer', label: 'Consumer' },
   { value: 'contenus', label: 'Contenus' },
 ];
