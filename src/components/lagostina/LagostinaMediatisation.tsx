@@ -229,12 +229,13 @@ function SEATab({ rows }: { rows: any[] }) {
   );
 }
 
-function FunnelStep({ label, value, color, ratio }: { label: string; value: string; color: string; ratio?: string }) {
+function FunnelStep({ label, value, color, ratio, widthPercent }: { label: string; value: string; color: string; ratio?: string; widthPercent: number }) {
+  const isDark = color === getChartAccent() || color.toLowerCase().includes('0f1422');
   return (
-    <div className="flex-1 flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-2" style={{ width: `${widthPercent}%` }}>
       <div className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">{label}</div>
-      <div className="w-full py-6 flex items-center justify-center" style={{ background: color }}>
-        <span className="text-black text-lg font-bold font-['Instrument_Sans']">{value}</span>
+      <div className="w-full py-6 flex items-center justify-center rounded-sm" style={{ background: color }}>
+        <span className={`text-lg font-bold font-['Instrument_Sans'] ${isDark ? 'text-white' : 'text-foreground'}`}>{value}</span>
       </div>
       {ratio && <div className="text-muted-foreground text-xs font-['Roboto']">→ {ratio}</div>}
     </div>
@@ -257,10 +258,10 @@ function SMATab({ rows }: { rows: any[] }) {
       </div>
       <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-6">
         <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Funnel SMA</h3>
-        <div className="flex gap-2 items-end">
-          <FunnelStep label="Awareness" value={formatVal(reach, 'reach_3s_views')} color={getChartAccent()} ratio={awarenessToConsid} />
-          <FunnelStep label="Considération" value={formatVal(traffic, 'traffic_qualifie_visites_site')} color="#38bdf8" ratio={considToPurchase} />
-          <FunnelStep label="Purchase" value={conversions != null ? `${conversions.toFixed(1)}%` : '—'} color="#22c55e" />
+        <div className="flex items-end justify-center gap-0">
+          <FunnelStep label="Awareness" value={formatVal(reach, 'reach_3s_views')} color={getChartAccent()} ratio={awarenessToConsid} widthPercent={100} />
+          <FunnelStep label="Considération" value={formatVal(traffic, 'traffic_qualifie_visites_site')} color="#38bdf8" ratio={considToPurchase} widthPercent={66} />
+          <FunnelStep label="Purchase" value={conversions != null ? `${conversions.toFixed(1)}%` : '—'} color="#22c55e" widthPercent={40} />
         </div>
       </div>
       {kpis[0]?.weeks.length > 1 && (
