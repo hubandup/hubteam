@@ -756,8 +756,7 @@ export default function LagostinaAdmin() {
   const syncFromKDrive = async () => {
     setSyncing(true);
     try {
-      // Step 1: Search for LAGOSTINA files on kDrive
-      toast.info('Recherche des fichiers Lagostina sur kDrive…');
+      toast.info('Navigation vers CLIENTS/LAGOSTINA/_DATA sur kDrive…');
       
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -767,33 +766,33 @@ export default function LagostinaAdmin() {
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       
-      // Search for files with "LAGOSTINA" in the name
-      const searchResponse = await supabase.functions.invoke('kdrive-api', {
-        body: { action: 'search-folder', folderPath: 'LAGOSTINA' },
+      // Step 1: Resolve the folder path CLIENTS/LAGOSTINA/_DATA
+      const resolveResponse = await supabase.functions.invoke('kdrive-api', {
+        body: { action: 'resolve-path', folderPath: 'CLIENTS/LAGOSTINA/_DATA' },
       });
 
-      if (searchResponse.error) {
-        throw new Error(searchResponse.error.message || 'Erreur lors de la recherche kDrive');
+      if (resolveResponse.error) {
+        throw new Error(resolveResponse.error.message || 'Erreur lors de la navigation kDrive');
       }
 
-      const searchData = searchResponse.data?.data || searchResponse.data;
-      const files = (Array.isArray(searchData) ? searchData : searchData?.data || [])
-        .filter((f: any) => {
-          const name = (f.name || f.filename || '').toLowerCase();
-          return name.endsWith('.xlsx') && name.includes('lagostina');
-        });
+      const resolveData = resolveResponse.data;
+      const driveId = resolveData?.driveId;
+      const kdriveFiles = (resolveData?.data || []).filter((f: any) => {
+        const name = (f.name || f.filename || '').toLowerCase();
+        return name.endsWith('.xlsx') || name.endsWith('.xls');
+      });
 
-      if (files.length === 0) {
-        toast.warning('Aucun fichier Excel Lagostina trouvé sur kDrive');
+      if (kdriveFiles.length === 0) {
+        toast.warning('Aucun fichier Excel trouvé dans CLIENTS/LAGOSTINA/_DATA');
         return;
       }
 
-      toast.info(`${files.length} fichier(s) trouvé(s), téléchargement en cours…`);
+      toast.info(`${kdriveFiles.length} fichier(s) Excel trouvé(s), téléchargement en cours…`);
 
       let totalImported = 0;
       let errors = 0;
 
-      for (const file of files) {
+      for (const file of kdriveFiles) {
         const fileName = file.name || file.filename;
         const fileType = detectFileType(fileName);
         
@@ -803,16 +802,15 @@ export default function LagostinaAdmin() {
         }
 
         try {
-          // Download file via proxy
-          const driveId = file.drive_id || file.driveId;
           const fileId = file.id || file.file_id;
+          const fileDriveId = file.drive_id || driveId;
           
-          if (!driveId || !fileId) {
+          if (!fileDriveId || !fileId) {
             console.warn('Missing driveId or fileId for:', fileName);
             continue;
           }
 
-          const downloadUrl = `${supabaseUrl}/functions/v1/kdrive-api?action=download&driveId=${driveId}&fileId=${fileId}`;
+          const downloadUrl = `${supabaseUrl}/functions/v1/kdrive-api?action=download&driveId=${fileDriveId}&fileId=${fileId}`;
           const downloadResponse = await fetch(downloadUrl, {
             headers: { 'Authorization': `Bearer ${session.access_token}` },
           });
@@ -862,18 +860,13 @@ export default function LagostinaAdmin() {
       }
 
       // Invalidate all queries
-      queryClient.invalidateQueries({ queryKey: ['lagostina-files'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-scorecards'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-budget'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-influence'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-press'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-media-kpis'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-consumer'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-rnr'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-contenus'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-social-mix'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-content-learnings'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-learnings'] });
+      const queryKeys = [
+        'lagostina-files', 'lagostina-scorecards', 'lagostina-budget',
+        'lagostina-influence', 'lagostina-press', 'lagostina-media-kpis',
+        'lagostina-consumer', 'lagostina-rnr', 'lagostina-contenus',
+        'lagostina-social-mix', 'lagostina-content-learnings', 'lagostina-learnings',
+      ];
+      queryKeys.forEach(key => queryClient.invalidateQueries({ queryKey: [key] }));
 
       if (errors === 0) {
         toast.success(`Synchronisation terminée : ${totalImported} enregistrements importés`);
@@ -887,6 +880,14 @@ export default function LagostinaAdmin() {
       setSyncing(false);
     }
   };
+
+  // Auto-trigger sync when navigating with ?sync=auto
+  useEffect(() => {
+    if (searchParams.get('sync') === 'auto' && !syncing) {
+      setSearchParams({}, { replace: true });
+      syncFromKDrive();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
