@@ -572,7 +572,68 @@ export async function parseMediaFile(workbook: XLSX.WorkBook) {
     const { error } = await supabase.from('lagostina_media_kpis').insert(batch);
     if (error) throw error;
   }
-  return final.length;
+
+  // ── Parse Top Keywords SEA sheet ──
+  const keywordRecords: Array<{ keyword: string; clicks: number | null; impressions: number | null; ctr: number | null; cpc: number | null; conversions: number | null; cost: number | null; revenue: number | null; roas: number | null; position_avg: number | null; week: string | null }> = [];
+
+  for (const sheetName of workbook.SheetNames) {
+    const lowerSheet = sheetName.toLowerCase();
+    if (!lowerSheet.includes('top keywords') && !lowerSheet.includes('top_keywords')) continue;
+
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) continue;
+    const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { header: 1 }) as any[][];
+    if (rows.length < 2) continue;
+
+    const headers = (rows[0] || []).map((h: any) => String(h || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, ''));
+
+    const kwCol = headers.findIndex((h: string) => h.includes('keyword') || h.includes('mot_cle') || h === 'terme');
+    if (kwCol < 0) continue;
+
+    const findCol = (names: string[]) => headers.findIndex((h: string) => names.some(n => h.includes(n)));
+    const clicksCol = findCol(['click', 'clics']);
+    const impressionsCol = findCol(['impression']);
+    const ctrCol = findCol(['ctr']);
+    const cpcCol = findCol(['cpc', 'cout_par_clic']);
+    const conversionsCol = findCol(['conversion']);
+    const costCol = findCol(['cout', 'cost', 'depense']);
+    const revenueCol = findCol(['revenue', 'revenu', 'ca']);
+    const roasCol = findCol(['roas']);
+    const posCol = findCol(['position', 'rang']);
+    const weekCol = findCol(['week', 'semaine']);
+
+    for (let r = 1; r < rows.length; r++) {
+      const row = rows[r];
+      if (!row || !row[kwCol]) continue;
+      const keyword = String(row[kwCol]).trim();
+      if (!keyword) continue;
+
+      keywordRecords.push({
+        keyword,
+        clicks: clicksCol >= 0 ? parseOptionalNumber(row[clicksCol]) : null,
+        impressions: impressionsCol >= 0 ? parseOptionalNumber(row[impressionsCol]) : null,
+        ctr: ctrCol >= 0 ? parseOptionalNumber(row[ctrCol]) : null,
+        cpc: cpcCol >= 0 ? parseOptionalNumber(row[cpcCol]) : null,
+        conversions: conversionsCol >= 0 ? parseOptionalNumber(row[conversionsCol]) : null,
+        cost: costCol >= 0 ? parseOptionalNumber(row[costCol]) : null,
+        revenue: revenueCol >= 0 ? parseOptionalNumber(row[revenueCol]) : null,
+        roas: roasCol >= 0 ? parseOptionalNumber(row[roasCol]) : null,
+        position_avg: posCol >= 0 ? parseOptionalNumber(row[posCol]) : null,
+        week: weekCol >= 0 && row[weekCol] ? String(row[weekCol]).trim() : null,
+      });
+    }
+  }
+
+  if (keywordRecords.length > 0) {
+    await supabase.from('lagostina_top_keywords').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    for (let i = 0; i < keywordRecords.length; i += 500) {
+      const batch = keywordRecords.slice(i, i + 500);
+      const { error } = await supabase.from('lagostina_top_keywords' as any).insert(batch as any);
+      if (error) throw error;
+    }
+  }
+
+  return final.length + keywordRecords.length;
 }
 
 // ── CONSUMER PARSER ──
