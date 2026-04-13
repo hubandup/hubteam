@@ -618,10 +618,16 @@ const KDRIVE_FILE_TYPE_MAP: Record<string, string> = {
   'budget': 'budget',
   'influence': 'influence_rp',
   'revue_presse': 'influence_rp',
+  'revue de presse': 'influence_rp',
+  'presse': 'influence_rp',
+  'mediatisation': 'media',
+  'médiatisation': 'media',
+  'media': 'media',
   'sma': 'media',
   'sea': 'media',
   'consumer': 'consumer',
   'contenus': 'contenus',
+  'contenu': 'contenus',
 };
 
 function detectFileType(filename: string): string | null {
