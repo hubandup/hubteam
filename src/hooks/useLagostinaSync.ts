@@ -88,8 +88,10 @@ export function useLagostinaSync() {
             continue;
           }
 
-          const downloadUrl = `${supabaseUrl}/functions/v1/kdrive-api?action=download&driveId=${fileDriveId}&fileId=${fileId}`;
+          const cacheBust = Date.now();
+          const downloadUrl = `${supabaseUrl}/functions/v1/kdrive-api?action=download&driveId=${fileDriveId}&fileId=${fileId}&t=${cacheBust}`;
           const downloadResponse = await fetch(downloadUrl, {
+            cache: 'no-store',
             headers: { 'Authorization': `Bearer ${session.access_token}` },
           });
 
