@@ -20,7 +20,7 @@ const CHANNEL_MAP: Record<SubTab, string> = { SEA: 'sea', META: 'sma', TikTok: '
 
 // Map DB kpi_names to display keys
 const SEA_KPIS = ['roas', 'cpc_moyen', 'ctr', 'impressions', 'conversions', 'budget_ratio'];
-const SMA_KPIS = ['reach_(3s_views)', 'complétion_vidéo', 'traffic_qualifié_(visites_site)', 'cpm_reach_attentif', 'cpvisite', 'cpc', 'conversion_rate', 'roas'];
+const SMA_KPIS = ['reach_3s_views', 'completion_video', 'traffic_qualifie_visites_site', 'cpm_reach_attentif', 'cpvisite', 'cpc', 'conversion_rate', 'roas'];
 const TIKTOK_KPIS = ['reach', 'completion', 'engagement_rate', 'cpv', 'cpc', 'roas'];
 
 const KPI_LABELS: Record<string, string> = {
