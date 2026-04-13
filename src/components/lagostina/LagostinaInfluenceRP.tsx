@@ -138,7 +138,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
     ];
   }, [latest, influenceData]);
 
-  // Tonality pie chart data
+  // Tonality pie chart data (count)
   const tonalityPieData = useMemo(() => {
     if (!pressData?.length) return [];
     const counts: Record<string, number> = { positive: 0, neutral: 0, negative: 0 };
@@ -148,6 +148,23 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
       else counts.neutral++;
     });
     return Object.entries(counts)
+      .filter(([, v]) => v > 0)
+      .map(([key, value]) => ({
+        name: TONALITY_STYLES[key]?.label || key,
+        value,
+        color: TONALITY_COLORS[key] || '#9ca3af',
+      }));
+  }, [pressData]);
+
+  // Tonality pie chart data (reach)
+  const tonalityReachPieData = useMemo(() => {
+    if (!pressData?.length) return [];
+    const reachSums: Record<string, number> = { positive: 0, neutral: 0, negative: 0 };
+    pressData.forEach((p) => {
+      const tonality = normalizeTonalityKey(p.tonality);
+      reachSums[tonality] = (reachSums[tonality] || 0) + (p.estimated_reach || 0);
+    });
+    return Object.entries(reachSums)
       .filter(([, v]) => v > 0)
       .map(([key, value]) => ({
         name: TONALITY_STYLES[key]?.label || key,
@@ -223,43 +240,54 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
         <div className="space-y-6">
           {/* Tonality pie chart + counters */}
           <div className="flex flex-col md:flex-row gap-6">
-            {/* Pie chart */}
-            <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-5 flex flex-col items-center w-full md:w-72 shrink-0">
-              <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-3">Répartition tonalité</p>
-              <div className="w-48 h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={tonalityPieData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      innerRadius={40}
-                      strokeWidth={2}
-                      stroke="var(--background)"
-                    >
-                      {tonalityPieData.map((entry, idx) => (
-                        <Cell key={idx} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value: number, name: string) => [`${value} retombées`, name]}
-                      contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 13, fontFamily: 'Roboto' }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+            {/* Pie charts side by side */}
+            <div className="flex flex-col sm:flex-row gap-4 shrink-0">
+              {/* Pie chart - count */}
+              <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-5 flex flex-col items-center w-full sm:w-60">
+                <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-3">Retombées par tonalité</p>
+                <div className="w-40 h-40">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={tonalityPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={35} strokeWidth={2} stroke="var(--background)">
+                        {tonalityPieData.map((entry, idx) => <Cell key={idx} fill={entry.color} />)}
+                      </Pie>
+                      <Tooltip formatter={(value: number, name: string) => [`${value} retombées`, name]} contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 13, fontFamily: 'Roboto' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-wrap gap-3 mt-2 justify-center">
+                  {tonalityPieData.map((entry) => (
+                    <div key={entry.name} className="flex items-center gap-1.5 text-xs font-['Roboto']">
+                      <span className="w-2.5 h-2.5 inline-block" style={{ backgroundColor: entry.color }} />
+                      <span className="text-foreground">{entry.name}</span>
+                      <span className="text-muted-foreground">({entry.value})</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              {/* Legend */}
-              <div className="flex flex-wrap gap-3 mt-2 justify-center">
-                {tonalityPieData.map((entry) => (
-                  <div key={entry.name} className="flex items-center gap-1.5 text-xs font-['Roboto']">
-                    <span className="w-2.5 h-2.5 inline-block" style={{ backgroundColor: entry.color }} />
-                    <span className="text-foreground">{entry.name}</span>
-                    <span className="text-muted-foreground">({entry.value})</span>
-                  </div>
-                ))}
+
+              {/* Pie chart - reach */}
+              <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-5 flex flex-col items-center w-full sm:w-60">
+                <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-3">Reach par tonalité</p>
+                <div className="w-40 h-40">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={tonalityReachPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={35} strokeWidth={2} stroke="var(--background)">
+                        {tonalityReachPieData.map((entry, idx) => <Cell key={idx} fill={entry.color} />)}
+                      </Pie>
+                      <Tooltip formatter={(value: number, name: string) => [`${value >= 1000000 ? `${(value / 1000000).toFixed(1)}M` : value >= 1000 ? `${(value / 1000).toFixed(0)}K` : value}`, name]} contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 13, fontFamily: 'Roboto' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-wrap gap-3 mt-2 justify-center">
+                  {tonalityReachPieData.map((entry) => (
+                    <div key={entry.name} className="flex items-center gap-1.5 text-xs font-['Roboto']">
+                      <span className="w-2.5 h-2.5 inline-block" style={{ backgroundColor: entry.color }} />
+                      <span className="text-foreground">{entry.name}</span>
+                      <span className="text-muted-foreground">({entry.value >= 1000000 ? `${(entry.value / 1000000).toFixed(1)}M` : entry.value >= 1000 ? `${(entry.value / 1000).toFixed(0)}K` : entry.value})</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
