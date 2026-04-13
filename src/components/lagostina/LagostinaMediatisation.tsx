@@ -6,6 +6,7 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
 import { LagostinaSubTabs } from './LagostinaSubTabs';
+import { NoteableCell, useCellNotes } from './CellNotePopover';
 
 // Theme-aware chart accent: dark=#E8FF4C, light=#0f1422
 function getChartAccent(): string {
@@ -244,6 +245,8 @@ function FunnelStep({ label, value, color, ratio, widthPercent }: { label: strin
 
 function SMATab({ rows }: { rows: any[] }) {
   const kpis = buildKpiData(rows, SMA_KPIS);
+  const { data: cellNotesData } = useCellNotes();
+  const notesMap = cellNotesData as Map<string, any> | undefined;
   const reach = kpis.find((k) => k.kpi_name === 'reach_3s_views')?.latestActual;
   const traffic = kpis.find((k) => k.kpi_name === 'traffic_qualifie_visites_site')?.latestActual;
   const conversions = kpis.find((k) => k.kpi_name === 'conversion_rate')?.latestActual;
@@ -267,26 +270,39 @@ function SMATab({ rows }: { rows: any[] }) {
       {kpis[0]?.weeks.length > 1 && (
         <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4 overflow-x-auto">
           <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Détail par semaine</h3>
-          <table className="w-full text-[13px] font-['Roboto']">
-            <thead>
-              <tr className="border-b border-border/40">
-                <th className="text-left py-2 px-2 text-muted-foreground">KPI</th>
-                <th className="text-left py-2 px-2 text-muted-foreground">Type</th>
+          <table className="w-full text-[12px] font-['Roboto'] border-collapse">
+            <thead className="sticky top-0 bg-white dark:bg-[#0f1422] z-10">
+              <tr>
+                <th className="text-left py-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 border-b border-border/40">KPI</th>
                 {kpis[0].weeks.map((w) => (
-                  <th key={w.week} className="text-center py-2 px-1 text-muted-foreground">{w.week}</th>
+                  <th key={w.week} className="text-center py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 border-b border-border/40 min-w-[80px]">{w.week}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {kpis.map((k) => (
-                <tr key={k.kpi_name} className="border-b border-border/20">
-                  <td className="py-2 px-2 text-foreground" rowSpan={1}>{KPI_LABELS[k.kpi_name] || k.kpi_name}</td>
-                  <td className="py-2 px-2 text-muted-foreground">Act.</td>
-                  {k.weeks.map((w) => (
-                    <td key={w.week} className="py-2 px-1 text-center text-foreground">{formatVal(w.actual, k.kpi_name)}</td>
-                  ))}
-                </tr>
-              ))}
+              {kpis.map((k, idx) => {
+                const obj = k.weeks[k.weeks.length - 1]?.objective;
+                return (
+                  <tr key={k.kpi_name} className={`border-b border-border/20 transition-colors hover:bg-muted/40 ${idx % 2 === 0 ? '' : 'bg-muted/10'}`}>
+                    <td className="py-2.5 px-3 text-foreground font-medium whitespace-nowrap">{KPI_LABELS[k.kpi_name] || k.kpi_name}</td>
+                    {k.weeks.map((w) => (
+                      <NoteableCell
+                        key={w.week}
+                        levier="sma"
+                        kpiName={k.kpi_name}
+                        week={w.week}
+                        notesMap={notesMap}
+                        levierColor="#38bdf8"
+                        className="py-2.5 px-2 text-center text-foreground tabular-nums"
+                      >
+                        <span className={w.actual != null && obj != null ? (w.actual >= obj ? 'text-[#22c55e]' : w.actual >= obj * 0.8 ? '' : 'text-[#ef4444]') : ''}>
+                          {formatVal(w.actual, k.kpi_name)}
+                        </span>
+                      </NoteableCell>
+                    ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
