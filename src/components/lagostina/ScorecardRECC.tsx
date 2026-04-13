@@ -27,6 +27,11 @@ type Scorecard = {
 };
 
 // ── FRAMEWORK RECC STRUCTURE ──
+const HIDDEN_LEVIERS = ['crm', 'promo_shopper', 'digital_(display_+_vol)'];
+
+const isHiddenLevier = (levier: string) =>
+  HIDDEN_LEVIERS.some((h) => levier.toLowerCase().replace(/[^a-z0-9_]/g, '') === h.replace(/[^a-z0-9_]/g, '') || levier.toLowerCase().includes(h.replace(/[^a-z0-9_]/g, '')));
+
 const SYNTHESE_STRUCTURE = [
   {
     levier: 'media',
@@ -56,16 +61,6 @@ const SYNTHESE_STRUCTURE = [
       { recc: 'Engagement', name: 'Engagement' },
       { recc: 'Rétention', name: 'Evol followers TikTok' },
       { recc: 'Rétention', name: 'Evol followers Instagram' },
-    ],
-  },
-  {
-    levier: 'crm',
-    label: 'CRM',
-    kpis: [
-      { recc: 'Engagement', name: 'Open rate' },
-      { recc: 'Engagement', name: 'CTR' },
-      { recc: 'Engagement', name: 'CTOR' },
-      { recc: 'Rétention', name: 'Unsub rate' },
     ],
   },
   {
@@ -308,7 +303,7 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
 
   const budgetByLevier = useMemo(() => {
     if (!scorecards?.length) return [];
-    const leviers = [...new Set(scorecards.map((s) => s.levier))];
+    const leviers = [...new Set(scorecards.map((s) => s.levier))].filter((l) => !isHiddenLevier(l));
     return leviers.map((l) => ({
       levier: l,
       total: scorecards.filter((s) => s.levier === l).reduce((sum, s) => sum + (Number(s.actual) || 0), 0),
