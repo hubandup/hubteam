@@ -248,21 +248,37 @@ async function parseBudgetFile(workbook: XLSX.WorkBook) {
   const records: Array<{ levier: string; month: string; planned: number; engaged: number; invoiced: number; remaining: number }> = [];
   const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
 
+  console.log('[Budget] SheetNames:', workbook.SheetNames);
   for (const sheetName of workbook.SheetNames) {
     const sheet = workbook.Sheets[sheetName];
     if (!sheet) continue;
     const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { header: 1 }) as any[][];
     if (!rows.length) continue;
 
-    // Find month header row
+    console.log(`[Budget] Sheet "${sheetName}" has ${rows.length} rows`);
+    // Log the first 8 rows for debugging
+    for (let r = 0; r < Math.min(8, rows.length); r++) {
+      console.log(`[Budget] Row ${r}:`, JSON.stringify(rows[r]?.slice(0, 15)));
+    }
+
+    // Find month header row - search more rows and also match full month names
+    const MONTH_FULL = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
     let monthRow = -1;
     let monthCols: Record<number, string> = {};
-    for (let r = 0; r < Math.min(5, rows.length); r++) {
+    for (let r = 0; r < Math.min(15, rows.length); r++) {
       const row = rows[r];
       if (!row) continue;
       for (let c = 0; c < row.length; c++) {
         const val = String(row[c] || '').trim();
-        const matchedMonth = MONTHS.find((m) => val.toLowerCase().startsWith(m.toLowerCase().slice(0, 3)));
+        if (!val) continue;
+        const valLower = val.toLowerCase();
+        // Match abbreviated months (Jan, Fév, etc.)
+        let matchedMonth = MONTHS.find((m) => valLower.startsWith(m.toLowerCase().slice(0, 3)));
+        // Also match full French month names
+        if (!matchedMonth) {
+          const fullIdx = MONTH_FULL.findIndex((m) => valLower.startsWith(m));
+          if (fullIdx >= 0) matchedMonth = MONTHS[fullIdx];
+        }
         if (matchedMonth) {
           monthCols[c] = matchedMonth;
           monthRow = r;
@@ -271,6 +287,7 @@ async function parseBudgetFile(workbook: XLSX.WorkBook) {
       if (monthRow >= 0) break;
     }
 
+    console.log(`[Budget] monthRow=${monthRow}, monthCols=`, JSON.stringify(monthCols));
     if (monthRow < 0) continue;
 
     let currentLevier = '';
