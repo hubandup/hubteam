@@ -27,77 +27,33 @@ type Scorecard = {
 };
 
 // ── FRAMEWORK RECC STRUCTURE ──
-const HIDDEN_LEVIERS = ['crm', 'promo_shopper', 'digital_(display_+_vol)'];
+const HIDDEN_LEVIERS = ['crm', 'promo_shopper', 'digital_(display_+_vol)', 'event_(optional)'];
 
 const isHiddenLevier = (levier: string) =>
-  HIDDEN_LEVIERS.some((h) => levier.toLowerCase().replace(/[^a-z0-9_]/g, '') === h.replace(/[^a-z0-9_]/g, '') || levier.toLowerCase().includes(h.replace(/[^a-z0-9_]/g, '')));
+  HIDDEN_LEVIERS.some((h) => {
+    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return norm(levier) === norm(h) || norm(levier).includes(norm(h));
+  });
 
-const SYNTHESE_STRUCTURE = [
-  {
-    levier: 'media',
-    label: 'Media',
-    kpis: [
-      { recc: 'Reach', name: 'Potentiel en Millions' },
-      { recc: 'Engagement', name: 'Visites D2C' },
-      { recc: 'Conversion', name: 'ROAS' },
-      { recc: 'Coûts', name: 'Coût complétion vidéo' },
-      { recc: 'Coûts', name: 'CPV' },
-    ],
-  },
-  {
-    levier: 'influence',
-    label: 'Influence',
-    kpis: [
-      { recc: 'Reach', name: 'Reach' },
-      { recc: 'Engagement', name: 'Engagement' },
-      { recc: 'Conversion', name: 'Conversion' },
-      { recc: 'Coûts', name: 'Coûts' },
-    ],
-  },
-  {
-    levier: 'social_media',
-    label: 'Social Media',
-    kpis: [
-      { recc: 'Engagement', name: 'Engagement' },
-      { recc: 'Rétention', name: 'Evol followers TikTok' },
-      { recc: 'Rétention', name: 'Evol followers Instagram' },
-    ],
-  },
-  {
-    levier: 'seo',
-    label: 'SEO',
-    kpis: [
-      { recc: 'Reach', name: 'Sessions' },
-      { recc: 'Reach', name: 'Impressions' },
-      { recc: 'Engagement', name: 'Clics' },
-      { recc: 'Engagement', name: 'CTR' },
-      { recc: 'Engagement', name: 'Position moyenne' },
-    ],
-  },
-];
+// Labels for known leviers
+const LEVIER_LABELS: Record<string, string> = {
+  media: 'Media',
+  influence: 'Influence',
+  social_media: 'Social Media',
+  seo: 'SEO',
+  crm: 'CRM',
+  promo_shopper: 'Promo Shopper',
+  'event_(optional)': 'Event',
+  'media_(affiliation)': 'Media Affiliation',
+  'media_(one_video_+_social)': 'Media One Video + Social',
+  'media_(sea)': 'Media SEA',
+  'media_(social_-_plateforme)': 'Media Social Plateforme',
+  'media_(vol)': 'Media VOL',
+};
 
-const PAR_LEVIER_STRUCTURE = [
-  { levier: 'media_one_video_social', label: 'Media One Video + Social' },
-  { levier: 'media_vol', label: 'Media VOL' },
-  { levier: 'media_social', label: 'Media Social' },
-  { levier: 'media_sea', label: 'Media SEA' },
-  { levier: 'media_affiliation', label: 'Media Affiliation' },
-];
-
-const FULL_DETAIL_SECTIONS = [
-  {
-    section: 'Awareness',
-    kpis: ['Reach', 'Evol w/w Reach', 'Complétion vidéo 100%', 'c/Reach point'],
-  },
-  {
-    section: 'Considération',
-    kpis: ['DPV AMZ', 'Trafic D2C', 'Evol w/w D2C', 'CTR', 'CPV'],
-  },
-  {
-    section: 'Purchase',
-    kpis: ['Ventes K€', 'Evol w/w Ventes', 'CVR', 'ROAS', 'CPA'],
-  },
-];
+function getLevierLabel(levier: string): string {
+  return LEVIER_LABELS[levier] || levier.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 const LEVIER_COLORS: Record<string, string> = {
   media: '#6366f1',
