@@ -124,24 +124,7 @@ export default function LagostinaAdmin() {
         .eq('id', syncRecord.id);
 
       toast.success(`${insertedCount} enregistrements importés depuis ${file.name}`);
-      queryClient.invalidateQueries({ queryKey: ['lagostina-files'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-scorecards'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-budget'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-category-status'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-last-sync'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-personas'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-activation'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-influence'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-press'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-media-kpis'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-consumer'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-rnr'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-contenus'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-social-mix'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-content-learnings'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-learnings'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-glossary'] });
-      queryClient.invalidateQueries({ queryKey: ['lagostina-priorities'] });
+      invalidateAll();
     } catch (err: any) {
       console.error('Upload error:', err);
       toast.error(`Erreur : ${err.message || 'Impossible de traiter le fichier'}`);
