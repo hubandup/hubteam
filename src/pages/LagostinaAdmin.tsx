@@ -436,7 +436,28 @@ async function parseInfluenceRPFile(workbook: XLSX.WorkBook) {
 // ── MEDIA PARSER ──
 async function parseMediaFile(workbook: XLSX.WorkBook) {
   const records: Array<{ channel: string; kpi_name: string; week: string; actual: number | null; objective: number | null; budget_spent: number | null; budget_allocated: number | null }> = [];
-  const channelMap: Record<string, string> = { sea: 'sea', sma: 'sma', tiktok: 'tiktok', display: 'display', vol: 'vol', social: 'social', affiliation: 'affiliation' };
+  const channelMap: Record<string, string> = { sea: 'sea', sma: 'sma', meta: 'sma', tiktok: 'tiktok', display: 'display', vol: 'vol', social: 'social', affiliation: 'affiliation' };
+  const normalizeValue = (value: unknown) => String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  const normalizeChannel = (value: unknown) => {
+    const normalized = normalizeValue(value);
+    if (!normalized) return '';
+    if (normalized.includes('meta') || normalized.includes('sma')) return 'sma';
+    if (normalized.includes('tiktok')) return 'tiktok';
+    if (normalized.includes('sea')) return 'sea';
+    if (normalized.includes('display')) return 'display';
+    if (normalized.includes('vol')) return 'vol';
+    if (normalized.includes('social')) return 'social';
+    if (normalized.includes('affiliation')) return 'affiliation';
+    return channelMap[normalized] || normalized;
+  };
+  const parseOptionalNumber = (value: unknown) => {
+    if (value == null || value === '') return null;
+    if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+    const normalized = String(value).trim().replace(/\s+/g, '').replace(',', '.');
+    if (!normalized) return null;
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
 
   console.log('[Media] SheetNames:', workbook.SheetNames);
 
@@ -445,27 +466,63 @@ async function parseMediaFile(workbook: XLSX.WorkBook) {
     // Skip instruction sheets
     if (lowerSheet.includes('instruction') || lowerSheet.includes('readme')) continue;
     
-    let channel = Object.keys(channelMap).find((k) => lowerSheet.includes(k));
-    // If no channel found, use the sheet name itself as channel (for generic templates)
-    if (!channel) {
-      // Try to use the sheet as-is if it's not an instructions sheet
-      channel = lowerSheet.replace(/\s+/g, '_');
-    }
+    const inferredChannel = normalizeChannel(sheetName);
     
     const sheet = workbook.Sheets[sheetName];
     if (!sheet) continue;
     const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { header: 1 }) as any[][];
     if (rows.length < 2) continue;
 
-    console.log(`[Media] Sheet "${sheetName}" → channel="${channel}", ${rows.length} rows`);
+    console.log(`[Media] Sheet "${sheetName}" → channel="${inferredChannel}", ${rows.length} rows`);
     console.log(`[Media] Row 0:`, JSON.stringify(rows[0]?.slice(0, 15)));
     console.log(`[Media] Row 1:`, JSON.stringify(rows[1]?.slice(0, 15)));
 
+    const headers = (rows[0] || []).map(normalizeValue);
+    const channelCol = headers.findIndex((header) => header === 'channel' || header === 'canal');
+    const kpiCol = headers.findIndex((header) => ['kpi_name', 'kpi', 'metric', 'indicateur'].includes(header));
+    const weekCol = headers.findIndex((header) => header === 'week' || header === 'semaine');
+    const actualCol = headers.findIndex((header) => ['actual', 'realise', 'reel', 'valeur_actuelle'].includes(header));
+    const objectiveCol = headers.findIndex((header) => ['objective', 'objectif', 'target'].includes(header));
+    const budgetAllocatedCol = headers.findIndex((header) => ['budget_allocated', 'budget_alloue', 'budget_prevu'].includes(header));
+    const budgetSpentCol = headers.findIndex((header) => ['budget_spent', 'budget_depense', 'budget_engage'].includes(header));
+    const rowBasedFormat = weekCol >= 0 && kpiCol >= 0 && (actualCol >= 0 || objectiveCol >= 0 || budgetAllocatedCol >= 0 || budgetSpentCol >= 0);
+
+    if (rowBasedFormat) {
+      console.log('[Media] Detected row-based format');
+      for (let r = 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row) continue;
+
+        const week = String(row[weekCol] || '').trim().toUpperCase();
+        const kpiName = normalizeValue(row[kpiCol]);
+        const channel = normalizeChannel(channelCol >= 0 ? row[channelCol] : inferredChannel) || inferredChannel;
+
+        if (!week.match(/^S\d+$/i) || !kpiName || !channel) continue;
+
+        const actual = actualCol >= 0 ? parseOptionalNumber(row[actualCol]) : null;
+        const objective = objectiveCol >= 0 ? parseOptionalNumber(row[objectiveCol]) : null;
+        const budgetAllocated = budgetAllocatedCol >= 0 ? parseOptionalNumber(row[budgetAllocatedCol]) : null;
+        const budgetSpent = budgetSpentCol >= 0 ? parseOptionalNumber(row[budgetSpentCol]) : null;
+
+        if (actual == null && objective == null && budgetAllocated == null && budgetSpent == null) continue;
+
+        records.push({
+          channel,
+          kpi_name: kpiName,
+          week,
+          actual,
+          objective,
+          budget_allocated: budgetAllocated,
+          budget_spent: budgetSpent,
+        });
+      }
+      continue;
+    }
+
     // First row = headers, detect week columns (S1, S2, ...) or month columns
-    const headers = rows[0] || [];
     const weekCols: Record<number, string> = {};
-    for (let c = 0; c < headers.length; c++) {
-      const val = String(headers[c] || '').trim();
+    for (let c = 0; c < rows[0].length; c++) {
+      const val = String(rows[0][c] || '').trim();
       if (val.match(/^S\d+$/i)) weekCols[c] = val.toUpperCase();
     }
 
@@ -478,15 +535,15 @@ async function parseMediaFile(workbook: XLSX.WorkBook) {
     for (let r = 1; r < rows.length; r++) {
       const row = rows[r];
       if (!row || !row[0]) continue;
-      const kpiName = String(row[0]).trim().toLowerCase().replace(/\s+/g, '_');
+      const kpiName = normalizeValue(row[0]);
       const type = row[1] ? String(row[1]).trim().toLowerCase() : 'actual';
       const isActual = !type.includes('obj');
 
       for (const [colIdx, week] of Object.entries(weekCols)) {
-        const val = Number(row[Number(colIdx)]);
-        if (isNaN(val)) continue;
+        const val = parseOptionalNumber(row[Number(colIdx)]);
+        if (val == null) continue;
         records.push({
-          channel: channelMap[channel] || channel,
+          channel: inferredChannel,
           kpi_name: kpiName,
           week,
           actual: isActual ? val : null,
@@ -508,6 +565,8 @@ async function parseMediaFile(workbook: XLSX.WorkBook) {
     if (ex) {
       if (r.actual != null) ex.actual = r.actual;
       if (r.objective != null) ex.objective = r.objective;
+      if (r.budget_allocated != null) ex.budget_allocated = r.budget_allocated;
+      if (r.budget_spent != null) ex.budget_spent = r.budget_spent;
     } else {
       merged.set(key, { ...r });
     }
