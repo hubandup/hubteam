@@ -392,23 +392,20 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
                 </tr>
               </thead>
               <tbody>
-                {SYNTHESE_STRUCTURE.map((group) => (
-                  group.kpis.map((kpi, ki) => {
-                    const actualVals = weeks.map((w) => getVal(group.levier, kpi.name, w)?.actual ?? null);
-                    const objVals = weeks.map((w) => getVal(group.levier, kpi.name, w)?.objective ?? null);
+                {syntheseGroups.map((group) => (
+                  group.kpis.map((kpiName, ki) => {
+                    const actualVals = weeks.map((w) => getVal(group.levier, kpiName, w)?.actual ?? null);
+                    const objVals = weeks.map((w) => getVal(group.levier, kpiName, w)?.objective ?? null);
                     const sparkData = actualVals.filter((v): v is number => v != null);
 
-                    // Latest objective value (last non-null)
                     const latestObj = [...objVals].reverse().find((v) => v != null) ?? null;
-                    // Latest actual value
                     const latestActual = [...actualVals].reverse().find((v) => v != null) ?? null;
-                    // Latest actual index for status
                     const latestActualIdx = actualVals.lastIndexOf(latestActual);
                     const completion = getCompletion(latestActual, latestObj);
                     const status = getStatus(latestActual, latestObj, latestActualIdx >= 0 ? latestActualIdx : 0, weeks.length);
 
                     return (
-                      <tr key={`${group.levier}-${kpi.name}`} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
+                      <tr key={`${group.levier}-${kpiName}`} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
                         {ki === 0 && (
                           <td
                             rowSpan={group.kpis.length}
@@ -418,8 +415,7 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
                             {group.label}
                           </td>
                         )}
-                        <td className="px-2 py-1.5 text-muted-foreground text-xs">{kpi.recc}</td>
-                        <td className="px-2 py-1.5 text-foreground text-xs">{kpi.name}</td>
+                        <td className="px-2 py-1.5 text-foreground text-xs">{kpiName}</td>
                         <td className="px-2 py-1.5 text-center text-muted-foreground text-xs">
                           {formatNum(latestObj)}
                         </td>
@@ -430,7 +426,7 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
                           const obj = objVals[wi];
                           const color = getCondColor(val, obj);
                           return (
-                            <NoteableCell key={w} levier={group.levier} kpiName={kpi.name} week={w} notesMap={cellNotesMap} levierColor={LEVIER_COLORS[group.levier]} className={`px-1 py-1.5 text-center text-[13px] ${color}`}>
+                            <NoteableCell key={w} levier={group.levier} kpiName={kpiName} week={w} notesMap={cellNotesMap} levierColor={LEVIER_COLORS[group.levier]} className={`px-1 py-1.5 text-center text-[13px] ${color}`}>
                               {formatNum(val)}
                             </NoteableCell>
                           );
