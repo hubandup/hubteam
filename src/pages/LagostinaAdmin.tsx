@@ -436,23 +436,43 @@ async function parseInfluenceRPFile(workbook: XLSX.WorkBook) {
 // ── MEDIA PARSER ──
 async function parseMediaFile(workbook: XLSX.WorkBook) {
   const records: Array<{ channel: string; kpi_name: string; week: string; actual: number | null; objective: number | null; budget_spent: number | null; budget_allocated: number | null }> = [];
-  const channelMap: Record<string, string> = { sea: 'sea', sma: 'sma', tiktok: 'tiktok' };
+  const channelMap: Record<string, string> = { sea: 'sea', sma: 'sma', tiktok: 'tiktok', display: 'display', vol: 'vol', social: 'social', affiliation: 'affiliation' };
+
+  console.log('[Media] SheetNames:', workbook.SheetNames);
 
   for (const sheetName of workbook.SheetNames) {
     const lowerSheet = sheetName.toLowerCase();
-    const channel = Object.keys(channelMap).find((k) => lowerSheet.includes(k));
-    if (!channel) continue;
+    // Skip instruction sheets
+    if (lowerSheet.includes('instruction') || lowerSheet.includes('readme')) continue;
+    
+    let channel = Object.keys(channelMap).find((k) => lowerSheet.includes(k));
+    // If no channel found, use the sheet name itself as channel (for generic templates)
+    if (!channel) {
+      // Try to use the sheet as-is if it's not an instructions sheet
+      channel = lowerSheet.replace(/\s+/g, '_');
+    }
+    
     const sheet = workbook.Sheets[sheetName];
     if (!sheet) continue;
     const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { header: 1 }) as any[][];
     if (rows.length < 2) continue;
 
-    // First row = headers, detect week columns
+    console.log(`[Media] Sheet "${sheetName}" → channel="${channel}", ${rows.length} rows`);
+    console.log(`[Media] Row 0:`, JSON.stringify(rows[0]?.slice(0, 15)));
+    console.log(`[Media] Row 1:`, JSON.stringify(rows[1]?.slice(0, 15)));
+
+    // First row = headers, detect week columns (S1, S2, ...) or month columns
     const headers = rows[0] || [];
     const weekCols: Record<number, string> = {};
     for (let c = 0; c < headers.length; c++) {
       const val = String(headers[c] || '').trim();
       if (val.match(/^S\d+$/i)) weekCols[c] = val.toUpperCase();
+    }
+
+    console.log(`[Media] weekCols=`, JSON.stringify(weekCols));
+    if (Object.keys(weekCols).length === 0) {
+      console.log('[Media] No week columns found, skipping sheet');
+      continue;
     }
 
     for (let r = 1; r < rows.length; r++) {
@@ -466,7 +486,7 @@ async function parseMediaFile(workbook: XLSX.WorkBook) {
         const val = Number(row[Number(colIdx)]);
         if (isNaN(val)) continue;
         records.push({
-          channel: channelMap[channel],
+          channel: channelMap[channel] || channel,
           kpi_name: kpiName,
           week,
           actual: isActual ? val : null,
