@@ -280,6 +280,8 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
     return { syntheseGroups: synthese, parLevierGroups: parLevier, allLevierKpis: allLevKpis };
   }, [scorecards]);
 
+  const getVal = (levier: string, kpi: string, week: string) => lookup.get(`${levier}|${kpi}|${week}`);
+
   // Charts data
   const reachChartData = useMemo(() => {
     return weeks.map((w) => {
