@@ -243,8 +243,8 @@ function FunnelStep({ label, value, color, ratio }: { label: string; value: stri
 
 function SMATab({ rows }: { rows: any[] }) {
   const kpis = buildKpiData(rows, SMA_KPIS);
-  const reach = kpis.find((k) => k.kpi_name === 'reach_(3s_views)')?.latestActual;
-  const traffic = kpis.find((k) => k.kpi_name === 'traffic_qualifié_(visites_site)')?.latestActual;
+  const reach = kpis.find((k) => k.kpi_name === 'reach_3s_views')?.latestActual;
+  const traffic = kpis.find((k) => k.kpi_name === 'traffic_qualifie_visites_site')?.latestActual;
   const conversions = kpis.find((k) => k.kpi_name === 'conversion_rate')?.latestActual;
 
   const awarenessToConsid = reach && traffic ? `${((traffic / reach) * 100).toFixed(1)}%` : undefined;
@@ -258,8 +258,8 @@ function SMATab({ rows }: { rows: any[] }) {
       <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-6">
         <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Funnel SMA</h3>
         <div className="flex gap-2 items-end">
-          <FunnelStep label="Awareness" value={formatVal(reach, 'reach_(3s_views)')} color={getChartAccent()} ratio={awarenessToConsid} />
-          <FunnelStep label="Considération" value={formatVal(traffic, 'traffic_qualifié_(visites_site)')} color="#38bdf8" ratio={considToPurchase} />
+          <FunnelStep label="Awareness" value={formatVal(reach, 'reach_3s_views')} color={getChartAccent()} ratio={awarenessToConsid} />
+          <FunnelStep label="Considération" value={formatVal(traffic, 'traffic_qualifie_visites_site')} color="#38bdf8" ratio={considToPurchase} />
           <FunnelStep label="Purchase" value={conversions != null ? `${conversions.toFixed(1)}%` : '—'} color="#22c55e" />
         </div>
       </div>
