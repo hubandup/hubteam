@@ -243,7 +243,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
             {/* Pie charts side by side */}
             <div className="flex flex-col gap-4 shrink-0 w-full md:w-60">
               {/* Pie chart - count */}
-              <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-5 flex flex-col items-center w-full sm:w-60">
+              <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-5 flex flex-col items-center w-full">
                 <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-3">Retombées par tonalité</p>
                 <div className="w-40 h-40">
                   <ResponsiveContainer width="100%" height="100%">
@@ -267,7 +267,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
               </div>
 
               {/* Pie chart - reach */}
-              <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-5 flex flex-col items-center w-full sm:w-60">
+              <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-5 flex flex-col items-center w-full">
                 <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-3">Reach par tonalité</p>
                 <div className="w-40 h-40">
                   <ResponsiveContainer width="100%" height="100%">
