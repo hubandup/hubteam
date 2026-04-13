@@ -27,77 +27,33 @@ type Scorecard = {
 };
 
 // ── FRAMEWORK RECC STRUCTURE ──
-const HIDDEN_LEVIERS = ['crm', 'promo_shopper', 'digital_(display_+_vol)'];
+const HIDDEN_LEVIERS = ['crm', 'promo_shopper', 'digital_(display_+_vol)', 'event_(optional)'];
 
 const isHiddenLevier = (levier: string) =>
-  HIDDEN_LEVIERS.some((h) => levier.toLowerCase().replace(/[^a-z0-9_]/g, '') === h.replace(/[^a-z0-9_]/g, '') || levier.toLowerCase().includes(h.replace(/[^a-z0-9_]/g, '')));
+  HIDDEN_LEVIERS.some((h) => {
+    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return norm(levier) === norm(h) || norm(levier).includes(norm(h));
+  });
 
-const SYNTHESE_STRUCTURE = [
-  {
-    levier: 'media',
-    label: 'Media',
-    kpis: [
-      { recc: 'Reach', name: 'Potentiel en Millions' },
-      { recc: 'Engagement', name: 'Visites D2C' },
-      { recc: 'Conversion', name: 'ROAS' },
-      { recc: 'Coûts', name: 'Coût complétion vidéo' },
-      { recc: 'Coûts', name: 'CPV' },
-    ],
-  },
-  {
-    levier: 'influence',
-    label: 'Influence',
-    kpis: [
-      { recc: 'Reach', name: 'Reach' },
-      { recc: 'Engagement', name: 'Engagement' },
-      { recc: 'Conversion', name: 'Conversion' },
-      { recc: 'Coûts', name: 'Coûts' },
-    ],
-  },
-  {
-    levier: 'social_media',
-    label: 'Social Media',
-    kpis: [
-      { recc: 'Engagement', name: 'Engagement' },
-      { recc: 'Rétention', name: 'Evol followers TikTok' },
-      { recc: 'Rétention', name: 'Evol followers Instagram' },
-    ],
-  },
-  {
-    levier: 'seo',
-    label: 'SEO',
-    kpis: [
-      { recc: 'Reach', name: 'Sessions' },
-      { recc: 'Reach', name: 'Impressions' },
-      { recc: 'Engagement', name: 'Clics' },
-      { recc: 'Engagement', name: 'CTR' },
-      { recc: 'Engagement', name: 'Position moyenne' },
-    ],
-  },
-];
+// Labels for known leviers
+const LEVIER_LABELS: Record<string, string> = {
+  media: 'Media',
+  influence: 'Influence',
+  social_media: 'Social Media',
+  seo: 'SEO',
+  crm: 'CRM',
+  promo_shopper: 'Promo Shopper',
+  'event_(optional)': 'Event',
+  'media_(affiliation)': 'Media Affiliation',
+  'media_(one_video_+_social)': 'Media One Video + Social',
+  'media_(sea)': 'Media SEA',
+  'media_(social_-_plateforme)': 'Media Social Plateforme',
+  'media_(vol)': 'Media VOL',
+};
 
-const PAR_LEVIER_STRUCTURE = [
-  { levier: 'media_one_video_social', label: 'Media One Video + Social' },
-  { levier: 'media_vol', label: 'Media VOL' },
-  { levier: 'media_social', label: 'Media Social' },
-  { levier: 'media_sea', label: 'Media SEA' },
-  { levier: 'media_affiliation', label: 'Media Affiliation' },
-];
-
-const FULL_DETAIL_SECTIONS = [
-  {
-    section: 'Awareness',
-    kpis: ['Reach', 'Evol w/w Reach', 'Complétion vidéo 100%', 'c/Reach point'],
-  },
-  {
-    section: 'Considération',
-    kpis: ['DPV AMZ', 'Trafic D2C', 'Evol w/w D2C', 'CTR', 'CPV'],
-  },
-  {
-    section: 'Purchase',
-    kpis: ['Ventes K€', 'Evol w/w Ventes', 'CVR', 'ROAS', 'CPA'],
-  },
-];
+function getLevierLabel(levier: string): string {
+  return LEVIER_LABELS[levier] || levier.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 const LEVIER_COLORS: Record<string, string> = {
   media: '#6366f1',
@@ -285,6 +241,45 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
     return map;
   }, [scorecards]);
 
+  // ── Dynamic structures from actual data ──
+  const { syntheseGroups, parLevierGroups, allLevierKpis } = useMemo(() => {
+    if (!scorecards?.length) return { syntheseGroups: [], parLevierGroups: [], allLevierKpis: [] };
+
+    // Group by levier
+    const levierMap = new Map<string, Set<string>>();
+    scorecards.forEach((s) => {
+      if (!levierMap.has(s.levier)) levierMap.set(s.levier, new Set());
+      levierMap.get(s.levier)!.add(s.kpi_name);
+    });
+
+    // Synthèse: prio_1 leviers, excluding hidden
+    const prio1Leviers = [...new Set(scorecards.filter(s => s.priority === 'prio_1' && !isHiddenLevier(s.levier)).map(s => s.levier))];
+    const synthese = prio1Leviers.map((lev) => ({
+      levier: lev,
+      label: getLevierLabel(lev),
+      kpis: [...(levierMap.get(lev) || [])],
+    }));
+
+    // Par levier: prio_2 leviers (full funnel detail)
+    const prio2Leviers = [...new Set(scorecards.filter(s => s.priority !== 'prio_1').map(s => s.levier))];
+    const parLevier = prio2Leviers.map((lev) => ({
+      levier: lev,
+      label: getLevierLabel(lev),
+      kpis: [...(levierMap.get(lev) || [])],
+    }));
+
+    // All leviers with KPIs for full detail
+    const allLevKpis = [...levierMap.entries()]
+      .filter(([lev]) => !isHiddenLevier(lev))
+      .map(([lev, kpis]) => ({
+        levier: lev,
+        label: getLevierLabel(lev),
+        kpis: [...kpis],
+      }));
+
+    return { syntheseGroups: synthese, parLevierGroups: parLevier, allLevierKpis: allLevKpis };
+  }, [scorecards]);
+
   const getVal = (levier: string, kpi: string, week: string) => lookup.get(`${levier}|${kpi}|${week}`);
 
   // Charts data
@@ -362,7 +357,7 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
               <thead>
                 <tr className="border-b border-border/40">
                   <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10 min-w-[120px]">Levier</th>
-                  <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[60px]">RECC</th>
+                  
                   <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[140px]">KPI</th>
                   <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[70px]">Objectif</th>
                   {pastWeeks.length > 0 && (
@@ -386,7 +381,7 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
                   <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[80px]">Trend</th>
                 </tr>
                 <tr className="border-b border-border/20">
-                  <th colSpan={4} className="sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10" />
+                  <th colSpan={3} className="sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10" />
                   {pastWeeks.length > 0 && <th />}
                   {visibleWeeks.map((w) => (
                     <th key={w} className="text-center px-1 py-1 text-muted-foreground/60 text-xs">{w}</th>
@@ -397,23 +392,20 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
                 </tr>
               </thead>
               <tbody>
-                {SYNTHESE_STRUCTURE.map((group) => (
-                  group.kpis.map((kpi, ki) => {
-                    const actualVals = weeks.map((w) => getVal(group.levier, kpi.name, w)?.actual ?? null);
-                    const objVals = weeks.map((w) => getVal(group.levier, kpi.name, w)?.objective ?? null);
+                {syntheseGroups.map((group) => (
+                  group.kpis.map((kpiName, ki) => {
+                    const actualVals = weeks.map((w) => getVal(group.levier, kpiName, w)?.actual ?? null);
+                    const objVals = weeks.map((w) => getVal(group.levier, kpiName, w)?.objective ?? null);
                     const sparkData = actualVals.filter((v): v is number => v != null);
 
-                    // Latest objective value (last non-null)
                     const latestObj = [...objVals].reverse().find((v) => v != null) ?? null;
-                    // Latest actual value
                     const latestActual = [...actualVals].reverse().find((v) => v != null) ?? null;
-                    // Latest actual index for status
                     const latestActualIdx = actualVals.lastIndexOf(latestActual);
                     const completion = getCompletion(latestActual, latestObj);
                     const status = getStatus(latestActual, latestObj, latestActualIdx >= 0 ? latestActualIdx : 0, weeks.length);
 
                     return (
-                      <tr key={`${group.levier}-${kpi.name}`} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
+                      <tr key={`${group.levier}-${kpiName}`} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
                         {ki === 0 && (
                           <td
                             rowSpan={group.kpis.length}
@@ -423,8 +415,7 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
                             {group.label}
                           </td>
                         )}
-                        <td className="px-2 py-1.5 text-muted-foreground text-xs">{kpi.recc}</td>
-                        <td className="px-2 py-1.5 text-foreground text-xs">{kpi.name}</td>
+                        <td className="px-2 py-1.5 text-foreground text-xs">{kpiName}</td>
                         <td className="px-2 py-1.5 text-center text-muted-foreground text-xs">
                           {formatNum(latestObj)}
                         </td>
@@ -435,7 +426,7 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
                           const obj = objVals[wi];
                           const color = getCondColor(val, obj);
                           return (
-                            <NoteableCell key={w} levier={group.levier} kpiName={kpi.name} week={w} notesMap={cellNotesMap} levierColor={LEVIER_COLORS[group.levier]} className={`px-1 py-1.5 text-center text-[13px] ${color}`}>
+                            <NoteableCell key={w} levier={group.levier} kpiName={kpiName} week={w} notesMap={cellNotesMap} levierColor={LEVIER_COLORS[group.levier]} className={`px-1 py-1.5 text-center text-[13px] ${color}`}>
                               {formatNum(val)}
                             </NoteableCell>
                           );
@@ -534,12 +525,9 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
       {/* PAR LEVIER */}
       {tab === 'par_levier' && (
         <div className="space-y-6">
-          {PAR_LEVIER_STRUCTURE.map((block) => {
-            const matchingData = scorecards?.filter((s) =>
-              s.levier.toLowerCase().includes(block.levier.replace('media_', '').replace('_', ' ')) ||
-              s.levier === block.levier
-            ) || [];
-            const kpiNames = [...new Set(matchingData.map((s) => s.kpi_name))];
+          {parLevierGroups.map((block) => {
+            const matchingData = scorecards?.filter((s) => s.levier === block.levier) || [];
+            const kpiNames = block.kpis;
 
             return (
               <div key={block.levier} className="bg-white dark:bg-[#0f1422] border border-border/30">
@@ -627,17 +615,18 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
       {/* FULL DÉTAIL */}
       {tab === 'full_detail' && (
         <div className="space-y-6">
-          {FULL_DETAIL_SECTIONS.map((section) => (
-            <div key={section.section} className="bg-white dark:bg-[#0f1422] border border-border/30">
+          {allLevierKpis.map((group) => (
+            <div key={group.levier} className="bg-white dark:bg-[#0f1422] border border-border/30">
               <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2">
-                <div className="w-2 h-2 bg-black" />
-                <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">{section.section}</h3>
+                <div className="w-2 h-2" style={{ backgroundColor: LEVIER_COLORS[group.levier] || '#E8FF4C' }} />
+                <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">{group.label}</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm font-['Roboto']">
                   <thead>
                     <tr className="border-b border-border/20">
                       <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
+                      <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[70px]">Objectif</th>
                       {pastWeeks.length > 0 && (
                         <th className="text-center px-1 py-2">
                           <button
@@ -655,42 +644,40 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
                       {visibleMonthGroups.map((mg) => (
                         <th key={mg.month} className="text-center px-2 py-2 text-black dark:text-white font-semibold text-xs font-bold border-l border-border/40">{mg.month}</th>
                       ))}
+                      <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[80px]">Complétion</th>
+                      <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[80px]">Statut</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {section.kpis.map((kpiName) => {
-                      const matching = scorecards?.filter((s) =>
-                        s.kpi_name.toLowerCase().includes(kpiName.toLowerCase().replace('evol w/w ', ''))
-                      ) || [];
-                      
-                      const weeklyVals = weeks.map((w) => {
-                        const entry = matching.find((s) => s.week === w);
-                        return entry?.actual ?? null;
-                      });
+                    {group.kpis.map((kpiName) => {
+                      const data = scorecards?.filter((s) => s.levier === group.levier && s.kpi_name === kpiName) || [];
+                      const actualVals = weeks.map((w) => data.find((s) => s.week === w)?.actual ?? null);
+                      const objVals = weeks.map((w) => data.find((s) => s.week === w)?.objective ?? null);
 
-                      // Monthly aggregates
+                      const latestObj = [...objVals].reverse().find((v) => v != null) ?? null;
+                      const latestActual = [...actualVals].reverse().find((v) => v != null) ?? null;
+                      const latestActualIdx = actualVals.lastIndexOf(latestActual);
+                      const completion = getCompletion(latestActual, latestObj);
+                      const status = getStatus(latestActual, latestObj, latestActualIdx >= 0 ? latestActualIdx : 0, weeks.length);
+
                       const monthlyVals = visibleMonthGroups.map((mg) => {
-                        const monthEntries = matching.filter((s) => mg.weeks.includes(s.week) && s.actual != null);
+                        const monthEntries = data.filter((s) => mg.weeks.includes(s.week) && s.actual != null);
                         if (!monthEntries.length) return null;
                         return monthEntries.reduce((sum, e) => sum + Number(e.actual), 0) / monthEntries.length;
                       });
 
-                      const isEvol = kpiName.toLowerCase().includes('evol');
-
                       return (
                         <tr key={kpiName} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
                           <td className="px-3 py-1.5 text-foreground">{kpiName}</td>
+                          <td className="px-2 py-1.5 text-center text-muted-foreground text-xs">{formatNum(latestObj)}</td>
                           {pastWeeks.length > 0 && <td />}
                           {visibleWeeks.map((w) => {
-                            const i = weeks.indexOf(w);
-                            const v = weeklyVals[i];
-                            let cls = '';
-                            if (isEvol && v != null) {
-                              cls = v >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]';
-                            }
+                            const wi = weeks.indexOf(w);
+                            const val = actualVals[wi];
+                            const obj = objVals[wi];
                             return (
-                              <NoteableCell key={w} levier={`detail_${section.section}`} kpiName={kpiName} week={w} notesMap={cellNotesMap} levierColor={LEVIER_COLORS[section.section]} className={`px-1 py-1.5 text-center text-[13px] ${cls || 'text-foreground'}`}>
-                                {v != null ? (isEvol ? `${v >= 0 ? '↑' : '↓'}${Math.abs(v).toFixed(1)}%` : formatNum(v)) : '—'}
+                              <NoteableCell key={w} levier={group.levier} kpiName={kpiName} week={w} notesMap={cellNotesMap} levierColor={LEVIER_COLORS[group.levier]} className={`px-1 py-1.5 text-center text-[13px] ${getCondColor(val, obj)}`}>
+                                {formatNum(val)}
                               </NoteableCell>
                             );
                           })}
@@ -699,6 +686,14 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
                               {formatNum(v)}
                             </td>
                           ))}
+                          <td className="px-2 py-1.5 text-center text-xs font-medium">
+                            {completion != null ? `${completion.toFixed(0)}%` : '—'}
+                          </td>
+                          <td className="px-2 py-1.5 text-center">
+                            <span className={`inline-block px-2 py-0.5 text-[11px] font-medium ${status.color}`}>
+                              {status.label}
+                            </span>
+                          </td>
                         </tr>
                       );
                     })}
@@ -707,62 +702,6 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
               </div>
             </div>
           ))}
-
-          {/* Influence & Social Media sections */}
-          {['influence', 'social_media'].map((lev) => {
-            const data = scorecards?.filter((s) => s.levier === lev) || [];
-            const kpiNames = [...new Set(data.map((s) => s.kpi_name))];
-            if (!kpiNames.length) return null;
-            return (
-              <div key={lev} className="bg-white dark:bg-[#0f1422] border border-border/30">
-                <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2">
-                  <div className="w-2 h-2" style={{ backgroundColor: LEVIER_COLORS[lev] || '#E8FF4C' }} />
-                  <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">
-                    {lev === 'influence' ? 'Influence' : 'Social Media'}
-                  </h3>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm font-['Roboto']">
-                    <thead>
-                      <tr className="border-b border-border/20">
-                        <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
-                        {pastWeeks.length > 0 && (
-                          <th className="text-center px-1 py-2">
-                            <button
-                              onClick={() => setShowPastWeeks(!showPastWeeks)}
-                              className="inline-flex items-center justify-center w-6 h-6 bg-black text-white dark:bg-[#E8FF4C] dark:text-black transition-colors"
-                              title={showPastWeeks ? 'Masquer les mois précédents' : 'Mois précédents'}
-                            >
-                              {showPastWeeks ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
-                            </button>
-                          </th>
-                        )}
-                        {visibleWeeks.map((w) => (
-                          <th key={w} className="text-center px-1 py-2 text-muted-foreground/60 text-xs">{w}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {kpiNames.map((kn) => (
-                        <tr key={kn} className="border-b border-border/20">
-                          <td className="px-3 py-1.5 text-foreground">{kn}</td>
-                          {pastWeeks.length > 0 && <td />}
-                          {visibleWeeks.map((w) => {
-                            const entry = data.find((s) => s.kpi_name === kn && s.week === w);
-                            return (
-                              <NoteableCell key={w} levier={lev} kpiName={kn} week={w} notesMap={cellNotesMap} levierColor={LEVIER_COLORS[lev]} className="px-1 py-1.5 text-center text-[13px] text-foreground">
-                                {formatNum(entry?.actual ?? null)}
-                              </NoteableCell>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            );
-          })}
         </div>
       )}
         </>
