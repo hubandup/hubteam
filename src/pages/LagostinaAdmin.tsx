@@ -966,11 +966,12 @@ export default function LagostinaAdmin() {
           </div>
 
           <button
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-foreground border border-border/40 font-['Roboto'] text-sm hover:bg-gray-200 transition-colors"
-            onClick={() => toast.info('Synchronisation kDrive — fonctionnalité à venir')}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-foreground border border-border/40 font-['Roboto'] text-sm hover:bg-gray-200 transition-colors disabled:opacity-50"
+            onClick={syncFromKDrive}
+            disabled={syncing || uploading}
           >
-            <RefreshCw className="h-4 w-4" />
-            Synchroniser depuis kDrive
+            <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'Synchronisation en cours…' : 'Synchroniser depuis kDrive'}
           </button>
         </div>
 
