@@ -37,7 +37,7 @@ const KPI_LABELS: Record<string, string> = {
 };
 
 // KPIs where values are already in percentage (don't multiply by 100)
-const ALREADY_PERCENT_KPIS = ['ctr', 'engagement_rate', 'conversion_rate', 'completion', 'complétion_vidéo', 'taux_de_conversion'];
+const ALREADY_PERCENT_KPIS = ['ctr', 'engagement_rate', 'conversion_rate', 'completion', 'completion_video', 'complétion_vidéo', 'taux_de_conversion'];
 
 function getCondColor(actual: number | null, objective: number | null) {
   if (!actual || !objective) return '';
