@@ -25,10 +25,10 @@ const TIKTOK_KPIS = ['reach', 'completion', 'engagement_rate', 'cpv', 'cpc', 'ro
 
 const KPI_LABELS: Record<string, string> = {
   roas: 'ROAS', cpc_moyen: 'CPC', cpc: 'CPC', ctr: 'CTR', impressions: 'Impressions', conversions: 'Conversions',
-  budget_ratio: 'Budget dépensé / alloué', 'reach_(3s_views)': 'Reach 3s', reach: 'Reach 3s',
-  'complétion_vidéo': 'Complétion vidéo', completion: 'Complétion vidéo',
-  'traffic_qualifié_(visites_site)': 'Traffic qualifié', traffic: 'Traffic qualifié',
-  'cpm_reach_attentif': 'CPM', cpm: 'CPM', cpvisite: 'CPVisite', cpv: 'CPV',
+  budget_ratio: 'Budget dépensé / alloué', reach_3s_views: 'Reach 3s', 'reach_(3s_views)': 'Reach 3s', reach: 'Reach 3s',
+  completion_video: 'Complétion vidéo', 'complétion_vidéo': 'Complétion vidéo', completion: 'Complétion vidéo',
+  traffic_qualifie_visites_site: 'Traffic qualifié', 'traffic_qualifié_(visites_site)': 'Traffic qualifié', traffic: 'Traffic qualifié',
+  cpm_reach_attentif: 'CPM', cpm: 'CPM', cpvisite: 'CPVisite', cpv: 'CPV',
   conversion_rate: 'Taux conversion', engagement_rate: 'Engagement rate',
   followers_evol: 'Évol. followers', taux_de_conversion: 'Taux conversion',
   'coût_/_conversion': 'Coût / conversion', cout_conversion: 'Coût / conversion',
