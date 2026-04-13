@@ -381,7 +381,7 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
                   <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[80px]">Trend</th>
                 </tr>
                 <tr className="border-b border-border/20">
-                  <th colSpan={4} className="sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10" />
+                  <th colSpan={3} className="sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10" />
                   {pastWeeks.length > 0 && <th />}
                   {visibleWeeks.map((w) => (
                     <th key={w} className="text-center px-1 py-1 text-muted-foreground/60 text-xs">{w}</th>
