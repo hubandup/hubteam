@@ -47,7 +47,7 @@ function EmptyState({ section, role }: { section: string; role: string | null })
       <p className="text-black dark:text-white font-['Roboto'] text-sm">Données {section} non disponibles</p>
       <p className="text-[#9ca3af] font-['Roboto'] text-xs">En attente de synchronisation</p>
       {(role === 'admin' || role === 'team') ? (
-        <a href="/lagostina-admin" className="px-4 py-2 border border-black dark:border-[#E8FF4C] text-black dark:text-[#E8FF4C] font-['Roboto'] text-sm hover:bg-black hover:text-white dark:hover:bg-[#E8FF4C] dark:hover:text-black transition-colors">
+        <a href="/admin/lagostina" className="px-4 py-2 border border-black dark:border-[#E8FF4C] text-black dark:text-[#E8FF4C] font-['Roboto'] text-sm hover:bg-black hover:text-white dark:hover:bg-[#E8FF4C] dark:hover:text-black transition-colors">
           Synchroniser
         </a>
       ) : (
