@@ -635,6 +635,7 @@ function detectFileType(filename: string): string | null {
 export default function LagostinaAdmin() {
   const { role } = useUserRole();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedType, setSelectedType] = useState('scorecard');
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
