@@ -241,128 +241,80 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
 
               <ClientBudgetChart />
 
-              {/* 3 colonnes : Affiliation / Influence / Médiatisation */}
-              {(() => {
-                const formatVal = (n: number | null) => {
-                  if (n == null) return '—';
-                  if (Math.abs(n) >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-                  if (Math.abs(n) >= 1000) return `${(n / 1000).toFixed(1)}K`;
-                  if (n % 1 !== 0) return n.toFixed(2);
-                  return String(n);
-                };
+              {/* Détail par levier — basé sur Détail mensuel */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {leviers.filter(l => {
+                  const planned = MONTHS.reduce((s, m) => s + getMonthVal(l, m, 'planned'), 0);
+                  const engaged = MONTHS.reduce((s, m) => s + getMonthVal(l, m, 'engaged'), 0);
+                  return planned > 0 || engaged > 0;
+                }).map((levier, idx) => {
+                  const planned = MONTHS.reduce((s, m) => s + getMonthVal(levier, m, 'planned'), 0);
+                  const engaged = MONTHS.reduce((s, m) => s + getMonthVal(levier, m, 'engaged'), 0);
+                  const invoiced = MONTHS.reduce((s, m) => s + getMonthVal(levier, m, 'invoiced'), 0);
+                  const remaining = planned - engaged;
+                  const budgetPct = planned > 0 ? (engaged / planned) * 100 : 0;
+                  const color = getLevierColor(levier, idx);
 
-                const getLatestKpis = (levier: string) => {
-                  if (!scorecardData?.length) return [];
-                  const levierData = scorecardData.filter(s => s.levier === levier);
-                  const kpiNames = [...new Set(levierData.map(s => s.kpi_name))];
-                  return kpiNames.map(name => {
-                    const entries = levierData.filter(s => s.kpi_name === name).sort((a, b) => (b.week || '').localeCompare(a.week || ''));
-                    const latest = entries[0];
-                    return {
-                      name,
-                      actual: latest?.actual ?? null,
-                      objective: latest?.objective ?? null,
-                    };
-                  });
-                };
+                  // Monthly engaged for sparkline
+                  const monthlyEngaged = MONTHS.map(m => getMonthVal(levier, m, 'engaged'));
+                  const hasMonthlyData = monthlyEngaged.some(v => v > 0);
 
-                const getBudgetForLevier = (levierKey: string) => {
-                  if (!budgetData?.length) return { planned: 0, engaged: 0, invoiced: 0 };
-                  const rows = budgetData.filter(b => b.levier === levierKey);
-                  return {
-                    planned: rows.reduce((s, b) => s + (Number(b.planned) || 0), 0),
-                    engaged: rows.reduce((s, b) => s + (Number(b.engaged) || 0), 0),
-                    invoiced: rows.reduce((s, b) => s + (Number(b.invoiced) || 0), 0),
-                  };
-                };
+                  return (
+                    <div key={levier} className="bg-white dark:bg-[#0f1422] border border-border/30 p-5">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-2 h-6" style={{ backgroundColor: color }} />
+                        <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold capitalize">{levier.replace(/_/g, ' ')}</h3>
+                      </div>
 
-                const categories = [
-                  {
-                    title: 'Affiliation',
-                    icon: <TrendingUp className="h-4 w-4" />,
-                    levierBudget: 'affiliation',
-                    levierScorecard: 'media_affiliation',
-                    color: '#94a3b8',
-                  },
-                  {
-                    title: 'Influence',
-                    icon: <Users className="h-4 w-4" />,
-                    levierBudget: 'influence',
-                    levierScorecard: 'influence',
-                    color: '#a78bfa',
-                  },
-                  {
-                    title: 'Médiatisation',
-                    icon: <Megaphone className="h-4 w-4" />,
-                    levierBudget: 'media',
-                    levierScorecard: 'media_one_video_social',
-                    color: '#6366f1',
-                  },
-                ];
-
-                return (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {categories.map(cat => {
-                      const budget = getBudgetForLevier(cat.levierBudget);
-                      const kpis = getLatestKpis(cat.levierScorecard);
-                      const budgetPct = budget.planned > 0 ? (budget.engaged / budget.planned) * 100 : 0;
-
-                      return (
-                        <div key={cat.title} className="bg-white dark:bg-[#0f1422] border border-border/30 p-5">
-                          <div className="flex items-center gap-2 mb-4">
-                            <div className="p-1.5 rounded" style={{ backgroundColor: `${cat.color}20`, color: cat.color }}>
-                              {cat.icon}
-                            </div>
-                            <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">{cat.title}</h3>
-                          </div>
-
-                          {/* Budget summary */}
-                          <div className="space-y-2 mb-4">
-                            <div className="flex justify-between text-xs font-['Roboto']">
-                              <span className="text-muted-foreground">Budget engagé</span>
-                              <span className="text-foreground font-medium">
-                                €{budget.engaged >= 1000 ? `${(budget.engaged / 1000).toFixed(0)}K` : budget.engaged}
-                                <span className="text-muted-foreground font-normal"> / €{budget.planned >= 1000 ? `${(budget.planned / 1000).toFixed(0)}K` : budget.planned}</span>
-                              </span>
-                            </div>
-                            <div className="w-full h-1.5 bg-gray-200">
-                              <div className="h-full transition-all" style={{ width: `${Math.min(budgetPct, 100)}%`, backgroundColor: cat.color }} />
-                            </div>
-                            <div className="flex justify-between text-xs font-['Roboto']">
-                              <span className="text-muted-foreground">Facturé</span>
-                              <span className="text-foreground">€{budget.invoiced >= 1000 ? `${(budget.invoiced / 1000).toFixed(0)}K` : budget.invoiced}</span>
-                            </div>
-                          </div>
-
-                          {/* KPIs from scorecard */}
-                          {kpis.length > 0 && (
-                            <div className="border-t border-border/20 pt-3 space-y-2">
-                              <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">KPIs Scorecard</p>
-                              {kpis.map(kpi => {
-                                const completion = kpi.actual != null && kpi.objective != null && kpi.objective !== 0
-                                  ? (kpi.actual / kpi.objective) * 100 : null;
-                                return (
-                                  <div key={kpi.name} className="flex justify-between items-center text-xs font-['Roboto']">
-                                    <span className="text-muted-foreground truncate mr-2">{kpi.name}</span>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-foreground font-medium">{formatVal(kpi.actual)}</span>
-                                      {completion != null && (
-                                        <span className={`text-[10px] px-1.5 py-0.5 rounded-sm ${completion >= 100 ? 'bg-[#22c55e]/20 text-[#22c55e]' : completion >= 70 ? 'bg-[#fbbf24]/20 text-[#fbbf24]' : 'bg-[#ef4444]/20 text-[#ef4444]'}`}>
-                                          {completion.toFixed(0)}%
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
+                      {/* Budget KPIs */}
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div>
+                          <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">Prévu</p>
+                          <p className="text-foreground text-lg font-bold font-['Instrument_Sans']">
+                            {planned >= 1000 ? `€${(planned / 1000).toFixed(0)}K` : `€${planned}`}
+                          </p>
                         </div>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
+                        <div>
+                          <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">Engagé</p>
+                          <p className="text-foreground text-lg font-bold font-['Instrument_Sans']">
+                            {engaged >= 1000 ? `€${(engaged / 1000).toFixed(0)}K` : `€${engaged}`}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">Facturé</p>
+                          <p className="text-foreground text-sm font-medium font-['Instrument_Sans']">
+                            {invoiced >= 1000 ? `€${(invoiced / 1000).toFixed(0)}K` : `€${invoiced}`}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">Reste</p>
+                          <p className={`text-sm font-medium font-['Instrument_Sans'] ${remaining < 0 ? 'text-[#ef4444]' : 'text-foreground'}`}>
+                            {remaining >= 1000 ? `€${(remaining / 1000).toFixed(0)}K` : remaining <= -1000 ? `-€${(Math.abs(remaining) / 1000).toFixed(0)}K` : `€${remaining}`}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Progress bar */}
+                      <div className="w-full h-1.5 bg-gray-200 mb-2">
+                        <div className="h-full transition-all" style={{ width: `${Math.min(budgetPct, 100)}%`, backgroundColor: budgetPct > 100 ? '#ef4444' : color }} />
+                      </div>
+                      <p className="text-muted-foreground text-[10px] font-['Roboto'] text-right">{budgetPct.toFixed(0)}% consommé</p>
+
+                      {/* Mini monthly chart */}
+                      {hasMonthlyData && (
+                        <div className="mt-3 h-16">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={MONTHS.map((m, i) => ({ month: m, engaged: monthlyEngaged[i] }))} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
+                              <Area type="monotone" dataKey="engaged" stroke={color} strokeWidth={1.5} fill={color} fillOpacity={0.15} />
+                              <XAxis dataKey="month" tick={{ fontSize: 8, fill: '#9ca3af' }} interval={2} />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </>
           )}
 
