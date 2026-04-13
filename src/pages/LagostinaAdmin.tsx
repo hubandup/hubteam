@@ -7,6 +7,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Upload, FileSpreadsheet, RefreshCw, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import {
+  parseScorecardFile,
+  parseActivationFile,
+  insertActivationData,
+  mergeAndInsertScorecard,
+  parseBudgetFile,
+  parseInfluenceRPFile,
+  parseMediaFile,
+  parseConsumerFile,
+  parseContenusFile,
+  detectFileType,
+} from '@/lib/lagostina-parsers';
+import { useLagostinaSync } from '@/hooks/useLagostinaSync';
 
 const FILE_TYPES = [
   { value: 'scorecard', label: 'Scorecard' },
