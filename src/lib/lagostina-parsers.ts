@@ -388,9 +388,14 @@ export async function parseInfluenceRPFile(workbook: XLSX.WorkBook) {
         return Number.isFinite(parsed) ? Math.round(parsed) : null;
       };
 
+      console.log('[Press] Headers:', rows[0]);
       for (let r = 1; r < rows.length; r++) {
         const row = rows[r];
         if (!row || !row[0]) continue;
+        if (r <= 3) {
+          console.log(`[Press] Row ${r}:`, JSON.stringify(row));
+          console.log(`[Press] row[4]=${row[4]} (tonality), row[5]=${row[5]} (reach), typeof=${typeof row[5]}`);
+        }
 
         let dateVal: string;
         if (typeof row[0] === 'number') {
