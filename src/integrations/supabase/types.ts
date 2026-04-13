@@ -1759,6 +1759,54 @@ export type Database = {
         }
         Relationships: []
       }
+      lagostina_top_keywords: {
+        Row: {
+          clicks: number | null
+          conversions: number | null
+          cost: number | null
+          cpc: number | null
+          ctr: number | null
+          id: string
+          impressions: number | null
+          keyword: string
+          position_avg: number | null
+          revenue: number | null
+          roas: number | null
+          updated_at: string | null
+          week: string | null
+        }
+        Insert: {
+          clicks?: number | null
+          conversions?: number | null
+          cost?: number | null
+          cpc?: number | null
+          ctr?: number | null
+          id?: string
+          impressions?: number | null
+          keyword: string
+          position_avg?: number | null
+          revenue?: number | null
+          roas?: number | null
+          updated_at?: string | null
+          week?: string | null
+        }
+        Update: {
+          clicks?: number | null
+          conversions?: number | null
+          cost?: number | null
+          cpc?: number | null
+          ctr?: number | null
+          id?: string
+          impressions?: number | null
+          keyword?: string
+          position_avg?: number | null
+          revenue?: number | null
+          roas?: number | null
+          updated_at?: string | null
+          week?: string | null
+        }
+        Relationships: []
+      }
       linkedin_posts: {
         Row: {
           content: string
