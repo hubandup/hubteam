@@ -237,7 +237,7 @@ function FunnelStep({ label, value, color, ratio, widthPercent }: { label: strin
       <div className="w-full py-6 flex items-center justify-center rounded-sm" style={{ background: color }}>
         <span className={`text-lg font-bold font-['Instrument_Sans'] ${isDark ? 'text-white' : 'text-foreground'}`}>{value}</span>
       </div>
-      {ratio && <div className="text-muted-foreground text-xs font-['Roboto']">→ {ratio}</div>}
+      <div className="text-muted-foreground text-xs font-['Roboto'] h-4">{ratio ? `→ ${ratio}` : '\u00A0'}</div>
     </div>
   );
 }
