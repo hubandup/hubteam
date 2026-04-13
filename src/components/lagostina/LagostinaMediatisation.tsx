@@ -31,8 +31,9 @@ const KPI_LABELS: Record<string, string> = {
   'cpm_reach_attentif': 'CPM', cpm: 'CPM', cpvisite: 'CPVisite', cpv: 'CPV',
   conversion_rate: 'Taux conversion', engagement_rate: 'Engagement rate',
   followers_evol: 'Évol. followers', taux_de_conversion: 'Taux conversion',
-  'coût_/_conversion': 'Coût / conversion',
-  'budget_dépensé': 'Budget dépensé', 'budget_alloué': 'Budget alloué',
+  'coût_/_conversion': 'Coût / conversion', cout_conversion: 'Coût / conversion',
+  'budget_dépensé': 'Budget dépensé', budget_depense: 'Budget dépensé',
+  'budget_alloué': 'Budget alloué', budget_alloue: 'Budget alloué',
 };
 
 // KPIs where values are already in percentage (don't multiply by 100)
