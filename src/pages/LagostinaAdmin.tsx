@@ -227,7 +227,7 @@ export default function LagostinaAdmin() {
             <input
               id="file-input-lago"
               type="file"
-              accept=".xlsx,.xls"
+              accept={selectedType === 'meta_csv' ? '.csv' : '.xlsx,.xls'}
               onChange={handleFileInput}
               className="hidden"
             />
@@ -240,10 +240,10 @@ export default function LagostinaAdmin() {
               <div className="flex flex-col items-center gap-3">
                 <Upload className="h-8 w-8 text-muted-foreground" />
                 <p className="text-foreground font-['Roboto'] text-sm">
-                  Glissez un fichier .xlsx ici ou <span className="text-black font-semibold underline">parcourir</span>
+                  Glissez un fichier {selectedType === 'meta_csv' ? '.csv' : '.xlsx'} ici ou <span className="text-black font-semibold underline">parcourir</span>
                 </p>
                 <p className="text-muted-foreground font-['Roboto'] text-xs">
-                  Format attendu : fichier Excel Lagostina ({FILE_TYPES.find(f => f.value === selectedType)?.label})
+                  Format attendu : {selectedType === 'meta_csv' ? 'export CSV Meta Ads Manager' : `fichier Excel Lagostina (${FILE_TYPES.find(f => f.value === selectedType)?.label})`}
                 </p>
               </div>
             )}
