@@ -451,8 +451,14 @@ export async function parseMediaFile(workbook: XLSX.WorkBook) {
   const parseOptionalNumber = (value: unknown) => {
     if (value == null || value === '') return null;
     if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-    const normalized = String(value).trim().replace(/\s+/g, '').replace(',', '.');
-    if (!normalized) return null;
+    const normalized = String(value)
+      .trim()
+      .replace(/\s+/g, '')
+      .replace(/€/g, '')
+      .replace(/%/g, '')
+      .replace(/[^0-9,.-]/g, '')
+      .replace(',', '.');
+    if (!normalized || normalized === '-' || normalized === '.') return null;
     const parsed = Number(normalized);
     return Number.isFinite(parsed) ? parsed : null;
   };
