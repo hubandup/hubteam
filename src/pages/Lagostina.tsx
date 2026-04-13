@@ -19,11 +19,11 @@ const TABS = [
   { id: 'budget', label: 'Budget' },
 ] as const;
 
-const EXPORT_CONFIG: Record<string, { tabName: string; showPdf: boolean; chartsId?: string }> = {
-  scorecard: { tabName: 'Scorecard', showPdf: true, chartsId: 'lagostina-scorecard-charts' },
-  budget: { tabName: 'Budget', showPdf: true, chartsId: 'lagostina-budget-charts' },
-  influence: { tabName: 'Influence & RP', showPdf: false },
-  mediatisation: { tabName: 'Médiatisation', showPdf: false },
+const EXPORT_CONFIG: Record<string, { tabName: string; showPdf: boolean; chartsId: string }> = {
+  scorecard: { tabName: 'Scorecard', showPdf: true, chartsId: 'lagostina-tab-content' },
+  budget: { tabName: 'Budget', showPdf: true, chartsId: 'lagostina-tab-content' },
+  influence: { tabName: 'Influence & RP', showPdf: true, chartsId: 'lagostina-tab-content' },
+  mediatisation: { tabName: 'Médiatisation', showPdf: true, chartsId: 'lagostina-tab-content' },
 };
 
 function TabSkeleton() {
@@ -128,7 +128,7 @@ export default function Lagostina() {
       </div>
 
       {/* Content */}
-      <div className="p-6 transition-opacity duration-150">
+      <div className="p-6 transition-opacity duration-150" id="lagostina-tab-content">
         <Suspense fallback={<TabSkeleton />}>
           {activeTab === 'scorecard' && <ScorecardRECC learningsButton={learningsButton} learningsPanel={showLearnings ? <LagostinaLearningsPanel activeTab={activeTab} /> : null} />}
           {activeTab === 'influence' && <LagostinaInfluenceRP learningsButton={learningsButton} learningsPanel={showLearnings ? <LagostinaLearningsPanel activeTab={activeTab} /> : null} />}
