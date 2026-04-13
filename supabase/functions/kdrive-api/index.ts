@@ -101,12 +101,17 @@ serve(async (req) => {
           ...corsHeaders,
           'Content-Type': isPdf ? 'application/pdf' : contentType,
           'Content-Disposition': contentDisposition,
-          'Cache-Control': 'public, max-age=3600',
+          'Cache-Control': isPdf ? 'public, max-age=3600' : 'no-store, no-cache, must-revalidate',
           'X-Content-Type-Options': 'nosniff',
           'Content-Security-Policy': "frame-ancestors *",
           'Accept-Ranges': acceptRanges,
           'Access-Control-Expose-Headers': 'Content-Disposition, Content-Type, Content-Length, Accept-Ranges, Content-Range',
         };
+
+        if (!isPdf) {
+          headers.Pragma = 'no-cache';
+          headers.Expires = '0';
+        }
 
         if (contentLength) headers['Content-Length'] = contentLength;
         if (contentRange) headers['Content-Range'] = contentRange;
