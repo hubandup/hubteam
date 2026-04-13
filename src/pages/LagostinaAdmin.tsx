@@ -44,7 +44,7 @@ export default function LagostinaAdmin() {
   const [selectedType, setSelectedType] = useState('scorecard');
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [syncing, setSyncing] = useState(false);
+  const { syncing, syncFromKDrive, invalidateAll } = useLagostinaSync();
 
   const { data: files, isLoading: loadingFiles } = useQuery({
     queryKey: ['lagostina-files'],
