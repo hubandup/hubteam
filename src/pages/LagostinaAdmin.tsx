@@ -17,6 +17,7 @@ import {
   parseMediaFile,
   parseConsumerFile,
   parseContenusFile,
+  parseMetaCsvFile,
   detectFileType,
 } from '@/lib/lagostina-parsers';
 import { useLagostinaSync } from '@/hooks/useLagostinaSync';
@@ -26,6 +27,7 @@ const FILE_TYPES = [
   { value: 'budget', label: 'Budget' },
   { value: 'influence_rp', label: 'Influence & RP' },
   { value: 'media', label: 'Médiatisation' },
+  { value: 'meta_csv', label: 'Meta Ads (CSV)' },
   { value: 'consumer', label: 'Consumer' },
   { value: 'contenus', label: 'Contenus' },
 ];
@@ -59,8 +61,21 @@ export default function LagostinaAdmin() {
   });
 
   const processFile = async (file: File) => {
-    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-      toast.error('Seuls les fichiers Excel (.xlsx) sont acceptés');
+    const isCsv = file.name.endsWith('.csv');
+    const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+
+    if (!isCsv && !isExcel) {
+      toast.error('Seuls les fichiers Excel (.xlsx) ou CSV (.csv) sont acceptés');
+      return;
+    }
+
+    if (selectedType === 'meta_csv' && !isCsv) {
+      toast.error('Pour le type "Meta Ads (CSV)", veuillez importer un fichier .csv');
+      return;
+    }
+
+    if (selectedType !== 'meta_csv' && !isExcel) {
+      toast.error('Pour ce type, veuillez importer un fichier Excel (.xlsx)');
       return;
     }
 
@@ -78,7 +93,7 @@ export default function LagostinaAdmin() {
         .from('lagostina_files_sync')
         .insert({
           filename: file.name,
-          file_type: selectedType,
+          file_type: selectedType === 'meta_csv' ? 'media' : selectedType,
           source: 'upload',
           status: 'pending',
         })
@@ -87,35 +102,40 @@ export default function LagostinaAdmin() {
 
       if (syncError) throw syncError;
 
-      const arrayBuffer = await file.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer);
-
       let insertedCount = 0;
 
-      if (selectedType === 'scorecard') {
-        const records = await parseScorecardFile(workbook);
-        const { personas, activations } = await parseActivationFile(workbook);
-        if (records.length === 0 && personas.length === 0 && activations.length === 0) {
-          throw new Error('Aucune donnée trouvée dans le fichier. Vérifiez le format.');
-        }
-        if (records.length > 0) {
-          insertedCount += await mergeAndInsertScorecard(records);
-        }
-        if (personas.length > 0 || activations.length > 0) {
-          insertedCount += await insertActivationData(personas, activations);
-        }
-      } else if (selectedType === 'budget') {
-        insertedCount += await parseBudgetFile(workbook);
-      } else if (selectedType === 'influence_rp') {
-        insertedCount += await parseInfluenceRPFile(workbook);
-      } else if (selectedType === 'media') {
-        insertedCount += await parseMediaFile(workbook);
-      } else if (selectedType === 'consumer') {
-        insertedCount += await parseConsumerFile(workbook);
-      } else if (selectedType === 'contenus') {
-        insertedCount += await parseContenusFile(workbook);
+      if (selectedType === 'meta_csv') {
+        const csvText = await file.text();
+        insertedCount += await parseMetaCsvFile(csvText);
       } else {
-        toast.info(`Le parsing des fichiers "${selectedType}" sera disponible dans une prochaine phase.`);
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer);
+
+        if (selectedType === 'scorecard') {
+          const records = await parseScorecardFile(workbook);
+          const { personas, activations } = await parseActivationFile(workbook);
+          if (records.length === 0 && personas.length === 0 && activations.length === 0) {
+            throw new Error('Aucune donnée trouvée dans le fichier. Vérifiez le format.');
+          }
+          if (records.length > 0) {
+            insertedCount += await mergeAndInsertScorecard(records);
+          }
+          if (personas.length > 0 || activations.length > 0) {
+            insertedCount += await insertActivationData(personas, activations);
+          }
+        } else if (selectedType === 'budget') {
+          insertedCount += await parseBudgetFile(workbook);
+        } else if (selectedType === 'influence_rp') {
+          insertedCount += await parseInfluenceRPFile(workbook);
+        } else if (selectedType === 'media') {
+          insertedCount += await parseMediaFile(workbook);
+        } else if (selectedType === 'consumer') {
+          insertedCount += await parseConsumerFile(workbook);
+        } else if (selectedType === 'contenus') {
+          insertedCount += await parseContenusFile(workbook);
+        } else {
+          toast.info(`Le parsing des fichiers "${selectedType}" sera disponible dans une prochaine phase.`);
+        }
       }
 
       await supabase
@@ -207,7 +227,7 @@ export default function LagostinaAdmin() {
             <input
               id="file-input-lago"
               type="file"
-              accept=".xlsx,.xls"
+              accept={selectedType === 'meta_csv' ? '.csv' : '.xlsx,.xls'}
               onChange={handleFileInput}
               className="hidden"
             />
@@ -220,10 +240,10 @@ export default function LagostinaAdmin() {
               <div className="flex flex-col items-center gap-3">
                 <Upload className="h-8 w-8 text-muted-foreground" />
                 <p className="text-foreground font-['Roboto'] text-sm">
-                  Glissez un fichier .xlsx ici ou <span className="text-black font-semibold underline">parcourir</span>
+                  Glissez un fichier {selectedType === 'meta_csv' ? '.csv' : '.xlsx'} ici ou <span className="text-black font-semibold underline">parcourir</span>
                 </p>
                 <p className="text-muted-foreground font-['Roboto'] text-xs">
-                  Format attendu : fichier Excel Lagostina ({FILE_TYPES.find(f => f.value === selectedType)?.label})
+                  Format attendu : {selectedType === 'meta_csv' ? 'export CSV Meta Ads Manager' : `fichier Excel Lagostina (${FILE_TYPES.find(f => f.value === selectedType)?.label})`}
                 </p>
               </div>
             )}
