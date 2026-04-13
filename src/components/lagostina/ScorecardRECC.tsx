@@ -525,12 +525,9 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
       {/* PAR LEVIER */}
       {tab === 'par_levier' && (
         <div className="space-y-6">
-          {PAR_LEVIER_STRUCTURE.map((block) => {
-            const matchingData = scorecards?.filter((s) =>
-              s.levier.toLowerCase().includes(block.levier.replace('media_', '').replace('_', ' ')) ||
-              s.levier === block.levier
-            ) || [];
-            const kpiNames = [...new Set(matchingData.map((s) => s.kpi_name))];
+          {parLevierGroups.map((block) => {
+            const matchingData = scorecards?.filter((s) => s.levier === block.levier) || [];
+            const kpiNames = block.kpis;
 
             return (
               <div key={block.levier} className="bg-white dark:bg-[#0f1422] border border-border/30">
