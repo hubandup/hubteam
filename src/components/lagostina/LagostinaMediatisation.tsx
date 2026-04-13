@@ -53,7 +53,7 @@ function formatVal(val: number | null | undefined, kpi: string): string {
   if (ALREADY_PERCENT_KPIS.includes(kpi)) return `${val.toFixed(1)}%`;
   if (['roas'].includes(kpi)) return val.toFixed(2);
   if (['cpc_moyen', 'cpc', 'cpm', 'cpm_reach_attentif', 'cpv', 'cpvisite', 'coût_/_conversion'].includes(kpi)) return `€${val.toFixed(2)}`;
-  if (['impressions', 'reach', 'reach_(3s_views)', 'conversions', 'traffic', 'traffic_qualifié_(visites_site)', 'clics'].includes(kpi)) {
+  if (['impressions', 'reach', 'reach_3s_views', 'reach_(3s_views)', 'conversions', 'traffic', 'traffic_qualifie_visites_site', 'traffic_qualifié_(visites_site)', 'clics'].includes(kpi)) {
     if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
     if (val >= 1_000) return `${(val / 1_000).toFixed(0)}K`;
     return val.toFixed(0);
