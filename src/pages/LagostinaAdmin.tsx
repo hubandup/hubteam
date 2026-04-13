@@ -842,13 +842,13 @@ export default function LagostinaAdmin() {
           }
 
           // Update sync record
-          await supabase.from('lagostina_files_sync').upsert({
+          await supabase.from('lagostina_files_sync').insert({
             filename: fileName,
             file_type: fileType,
             source: 'kdrive',
             status: 'synced',
             last_synced: new Date().toISOString(),
-          }, { onConflict: 'filename' });
+          });
 
           totalImported += insertedCount;
           toast.success(`${fileName}: ${insertedCount} enregistrements importés`);
