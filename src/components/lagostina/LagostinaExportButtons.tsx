@@ -143,7 +143,7 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
   return (
     <div className="flex items-center gap-2">
       <button
-        onClick={() => navigate('/lagostina-admin')}
+        onClick={() => navigate('/lagostina-admin?sync=auto')}
         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-['Roboto'] font-medium text-black dark:text-[#E8FF4C] border border-black dark:border-[#E8FF4C] bg-transparent hover:bg-black hover:text-white dark:hover:bg-[#E8FF4C] dark:hover:text-black transition-colors"
       >
         <RefreshCw className="h-3.5 w-3.5" />
