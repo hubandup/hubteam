@@ -807,3 +807,121 @@ export function detectFileType(filename: string): string | null {
   }
   return null;
 }
+
+// ── META ADS CSV PARSER ──
+// Parses CSV exports from Meta Ads Manager (French locale)
+// Aggregates per-ad rows by ISO week and inserts into lagostina_media_kpis (channel='sma')
+export async function parseMetaCsvFile(csvText: string): Promise<number> {
+  const lines = csvText.split('\n');
+  if (lines.length < 2) throw new Error('Fichier CSV vide ou invalide');
+
+  // Parse CSV respecting quoted fields
+  const parseRow = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+        else inQuotes = !inQuotes;
+      } else if (ch === ',' && !inQuotes) {
+        result.push(current); current = '';
+      } else {
+        current += ch;
+      }
+    }
+    result.push(current);
+    return result;
+  };
+
+  const headerRow = parseRow(lines[0]);
+  // Normalize headers: replace non-breaking spaces, trim
+  const headers = headerRow.map(h => h.replace(/\u00a0/g, ' ').replace(/\u2019/g, "'").trim());
+
+  const col = (search: string) => headers.findIndex(h => h.includes(search));
+  const colStart = col('Début des rapports');
+  const colSpend = col('Montant dépensé');
+  const colImpressions = col('Impressions');
+  const colReach = col('Couverture');
+  const colViews3s = col('Lectures de vidéo de 3 secondes');
+  const colVideoPlays = col('Lectures de vidéo');
+  const colClicks = col('Clics sur un lien');
+  const colLanding = headers.findIndex(h => h.includes('Vues de la page de destination'));
+  const colPurchases = col('Achats');
+  const colRoas = col('ROAS');
+
+  if (colStart < 0 || colSpend < 0) {
+    throw new Error('Colonnes requises introuvables (Début des rapports, Montant dépensé)');
+  }
+
+  const num = (vals: string[], idx: number): number => {
+    if (idx < 0 || idx >= vals.length) return 0;
+    const v = vals[idx]?.trim();
+    if (!v || v === '-') return 0;
+    const cleaned = v.replace(/\s/g, '').replace(',', '.');
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  // Aggregate by ISO week
+  const agg: Record<string, { spend: number; impressions: number; reach: number; views3s: number; videoPlays: number; clicks: number; landing: number; purchases: number; roas_weighted: number }> = {};
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const vals = parseRow(line);
+    const dateStr = vals[colStart]?.trim();
+    if (!dateStr || !dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) continue;
+
+    const dt = new Date(dateStr + 'T00:00:00');
+    const dayOfYear = Math.floor((dt.getTime() - new Date(dt.getFullYear(), 0, 1).getTime()) / 86400000);
+    const weekDay = dt.getDay() || 7;
+    const weekNum = Math.ceil((dayOfYear + (new Date(dt.getFullYear(), 0, 1).getDay() || 7) - weekDay + 10) / 7);
+    const wk = `S${String(weekNum).padStart(2, '0')}`;
+
+    if (!agg[wk]) agg[wk] = { spend: 0, impressions: 0, reach: 0, views3s: 0, videoPlays: 0, clicks: 0, landing: 0, purchases: 0, roas_weighted: 0 };
+    const a = agg[wk];
+    const rowSpend = num(vals, colSpend);
+    a.spend += rowSpend;
+    a.impressions += num(vals, colImpressions);
+    a.reach += num(vals, colReach);
+    a.views3s += num(vals, colViews3s);
+    a.videoPlays += colVideoPlays >= 0 ? num(vals, colVideoPlays) : 0;
+    a.clicks += num(vals, colClicks);
+    a.landing += num(vals, colLanding);
+    a.purchases += num(vals, colPurchases);
+    a.roas_weighted += colRoas >= 0 ? num(vals, colRoas) * rowSpend : 0;
+  };
+
+  const records: Array<{ channel: string; kpi_name: string; week: string; actual: number | null; objective: number | null; budget_spent: number | null; budget_allocated: number | null }> = [];
+
+  for (const [week, d] of Object.entries(agg)) {
+    if (d.spend === 0 && d.impressions === 0) continue; // skip empty weeks
+
+    const push = (kpi: string, val: number | null) => records.push({ channel: 'sma', kpi_name: kpi, week, actual: val, objective: null, budget_spent: null, budget_allocated: null });
+
+    push('reach_(3s_views)', d.views3s || null);
+    push('impressions', d.impressions || null);
+    push('cpc', d.clicks > 0 ? d.spend / d.clicks : null);
+    push('cpm_reach_attentif', d.impressions > 0 ? (d.spend / d.impressions) * 1000 : null);
+    push('traffic_qualifié_(visites_site)', d.landing > 0 ? d.landing : d.clicks || null);
+    push('cpvisite', d.landing > 0 ? d.spend / d.landing : (d.clicks > 0 ? d.spend / d.clicks : null));
+    push('conversion_rate', d.landing > 0 && d.purchases > 0 ? (d.purchases / d.landing) * 100 : (d.clicks > 0 && d.purchases > 0 ? (d.purchases / d.clicks) * 100 : null));
+    push('roas', d.spend > 0 && d.roas_weighted > 0 ? d.roas_weighted / d.spend : null);
+    push('complétion_vidéo', d.views3s > 0 && d.videoPlays > 0 ? (d.videoPlays / d.views3s) * 100 : null);
+    push('budget_dépensé', d.spend || null);
+  }
+
+  if (records.length === 0) throw new Error('Aucune donnée Meta exploitable trouvée dans le CSV.');
+
+  // Delete existing SMA data and insert new
+  await supabase.from('lagostina_media_kpis').delete().eq('channel', 'sma');
+  for (let i = 0; i < records.length; i += 500) {
+    const batch = records.slice(i, i + 500);
+    const { error } = await supabase.from('lagostina_media_kpis').insert(batch);
+    if (error) throw error;
+  }
+
+  return records.length;
+}
