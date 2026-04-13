@@ -23,6 +23,7 @@ const LAGOSTINA_QUERY_KEYS = [
   'lagostina-social-mix', 'lagostina-content-learnings', 'lagostina-learnings',
   'lagostina-category-status', 'lagostina-last-sync', 'lagostina-personas',
   'lagostina-activation', 'lagostina-glossary', 'lagostina-priorities',
+  'lagostina-top-keywords',
 ];
 
 export function useLagostinaSync() {
