@@ -611,12 +611,33 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
   pending: <Clock className="h-3.5 w-3.5 text-black font-semibold" />,
 };
 
+// Map kDrive filenames to file types for auto-detection
+const KDRIVE_FILE_TYPE_MAP: Record<string, string> = {
+  'scorecard': 'scorecard',
+  'budget': 'budget',
+  'influence': 'influence_rp',
+  'revue_presse': 'influence_rp',
+  'sma': 'media',
+  'sea': 'media',
+  'consumer': 'consumer',
+  'contenus': 'contenus',
+};
+
+function detectFileType(filename: string): string | null {
+  const lower = filename.toLowerCase();
+  for (const [key, type] of Object.entries(KDRIVE_FILE_TYPE_MAP)) {
+    if (lower.includes(key)) return type;
+  }
+  return null;
+}
+
 export default function LagostinaAdmin() {
   const { role } = useUserRole();
   const queryClient = useQueryClient();
   const [selectedType, setSelectedType] = useState('scorecard');
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   const { data: files, isLoading: loadingFiles } = useQuery({
     queryKey: ['lagostina-files'],
