@@ -84,9 +84,10 @@ interface KpiData {
 function buildKpiData(rows: any[], kpis: string[]): KpiData[] {
   return kpis.map((kpi) => {
     // Special case: budget_ratio is computed from budget_dépensé / budget_alloué
+    // Handle both accented and unaccented kpi_name variants
     if (kpi === 'budget_ratio') {
-      const spentRows = rows.filter((r: any) => r.kpi_name === 'budget_dépensé');
-      const allocRows = rows.filter((r: any) => r.kpi_name === 'budget_alloué');
+      const spentRows = rows.filter((r: any) => r.kpi_name === 'budget_dépensé' || r.kpi_name === 'budget_depense');
+      const allocRows = rows.filter((r: any) => r.kpi_name === 'budget_alloué' || r.kpi_name === 'budget_alloue');
       const allWeeks = [...new Set(spentRows.map((r: any) => r.week))];
       const weeks = sortWeeksNumerically(allWeeks.map((w) => {
         const spent = spentRows.find((r: any) => r.week === w)?.actual ?? null;

@@ -478,8 +478,8 @@ export async function parseMediaFile(workbook: XLSX.WorkBook) {
     const channelCol = headers.findIndex((header) => header === 'channel' || header === 'canal');
     const kpiCol = headers.findIndex((header) => ['kpi_name', 'kpi', 'metric', 'indicateur'].includes(header));
     const weekCol = headers.findIndex((header) => header === 'week' || header === 'semaine');
-    const actualCol = headers.findIndex((header) => ['actual', 'realise', 'reel', 'valeur_actuelle'].includes(header));
-    const objectiveCol = headers.findIndex((header) => ['objective', 'objectif', 'target'].includes(header));
+    const actualCol = headers.findIndex((header) => ['actual', 'realise', 'reel', 'valeur_actuelle', 'valeur', 'resultat', 'donnee_reelle'].includes(header));
+    const objectiveCol = headers.findIndex((header) => ['objective', 'objectif', 'target', 'cible', 'obj'].includes(header));
     const budgetAllocatedCol = headers.findIndex((header) => ['budget_allocated', 'budget_alloue', 'budget_prevu'].includes(header));
     const budgetSpentCol = headers.findIndex((header) => ['budget_spent', 'budget_depense', 'budget_engage'].includes(header));
     const rowBasedFormat = weekCol >= 0 && kpiCol >= 0 && (actualCol >= 0 || objectiveCol >= 0 || budgetAllocatedCol >= 0 || budgetSpentCol >= 0);
