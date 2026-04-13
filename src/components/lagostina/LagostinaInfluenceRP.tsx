@@ -39,6 +39,18 @@ type Press = {
   journalist_name: string | null;
 };
 
+function normalizeTonalityKey(value: string | null | undefined): 'positive' | 'neutral' | 'negative' {
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  if (normalized.startsWith('pos')) return 'positive';
+  if (normalized.startsWith('neg')) return 'negative';
+  return 'neutral';
+}
+
 function getCondColor(actual: number | null, obj: number | null): string {
   if (actual == null || obj == null || obj === 0) return '';
   const ratio = actual / obj;
@@ -131,7 +143,8 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
     if (!pressData?.length) return [];
     const counts: Record<string, number> = { positive: 0, neutral: 0, negative: 0 };
     pressData.forEach((p) => {
-      if (counts[p.tonality] !== undefined) counts[p.tonality]++;
+      const tonality = normalizeTonalityKey(p.tonality);
+      if (counts[tonality] !== undefined) counts[tonality]++;
       else counts.neutral++;
     });
     return Object.entries(counts)
@@ -146,7 +159,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
   const filteredPress = useMemo(() => {
     if (!pressData) return [];
     if (tonalityFilter === 'all') return pressData;
-    return pressData.filter((p) => p.tonality === tonalityFilter);
+    return pressData.filter((p) => normalizeTonalityKey(p.tonality) === tonalityFilter);
   }, [pressData, tonalityFilter]);
 
   const totalPages = Math.ceil(filteredPress.length / PAGE_SIZE);
@@ -297,7 +310,8 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
                   </thead>
                   <tbody>
                     {pagedPress.map((p) => {
-                      const style = TONALITY_STYLES[p.tonality] || TONALITY_STYLES.neutral;
+                      const tonality = normalizeTonalityKey(p.tonality);
+                      const style = TONALITY_STYLES[tonality] || TONALITY_STYLES.neutral;
                       return (
                         <tr key={p.id} className="border-b border-border/20 hover:bg-gray-50 dark:hover:bg-[#141928]">
                           <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
