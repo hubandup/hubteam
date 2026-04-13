@@ -117,6 +117,15 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
     }
   };
 
+  const loadImage = (src: string): Promise<HTMLImageElement> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+
   const exportPdf = async () => {
     if (!chartsContainerId) return;
     setExporting(true);
@@ -128,6 +137,12 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
       const isDark = document.documentElement.classList.contains('dark');
       const bgColor = isDark ? '#0a0e1a' : '#ffffff';
 
+      // Load logos
+      const [logoHeader, logoFooter] = await Promise.all([
+        loadImage('/logo-hubandup-horizontal.png').catch(() => null),
+        loadImage('/logo-hubandup-signature.png').catch(() => null),
+      ]);
+
       const canvas = await html2canvas(el, {
         backgroundColor: bgColor,
         scale: 2,
@@ -137,54 +152,88 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
         windowHeight: el.scrollHeight,
       });
 
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-
-      const pageWidth = 297;
-      const pageHeight = 210;
-      const margin = 10;
-      const headerHeight = 12;
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 15;
+      const headerTopY = 12;
+      const headerLogoH = 12; // logo height in mm
+      const contentStartY = headerTopY + headerLogoH + 8; // after logo + spacing
+      const footerH = 22;
+      const footerStartY = pageHeight - margin - footerH;
       const usableWidth = pageWidth - margin * 2;
-      const usableHeight = pageHeight - margin - headerHeight;
+      const usableHeight = footerStartY - contentStartY;
 
       // Calculate total image height in mm
       const imgWidthMm = usableWidth;
       const imgHeightMm = (canvas.height / canvas.width) * imgWidthMm;
 
-      // Add header on first page
-      const addHeader = (pageNum: number, totalPages: number) => {
-        pdf.setFontSize(8);
+      const addHeaderFooter = (pageNum: number, totalPages: number) => {
+        // --- HEADER: logo top-left ---
+        if (logoHeader) {
+          const logoW = (logoHeader.width / logoHeader.height) * headerLogoH;
+          pdf.addImage(logoHeader, 'PNG', margin, headerTopY, logoW, headerLogoH);
+        }
+
+        // --- FOOTER ---
+        const footerY = pageHeight - margin;
+
+        // Separator line
+        pdf.setDrawColor(220, 220, 220);
+        pdf.setLineWidth(0.3);
+        pdf.line(margin, footerY - footerH, pageWidth - margin, footerY - footerH);
+
+        // DOCUMENT CONFIDENTIEL
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(7);
+        pdf.setTextColor(30, 30, 30);
+        pdf.text('DOCUMENT CONFIDENTIEL', margin, footerY - footerH + 5);
+
+        // Legal text
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(5.5);
+        pdf.setTextColor(120, 120, 120);
+        pdf.text(
+          'HUB AND UP S.A.S au Capital de 10 000 € - RCS Lyon B 904 096 435 – TVA : FR52904096435',
+          margin, footerY - footerH + 10
+        );
+        pdf.text(
+          '59, chemin du moulin Carron F-69570 Dardilly – tél. 04 72 19 19 78 – contact@hubandup.com',
+          margin, footerY - footerH + 14
+        );
+
+        // Page number
+        pdf.setFontSize(6);
         pdf.setTextColor(156, 163, 175);
-        pdf.text(`Dashboard Lagostina — ${tabName}`, margin, 8);
-        pdf.text(`Export du ${new Date().toLocaleDateString('fr-FR')} — Page ${pageNum}/${totalPages}`, pageWidth - margin - 60, 8);
+        pdf.text(`Page ${pageNum}/${totalPages}`, pageWidth / 2, footerY - 2, { align: 'center' });
+
+        // Footer logo bottom-right
+        if (logoFooter) {
+          const fLogoH = 6;
+          const fLogoW = (logoFooter.width / logoFooter.height) * fLogoH;
+          pdf.addImage(logoFooter, 'PNG', pageWidth - margin - fLogoW, footerY - fLogoH - 4, fLogoW, fLogoH);
+        }
       };
 
       const totalPages = Math.max(1, Math.ceil(imgHeightMm / usableHeight));
 
-      if (imgHeightMm <= usableHeight) {
-        // Single page
-        addHeader(1, 1);
-        pdf.addImage(imgData, 'PNG', margin, headerHeight, imgWidthMm, imgHeightMm);
-      } else {
-        // Multi-page: slice the image
-        for (let page = 0; page < totalPages; page++) {
-          if (page > 0) pdf.addPage();
-          addHeader(page + 1, totalPages);
+      for (let page = 0; page < totalPages; page++) {
+        if (page > 0) pdf.addPage();
 
-          const srcY = (page * usableHeight / imgHeightMm) * canvas.height;
-          const srcH = Math.min((usableHeight / imgHeightMm) * canvas.height, canvas.height - srcY);
+        const srcY = (page * usableHeight / imgHeightMm) * canvas.height;
+        const srcH = Math.min((usableHeight / imgHeightMm) * canvas.height, canvas.height - srcY);
 
-          // Create a slice canvas
-          const sliceCanvas = document.createElement('canvas');
-          sliceCanvas.width = canvas.width;
-          sliceCanvas.height = srcH;
-          const ctx = sliceCanvas.getContext('2d')!;
-          ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = srcH;
+        const ctx = sliceCanvas.getContext('2d')!;
+        ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
 
-          const sliceData = sliceCanvas.toDataURL('image/png');
-          const sliceHeightMm = (srcH / canvas.width) * imgWidthMm;
-          pdf.addImage(sliceData, 'PNG', margin, headerHeight, imgWidthMm, sliceHeightMm);
-        }
+        const sliceData = sliceCanvas.toDataURL('image/png');
+        const sliceHeightMm = (srcH / canvas.width) * imgWidthMm;
+        pdf.addImage(sliceData, 'PNG', margin, contentStartY, imgWidthMm, sliceHeightMm);
+
+        addHeaderFooter(page + 1, totalPages);
       }
 
       const dateStr = new Date().toISOString().slice(0, 10);
