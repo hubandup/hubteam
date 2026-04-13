@@ -153,13 +153,24 @@ function SEATab({ rows }: { rows: any[] }) {
   const kpis = buildKpiData(rows, SEA_KPIS);
   const roasData = kpis.find((k) => k.kpi_name === 'roas');
 
+  const { data: topKeywords } = useQuery({
+    queryKey: ['lagostina-top-keywords'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('lagostina_top_keywords').select('*').order('clicks', { ascending: false }).limit(20);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const hasKeywords = (topKeywords || []).length > 0;
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {kpis.map((k) => <KpiCard key={k.kpi_name} data={k} />)}
       </div>
-      {roasData && roasData.weeks.length > 1 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {roasData && roasData.weeks.length > 1 && (
           <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
             <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Évolution ROAS</h3>
             <ResponsiveContainer width="100%" height={220}>
@@ -173,11 +184,45 @@ function SEATab({ rows }: { rows: any[] }) {
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4 flex items-center justify-center">
-            <div className="text-muted-foreground text-sm font-['Roboto']">Top keywords — données non disponibles</div>
-          </div>
+        )}
+        <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
+          <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Top Keywords SEA</h3>
+          {!hasKeywords ? (
+            <div className="flex items-center justify-center py-8">
+              <span className="text-muted-foreground text-sm font-['Roboto']">Données non disponibles</span>
+            </div>
+          ) : (
+            <div className="overflow-x-auto max-h-[260px] overflow-y-auto">
+              <table className="w-full text-[12px] font-['Roboto']">
+                <thead className="sticky top-0 bg-white dark:bg-[#0f1422]">
+                  <tr className="border-b border-border/40">
+                    <th className="text-left py-1.5 px-2 text-muted-foreground uppercase">Keyword</th>
+                    <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">Clics</th>
+                    <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">Impr.</th>
+                    <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">CTR</th>
+                    <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">CPC</th>
+                    <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">Conv.</th>
+                    <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">ROAS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(topKeywords || []).map((kw: any) => (
+                    <tr key={kw.id} className="border-b border-border/20 hover:bg-gray-50 dark:hover:bg-[#141928]">
+                      <td className="py-1.5 px-2 text-foreground truncate max-w-[160px]" title={kw.keyword}>{kw.keyword}</td>
+                      <td className="py-1.5 px-2 text-right text-foreground">{kw.clicks != null ? kw.clicks.toLocaleString('fr-FR') : '—'}</td>
+                      <td className="py-1.5 px-2 text-right text-foreground">{kw.impressions != null ? kw.impressions.toLocaleString('fr-FR') : '—'}</td>
+                      <td className="py-1.5 px-2 text-right text-foreground">{kw.ctr != null ? `${Number(kw.ctr).toFixed(1)}%` : '—'}</td>
+                      <td className="py-1.5 px-2 text-right text-foreground">{kw.cpc != null ? `€${Number(kw.cpc).toFixed(2)}` : '—'}</td>
+                      <td className="py-1.5 px-2 text-right text-foreground">{kw.conversions != null ? kw.conversions : '—'}</td>
+                      <td className="py-1.5 px-2 text-right text-foreground font-bold">{kw.roas != null ? Number(kw.roas).toFixed(2) : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
