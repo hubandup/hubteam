@@ -357,7 +357,7 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
               <thead>
                 <tr className="border-b border-border/40">
                   <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10 min-w-[120px]">Levier</th>
-                  <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[60px]">RECC</th>
+                  
                   <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[140px]">KPI</th>
                   <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[70px]">Objectif</th>
                   {pastWeeks.length > 0 && (
