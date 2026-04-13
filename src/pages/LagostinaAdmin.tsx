@@ -504,8 +504,6 @@ async function parseMediaFile(workbook: XLSX.WorkBook) {
         const budgetAllocated = budgetAllocatedCol >= 0 ? parseOptionalNumber(row[budgetAllocatedCol]) : null;
         const budgetSpent = budgetSpentCol >= 0 ? parseOptionalNumber(row[budgetSpentCol]) : null;
 
-        if (actual == null && objective == null && budgetAllocated == null && budgetSpent == null) continue;
-
         records.push({
           channel,
           kpi_name: kpiName,
