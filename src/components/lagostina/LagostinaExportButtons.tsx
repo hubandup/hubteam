@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { FileSpreadsheet, FileText, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { useNavigate } from 'react-router-dom';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 function getCondFill(actual: number | null, objective: number | null): Partial<ExcelJS.Fill> | undefined {
   if (actual == null || objective == null || objective === 0) return undefined;
@@ -23,6 +25,7 @@ interface ExportButtonsProps {
 
 export function LagostinaExportButtons({ tabName, showPdf = false, chartsContainerId }: ExportButtonsProps) {
   const [exporting, setExporting] = useState(false);
+  const navigate = useNavigate();
 
   const exportExcel = async () => {
     setExporting(true);
@@ -44,7 +47,7 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
         sheet.columns.forEach((col) => { col.width = 15; });
       }
 
-      if (tabName === 'Scorecard RECC' || tabName === 'scorecard') {
+      if (tabName === 'Scorecard RECC' || tabName === 'scorecard' || tabName === 'Scorecard') {
         const { data } = await supabase.from('lagostina_scorecards').select('*').order('week');
         const sheet = workbook.addWorksheet('Scorecard full funnel Prio 1');
         sheet.addRow(['Priorité', 'Levier', 'KPI', 'Semaine', 'Mois', 'Actual', 'Objectif']);
@@ -114,7 +117,6 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
-      // Header
       pdf.setFontSize(8);
       pdf.setTextColor(156, 163, 175);
       pdf.text(`Dashboard Lagostina — ${tabName}`, 10, 8);
@@ -136,25 +138,36 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
     }
   };
 
+  const btnClass = "flex items-center justify-center h-8 w-8 text-black dark:text-[#E8FF4C] border border-black dark:border-[#E8FF4C] bg-transparent hover:bg-black hover:text-white dark:hover:bg-[#E8FF4C] dark:hover:text-black transition-colors disabled:opacity-50";
+
   return (
     <div className="flex items-center gap-2">
       <button
-        onClick={exportExcel}
-        disabled={exporting}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-['Roboto'] text-black dark:text-[#E8FF4C] border border-black dark:border-[#E8FF4C] bg-transparent hover:bg-black hover:text-white dark:hover:bg-[#E8FF4C] dark:hover:text-black transition-colors disabled:opacity-50"
+        onClick={() => navigate('/lagostina-admin')}
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-['Roboto'] font-medium text-black dark:text-[#E8FF4C] border border-black dark:border-[#E8FF4C] bg-transparent hover:bg-black hover:text-white dark:hover:bg-[#E8FF4C] dark:hover:text-black transition-colors"
       >
-        <FileSpreadsheet className="h-3.5 w-3.5" />
-        Exporter Excel
+        <RefreshCw className="h-3.5 w-3.5" />
+        Mettre à jour les données
       </button>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button onClick={exportExcel} disabled={exporting} className={btnClass}>
+            <FileSpreadsheet className="h-4 w-4" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>Exporter Excel</TooltipContent>
+      </Tooltip>
+
       {showPdf && (
-        <button
-          onClick={exportPdf}
-          disabled={exporting}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-['Roboto'] text-black dark:text-[#E8FF4C] border border-black dark:border-[#E8FF4C] bg-transparent hover:bg-black hover:text-white dark:hover:bg-[#E8FF4C] dark:hover:text-black transition-colors disabled:opacity-50"
-        >
-          <FileText className="h-3.5 w-3.5" />
-          Exporter PDF
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button onClick={exportPdf} disabled={exporting} className={btnClass}>
+              <FileText className="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>Exporter PDF</TooltipContent>
+        </Tooltip>
       )}
     </div>
   );
