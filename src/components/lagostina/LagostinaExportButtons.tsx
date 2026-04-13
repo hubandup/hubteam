@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileSpreadsheet, FileText, RefreshCw } from 'lucide-react';
+import { FileDown, FileText, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import ExcelJS from 'exceljs';
@@ -152,8 +152,8 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <button onClick={exportExcel} disabled={exporting} className={btnClass}>
-            <FileSpreadsheet className="h-4 w-4" />
+          <button onClick={exportExcel} disabled={exporting} className={btnClass} aria-label="Exporter Excel">
+            <span className="text-[10px] font-bold font-['Roboto'] leading-none">XLS</span>
           </button>
         </TooltipTrigger>
         <TooltipContent>Exporter Excel</TooltipContent>
@@ -162,8 +162,8 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
       {showPdf && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <button onClick={exportPdf} disabled={exporting} className={btnClass}>
-              <FileText className="h-4 w-4" />
+            <button onClick={exportPdf} disabled={exporting} className={btnClass} aria-label="Exporter PDF">
+              <span className="text-[10px] font-bold font-['Roboto'] leading-none">PDF</span>
             </button>
           </TooltipTrigger>
           <TooltipContent>Exporter PDF</TooltipContent>
