@@ -67,17 +67,6 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
     },
   });
 
-  const { data: scorecardData } = useQuery({
-    queryKey: ['lagostina-scorecard-budget'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('lagostina_scorecards')
-        .select('*')
-        .in('levier', ['media_affiliation', 'influence', 'media_one_video_social', 'media_social', 'media_sea', 'media_vol']);
-      if (error) throw error;
-      return data;
-    },
-  });
 
   const totalPlanned = useMemo(() => budgetData?.reduce((s, b) => s + (Number(b.planned) || 0), 0) || 0, [budgetData]);
   const totalEngaged = useMemo(() => budgetData?.reduce((s, b) => s + (Number(b.engaged) || 0), 0) || 0, [budgetData]);
