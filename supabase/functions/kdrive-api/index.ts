@@ -453,6 +453,94 @@ serve(async (req) => {
         }
         break;
 
+      case 'resolve-path': {
+        // Navigate a folder path like "CLIENTS/LAGOSTINA/_DATA" step by step
+        // folderPath should be a "/" separated path of folder names from root
+        let resolveDriveId = driveId;
+        if (!resolveDriveId) {
+          const productsResp = await fetch(`${KDRIVE_API_BASE}/1/product`, { headers: kdriveHeaders });
+          if (productsResp.ok) {
+            const productsData = await productsResp.json();
+            const driveProduct = productsData?.data?.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
+            resolveDriveId = driveProduct?.id;
+          }
+        }
+        if (!resolveDriveId) {
+          return new Response(JSON.stringify({ error: 'Drive ID not found' }), {
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const pathSegments = (folderPath || '').split('/').filter(Boolean);
+        if (pathSegments.length === 0) {
+          return new Response(JSON.stringify({ error: 'folderPath is required (e.g. CLIENTS/LAGOSTINA/_DATA)' }), {
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        let currentFolderId: string | number = 1; // root
+        console.log('resolve-path: navigating', pathSegments, 'in drive', resolveDriveId);
+
+        for (const segment of pathSegments) {
+          const listUrl = `${KDRIVE_API_BASE}/3/drive/${resolveDriveId}/files/${currentFolderId}/files?limit=200`;
+          console.log('resolve-path: listing', listUrl, 'looking for', segment);
+          const listResp = await fetch(listUrl, { headers: kdriveHeaders });
+          
+          if (!listResp.ok) {
+            // Fallback to v2
+            const listUrl2 = `${KDRIVE_API_BASE}/2/drive/${resolveDriveId}/files/${currentFolderId}/children`;
+            const listResp2 = await fetch(listUrl2, { headers: kdriveHeaders });
+            if (!listResp2.ok) {
+              return new Response(JSON.stringify({ error: `Cannot list folder ${currentFolderId}`, segment }), {
+                status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            }
+            const listData2 = await listResp2.json();
+            const items2 = listData2?.data || [];
+            const found2 = items2.find((f: any) => (f.name || '').toLowerCase() === segment.toLowerCase() && f.type === 'dir');
+            if (!found2) {
+              return new Response(JSON.stringify({ error: `Folder "${segment}" not found in ${currentFolderId}`, available: items2.filter((f: any) => f.type === 'dir').map((f: any) => f.name).slice(0, 20) }), {
+                status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            }
+            currentFolderId = found2.id;
+            continue;
+          }
+
+          const listData = await listResp.json();
+          const items = listData?.data || [];
+          const found = items.find((f: any) => (f.name || '').toLowerCase() === segment.toLowerCase() && f.type === 'dir');
+          if (!found) {
+            return new Response(JSON.stringify({ error: `Folder "${segment}" not found in ${currentFolderId}`, available: items.filter((f: any) => f.type === 'dir').map((f: any) => f.name).slice(0, 20) }), {
+              status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+          currentFolderId = found.id;
+          console.log('resolve-path: found', segment, '->', currentFolderId);
+        }
+
+        // Now list all files in the resolved folder
+        const finalListUrl = `${KDRIVE_API_BASE}/3/drive/${resolveDriveId}/files/${currentFolderId}/files?limit=200`;
+        const finalResp = await fetch(finalListUrl, { headers: kdriveHeaders });
+        let finalFiles: any[] = [];
+        if (finalResp.ok) {
+          const finalData = await finalResp.json();
+          finalFiles = (finalData?.data || []).map((f: any) => ({ ...f, drive_id: resolveDriveId }));
+        } else {
+          // v2 fallback
+          const finalResp2 = await fetch(`${KDRIVE_API_BASE}/2/drive/${resolveDriveId}/files/${currentFolderId}/children`, { headers: kdriveHeaders });
+          if (finalResp2.ok) {
+            const finalData2 = await finalResp2.json();
+            finalFiles = (finalData2?.data || []).map((f: any) => ({ ...f, drive_id: resolveDriveId }));
+          }
+        }
+
+        console.log('resolve-path: resolved to', currentFolderId, 'with', finalFiles.length, 'items');
+        return new Response(JSON.stringify({ data: finalFiles, folderId: currentFolderId, driveId: resolveDriveId }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       case 'upload-file':
         // Get the actual drive ID from product if not provided
         let uploadDriveId = driveId;
