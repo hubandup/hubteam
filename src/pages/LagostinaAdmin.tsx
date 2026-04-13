@@ -762,19 +762,16 @@ export default function LagostinaAdmin() {
   const syncFromKDrive = async () => {
     setSyncing(true);
     try {
-      toast.info('Navigation vers CLIENTS/LAGOSTINA/_DATA sur kDrive…');
+      toast.info('Navigation vers kDrive > CLIENTS > LAGOSTINA > _DATA…');
       
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('Vous devez être connecté pour synchroniser');
-        return;
-      }
+      if (!session) { toast.error('Session expirée'); return; }
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       
-      // Step 1: Resolve the folder path CLIENTS/LAGOSTINA/_DATA
+      // Step 1: Resolve the folder path Common documents/CLIENTS/LAGOSTINA/_DATA
       const resolveResponse = await supabase.functions.invoke('kdrive-api', {
-        body: { action: 'resolve-path', folderPath: 'CLIENTS/LAGOSTINA/_DATA' },
+        body: { action: 'resolve-path', folderPath: 'Common documents/CLIENTS/LAGOSTINA/_DATA' },
       });
 
       if (resolveResponse.error) {
