@@ -615,17 +615,18 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
       {/* FULL DÉTAIL */}
       {tab === 'full_detail' && (
         <div className="space-y-6">
-          {FULL_DETAIL_SECTIONS.map((section) => (
-            <div key={section.section} className="bg-white dark:bg-[#0f1422] border border-border/30">
+          {allLevierKpis.map((group) => (
+            <div key={group.levier} className="bg-white dark:bg-[#0f1422] border border-border/30">
               <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2">
-                <div className="w-2 h-2 bg-black" />
-                <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">{section.section}</h3>
+                <div className="w-2 h-2" style={{ backgroundColor: LEVIER_COLORS[group.levier] || '#E8FF4C' }} />
+                <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">{group.label}</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm font-['Roboto']">
                   <thead>
                     <tr className="border-b border-border/20">
                       <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
+                      <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[70px]">Objectif</th>
                       {pastWeeks.length > 0 && (
                         <th className="text-center px-1 py-2">
                           <button
@@ -643,42 +644,40 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
                       {visibleMonthGroups.map((mg) => (
                         <th key={mg.month} className="text-center px-2 py-2 text-black dark:text-white font-semibold text-xs font-bold border-l border-border/40">{mg.month}</th>
                       ))}
+                      <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[80px]">Complétion</th>
+                      <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[80px]">Statut</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {section.kpis.map((kpiName) => {
-                      const matching = scorecards?.filter((s) =>
-                        s.kpi_name.toLowerCase().includes(kpiName.toLowerCase().replace('evol w/w ', ''))
-                      ) || [];
-                      
-                      const weeklyVals = weeks.map((w) => {
-                        const entry = matching.find((s) => s.week === w);
-                        return entry?.actual ?? null;
-                      });
+                    {group.kpis.map((kpiName) => {
+                      const data = scorecards?.filter((s) => s.levier === group.levier && s.kpi_name === kpiName) || [];
+                      const actualVals = weeks.map((w) => data.find((s) => s.week === w)?.actual ?? null);
+                      const objVals = weeks.map((w) => data.find((s) => s.week === w)?.objective ?? null);
 
-                      // Monthly aggregates
+                      const latestObj = [...objVals].reverse().find((v) => v != null) ?? null;
+                      const latestActual = [...actualVals].reverse().find((v) => v != null) ?? null;
+                      const latestActualIdx = actualVals.lastIndexOf(latestActual);
+                      const completion = getCompletion(latestActual, latestObj);
+                      const status = getStatus(latestActual, latestObj, latestActualIdx >= 0 ? latestActualIdx : 0, weeks.length);
+
                       const monthlyVals = visibleMonthGroups.map((mg) => {
-                        const monthEntries = matching.filter((s) => mg.weeks.includes(s.week) && s.actual != null);
+                        const monthEntries = data.filter((s) => mg.weeks.includes(s.week) && s.actual != null);
                         if (!monthEntries.length) return null;
                         return monthEntries.reduce((sum, e) => sum + Number(e.actual), 0) / monthEntries.length;
                       });
 
-                      const isEvol = kpiName.toLowerCase().includes('evol');
-
                       return (
                         <tr key={kpiName} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
                           <td className="px-3 py-1.5 text-foreground">{kpiName}</td>
+                          <td className="px-2 py-1.5 text-center text-muted-foreground text-xs">{formatNum(latestObj)}</td>
                           {pastWeeks.length > 0 && <td />}
                           {visibleWeeks.map((w) => {
-                            const i = weeks.indexOf(w);
-                            const v = weeklyVals[i];
-                            let cls = '';
-                            if (isEvol && v != null) {
-                              cls = v >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]';
-                            }
+                            const wi = weeks.indexOf(w);
+                            const val = actualVals[wi];
+                            const obj = objVals[wi];
                             return (
-                              <NoteableCell key={w} levier={`detail_${section.section}`} kpiName={kpiName} week={w} notesMap={cellNotesMap} levierColor={LEVIER_COLORS[section.section]} className={`px-1 py-1.5 text-center text-[13px] ${cls || 'text-foreground'}`}>
-                                {v != null ? (isEvol ? `${v >= 0 ? '↑' : '↓'}${Math.abs(v).toFixed(1)}%` : formatNum(v)) : '—'}
+                              <NoteableCell key={w} levier={group.levier} kpiName={kpiName} week={w} notesMap={cellNotesMap} levierColor={LEVIER_COLORS[group.levier]} className={`px-1 py-1.5 text-center text-[13px] ${getCondColor(val, obj)}`}>
+                                {formatNum(val)}
                               </NoteableCell>
                             );
                           })}
@@ -687,6 +686,14 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
                               {formatNum(v)}
                             </td>
                           ))}
+                          <td className="px-2 py-1.5 text-center text-xs font-medium">
+                            {completion != null ? `${completion.toFixed(0)}%` : '—'}
+                          </td>
+                          <td className="px-2 py-1.5 text-center">
+                            <span className={`inline-block px-2 py-0.5 text-[11px] font-medium ${status.color}`}>
+                              {status.label}
+                            </span>
+                          </td>
                         </tr>
                       );
                     })}
@@ -695,62 +702,6 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
               </div>
             </div>
           ))}
-
-          {/* Influence & Social Media sections */}
-          {['influence', 'social_media'].map((lev) => {
-            const data = scorecards?.filter((s) => s.levier === lev) || [];
-            const kpiNames = [...new Set(data.map((s) => s.kpi_name))];
-            if (!kpiNames.length) return null;
-            return (
-              <div key={lev} className="bg-white dark:bg-[#0f1422] border border-border/30">
-                <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2">
-                  <div className="w-2 h-2" style={{ backgroundColor: LEVIER_COLORS[lev] || '#E8FF4C' }} />
-                  <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">
-                    {lev === 'influence' ? 'Influence' : 'Social Media'}
-                  </h3>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm font-['Roboto']">
-                    <thead>
-                      <tr className="border-b border-border/20">
-                        <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
-                        {pastWeeks.length > 0 && (
-                          <th className="text-center px-1 py-2">
-                            <button
-                              onClick={() => setShowPastWeeks(!showPastWeeks)}
-                              className="inline-flex items-center justify-center w-6 h-6 bg-black text-white dark:bg-[#E8FF4C] dark:text-black transition-colors"
-                              title={showPastWeeks ? 'Masquer les mois précédents' : 'Mois précédents'}
-                            >
-                              {showPastWeeks ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
-                            </button>
-                          </th>
-                        )}
-                        {visibleWeeks.map((w) => (
-                          <th key={w} className="text-center px-1 py-2 text-muted-foreground/60 text-xs">{w}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {kpiNames.map((kn) => (
-                        <tr key={kn} className="border-b border-border/20">
-                          <td className="px-3 py-1.5 text-foreground">{kn}</td>
-                          {pastWeeks.length > 0 && <td />}
-                          {visibleWeeks.map((w) => {
-                            const entry = data.find((s) => s.kpi_name === kn && s.week === w);
-                            return (
-                              <NoteableCell key={w} levier={lev} kpiName={kn} week={w} notesMap={cellNotesMap} levierColor={LEVIER_COLORS[lev]} className="px-1 py-1.5 text-center text-[13px] text-foreground">
-                                {formatNum(entry?.actual ?? null)}
-                              </NoteableCell>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            );
-          })}
         </div>
       )}
         </>
