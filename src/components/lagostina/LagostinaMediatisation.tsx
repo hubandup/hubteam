@@ -376,7 +376,7 @@ export function LagostinaMediatisation({ learningsButton, learningsPanel }: { le
         ) : (
           <>
             {tab === 'SEA' && <SEATab rows={rows} />}
-            {tab === 'SMA' && <SMATab rows={rows} />}
+            {tab === 'META' && <SMATab rows={rows} />}
             {tab === 'TikTok' && <TikTokTab rows={rows} />}
           </>
         );
