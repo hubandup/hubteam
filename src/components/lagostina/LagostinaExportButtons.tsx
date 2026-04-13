@@ -156,9 +156,7 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
       const pageWidth = 210;
       const pageHeight = 297;
       const margin = 15;
-      const headerTopY = 12;
-      const headerLogoH = 12; // logo height in mm
-      const contentStartY = headerTopY + headerLogoH + 8; // after logo + spacing
+      const contentStartY = margin;
       const footerH = 22;
       const footerStartY = pageHeight - margin - footerH;
       const usableWidth = pageWidth - margin * 2;
@@ -169,11 +167,6 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
       const imgHeightMm = (canvas.height / canvas.width) * imgWidthMm;
 
       const addHeaderFooter = (pageNum: number, totalPages: number) => {
-        // --- HEADER: logo top-left ---
-        if (logoHeader) {
-          const logoW = (logoHeader.width / logoHeader.height) * headerLogoH;
-          pdf.addImage(logoHeader, 'PNG', margin, headerTopY, logoW, headerLogoH);
-        }
 
         // --- FOOTER ---
         const footerY = pageHeight - margin;
@@ -209,7 +202,7 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
 
         // Footer logo bottom-right
         if (logoFooter) {
-          const fLogoH = 6;
+          const fLogoH = 2.4;
           const fLogoW = (logoFooter.width / logoFooter.height) * fLogoH;
           pdf.addImage(logoFooter, 'PNG', pageWidth - margin - fLogoW, footerY - fLogoH - 4, fLogoW, fLogoH);
         }
