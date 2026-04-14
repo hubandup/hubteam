@@ -339,12 +339,18 @@ export async function parseInfluenceRPFile(workbook: XLSX.WorkBook) {
 
     if (sheetName.toLowerCase().includes('influence')) {
       // Header-based parsing
-      const headers = (rows[0] || []).map((h: any) => String(h || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_'));
-      console.log('[Influence] Headers:', headers);
+      const rawHeaders = (rows[0] || []).map((h: any) => String(h || '').trim());
+      const headers = rawHeaders.map((h: string) => h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_'));
+      console.log('[Influence] Headers:', rawHeaders, '->', headers);
 
-      const col = (name: string) => {
+      // Fuzzy column finder: tries exact match first, then partial/contains match
+      const col = (name: string): number => {
         const norm = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_');
-        return headers.indexOf(norm);
+        const exact = headers.indexOf(norm);
+        if (exact >= 0) return exact;
+        // Try contains match
+        const partial = headers.findIndex((h: string) => h.includes(norm) || norm.includes(h));
+        return partial;
       };
 
       const IGNORED = ['week', 'reach_millions_obj', 'engagement_rate_obj', 'emv_obj', 'conversion_rate_obj', 'cost_per_reach_obj', 'influencer_count_obj'];
@@ -352,8 +358,10 @@ export async function parseInfluenceRPFile(workbook: XLSX.WorkBook) {
       const getNum = (row: any[], colName: string): number | null => {
         const idx = col(colName);
         if (idx < 0) return null;
-        const v = Number(row[idx]);
-        return isNaN(v) ? null : v || null;
+        const raw = row[idx];
+        if (raw == null || raw === '') return null;
+        const v = Number(raw);
+        return isNaN(v) ? null : v;
       };
 
       const influenceRecords: Array<Record<string, any>> = [];
