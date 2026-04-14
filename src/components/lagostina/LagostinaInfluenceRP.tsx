@@ -26,6 +26,14 @@ type Influence = {
   conversion_rate_obj: number | null;
   cost_per_reach: number | null;
   cost_per_reach_obj: number | null;
+  month: string | null;
+  budget_mois: number | null;
+  emv: number | null;
+  cpm: number | null;
+  impressions_globales: number | null;
+  reel_engagement: number | null;
+  stories_clics_vues: number | null;
+  stories_clics_mentions: number | null;
 };
 
 type Press = {
@@ -131,10 +139,16 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
     return [
       { label: 'Nb influenceurs', actual: latest.influencer_count, obj: latest.influencer_count_obj, vals: influenceData?.map((d) => d.influencer_count).filter((v): v is number => v != null) || [] },
       { label: 'Reach potentiel (M)', actual: latest.reach_millions, obj: latest.reach_millions_obj, vals: influenceData?.map((d) => d.reach_millions).filter((v): v is number => v != null) || [] },
+      { label: 'Budget mois', actual: latest.budget_mois, obj: null, vals: influenceData?.map((d) => d.budget_mois).filter((v): v is number => v != null) || [] },
       { label: 'Engagement rate (%)', actual: latest.engagement_rate, obj: latest.engagement_rate_obj, vals: influenceData?.map((d) => d.engagement_rate).filter((v): v is number => v != null) || [] },
-      { label: 'VTF', actual: latest.vtf, obj: latest.vtf_obj, vals: influenceData?.map((d) => d.vtf).filter((v): v is number => v != null) || [] },
+      { label: 'EMV', actual: latest.emv, obj: null, vals: influenceData?.map((d) => d.emv).filter((v): v is number => v != null) || [] },
       { label: 'Taux conversion (%)', actual: latest.conversion_rate, obj: latest.conversion_rate_obj, vals: influenceData?.map((d) => d.conversion_rate).filter((v): v is number => v != null) || [] },
       { label: 'Coût / reach potentiel', actual: latest.cost_per_reach, obj: latest.cost_per_reach_obj, vals: influenceData?.map((d) => d.cost_per_reach).filter((v): v is number => v != null) || [] },
+      { label: 'CPM', actual: latest.cpm, obj: null, vals: influenceData?.map((d) => d.cpm).filter((v): v is number => v != null) || [] },
+      { label: 'Impressions globales', actual: latest.impressions_globales, obj: null, vals: influenceData?.map((d) => d.impressions_globales).filter((v): v is number => v != null) || [] },
+      { label: 'Reel engagement', actual: latest.reel_engagement, obj: null, vals: influenceData?.map((d) => d.reel_engagement).filter((v): v is number => v != null) || [] },
+      { label: 'Stories clics / vues', actual: latest.stories_clics_vues, obj: null, vals: influenceData?.map((d) => d.stories_clics_vues).filter((v): v is number => v != null) || [] },
+      { label: 'Stories clics / mentions', actual: latest.stories_clics_mentions, obj: null, vals: influenceData?.map((d) => d.stories_clics_mentions).filter((v): v is number => v != null) || [] },
     ];
   }, [latest, influenceData]);
 

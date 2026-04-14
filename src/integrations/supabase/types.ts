@@ -1476,52 +1476,76 @@ export type Database = {
       }
       lagostina_influence: {
         Row: {
+          budget_mois: number | null
           conversion_rate: number | null
           conversion_rate_obj: number | null
           cost_per_reach: number | null
           cost_per_reach_obj: number | null
+          cpm: number | null
           created_at: string | null
+          emv: number | null
           engagement_rate: number | null
           engagement_rate_obj: number | null
           id: string
+          impressions_globales: number | null
           influencer_count: number | null
           influencer_count_obj: number | null
+          month: string | null
           reach_millions: number | null
           reach_millions_obj: number | null
+          reel_engagement: number | null
+          stories_clics_mentions: number | null
+          stories_clics_vues: number | null
           vtf: number | null
           vtf_obj: number | null
           week: string
         }
         Insert: {
+          budget_mois?: number | null
           conversion_rate?: number | null
           conversion_rate_obj?: number | null
           cost_per_reach?: number | null
           cost_per_reach_obj?: number | null
+          cpm?: number | null
           created_at?: string | null
+          emv?: number | null
           engagement_rate?: number | null
           engagement_rate_obj?: number | null
           id?: string
+          impressions_globales?: number | null
           influencer_count?: number | null
           influencer_count_obj?: number | null
+          month?: string | null
           reach_millions?: number | null
           reach_millions_obj?: number | null
+          reel_engagement?: number | null
+          stories_clics_mentions?: number | null
+          stories_clics_vues?: number | null
           vtf?: number | null
           vtf_obj?: number | null
           week: string
         }
         Update: {
+          budget_mois?: number | null
           conversion_rate?: number | null
           conversion_rate_obj?: number | null
           cost_per_reach?: number | null
           cost_per_reach_obj?: number | null
+          cpm?: number | null
           created_at?: string | null
+          emv?: number | null
           engagement_rate?: number | null
           engagement_rate_obj?: number | null
           id?: string
+          impressions_globales?: number | null
           influencer_count?: number | null
           influencer_count_obj?: number | null
+          month?: string | null
           reach_millions?: number | null
           reach_millions_obj?: number | null
+          reel_engagement?: number | null
+          stories_clics_mentions?: number | null
+          stories_clics_vues?: number | null
           vtf?: number | null
           vtf_obj?: number | null
           week?: string

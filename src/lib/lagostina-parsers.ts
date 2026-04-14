@@ -338,33 +338,61 @@ export async function parseInfluenceRPFile(workbook: XLSX.WorkBook) {
     const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { header: 1 }) as any[][];
 
     if (sheetName.toLowerCase().includes('influence')) {
-      const influenceRecords: Array<{ week: string; influencer_count: number | null; influencer_count_obj: number | null; reach_millions: number | null; reach_millions_obj: number | null; engagement_rate: number | null; engagement_rate_obj: number | null; vtf: number | null; vtf_obj: number | null; conversion_rate: number | null; conversion_rate_obj: number | null; cost_per_reach: number | null; cost_per_reach_obj: number | null }> = [];
+      // Header-based parsing
+      const headers = (rows[0] || []).map((h: any) => String(h || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_'));
+      console.log('[Influence] Headers:', headers);
+
+      const col = (name: string) => {
+        const norm = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_');
+        return headers.indexOf(norm);
+      };
+
+      const IGNORED = ['week', 'reach_millions_obj', 'engagement_rate_obj', 'emv_obj', 'conversion_rate_obj', 'cost_per_reach_obj', 'influencer_count_obj'];
+
+      const getNum = (row: any[], colName: string): number | null => {
+        const idx = col(colName);
+        if (idx < 0) return null;
+        const v = Number(row[idx]);
+        return isNaN(v) ? null : v || null;
+      };
+
+      const influenceRecords: Array<Record<string, any>> = [];
       for (let r = 1; r < rows.length; r++) {
         const row = rows[r];
-        if (!row || !row[0]) continue;
-        const week = String(row[0]).trim();
-        if (!week.match(/^S\d+$/i)) continue;
+        if (!row || row.every((c: any) => c == null || c === '')) continue;
+
+        // Generate a synthetic week key from row index
+        const weekVal = `S${r}`;
 
         influenceRecords.push({
-          week: week.toUpperCase(),
-          influencer_count: Number(row[1]) || null,
-          influencer_count_obj: Number(row[2]) || null,
-          reach_millions: Number(row[3]) || null,
-          reach_millions_obj: Number(row[4]) || null,
-          engagement_rate: Number(row[5]) || null,
-          engagement_rate_obj: Number(row[6]) || null,
-          vtf: Number(row[7]) || null,
-          vtf_obj: Number(row[8]) || null,
-          conversion_rate: Number(row[9]) || null,
-          conversion_rate_obj: Number(row[10]) || null,
-          cost_per_reach: Number(row[11]) || null,
-          cost_per_reach_obj: Number(row[12]) || null,
+          week: weekVal,
+          influencer_count: getNum(row, 'influencer_count'),
+          reach_millions: getNum(row, 'reach_millions'),
+          month: col('month') >= 0 ? String(row[col('month')] || '').trim() || null : null,
+          budget_mois: getNum(row, 'budget_mois'),
+          engagement_rate: getNum(row, 'engagement_rate'),
+          emv: getNum(row, 'emv'),
+          conversion_rate: getNum(row, 'conversion_rate'),
+          cost_per_reach: getNum(row, 'cost_per_reach'),
+          cpm: getNum(row, 'cpm'),
+          impressions_globales: getNum(row, 'impressions_globales'),
+          reel_engagement: getNum(row, 'reel_engagement'),
+          stories_clics_vues: getNum(row, 'stories_clics_vues'),
+          stories_clics_mentions: getNum(row, 'stories_clics_mentions'),
+          // Clear obj columns
+          influencer_count_obj: null,
+          reach_millions_obj: null,
+          engagement_rate_obj: null,
+          vtf: null,
+          vtf_obj: null,
+          conversion_rate_obj: null,
+          cost_per_reach_obj: null,
         });
       }
 
       if (influenceRecords.length > 0) {
         await supabase.from('lagostina_influence').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-        const { error } = await supabase.from('lagostina_influence').insert(influenceRecords);
+        const { error } = await supabase.from('lagostina_influence').insert(influenceRecords as any);
         if (error) throw error;
         count += influenceRecords.length;
       }

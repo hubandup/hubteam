@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database, Plus, Minus } from 'lucide-react';
-import { LagostinaSubTabs } from './LagostinaSubTabs';
+
 import { NoteableCell, useCellNotes } from './CellNotePopover';
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area,
@@ -242,42 +242,22 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
   }, [scorecards]);
 
   // ── Dynamic structures from actual data ──
-  const { syntheseGroups, parLevierGroups, allLevierKpis } = useMemo(() => {
-    if (!scorecards?.length) return { syntheseGroups: [], parLevierGroups: [], allLevierKpis: [] };
+  const syntheseGroups = useMemo(() => {
+    if (!scorecards?.length) return [];
 
-    // Group by levier
+    // Group by levier — include ALL leviers and ALL KPIs, excluding hidden
     const levierMap = new Map<string, Set<string>>();
     scorecards.forEach((s) => {
       if (!levierMap.has(s.levier)) levierMap.set(s.levier, new Set());
       levierMap.get(s.levier)!.add(s.kpi_name);
     });
 
-    // Synthèse: prio_1 leviers, excluding hidden
-    const prio1Leviers = [...new Set(scorecards.filter(s => s.priority === 'prio_1' && !isHiddenLevier(s.levier)).map(s => s.levier))];
-    const synthese = prio1Leviers.map((lev) => ({
+    const allLeviers = [...new Set(scorecards.filter(s => !isHiddenLevier(s.levier)).map(s => s.levier))];
+    return allLeviers.map((lev) => ({
       levier: lev,
       label: getLevierLabel(lev),
       kpis: [...(levierMap.get(lev) || [])],
     }));
-
-    // Par levier: prio_2 leviers (full funnel detail)
-    const prio2Leviers = [...new Set(scorecards.filter(s => s.priority !== 'prio_1').map(s => s.levier))];
-    const parLevier = prio2Leviers.map((lev) => ({
-      levier: lev,
-      label: getLevierLabel(lev),
-      kpis: [...(levierMap.get(lev) || [])],
-    }));
-
-    // All leviers with KPIs for full detail
-    const allLevKpis = [...levierMap.entries()]
-      .filter(([lev]) => !isHiddenLevier(lev))
-      .map(([lev, kpis]) => ({
-        levier: lev,
-        label: getLevierLabel(lev),
-        kpis: [...kpis],
-      }));
-
-    return { syntheseGroups: synthese, parLevierGroups: parLevier, allLevierKpis: allLevKpis };
   }, [scorecards]);
 
   const getVal = (levier: string, kpi: string, week: string) => lookup.get(`${levier}|${kpi}|${week}`);
@@ -339,18 +319,10 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
     );
   }
 
-  const scorecardSubTabs = [
-    { id: 'synthese', label: 'Synthèse' },
-    { id: 'par_levier', label: 'Par levier' },
-    { id: 'full_detail', label: 'Full détail' },
-  ];
-
   return (
-    <LagostinaSubTabs tabs={scorecardSubTabs} defaultTab="synthese" rightAction={learningsButton} belowTabs={learningsPanel}>
-      {(tab) => (
-        <>
-      {/* SYNTHÈSE */}
-      {tab === 'synthese' && (
+    <div className="space-y-6">
+      {learningsButton}
+      {learningsPanel}
         <>
           <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
             <table className="w-full text-sm font-['Roboto']">
@@ -520,192 +492,6 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
             </div>
           </div>
         </>
-      )}
-
-      {/* PAR LEVIER */}
-      {tab === 'par_levier' && (
-        <div className="space-y-6">
-          {parLevierGroups.map((block) => {
-            const matchingData = scorecards?.filter((s) => s.levier === block.levier) || [];
-            const kpiNames = block.kpis;
-
-            return (
-              <div key={block.levier} className="bg-white dark:bg-[#0f1422] border border-border/30">
-                <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-black" />
-                  <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">{block.label}</h3>
-                </div>
-                {kpiNames.length === 0 ? (
-                  <div className="p-4 text-muted-foreground text-xs font-['Roboto']">Aucune donnée pour ce levier</div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm font-['Roboto']">
-                      <thead>
-                        <tr className="border-b border-border/20">
-                          <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
-                          <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[70px]">Objectif</th>
-                          {pastWeeks.length > 0 && (
-                            <th className="text-center px-1 py-2">
-                              <button
-                                onClick={() => setShowPastWeeks(!showPastWeeks)}
-                                className="inline-flex items-center justify-center w-6 h-6 bg-black text-white dark:bg-[#E8FF4C] dark:text-black transition-colors"
-                                title={showPastWeeks ? 'Masquer les mois précédents' : 'Mois précédents'}
-                              >
-                                {showPastWeeks ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
-                              </button>
-                            </th>
-                          )}
-                          {visibleWeeks.map((w) => (
-                            <th key={w} className="text-center px-1 py-2 text-muted-foreground/60 text-xs">{w}</th>
-                          ))}
-                          <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[80px]">Complétion</th>
-                          <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[80px]">Statut</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {kpiNames.map((kn) => {
-                          const actualVals = weeks.map((w) => {
-                            const entry = matchingData.find((s) => s.kpi_name === kn && s.week === w);
-                            return entry?.actual ?? null;
-                          });
-                          const objVals = weeks.map((w) => {
-                            const entry = matchingData.find((s) => s.kpi_name === kn && s.week === w);
-                            return entry?.objective ?? null;
-                          });
-                          const latestObj = [...objVals].reverse().find((v) => v != null) ?? null;
-                          const latestActual = [...actualVals].reverse().find((v) => v != null) ?? null;
-                          const latestActualIdx = actualVals.lastIndexOf(latestActual);
-                          const completion = getCompletion(latestActual, latestObj);
-                          const status = getStatus(latestActual, latestObj, latestActualIdx >= 0 ? latestActualIdx : 0, weeks.length);
-
-                          return (
-                            <tr key={kn} className="border-b border-border/20">
-                              <td className="px-3 py-1.5 text-foreground">{kn}</td>
-                              <td className="px-2 py-1.5 text-center text-muted-foreground text-xs">{formatNum(latestObj)}</td>
-                              {pastWeeks.length > 0 && <td />}
-                              {visibleWeeks.map((w) => {
-                                const wi = weeks.indexOf(w);
-                                return (
-                                <NoteableCell key={w} levier={block.levier} kpiName={kn} week={w} notesMap={cellNotesMap} levierColor={LEVIER_COLORS[block.levier]} className={`px-1 py-1.5 text-center text-[13px] ${getCondColor(actualVals[wi], objVals[wi])}`}>
-                                  {formatNum(actualVals[wi])}
-                                </NoteableCell>
-                                );
-                              })}
-                              <td className="px-2 py-1.5 text-center text-xs font-medium">
-                                {completion != null ? `${completion.toFixed(0)}%` : '—'}
-                              </td>
-                              <td className="px-2 py-1.5 text-center">
-                                <span className={`inline-block px-2 py-0.5 text-[11px] font-medium ${status.color}`}>
-                                  {status.label}
-                                </span>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* FULL DÉTAIL */}
-      {tab === 'full_detail' && (
-        <div className="space-y-6">
-          {allLevierKpis.map((group) => (
-            <div key={group.levier} className="bg-white dark:bg-[#0f1422] border border-border/30">
-              <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2">
-                <div className="w-2 h-2" style={{ backgroundColor: LEVIER_COLORS[group.levier] || '#E8FF4C' }} />
-                <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">{group.label}</h3>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm font-['Roboto']">
-                  <thead>
-                    <tr className="border-b border-border/20">
-                      <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">KPI</th>
-                      <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[70px]">Objectif</th>
-                      {pastWeeks.length > 0 && (
-                        <th className="text-center px-1 py-2">
-                          <button
-                            onClick={() => setShowPastWeeks(!showPastWeeks)}
-                            className="inline-flex items-center justify-center w-6 h-6 bg-black text-white dark:bg-[#E8FF4C] dark:text-black transition-colors"
-                            title={showPastWeeks ? 'Masquer les mois précédents' : 'Mois précédents'}
-                          >
-                            {showPastWeeks ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
-                          </button>
-                        </th>
-                      )}
-                      {visibleWeeks.map((w) => (
-                        <th key={w} className="text-center px-1 py-2 text-muted-foreground/60 text-xs">{w}</th>
-                      ))}
-                      {visibleMonthGroups.map((mg) => (
-                        <th key={mg.month} className="text-center px-2 py-2 text-black dark:text-white font-semibold text-xs font-bold border-l border-border/40">{mg.month}</th>
-                      ))}
-                      <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[80px]">Complétion</th>
-                      <th className="text-center px-2 py-2 text-muted-foreground font-medium min-w-[80px]">Statut</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {group.kpis.map((kpiName) => {
-                      const data = scorecards?.filter((s) => s.levier === group.levier && s.kpi_name === kpiName) || [];
-                      const actualVals = weeks.map((w) => data.find((s) => s.week === w)?.actual ?? null);
-                      const objVals = weeks.map((w) => data.find((s) => s.week === w)?.objective ?? null);
-
-                      const latestObj = [...objVals].reverse().find((v) => v != null) ?? null;
-                      const latestActual = [...actualVals].reverse().find((v) => v != null) ?? null;
-                      const latestActualIdx = actualVals.lastIndexOf(latestActual);
-                      const completion = getCompletion(latestActual, latestObj);
-                      const status = getStatus(latestActual, latestObj, latestActualIdx >= 0 ? latestActualIdx : 0, weeks.length);
-
-                      const monthlyVals = visibleMonthGroups.map((mg) => {
-                        const monthEntries = data.filter((s) => mg.weeks.includes(s.week) && s.actual != null);
-                        if (!monthEntries.length) return null;
-                        return monthEntries.reduce((sum, e) => sum + Number(e.actual), 0) / monthEntries.length;
-                      });
-
-                      return (
-                        <tr key={kpiName} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
-                          <td className="px-3 py-1.5 text-foreground">{kpiName}</td>
-                          <td className="px-2 py-1.5 text-center text-muted-foreground text-xs">{formatNum(latestObj)}</td>
-                          {pastWeeks.length > 0 && <td />}
-                          {visibleWeeks.map((w) => {
-                            const wi = weeks.indexOf(w);
-                            const val = actualVals[wi];
-                            const obj = objVals[wi];
-                            return (
-                              <NoteableCell key={w} levier={group.levier} kpiName={kpiName} week={w} notesMap={cellNotesMap} levierColor={LEVIER_COLORS[group.levier]} className={`px-1 py-1.5 text-center text-[13px] ${getCondColor(val, obj)}`}>
-                                {formatNum(val)}
-                              </NoteableCell>
-                            );
-                          })}
-                          {monthlyVals.map((v, i) => (
-                            <td key={i} className="px-2 py-1.5 text-center text-[13px] text-black dark:text-white font-semibold font-medium border-l border-border/40">
-                              {formatNum(v)}
-                            </td>
-                          ))}
-                          <td className="px-2 py-1.5 text-center text-xs font-medium">
-                            {completion != null ? `${completion.toFixed(0)}%` : '—'}
-                          </td>
-                          <td className="px-2 py-1.5 text-center">
-                            <span className={`inline-block px-2 py-0.5 text-[11px] font-medium ${status.color}`}>
-                              {status.label}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-        </>
-      )}
-    </LagostinaSubTabs>
+    </div>
   );
 }
