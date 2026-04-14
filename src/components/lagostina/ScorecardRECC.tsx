@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database, Plus, Minus } from 'lucide-react';
-import { LagostinaSubTabs } from './LagostinaSubTabs';
+
 import { NoteableCell, useCellNotes } from './CellNotePopover';
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area,
