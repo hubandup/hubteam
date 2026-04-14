@@ -144,7 +144,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
     },
   });
 
-  // Get last month's aggregated data for KPI cards
+  // Get last month WITH DATA for KPI cards
   const { lastMonthAvg, allInfluenceData } = useMemo(() => {
     if (!influenceData?.length) return { lastMonthAvg: null, allInfluenceData: influenceData };
     const groups = new Map<string, InfluenceRow[]>();
@@ -154,8 +154,15 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
       groups.get(m)!.push(d);
     });
     const months = [...groups.keys()];
-    const lastMonth = months[months.length - 1];
-    const entries = groups.get(lastMonth) || [];
+    // Find last month that has at least one non-null numeric value
+    const dataKeys: (keyof InfluenceRow)[] = ['influencer_count', 'reach_millions', 'budget_mois', 'engagement_rate', 'emv'];
+    let lastMonthWithData = months[months.length - 1];
+    for (let i = months.length - 1; i >= 0; i--) {
+      const entries = groups.get(months[i]) || [];
+      const hasData = entries.some(e => dataKeys.some(k => e[k] != null));
+      if (hasData) { lastMonthWithData = months[i]; break; }
+    }
+    const entries = groups.get(lastMonthWithData) || [];
     const avg = (key: keyof InfluenceRow) => {
       const vals = entries.map(e => e[key] as number | null).filter((v): v is number => v != null);
       return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
@@ -451,9 +458,14 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
           return n.toLocaleString('fr-FR');
         };
 
-        // Use last month's aggregated data for KPI cards
-        const lastMonth = months[months.length - 1];
-        const lastMonthEntries = monthlyGroups.get(lastMonth) || [];
+        // Find last month WITH DATA for KPI cards
+        const dataKeys: (keyof InfluenceRow)[] = ['influencer_count', 'reach_millions', 'budget_mois', 'engagement_rate', 'emv'];
+        let lastMonthWithData = months[months.length - 1];
+        for (let i = months.length - 1; i >= 0; i--) {
+          const ents = monthlyGroups.get(months[i]) || [];
+          if (ents.some(e => dataKeys.some(k => e[k] != null))) { lastMonthWithData = months[i]; break; }
+        }
+        const lastMonthEntries = monthlyGroups.get(lastMonthWithData) || [];
         const avgForMonth = (key: keyof InfluenceRow) => {
           const vals = lastMonthEntries.map(e => e[key] as number | null).filter((v): v is number => v != null);
           return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
