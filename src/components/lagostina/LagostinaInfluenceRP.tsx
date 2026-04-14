@@ -230,24 +230,142 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
       {(tab) => (
         <>
       {/* Influence tab */}
-      {tab === 'influence' && kpis.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {kpis.map((kpi) => (
-            <div key={kpi.label} className={`bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
-              <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-1">{kpi.label}</p>
-              <div className="flex items-end gap-2">
-                <span className={`text-xl font-bold font-['Instrument_Sans'] ${getCondColor(kpi.actual, kpi.obj) || 'text-foreground'}`}>
-                  {kpi.actual != null ? kpi.actual.toLocaleString('fr-FR') : '—'}
-                </span>
-                {kpi.obj != null && (
-                  <span className="text-muted-foreground text-xs font-['Roboto'] mb-0.5">/ {kpi.obj.toLocaleString('fr-FR')}</span>
-                )}
+      {tab === 'influence' && influenceData && influenceData.length > 0 && (() => {
+        // Group data by month
+        const monthlyGroups = new Map<string, Influence[]>();
+        influenceData.forEach((d) => {
+          const m = d.month || 'N/A';
+          if (!monthlyGroups.has(m)) monthlyGroups.set(m, []);
+          monthlyGroups.get(m)!.push(d);
+        });
+
+        const KPI_KEYS: { key: keyof Influence; label: string }[] = [
+          { key: 'influencer_count', label: 'Nb influenceurs' },
+          { key: 'reach_millions', label: 'Reach (M)' },
+          { key: 'budget_mois', label: 'Budget mois' },
+          { key: 'engagement_rate', label: 'Engagement (%)' },
+          { key: 'emv', label: 'EMV' },
+          { key: 'conversion_rate', label: 'Conversion (%)' },
+          { key: 'cost_per_reach', label: 'Coût/reach' },
+          { key: 'cpm', label: 'CPM' },
+          { key: 'impressions_globales', label: 'Impressions' },
+          { key: 'reel_engagement', label: 'Reel engagement' },
+          { key: 'stories_clics_vues', label: 'Stories vues' },
+          { key: 'stories_clics_mentions', label: 'Stories mentions' },
+        ];
+
+        const months = [...monthlyGroups.keys()];
+        const fmtNum = (n: number | null) => {
+          if (n == null) return '—';
+          if (Math.abs(n) >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+          if (Math.abs(n) >= 1000) return `${(n / 1000).toFixed(1)}K`;
+          if (n % 1 !== 0) return n.toFixed(2);
+          return n.toLocaleString('fr-FR');
+        };
+
+        // Chart data: one point per row (month-based)
+        const chartData = influenceData.map((d) => ({
+          label: d.month || d.week,
+          reach: d.reach_millions,
+          engagement: d.engagement_rate,
+          budget: d.budget_mois,
+          cpm: d.cpm,
+        }));
+
+        const CHART_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444'];
+
+        return (
+        <div className="space-y-6">
+          {/* KPI cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {kpis.map((kpi) => (
+              <div key={kpi.label} className={`bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
+                <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-1">{kpi.label}</p>
+                <div className="flex items-end gap-2">
+                  <span className={`text-xl font-bold font-['Instrument_Sans'] ${getCondColor(kpi.actual, kpi.obj) || 'text-foreground'}`}>
+                    {kpi.actual != null ? kpi.actual.toLocaleString('fr-FR') : '—'}
+                  </span>
+                  {kpi.obj != null && (
+                    <span className="text-muted-foreground text-xs font-['Roboto'] mb-0.5">/ {kpi.obj.toLocaleString('fr-FR')}</span>
+                  )}
+                </div>
+                <Sparkline data={kpi.vals} />
               </div>
-              <Sparkline data={kpi.vals} />
+            ))}
+          </div>
+
+          {/* Evolution charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
+              <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Reach & Engagement</h3>
+              <div className="h-52">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+                    <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" className="dark:stroke-[#1e293b]" />
+                    <XAxis dataKey="label" tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                    <YAxis yAxisId="left" tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                    <Tooltip contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 12, fontFamily: 'Roboto' }} />
+                    <Line yAxisId="left" type="monotone" dataKey="reach" name="Reach (M)" stroke={CHART_COLORS[0]} strokeWidth={2} dot={{ r: 3 }} />
+                    <Line yAxisId="right" type="monotone" dataKey="engagement" name="Engagement (%)" stroke={CHART_COLORS[1]} strokeWidth={2} dot={{ r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-          ))}
+
+            <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
+              <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Budget & CPM</h3>
+              <div className="h-52">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+                    <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" className="dark:stroke-[#1e293b]" />
+                    <XAxis dataKey="label" tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                    <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                    <Tooltip contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 12, fontFamily: 'Roboto' }} />
+                    <Bar dataKey="budget" name="Budget" fill={CHART_COLORS[2]} />
+                    <Bar dataKey="cpm" name="CPM" fill={CHART_COLORS[3]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Detailed monthly table */}
+          <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
+            <div className="px-4 py-3 border-b border-border/40">
+              <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Détail mensuel</h3>
+            </div>
+            <table className="w-full text-sm font-['Roboto']">
+              <thead>
+                <tr className="border-b border-border/40">
+                  <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white dark:bg-[#0f1422] z-10 min-w-[140px]">KPI</th>
+                  {months.map((m) => (
+                    <th key={m} className="text-center px-3 py-2 text-foreground font-semibold uppercase tracking-wider min-w-[90px]">{m}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {KPI_KEYS.map((kpi) => (
+                  <tr key={kpi.key} className="border-b border-border/20 hover:bg-gray-50 dark:hover:bg-[#141928]">
+                    <td className="px-3 py-2 text-foreground text-xs font-medium sticky left-0 bg-white dark:bg-[#0f1422] z-10">{kpi.label}</td>
+                    {months.map((m) => {
+                      const entries = monthlyGroups.get(m) || [];
+                      const vals = entries.map((e) => e[kpi.key] as number | null).filter((v): v is number => v != null);
+                      const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+                      return (
+                        <td key={m} className="px-3 py-2 text-center text-foreground text-xs tabular-nums">
+                          {fmtNum(avg)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Presse tab */}
       {tab === 'presse' && pressData && pressData.length > 0 && (
