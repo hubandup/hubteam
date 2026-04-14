@@ -392,7 +392,7 @@ export async function parseInfluenceRPFile(workbook: XLSX.WorkBook) {
 
       if (influenceRecords.length > 0) {
         await supabase.from('lagostina_influence').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-        const { error } = await supabase.from('lagostina_influence').insert(influenceRecords);
+        const { error } = await supabase.from('lagostina_influence').insert(influenceRecords as any);
         if (error) throw error;
         count += influenceRecords.length;
       }
