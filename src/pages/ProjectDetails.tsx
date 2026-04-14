@@ -42,7 +42,8 @@ import { RecoTimeline } from '@/components/project-details/RecoTimeline';
 export default function ProjectDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, isTeam } = useUserRole();
+  const canEditProject = isAdmin || isTeam;
   const isMobile = useIsMobile();
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -345,7 +346,7 @@ export default function ProjectDetails() {
               date_montage_reco: project.date_montage_reco,
               date_restitution: project.date_restitution,
             }}
-            canEdit={isAdmin}
+            canEdit={canEditProject}
             onDatesUpdate={fetchProjectDetails}
           />
         ) : (
@@ -532,7 +533,7 @@ export default function ProjectDetails() {
           onClientSelected={handleClientSelected}
         />
 
-        {isAdmin && (
+        {canEditProject && (
           <>
             <EditProjectInfoDialog
               open={showEditDialog}
