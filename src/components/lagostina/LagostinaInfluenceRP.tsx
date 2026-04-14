@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Database, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { LagostinaSubTabs } from './LagostinaSubTabs';
+import { NoteableCell, useCellNotes } from './CellNotePopover';
 
 // Theme-aware chart accent: dark=#E8FF4C, light=#0f1422
 function getChartAccent(): string {
@@ -106,6 +107,7 @@ const PAGE_SIZE = 20;
 export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { learningsButton?: React.ReactNode; learningsPanel?: React.ReactNode }) {
   const [tonalityFilter, setTonalityFilter] = useState<string>('all');
   const [page, setPage] = useState(0);
+  const { data: cellNotesMap } = useCellNotes();
 
   const { data: influenceData, isLoading: loadingInfluence } = useQuery({
     queryKey: ['lagostina-influence'],
@@ -353,9 +355,9 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
                       const vals = entries.map((e) => e[kpi.key] as number | null).filter((v): v is number => v != null);
                       const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
                       return (
-                        <td key={m} className="px-3 py-2 text-center text-foreground text-xs tabular-nums">
+                        <NoteableCell key={m} levier="influence" kpiName={kpi.label} week={m} notesMap={cellNotesMap} levierColor="#a78bfa" className="px-3 py-2 text-center text-foreground text-xs tabular-nums">
                           {fmtNum(avg)}
-                        </td>
+                        </NoteableCell>
                       );
                     })}
                   </tr>
