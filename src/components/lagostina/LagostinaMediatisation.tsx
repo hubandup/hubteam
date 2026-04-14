@@ -313,47 +313,11 @@ function SMATab({ rows }: { rows: any[] }) {
 
 function TikTokTab({ rows }: { rows: any[] }) {
   const kpis = buildKpiData(rows, TIKTOK_KPIS);
-  const followersData = sortWeeksNumerically(
-    rows
-      .filter((r: any) => r.kpi_name === 'followers_evol')
-      .map((r: any) => ({ week: r.week, actual: r.actual, objective: null }))
-  ).map((r) => ({ week: r.week, value: r.actual }));
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {kpis.map((k) => <KpiCard key={k.kpi_name} data={k} />)}
-      </div>
-      {followersData.length > 1 && (
-        <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
-          <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Évolution followers</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={followersData}>
-              <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
-              <XAxis dataKey="week" tick={{ fill: '#9ca3af', fontSize: 10, fontFamily: 'Roboto' }} />
-              <YAxis tick={{ fill: '#9ca3af', fontSize: 10, fontFamily: 'Roboto' }} />
-              <Tooltip {...chartTooltipStyle} />
-              <Bar dataKey="value" name="Évol. %">
-                {followersData.map((entry, i) => (
-                  <Cell key={i} fill={(entry.value ?? 0) >= 0 ? '#22c55e' : '#ef4444'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-      <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
-        <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Top Creatives</h3>
-        <div className="grid grid-cols-3 gap-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-gray-50 dark:bg-[#141928] p-3">
-              <div className="aspect-video bg-white dark:bg-[#141928] flex items-center justify-center mb-2">
-                <span className="text-muted-foreground text-xs font-['Roboto']">Creative #{i}</span>
-              </div>
-              <div className="text-muted-foreground text-xs font-['Roboto']">Données non disponibles</div>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
