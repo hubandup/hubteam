@@ -114,7 +114,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
     queryFn: async () => {
       const { data, error } = await supabase.from('lagostina_influence').select('*');
       if (error) throw error;
-      return (data as Influence[]).sort((a, b) => {
+      return (data as InfluenceRow[]).sort((a, b) => {
         const numA = parseInt(a.week.replace(/\D/g, ''), 10);
         const numB = parseInt(b.week.replace(/\D/g, ''), 10);
         return numA - numB;
@@ -234,14 +234,14 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
       {/* Influence tab */}
       {tab === 'influence' && influenceData && influenceData.length > 0 && (() => {
         // Group data by month
-        const monthlyGroups = new Map<string, Influence[]>();
+        const monthlyGroups = new Map<string, InfluenceRow[]>();
         influenceData.forEach((d) => {
           const m = d.month || 'N/A';
           if (!monthlyGroups.has(m)) monthlyGroups.set(m, []);
           monthlyGroups.get(m)!.push(d);
         });
 
-        const KPI_KEYS: { key: keyof Influence; label: string }[] = [
+        const KPI_KEYS: { key: keyof InfluenceRow; label: string }[] = [
           { key: 'influencer_count', label: 'Nb influenceurs' },
           { key: 'reach_millions', label: 'Reach (M)' },
           { key: 'budget_mois', label: 'Budget mois' },
@@ -268,7 +268,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
         // Chart data: aggregate by MONTH (not per-row/week)
         const chartData = months.map((m) => {
           const entries = monthlyGroups.get(m) || [];
-          const avg = (key: keyof Influence) => {
+          const avg = (key: keyof InfluenceRow) => {
             const vals = entries.map(e => e[key] as number | null).filter((v): v is number => v != null);
             return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
           };
