@@ -393,6 +393,167 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
         );
       })()}
 
+      {/* Affiliation tab */}
+      {tab === 'affiliation' && (() => {
+        const affData = affiliationData || [];
+        if (!affData.length) {
+          return (
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <Database className="h-16 w-16 text-muted-foreground" />
+              <p className="text-foreground font-['Instrument_Sans'] text-lg font-bold">Données Affiliation non disponibles</p>
+              <p className="text-muted-foreground font-['Roboto'] text-sm">Importez un fichier Influence & RP avec un onglet Affiliation</p>
+            </div>
+          );
+        }
+
+        const monthlyGroups = new Map<string, InfluenceRow[]>();
+        affData.forEach((d) => {
+          const m = d.month || 'N/A';
+          if (!monthlyGroups.has(m)) monthlyGroups.set(m, []);
+          monthlyGroups.get(m)!.push(d);
+        });
+
+        const KPI_KEYS: { key: keyof InfluenceRow; label: string }[] = [
+          { key: 'influencer_count', label: 'Nb affiliés' },
+          { key: 'reach_millions', label: 'Reach (M)' },
+          { key: 'budget_mois', label: 'Budget mois' },
+          { key: 'engagement_rate', label: 'Engagement (%)' },
+          { key: 'emv', label: 'EMV' },
+          { key: 'conversion_rate', label: 'Conversion (%)' },
+          { key: 'cost_per_reach', label: 'Coût/reach' },
+          { key: 'cpm', label: 'CPM' },
+          { key: 'impressions_globales', label: 'Impressions' },
+          { key: 'reel_engagement', label: 'Reel engagement' },
+          { key: 'stories_clics_vues', label: 'Stories vues' },
+          { key: 'stories_clics_mentions', label: 'Stories mentions' },
+        ];
+
+        const months = [...monthlyGroups.keys()];
+        const fmtNum = (n: number | null) => {
+          if (n == null) return '—';
+          if (Math.abs(n) >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+          if (Math.abs(n) >= 1000) return `${(n / 1000).toFixed(1)}K`;
+          if (n % 1 !== 0) return n.toFixed(2);
+          return n.toLocaleString('fr-FR');
+        };
+
+        const latestAff = affData[affData.length - 1];
+        const affKpis = [
+          { label: 'Nb affiliés', actual: latestAff.influencer_count, obj: null, vals: affData.map(d => d.influencer_count).filter((v): v is number => v != null) },
+          { label: 'Reach (M)', actual: latestAff.reach_millions, obj: null, vals: affData.map(d => d.reach_millions).filter((v): v is number => v != null) },
+          { label: 'Budget mois', actual: latestAff.budget_mois, obj: null, vals: affData.map(d => d.budget_mois).filter((v): v is number => v != null) },
+          { label: 'Engagement (%)', actual: latestAff.engagement_rate, obj: null, vals: affData.map(d => d.engagement_rate).filter((v): v is number => v != null) },
+          { label: 'EMV', actual: latestAff.emv, obj: null, vals: affData.map(d => d.emv).filter((v): v is number => v != null) },
+          { label: 'Conversion (%)', actual: latestAff.conversion_rate, obj: null, vals: affData.map(d => d.conversion_rate).filter((v): v is number => v != null) },
+          { label: 'Coût/reach', actual: latestAff.cost_per_reach, obj: null, vals: affData.map(d => d.cost_per_reach).filter((v): v is number => v != null) },
+          { label: 'CPM', actual: latestAff.cpm, obj: null, vals: affData.map(d => d.cpm).filter((v): v is number => v != null) },
+          { label: 'Impressions', actual: latestAff.impressions_globales, obj: null, vals: affData.map(d => d.impressions_globales).filter((v): v is number => v != null) },
+        ];
+
+        const chartData = months.map((m) => {
+          const entries = monthlyGroups.get(m) || [];
+          const avg = (key: keyof InfluenceRow) => {
+            const vals = entries.map(e => e[key] as number | null).filter((v): v is number => v != null);
+            return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+          };
+          return { label: m, reach: avg('reach_millions'), engagement: avg('engagement_rate'), budget: avg('budget_mois'), cpm: avg('cpm') };
+        });
+
+        const CHART_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444'];
+
+        return (
+          <div className="space-y-6">
+            {/* KPI cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {affKpis.map((kpi) => (
+                <div key={kpi.label} className={`bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
+                  <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-1">{kpi.label}</p>
+                  <div className="flex items-end gap-2">
+                    <span className={`text-xl font-bold font-['Instrument_Sans'] ${getCondColor(kpi.actual, kpi.obj) || 'text-foreground'}`}>
+                      {kpi.actual != null ? kpi.actual.toLocaleString('fr-FR') : '—'}
+                    </span>
+                  </div>
+                  <Sparkline data={kpi.vals} />
+                </div>
+              ))}
+            </div>
+
+            {/* Evolution charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
+                <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Reach & Engagement</h3>
+                <div className="h-52">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                      <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" className="dark:stroke-[#1e293b]" />
+                      <XAxis dataKey="label" tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                      <YAxis yAxisId="left" tick={{ fill: '#9ca3af', fontSize: 10 }} label={{ value: 'Reach (M)', angle: -90, position: 'insideLeft', fill: '#9ca3af', fontSize: 10 }} />
+                      <YAxis yAxisId="right" orientation="right" tick={{ fill: '#9ca3af', fontSize: 10 }} label={{ value: 'Engagement (%)', angle: 90, position: 'insideRight', fill: '#9ca3af', fontSize: 10 }} />
+                      <Tooltip contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 12, fontFamily: 'Roboto' }} formatter={(value: any, name: string) => [value != null ? Number(value).toLocaleString('fr-FR', { maximumFractionDigits: 2 }) : '—', name]} />
+                      <Legend wrapperStyle={{ fontSize: 11, fontFamily: 'Roboto' }} />
+                      <Line yAxisId="left" type="monotone" dataKey="reach" name="Reach (M)" stroke={CHART_COLORS[0]} strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                      <Line yAxisId="right" type="monotone" dataKey="engagement" name="Engagement (%)" stroke={CHART_COLORS[1]} strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
+                <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Budget & CPM</h3>
+                <div className="h-52">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                      <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" className="dark:stroke-[#1e293b]" />
+                      <XAxis dataKey="label" tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                      <YAxis yAxisId="left" tick={{ fill: '#9ca3af', fontSize: 10 }} label={{ value: 'Budget (€)', angle: -90, position: 'insideLeft', fill: '#9ca3af', fontSize: 10 }} />
+                      <YAxis yAxisId="right" orientation="right" tick={{ fill: '#9ca3af', fontSize: 10 }} label={{ value: 'CPM', angle: 90, position: 'insideRight', fill: '#9ca3af', fontSize: 10 }} />
+                      <Tooltip contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 12, fontFamily: 'Roboto' }} formatter={(value: any, name: string) => [value != null ? Number(value).toLocaleString('fr-FR', { maximumFractionDigits: 2 }) : '—', name]} />
+                      <Legend wrapperStyle={{ fontSize: 11, fontFamily: 'Roboto' }} />
+                      <Bar yAxisId="left" dataKey="budget" name="Budget" fill={CHART_COLORS[2]} />
+                      <Bar yAxisId="right" dataKey="cpm" name="CPM" fill={CHART_COLORS[3]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* Detailed monthly table */}
+            <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
+              <div className="px-4 py-3 border-b border-border/40">
+                <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Détail mensuel</h3>
+              </div>
+              <table className="w-full text-sm font-['Roboto']">
+                <thead>
+                  <tr className="border-b border-border/40">
+                    <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white dark:bg-[#0f1422] z-10 min-w-[140px]">KPI</th>
+                    {months.map((m) => (
+                      <th key={m} className="text-center px-3 py-2 text-foreground font-semibold uppercase tracking-wider min-w-[90px]">{m}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {KPI_KEYS.map((kpi) => (
+                    <tr key={String(kpi.key)} className="border-b border-border/20 hover:bg-gray-50 dark:hover:bg-[#141928]">
+                      <td className="px-3 py-2 text-foreground text-xs font-medium sticky left-0 bg-white dark:bg-[#0f1422] z-10">{kpi.label}</td>
+                      {months.map((m) => {
+                        const entries = monthlyGroups.get(m) || [];
+                        const vals = entries.map((e) => e[kpi.key] as number | null).filter((v): v is number => v != null);
+                        const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+                        return (
+                          <NoteableCell key={m} levier="affiliation" kpiName={kpi.label} week={m} notesMap={cellNotesMap} levierColor="#f59e0b" className="px-3 py-2 text-center text-foreground text-xs tabular-nums">
+                            {fmtNum(avg)}
+                          </NoteableCell>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Presse tab */}
       {tab === 'presse' && pressData && pressData.length > 0 && (
         <div className="space-y-6">
