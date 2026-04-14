@@ -122,6 +122,19 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
     },
   });
 
+  const { data: affiliationData, isLoading: loadingAffiliation } = useQuery({
+    queryKey: ['lagostina-affiliation'],
+    queryFn: async () => {
+      const { data, error } = await (supabase.from('lagostina_affiliation') as any).select('*');
+      if (error) throw error;
+      return (data as InfluenceRow[]).sort((a: InfluenceRow, b: InfluenceRow) => {
+        const numA = parseInt(a.week.replace(/\D/g, ''), 10);
+        const numB = parseInt(b.week.replace(/\D/g, ''), 10);
+        return numA - numB;
+      });
+    },
+  });
+
   const { data: pressData, isLoading: loadingPress } = useQuery({
     queryKey: ['lagostina-press'],
     queryFn: async () => {
