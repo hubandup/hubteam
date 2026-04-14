@@ -242,42 +242,22 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
   }, [scorecards]);
 
   // ── Dynamic structures from actual data ──
-  const { syntheseGroups, parLevierGroups, allLevierKpis } = useMemo(() => {
-    if (!scorecards?.length) return { syntheseGroups: [], parLevierGroups: [], allLevierKpis: [] };
+  const syntheseGroups = useMemo(() => {
+    if (!scorecards?.length) return [];
 
-    // Group by levier
+    // Group by levier — include ALL leviers and ALL KPIs, excluding hidden
     const levierMap = new Map<string, Set<string>>();
     scorecards.forEach((s) => {
       if (!levierMap.has(s.levier)) levierMap.set(s.levier, new Set());
       levierMap.get(s.levier)!.add(s.kpi_name);
     });
 
-    // Synthèse: prio_1 leviers, excluding hidden
-    const prio1Leviers = [...new Set(scorecards.filter(s => s.priority === 'prio_1' && !isHiddenLevier(s.levier)).map(s => s.levier))];
-    const synthese = prio1Leviers.map((lev) => ({
+    const allLeviers = [...new Set(scorecards.filter(s => !isHiddenLevier(s.levier)).map(s => s.levier))];
+    return allLeviers.map((lev) => ({
       levier: lev,
       label: getLevierLabel(lev),
       kpis: [...(levierMap.get(lev) || [])],
     }));
-
-    // Par levier: prio_2 leviers (full funnel detail)
-    const prio2Leviers = [...new Set(scorecards.filter(s => s.priority !== 'prio_1').map(s => s.levier))];
-    const parLevier = prio2Leviers.map((lev) => ({
-      levier: lev,
-      label: getLevierLabel(lev),
-      kpis: [...(levierMap.get(lev) || [])],
-    }));
-
-    // All leviers with KPIs for full detail
-    const allLevKpis = [...levierMap.entries()]
-      .filter(([lev]) => !isHiddenLevier(lev))
-      .map(([lev, kpis]) => ({
-        levier: lev,
-        label: getLevierLabel(lev),
-        kpis: [...kpis],
-      }));
-
-    return { syntheseGroups: synthese, parLevierGroups: parLevier, allLevierKpis: allLevKpis };
   }, [scorecards]);
 
   const getVal = (levier: string, kpi: string, week: string) => lookup.get(`${levier}|${kpi}|${week}`);
@@ -339,18 +319,10 @@ export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsBu
     );
   }
 
-  const scorecardSubTabs = [
-    { id: 'synthese', label: 'Synthèse' },
-    { id: 'par_levier', label: 'Par levier' },
-    { id: 'full_detail', label: 'Full détail' },
-  ];
-
   return (
-    <LagostinaSubTabs tabs={scorecardSubTabs} defaultTab="synthese" rightAction={learningsButton} belowTabs={learningsPanel}>
-      {(tab) => (
-        <>
-      {/* SYNTHÈSE */}
-      {tab === 'synthese' && (
+    <div className="space-y-6">
+      {learningsButton}
+      {learningsPanel}
         <>
           <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
             <table className="w-full text-sm font-['Roboto']">
