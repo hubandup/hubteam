@@ -144,28 +144,42 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
     },
   });
 
-  const latest = useMemo(() => {
-    if (!influenceData?.length) return null;
-    return influenceData[influenceData.length - 1];
+  // Get last month's aggregated data for KPI cards
+  const { lastMonthAvg, allInfluenceData } = useMemo(() => {
+    if (!influenceData?.length) return { lastMonthAvg: null, allInfluenceData: influenceData };
+    const groups = new Map<string, InfluenceRow[]>();
+    influenceData.forEach((d) => {
+      const m = d.month || 'N/A';
+      if (!groups.has(m)) groups.set(m, []);
+      groups.get(m)!.push(d);
+    });
+    const months = [...groups.keys()];
+    const lastMonth = months[months.length - 1];
+    const entries = groups.get(lastMonth) || [];
+    const avg = (key: keyof InfluenceRow) => {
+      const vals = entries.map(e => e[key] as number | null).filter((v): v is number => v != null);
+      return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+    };
+    return { lastMonthAvg: avg, allInfluenceData: influenceData };
   }, [influenceData]);
 
   const kpis = useMemo(() => {
-    if (!latest) return [];
+    if (!lastMonthAvg || !allInfluenceData?.length) return [];
     return [
-      { label: 'Nb influenceurs', actual: latest.influencer_count, obj: latest.influencer_count_obj, vals: influenceData?.map((d) => d.influencer_count).filter((v): v is number => v != null) || [] },
-      { label: 'Reach potentiel (M)', actual: latest.reach_millions, obj: latest.reach_millions_obj, vals: influenceData?.map((d) => d.reach_millions).filter((v): v is number => v != null) || [] },
-      { label: 'Budget mois', actual: latest.budget_mois, obj: null, vals: influenceData?.map((d) => d.budget_mois).filter((v): v is number => v != null) || [] },
-      { label: 'Engagement rate (%)', actual: latest.engagement_rate, obj: latest.engagement_rate_obj, vals: influenceData?.map((d) => d.engagement_rate).filter((v): v is number => v != null) || [] },
-      { label: 'EMV', actual: latest.emv, obj: null, vals: influenceData?.map((d) => d.emv).filter((v): v is number => v != null) || [] },
-      { label: 'Taux conversion (%)', actual: latest.conversion_rate, obj: latest.conversion_rate_obj, vals: influenceData?.map((d) => d.conversion_rate).filter((v): v is number => v != null) || [] },
-      { label: 'Coût / reach potentiel', actual: latest.cost_per_reach, obj: latest.cost_per_reach_obj, vals: influenceData?.map((d) => d.cost_per_reach).filter((v): v is number => v != null) || [] },
-      { label: 'CPM', actual: latest.cpm, obj: null, vals: influenceData?.map((d) => d.cpm).filter((v): v is number => v != null) || [] },
-      { label: 'Impressions globales', actual: latest.impressions_globales, obj: null, vals: influenceData?.map((d) => d.impressions_globales).filter((v): v is number => v != null) || [] },
-      { label: 'Reel engagement', actual: latest.reel_engagement, obj: null, vals: influenceData?.map((d) => d.reel_engagement).filter((v): v is number => v != null) || [] },
-      { label: 'Stories clics / vues', actual: latest.stories_clics_vues, obj: null, vals: influenceData?.map((d) => d.stories_clics_vues).filter((v): v is number => v != null) || [] },
-      { label: 'Stories clics / mentions', actual: latest.stories_clics_mentions, obj: null, vals: influenceData?.map((d) => d.stories_clics_mentions).filter((v): v is number => v != null) || [] },
+      { label: 'Nb influenceurs', actual: lastMonthAvg('influencer_count'), obj: null, vals: allInfluenceData.map((d) => d.influencer_count).filter((v): v is number => v != null) },
+      { label: 'Reach potentiel (M)', actual: lastMonthAvg('reach_millions'), obj: null, vals: allInfluenceData.map((d) => d.reach_millions).filter((v): v is number => v != null) },
+      { label: 'Budget mois', actual: lastMonthAvg('budget_mois'), obj: null, vals: allInfluenceData.map((d) => d.budget_mois).filter((v): v is number => v != null) },
+      { label: 'Engagement rate (%)', actual: lastMonthAvg('engagement_rate'), obj: null, vals: allInfluenceData.map((d) => d.engagement_rate).filter((v): v is number => v != null) },
+      { label: 'EMV', actual: lastMonthAvg('emv'), obj: null, vals: allInfluenceData.map((d) => d.emv).filter((v): v is number => v != null) },
+      { label: 'Taux conversion (%)', actual: lastMonthAvg('conversion_rate'), obj: null, vals: allInfluenceData.map((d) => d.conversion_rate).filter((v): v is number => v != null) },
+      { label: 'Coût / reach potentiel', actual: lastMonthAvg('cost_per_reach'), obj: null, vals: allInfluenceData.map((d) => d.cost_per_reach).filter((v): v is number => v != null) },
+      { label: 'CPM', actual: lastMonthAvg('cpm'), obj: null, vals: allInfluenceData.map((d) => d.cpm).filter((v): v is number => v != null) },
+      { label: 'Impressions globales', actual: lastMonthAvg('impressions_globales'), obj: null, vals: allInfluenceData.map((d) => d.impressions_globales).filter((v): v is number => v != null) },
+      { label: 'Reel engagement', actual: lastMonthAvg('reel_engagement'), obj: null, vals: allInfluenceData.map((d) => d.reel_engagement).filter((v): v is number => v != null) },
+      { label: 'Stories clics / vues', actual: lastMonthAvg('stories_clics_vues'), obj: null, vals: allInfluenceData.map((d) => d.stories_clics_vues).filter((v): v is number => v != null) },
+      { label: 'Stories clics / mentions', actual: lastMonthAvg('stories_clics_mentions'), obj: null, vals: allInfluenceData.map((d) => d.stories_clics_mentions).filter((v): v is number => v != null) },
     ];
-  }, [latest, influenceData]);
+  }, [lastMonthAvg, allInfluenceData]);
 
   // Tonality pie chart data (count)
   const tonalityPieData = useMemo(() => {
@@ -437,17 +451,23 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
           return n.toLocaleString('fr-FR');
         };
 
-        const latestAff = affData[affData.length - 1];
+        // Use last month's aggregated data for KPI cards
+        const lastMonth = months[months.length - 1];
+        const lastMonthEntries = monthlyGroups.get(lastMonth) || [];
+        const avgForMonth = (key: keyof InfluenceRow) => {
+          const vals = lastMonthEntries.map(e => e[key] as number | null).filter((v): v is number => v != null);
+          return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+        };
         const affKpis = [
-          { label: 'Nb affiliés', actual: latestAff.influencer_count, obj: null, vals: affData.map(d => d.influencer_count).filter((v): v is number => v != null) },
-          { label: 'Reach (M)', actual: latestAff.reach_millions, obj: null, vals: affData.map(d => d.reach_millions).filter((v): v is number => v != null) },
-          { label: 'Budget mois', actual: latestAff.budget_mois, obj: null, vals: affData.map(d => d.budget_mois).filter((v): v is number => v != null) },
-          { label: 'Engagement (%)', actual: latestAff.engagement_rate, obj: null, vals: affData.map(d => d.engagement_rate).filter((v): v is number => v != null) },
-          { label: 'EMV', actual: latestAff.emv, obj: null, vals: affData.map(d => d.emv).filter((v): v is number => v != null) },
-          { label: 'Conversion (%)', actual: latestAff.conversion_rate, obj: null, vals: affData.map(d => d.conversion_rate).filter((v): v is number => v != null) },
-          { label: 'Coût/reach', actual: latestAff.cost_per_reach, obj: null, vals: affData.map(d => d.cost_per_reach).filter((v): v is number => v != null) },
-          { label: 'CPM', actual: latestAff.cpm, obj: null, vals: affData.map(d => d.cpm).filter((v): v is number => v != null) },
-          { label: 'Impressions', actual: latestAff.impressions_globales, obj: null, vals: affData.map(d => d.impressions_globales).filter((v): v is number => v != null) },
+          { label: 'Nb affiliés', actual: avgForMonth('influencer_count'), obj: null, vals: affData.map(d => d.influencer_count).filter((v): v is number => v != null) },
+          { label: 'Reach (M)', actual: avgForMonth('reach_millions'), obj: null, vals: affData.map(d => d.reach_millions).filter((v): v is number => v != null) },
+          { label: 'Budget mois', actual: avgForMonth('budget_mois'), obj: null, vals: affData.map(d => d.budget_mois).filter((v): v is number => v != null) },
+          { label: 'Engagement (%)', actual: avgForMonth('engagement_rate'), obj: null, vals: affData.map(d => d.engagement_rate).filter((v): v is number => v != null) },
+          { label: 'EMV', actual: avgForMonth('emv'), obj: null, vals: affData.map(d => d.emv).filter((v): v is number => v != null) },
+          { label: 'Conversion (%)', actual: avgForMonth('conversion_rate'), obj: null, vals: affData.map(d => d.conversion_rate).filter((v): v is number => v != null) },
+          { label: 'Coût/reach', actual: avgForMonth('cost_per_reach'), obj: null, vals: affData.map(d => d.cost_per_reach).filter((v): v is number => v != null) },
+          { label: 'CPM', actual: avgForMonth('cpm'), obj: null, vals: affData.map(d => d.cpm).filter((v): v is number => v != null) },
+          { label: 'Impressions', actual: avgForMonth('impressions_globales'), obj: null, vals: affData.map(d => d.impressions_globales).filter((v): v is number => v != null) },
         ];
 
         const chartData = months.map((m) => {
