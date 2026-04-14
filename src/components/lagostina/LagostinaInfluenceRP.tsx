@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
-import { LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { LagostinaSubTabs } from './LagostinaSubTabs';
 import { NoteableCell, useCellNotes } from './CellNotePopover';
 
@@ -265,14 +265,21 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
           return n.toLocaleString('fr-FR');
         };
 
-        // Chart data: one point per row (month-based)
-        const chartData = influenceData.map((d) => ({
-          label: d.month || d.week,
-          reach: d.reach_millions,
-          engagement: d.engagement_rate,
-          budget: d.budget_mois,
-          cpm: d.cpm,
-        }));
+        // Chart data: aggregate by MONTH (not per-row/week)
+        const chartData = months.map((m) => {
+          const entries = monthlyGroups.get(m) || [];
+          const avg = (key: keyof Influence) => {
+            const vals = entries.map(e => e[key] as number | null).filter((v): v is number => v != null);
+            return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+          };
+          return {
+            label: m,
+            reach: avg('reach_millions'),
+            engagement: avg('engagement_rate'),
+            budget: avg('budget_mois'),
+            cpm: avg('cpm'),
+          };
+        });
 
         const CHART_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444'];
 
@@ -302,14 +309,15 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
               <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Reach & Engagement</h3>
               <div className="h-52">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+                  <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                     <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" className="dark:stroke-[#1e293b]" />
                     <XAxis dataKey="label" tick={{ fill: '#9ca3af', fontSize: 10 }} />
-                    <YAxis yAxisId="left" tick={{ fill: '#9ca3af', fontSize: 10 }} />
-                    <YAxis yAxisId="right" orientation="right" tick={{ fill: '#9ca3af', fontSize: 10 }} />
-                    <Tooltip contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 12, fontFamily: 'Roboto' }} />
-                    <Line yAxisId="left" type="monotone" dataKey="reach" name="Reach (M)" stroke={CHART_COLORS[0]} strokeWidth={2} dot={{ r: 3 }} />
-                    <Line yAxisId="right" type="monotone" dataKey="engagement" name="Engagement (%)" stroke={CHART_COLORS[1]} strokeWidth={2} dot={{ r: 3 }} />
+                    <YAxis yAxisId="left" tick={{ fill: '#9ca3af', fontSize: 10 }} label={{ value: 'Reach (M)', angle: -90, position: 'insideLeft', fill: '#9ca3af', fontSize: 10 }} />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fill: '#9ca3af', fontSize: 10 }} label={{ value: 'Engagement (%)', angle: 90, position: 'insideRight', fill: '#9ca3af', fontSize: 10 }} />
+                    <Tooltip contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 12, fontFamily: 'Roboto' }} formatter={(value: any, name: string) => [value != null ? Number(value).toLocaleString('fr-FR', { maximumFractionDigits: 2 }) : '—', name]} />
+                    <Legend wrapperStyle={{ fontSize: 11, fontFamily: 'Roboto' }} />
+                    <Line yAxisId="left" type="monotone" dataKey="reach" name="Reach (M)" stroke={CHART_COLORS[0]} strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                    <Line yAxisId="right" type="monotone" dataKey="engagement" name="Engagement (%)" stroke={CHART_COLORS[1]} strokeWidth={2} dot={{ r: 3 }} connectNulls />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -319,13 +327,15 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
               <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Budget & CPM</h3>
               <div className="h-52">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+                  <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                     <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" className="dark:stroke-[#1e293b]" />
                     <XAxis dataKey="label" tick={{ fill: '#9ca3af', fontSize: 10 }} />
-                    <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} />
-                    <Tooltip contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 12, fontFamily: 'Roboto' }} />
-                    <Bar dataKey="budget" name="Budget" fill={CHART_COLORS[2]} />
-                    <Bar dataKey="cpm" name="CPM" fill={CHART_COLORS[3]} />
+                    <YAxis yAxisId="left" tick={{ fill: '#9ca3af', fontSize: 10 }} label={{ value: 'Budget (€)', angle: -90, position: 'insideLeft', fill: '#9ca3af', fontSize: 10 }} />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fill: '#9ca3af', fontSize: 10 }} label={{ value: 'CPM', angle: 90, position: 'insideRight', fill: '#9ca3af', fontSize: 10 }} />
+                    <Tooltip contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 12, fontFamily: 'Roboto' }} formatter={(value: any, name: string) => [value != null ? Number(value).toLocaleString('fr-FR', { maximumFractionDigits: 2 }) : '—', name]} />
+                    <Legend wrapperStyle={{ fontSize: 11, fontFamily: 'Roboto' }} />
+                    <Bar yAxisId="left" dataKey="budget" name="Budget" fill={CHART_COLORS[2]} />
+                    <Bar yAxisId="right" dataKey="cpm" name="CPM" fill={CHART_COLORS[3]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
