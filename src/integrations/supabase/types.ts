@@ -1193,6 +1193,63 @@ export type Database = {
         }
         Relationships: []
       }
+      lagostina_affiliation: {
+        Row: {
+          budget_mois: number | null
+          conversion_rate: number | null
+          cost_per_reach: number | null
+          cpm: number | null
+          created_at: string | null
+          emv: number | null
+          engagement_rate: number | null
+          id: string
+          impressions_globales: number | null
+          influencer_count: number | null
+          month: string | null
+          reach_millions: number | null
+          reel_engagement: number | null
+          stories_clics_mentions: number | null
+          stories_clics_vues: number | null
+          week: string
+        }
+        Insert: {
+          budget_mois?: number | null
+          conversion_rate?: number | null
+          cost_per_reach?: number | null
+          cpm?: number | null
+          created_at?: string | null
+          emv?: number | null
+          engagement_rate?: number | null
+          id?: string
+          impressions_globales?: number | null
+          influencer_count?: number | null
+          month?: string | null
+          reach_millions?: number | null
+          reel_engagement?: number | null
+          stories_clics_mentions?: number | null
+          stories_clics_vues?: number | null
+          week: string
+        }
+        Update: {
+          budget_mois?: number | null
+          conversion_rate?: number | null
+          cost_per_reach?: number | null
+          cpm?: number | null
+          created_at?: string | null
+          emv?: number | null
+          engagement_rate?: number | null
+          id?: string
+          impressions_globales?: number | null
+          influencer_count?: number | null
+          month?: string | null
+          reach_millions?: number | null
+          reel_engagement?: number | null
+          stories_clics_mentions?: number | null
+          stories_clics_vues?: number | null
+          week?: string
+        }
+        Relationships: []
+      }
       lagostina_budget: {
         Row: {
           created_at: string | null
