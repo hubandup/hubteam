@@ -214,8 +214,8 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
   const uniqueJournalists = useMemo(() => new Set(filteredPress.map((p) => p.journalist_name).filter(Boolean)).size, [filteredPress]);
   const totalReach = useMemo(() => filteredPress.reduce((s, p) => s + (p.estimated_reach || 0), 0), [filteredPress]);
 
-  const isLoading = loadingInfluence || loadingPress;
-  const isEmpty = !influenceData?.length && !pressData?.length;
+  const isLoading = loadingInfluence || loadingAffiliation || loadingPress;
+  const isEmpty = !influenceData?.length && !affiliationData?.length && !pressData?.length;
 
   if (isLoading) {
     return (
@@ -237,6 +237,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
 
   const tabs = [
     { id: 'influence', label: 'Influence' },
+    { id: 'affiliation', label: 'Affiliation' },
     { id: 'presse', label: 'Revue de presse' },
   ];
 
