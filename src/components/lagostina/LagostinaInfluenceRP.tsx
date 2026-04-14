@@ -12,21 +12,21 @@ function getChartAccent(): string {
   return '#0f1422';
 }
 
-type Influence = {
+type InfluenceRow = {
   id: string;
   week: string;
   influencer_count: number | null;
-  influencer_count_obj: number | null;
+  influencer_count_obj?: number | null;
   reach_millions: number | null;
-  reach_millions_obj: number | null;
+  reach_millions_obj?: number | null;
   engagement_rate: number | null;
-  engagement_rate_obj: number | null;
-  vtf: number | null;
-  vtf_obj: number | null;
+  engagement_rate_obj?: number | null;
+  vtf?: number | null;
+  vtf_obj?: number | null;
   conversion_rate: number | null;
-  conversion_rate_obj: number | null;
+  conversion_rate_obj?: number | null;
   cost_per_reach: number | null;
-  cost_per_reach_obj: number | null;
+  cost_per_reach_obj?: number | null;
   month: string | null;
   budget_mois: number | null;
   emv: number | null;
