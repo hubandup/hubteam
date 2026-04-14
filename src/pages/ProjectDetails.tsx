@@ -346,7 +346,7 @@ export default function ProjectDetails() {
               date_montage_reco: project.date_montage_reco,
               date_restitution: project.date_restitution,
             }}
-            canEdit={isAdmin}
+            canEdit={canEditProject}
             onDatesUpdate={fetchProjectDetails}
           />
         ) : (
@@ -533,7 +533,7 @@ export default function ProjectDetails() {
           onClientSelected={handleClientSelected}
         />
 
-        {isAdmin && (
+        {canEditProject && (
           <>
             <EditProjectInfoDialog
               open={showEditDialog}
