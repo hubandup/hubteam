@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
-import { LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { LagostinaSubTabs } from './LagostinaSubTabs';
 
 // Theme-aware chart accent: dark=#E8FF4C, light=#0f1422
