@@ -337,7 +337,65 @@ export async function parseInfluenceRPFile(workbook: XLSX.WorkBook) {
     if (!sheet) continue;
     const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { header: 1 }) as any[][];
 
-    if (sheetName.toLowerCase().includes('influence')) {
+    const sheetLower = sheetName.toLowerCase();
+
+    // Affiliation sheet (must check before influence since "affiliation" doesn't contain "influence")
+    if (sheetLower.includes('affiliation')) {
+      const rawHeaders = (rows[0] || []).map((h: any) => String(h || '').trim());
+      const headers = rawHeaders.map((h: string) => h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_'));
+      console.log('[Affiliation] Headers:', rawHeaders, '->', headers);
+
+      const col = (name: string): number => {
+        const norm = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_');
+        const exact = headers.indexOf(norm);
+        if (exact >= 0) return exact;
+        return headers.findIndex((h: string) => h.includes(norm) || norm.includes(h));
+      };
+
+      const getNum = (row: any[], colName: string): number | null => {
+        const idx = col(colName);
+        if (idx < 0) return null;
+        const raw = row[idx];
+        if (raw == null || raw === '') return null;
+        const v = Number(raw);
+        return isNaN(v) ? null : v;
+      };
+
+      const affiliationRecords: Array<Record<string, any>> = [];
+      for (let r = 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row || row.every((c: any) => c == null || c === '')) continue;
+
+        const weekVal = `S${r}`;
+        affiliationRecords.push({
+          week: weekVal,
+          influencer_count: getNum(row, 'influencer_count'),
+          reach_millions: getNum(row, 'reach_millions'),
+          month: col('month') >= 0 ? String(row[col('month')] || '').trim() || null : null,
+          budget_mois: getNum(row, 'budget_mois'),
+          engagement_rate: getNum(row, 'engagement_rate'),
+          emv: getNum(row, 'emv'),
+          conversion_rate: getNum(row, 'conversion_rate'),
+          cost_per_reach: getNum(row, 'cost_per_reach'),
+          cpm: getNum(row, 'cpm'),
+          impressions_globales: getNum(row, 'impressions_globales'),
+          reel_engagement: getNum(row, 'reel_engagement'),
+          stories_clics_vues: getNum(row, 'stories_clics_vues'),
+          stories_clics_mentions: getNum(row, 'stories_clics_mentions'),
+        });
+      }
+
+      if (affiliationRecords.length > 0) {
+        await supabase.from('lagostina_affiliation').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        const { error } = await (supabase.from('lagostina_affiliation') as any).insert(affiliationRecords);
+        if (error) throw error;
+        count += affiliationRecords.length;
+        console.log(`[Affiliation] Inserted ${affiliationRecords.length} records`);
+      }
+      continue;
+    }
+
+    if (sheetLower.includes('influence')) {
       // Header-based parsing
       const rawHeaders = (rows[0] || []).map((h: any) => String(h || '').trim());
       const headers = rawHeaders.map((h: string) => h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_'));
@@ -406,7 +464,7 @@ export async function parseInfluenceRPFile(workbook: XLSX.WorkBook) {
       }
     }
 
-    if (sheetName.toLowerCase().includes('presse') || sheetName.toLowerCase().includes('press')) {
+    if (sheetLower.includes('presse') || sheetLower.includes('press')) {
       const pressRecords: Array<{ date: string; media_name: string; title: string; url: string | null; tonality: string; estimated_reach: number | null; journalist_name: string | null }> = [];
       const normalizeTonality = (value: unknown) => {
         const normalized = String(value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');

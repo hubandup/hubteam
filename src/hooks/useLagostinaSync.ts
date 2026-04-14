@@ -18,7 +18,7 @@ import {
 
 const LAGOSTINA_QUERY_KEYS = [
   'lagostina-files', 'lagostina-scorecards', 'lagostina-budget',
-  'lagostina-influence', 'lagostina-press', 'lagostina-media-kpis',
+  'lagostina-influence', 'lagostina-affiliation', 'lagostina-press', 'lagostina-media-kpis',
   'lagostina-consumer', 'lagostina-rnr', 'lagostina-contenus',
   'lagostina-social-mix', 'lagostina-content-learnings', 'lagostina-learnings',
   'lagostina-category-status', 'lagostina-last-sync', 'lagostina-personas',
