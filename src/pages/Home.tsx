@@ -20,6 +20,7 @@ interface ActiveProject {
   name: string;
   status: string;
   clientName: string;
+  clientLogoUrl: string | null;
 }
 
 interface UpcomingDeadline {
@@ -98,7 +99,7 @@ export default function Home() {
       if (userProjectIds.length > 0) {
         const { data: activeData } = await supabase
           .from('projects')
-          .select('id, name, status, project_clients(clients(company))')
+          .select('id, name, status, project_clients(clients(company, logo_url))')
           .in('id', userProjectIds)
           .eq('archived', false)
           .in('status', ['active', 'reco_in_progress', 'planning'])
@@ -111,6 +112,7 @@ export default function Home() {
             name: p.name,
             status: p.status,
             clientName: p.project_clients?.[0]?.clients?.company || 'N/A',
+            clientLogoUrl: p.project_clients?.[0]?.clients?.logo_url || null,
           }))
         );
       }
@@ -247,7 +249,7 @@ export default function Home() {
       </div>
 
       {/* Alerts row */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
         {/* Overdue projects - hidden for agency role */}
         {!isAgency && <Card>
           <CardHeader className="pb-3">
@@ -260,18 +262,22 @@ export default function Home() {
             {activeProjects.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aucun projet en cours</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {activeProjects.map((p) => (
                   <div
                     key={p.id}
-                    className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded-md p-2 -mx-2 transition-colors"
+                    className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded-md px-2 py-1.5 -mx-2 transition-colors"
                     onClick={() => navigate(`/project/${p.id}`)}
                   >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{p.name}</p>
-                      <p className="text-xs text-muted-foreground">{p.clientName}</p>
-                    </div>
-                    <Badge variant="outline" className="text-xs shrink-0 ml-2">
+                    {p.clientLogoUrl ? (
+                      <img src={p.clientLogoUrl} alt={p.clientName} className="h-5 w-5 object-contain shrink-0" />
+                    ) : (
+                      <div className="h-5 w-5 bg-muted flex items-center justify-center shrink-0">
+                        <span className="text-[10px] font-bold text-muted-foreground">{p.clientName.charAt(0)}</span>
+                      </div>
+                    )}
+                    <p className="text-sm font-medium truncate flex-1 min-w-0">{p.name}</p>
+                    <Badge variant="outline" className="text-[11px] shrink-0">
                       {p.status === 'reco_in_progress' ? 'Reco' : p.status === 'planning' ? 'Planning' : 'Actif'}
                     </Badge>
                   </div>
