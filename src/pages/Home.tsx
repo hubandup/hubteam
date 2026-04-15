@@ -230,7 +230,7 @@ export default function Home() {
           <h1 className="font-bold" style={{ fontSize: '4rem', lineHeight: '3.5rem', marginBottom: '8px' }}>
             {greeting(userName)}
           </h1>
-          <p className="text-muted-foreground mt-1 capitalize">Nous sommes le {today}</p>
+          <p className="text-muted-foreground mt-1">Nous sommes le {today}</p>
         </div>
         {!isClient && unreadCount > 0 && (
           <Card
