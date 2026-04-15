@@ -190,7 +190,16 @@ export default function Home() {
   };
 
   const [greeting] = useState(() => {
-    const greetings = ['Bonjour', 'Hello', 'Salut', 'Hey', 'Content de te revoir'];
+    const greetings = [
+      (name: string) => `Bonjour ${name} !`,
+      (name: string) => `Hello ${name} !`,
+      (name: string) => `Salut ${name} !`,
+      (name: string) => `Hey ${name} !`,
+      (name: string) => `Content de te revoir ${name} !`,
+      (name: string) => `Welcome back ${name} !`,
+      (name: string) => `Alors ? Toujours hubtimiste ${name} ?`,
+      (name: string) => `Ça va être une journée hubtimiste ${name} !`,
+    ];
     return greetings[Math.floor(Math.random() * greetings.length)];
   });
 
@@ -217,7 +226,7 @@ export default function Home() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-bold" style={{ fontSize: '4rem', lineHeight: '3.5rem', marginBottom: '8px' }}>
-            {greeting}, {userName}
+            {greeting(userName)}
           </h1>
           <p className="text-muted-foreground mt-1 capitalize">{today}</p>
         </div>
