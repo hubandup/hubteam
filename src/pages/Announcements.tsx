@@ -178,7 +178,7 @@ export default function Announcements() {
       title: title.trim(),
       content: content.trim(),
       audience_type: audienceType,
-      target_roles: audienceType === 'role' ? selectedRoles : null,
+      target_roles: audienceType === 'role' ? selectedRoles as ('admin' | 'team' | 'client' | 'agency')[] : null,
       target_user_ids: audienceType === 'users' ? selectedUserIds : null,
       active,
       starts_at: startsAt ? new Date(startsAt).toISOString() : new Date().toISOString(),
