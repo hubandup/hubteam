@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Plus, Pencil, Trash2, Megaphone, Users, User, Globe } from 'lucide-react';
+import { RichTextEditor } from '@/components/faq/RichTextEditor';
+import { createSafeHtml } from '@/lib/sanitize';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Navigate } from 'react-router-dom';
@@ -241,7 +242,7 @@ export default function Announcements() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-base">{ann.title}</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{ann.content}</p>
+                    <div className="text-sm text-muted-foreground mt-1 line-clamp-2 [&_a]:text-primary [&_a]:underline" dangerouslySetInnerHTML={createSafeHtml(ann.content)} />
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Switch
@@ -291,7 +292,7 @@ export default function Announcements() {
             </div>
             <div>
               <Label>Contenu *</Label>
-              <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Contenu du message..." rows={4} />
+              <RichTextEditor value={content} onChange={setContent} />
             </div>
             <div>
               <Label>Audience</Label>

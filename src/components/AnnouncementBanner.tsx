@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { createSafeHtml } from '@/lib/sanitize';
 import { useUserRole, type UserRole } from '@/hooks/useUserRole';
 import { X, Megaphone } from 'lucide-react';
 import { Button } from './ui/button';
@@ -86,7 +87,7 @@ export function AnnouncementBanner() {
           <div className="flex-1 min-w-0">
             <span className="font-medium">{ann.title}</span>
             {ann.content && (
-              <span className="ml-2 opacity-90">{ann.content}</span>
+              <span className="ml-2 opacity-90 [&_a]:underline [&_a]:text-primary-foreground" dangerouslySetInnerHTML={createSafeHtml(ann.content)} />
             )}
           </div>
           <Button
