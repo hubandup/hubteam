@@ -91,11 +91,11 @@ export default function Announcements() {
   });
 
   const saveMutation = useMutation({
-    mutationFn: async (ann: Partial<Announcement>) => {
+    mutationFn: async (ann: Record<string, any>) => {
       if (editingAnnouncement) {
         const { error } = await supabase
           .from('announcements')
-          .update(ann)
+          .update(ann as any)
           .eq('id', editingAnnouncement.id);
         if (error) throw error;
       } else {
