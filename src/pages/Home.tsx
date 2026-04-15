@@ -270,14 +270,14 @@ export default function Home() {
                     onClick={() => navigate(`/project/${p.id}`)}
                   >
                     {p.clientLogoUrl ? (
-                      <img src={p.clientLogoUrl} alt={p.clientName} className="h-5 w-5 object-contain shrink-0" />
+                      <img src={p.clientLogoUrl} alt={p.clientName} className="h-4 w-4 object-contain shrink-0 self-center" />
                     ) : (
-                      <div className="h-5 w-5 bg-muted flex items-center justify-center shrink-0">
-                        <span className="text-[10px] font-bold text-muted-foreground">{p.clientName.charAt(0)}</span>
+                      <div className="h-4 w-4 bg-muted flex items-center justify-center shrink-0 self-center">
+                        <span className="text-[9px] font-bold text-muted-foreground">{p.clientName.charAt(0)}</span>
                       </div>
                     )}
-                    <p className="text-sm font-medium truncate flex-1 min-w-0">{p.name}</p>
-                    <Badge variant="outline" className="text-[11px] shrink-0">
+                    <span className="text-sm font-medium truncate flex-1 min-w-0 leading-none">{p.name}</span>
+                    <Badge variant="outline" className="text-[11px] shrink-0 leading-none">
                       {p.status === 'reco_in_progress' ? 'Reco' : p.status === 'planning' ? 'Planning' : 'Actif'}
                     </Badge>
                   </div>
