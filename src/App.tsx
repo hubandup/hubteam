@@ -38,6 +38,7 @@ const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const Lagostina = lazy(() => import("./pages/Lagostina"));
 const LagostinaAdmin = lazy(() => import("./pages/LagostinaAdmin"));
 const Brisach = lazy(() => import("./pages/Brisach"));
+const Announcements = lazy(() => import("./pages/Announcements"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Minimal page-level loading skeleton
@@ -107,6 +108,7 @@ function AppInner() {
         <Route path="/lagostina" element={<ProtectedRoute><Layout><PageSuspense><Lagostina /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="/admin/lagostina" element={<ProtectedRoute><Layout><PageSuspense><LagostinaAdmin /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="/brisach" element={<ProtectedRoute><Layout><PageSuspense><Brisach /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/announcements" element={<ProtectedRoute><Layout><PageSuspense><Announcements /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="*" element={<Suspense fallback={null}><NotFound /></Suspense>} />
         </Routes>
       </AuthProvider>

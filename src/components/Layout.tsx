@@ -12,6 +12,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { LanguageSelector } from './LanguageSelector';
 import { SmashDialog } from './SmashDialog';
 import { GlobalSearch } from './GlobalSearch';
+import { AnnouncementBanner } from './AnnouncementBanner';
 import { OfflineBanner } from './common/OfflineBanner';
 import { SkipToContent } from './common/SkipToContent';
 import { ArrowUpFromLine, Search } from 'lucide-react';
@@ -52,6 +53,9 @@ export function Layout({ children }: LayoutProps) {
           </div>
         </header>
         
+        {/* Annonces */}
+        <AnnouncementBanner />
+        
         {/* Contenu principal */}
         <main id="main-content" className="flex-1 overflow-auto bg-background rounded-t-2xl transition-opacity duration-150">
           <div className="px-4 py-4 pb-24">
@@ -79,6 +83,7 @@ export function Layout({ children }: LayoutProps) {
         <Sidebar />
         <div className="flex-1 min-w-0 flex flex-col">
           <OfflineBanner />
+          <AnnouncementBanner />
           <header className="h-14 border-b border-border/40 bg-background/80 backdrop-blur-xl flex items-center justify-between px-5 sticky top-0 z-10">
             <SidebarTrigger />
             <div className="flex items-center gap-1.5">
