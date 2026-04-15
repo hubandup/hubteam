@@ -190,16 +190,18 @@ export default function Home() {
   };
 
   const [greeting] = useState(() => {
-    const greetings = [
-      (name: string) => `Bonjour ${name} !`,
-      (name: string) => `Hello ${name} !`,
-      (name: string) => `Salut ${name} !`,
-      (name: string) => `Hey ${name} !`,
-      (name: string) => `Content de te revoir ${name} !`,
-      (name: string) => `Welcome back ${name} !`,
-      (name: string) => `Alors ? Toujours hubtimiste ${name} ?`,
-      (name: string) => `Ça va être une journée hubtimiste ${name} !`,
+    const greetings: Array<(name: string) => string> = [
+      (name) => `Bonjour ${name} !`,
+      (name) => `Hello ${name} !`,
+      (name) => `Salut ${name} !`,
+      (name) => `Hey ${name} !`,
+      (name) => `Content de te revoir ${name} !`,
+      (name) => `Welcome back ${name} !`,
     ];
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      greetings.push((name) => `Ça va être une belle journée ${name} !`);
+    }
     return greetings[Math.floor(Math.random() * greetings.length)];
   });
 
