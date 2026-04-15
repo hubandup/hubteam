@@ -1,0 +1,1 @@
+ALTER TABLE public.announcements ADD COLUMN banner_style text NOT NULL DEFAULT 'dark';
