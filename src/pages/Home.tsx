@@ -15,7 +15,6 @@ import { Badge } from '@/components/ui/badge';
 import { Bell, Calendar, Clock, Activity, Users, FolderKanban } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-
 interface ActiveProject {
   id: string;
   name: string;
@@ -310,69 +309,7 @@ export default function Home() {
             )}
           </CardContent>
         </Card>
-
-        {/* Client follow-ups - hidden for agency/client roles */}
-        {!isAgency && !isClient && <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Users className="h-4 w-4 text-primary" />
-              Rappels de suivi client
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {followUps.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucun suivi à prévoir</p>
-            ) : (
-              <div className="space-y-2">
-                {followUps.map((c) => (
-                  <div
-                    key={c.id}
-                    className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded-md p-2 -mx-2 transition-colors"
-                    onClick={() => navigate(`/client/${c.id}`)}
-                  >
-                    <p className="text-sm font-medium truncate">{c.company}</p>
-                    <Badge
-                      variant={isPast(new Date(c.follow_up_date)) ? 'destructive' : 'outline'}
-                      className="text-xs shrink-0 ml-2"
-                    >
-                      {format(new Date(c.follow_up_date), 'd MMM', { locale: fr })}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>}
       </div>
-
-      {/* Recent activity - hidden for client/agency */}
-      {!isAgency && !isClient && recentActivities.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Activity className="h-4 w-4 text-primary" />
-              Activité récente
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {recentActivities.map((a) => (
-                <div key={a.id} className="flex items-center gap-3 text-sm p-1">
-                  <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
-                  <span className="text-muted-foreground">
-                    <span className="font-medium text-foreground">{a.userName || 'Quelqu\'un'}</span>{' '}
-                    {actionLabels[a.action_type] || a.action_type}{' '}
-                    {entityLabels[a.entity_type] || a.entity_type}
-                  </span>
-                  <span className="text-xs text-muted-foreground ml-auto shrink-0">
-                    {format(new Date(a.created_at), 'HH:mm', { locale: fr })}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Existing widgets */}
       <div className="grid gap-6 lg:grid-cols-2">
