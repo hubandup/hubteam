@@ -87,7 +87,7 @@ export function AnnouncementBanner() {
           <div className="flex-1 min-w-0">
             <span className="font-medium">{ann.title}</span>
             {ann.content && (
-              <span className="ml-2 opacity-90 [&_a]:underline [&_a]:text-primary-foreground" dangerouslySetInnerHTML={createSafeHtml(ann.content)} />
+              <div className="ml-2 opacity-90 [&_a]:underline [&_a]:text-primary-foreground [&_p]:inline [&_strong]:font-bold [&_em]:italic [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:font-semibold [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_br]:content-[''] [&_br]:block" dangerouslySetInnerHTML={createSafeHtml(ann.content)} />
             )}
           </div>
           <Button
