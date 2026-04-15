@@ -299,14 +299,14 @@ export default function Home() {
             {upcomingDeadlines.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aucune échéance cette semaine</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {upcomingDeadlines.map((d) => (
-                  <div key={d.id} className="flex items-center justify-between p-2 -mx-2 rounded-md hover:bg-muted/50 transition-colors">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{d.title}</p>
-                      {d.projectName && <p className="text-xs text-muted-foreground">{d.projectName}</p>}
-                    </div>
-                    <Badge variant="outline" className="text-xs shrink-0 ml-2">
+                  <div key={d.id} className="flex items-center gap-2 px-2 py-1.5 -mx-2 rounded-md hover:bg-muted/50 transition-colors">
+                    <p className="text-sm font-medium truncate flex-1 min-w-0">
+                      {d.title}
+                      {d.projectName && <span className="text-muted-foreground font-normal"> — {d.projectName}</span>}
+                    </p>
+                    <Badge variant="outline" className="text-[11px] shrink-0">
                       {format(new Date(d.end_date), 'd MMM', { locale: fr })}
                     </Badge>
                   </div>
