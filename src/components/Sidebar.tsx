@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, HelpCircle, Rss, Euro, MessageSquare, ArrowUpFromLine, CookingPot, Flame } from 'lucide-react';
+import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, HelpCircle, Rss, Euro, MessageSquare, ArrowUpFromLine, CookingPot, Flame, Megaphone } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -134,6 +134,20 @@ export function Sidebar() {
                   </button>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {role === 'admin' && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to="/announcements" 
+                      className="text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground transition-all duration-150 rounded-lg text-[13px]" 
+                      activeClassName="bg-sidebar-primary text-sidebar-primary-foreground font-medium"
+                    >
+                      <Megaphone className="mr-2.5 h-4 w-4" />
+                      <span>Informer</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               {showSettings && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
