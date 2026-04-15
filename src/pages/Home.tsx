@@ -226,7 +226,7 @@ export default function Home() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-bold" style={{ fontSize: '4rem', lineHeight: '3.5rem', marginBottom: '8px' }}>
-            {greeting}, {userName}
+            {greeting(userName)}
           </h1>
           <p className="text-muted-foreground mt-1 capitalize">{today}</p>
         </div>
