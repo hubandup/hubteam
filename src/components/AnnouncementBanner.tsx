@@ -97,7 +97,7 @@ export function AnnouncementBanner() {
           <div
             key={ann.id}
             className={cn(
-              'px-4 py-2.5 flex items-center gap-3 text-sm',
+              'px-4 py-4 flex items-center gap-3 text-sm',
               bannerStyles[style]
             )}
           >
