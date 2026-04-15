@@ -5,6 +5,7 @@ import { createSafeHtml } from '@/lib/sanitize';
 import { useUserRole, type UserRole } from '@/hooks/useUserRole';
 import { X, Megaphone } from 'lucide-react';
 import { Button } from './ui/button';
+import { cn } from '@/lib/utils';
 
 interface Announcement {
   id: string;
@@ -16,7 +17,23 @@ interface Announcement {
   active: boolean;
   starts_at: string;
   ends_at: string | null;
+  banner_style: 'dark' | 'yellow';
 }
+
+const bannerStyles = {
+  dark: 'bg-black text-white dark:bg-white dark:text-black',
+  yellow: 'bg-[#DFFF00] text-black',
+} as const;
+
+const closeBtnStyles = {
+  dark: 'text-white/80 hover:text-white hover:bg-white/10 dark:text-black/80 dark:hover:text-black dark:hover:bg-black/10',
+  yellow: 'text-black/80 hover:text-black hover:bg-black/10',
+} as const;
+
+const linkStyles = {
+  dark: '[&_a]:text-white dark:[&_a]:text-black',
+  yellow: '[&_a]:text-black',
+} as const;
 
 export function AnnouncementBanner() {
   const { user } = useAuth();
@@ -28,7 +45,6 @@ export function AnnouncementBanner() {
     queryFn: async () => {
       const now = new Date().toISOString();
 
-      // Fetch active announcements
       const { data: anns, error } = await supabase
         .from('announcements')
         .select('*')
@@ -38,10 +54,8 @@ export function AnnouncementBanner() {
 
       if (error) throw error;
 
-      // Filter out expired
       const valid = (anns || []).filter(a => !a.ends_at || a.ends_at > now);
 
-      // Fetch user's dismissals
       const { data: dismissals } = await supabase
         .from('announcement_dismissals')
         .select('announcement_id');
@@ -66,7 +80,6 @@ export function AnnouncementBanner() {
     },
   });
 
-  // Filter by audience
   const visibleAnnouncements = announcements.filter(ann => {
     if (ann.audience_type === 'all') return true;
     if (ann.audience_type === 'role' && role && ann.target_roles?.includes(role)) return true;
@@ -78,28 +91,37 @@ export function AnnouncementBanner() {
 
   return (
     <div className="space-y-0">
-      {visibleAnnouncements.map(ann => (
-        <div
-          key={ann.id}
-          className="bg-primary text-primary-foreground px-4 py-2.5 flex items-center gap-3 text-sm"
-        >
-          <Megaphone className="h-4 w-4 shrink-0" />
-          <div className="flex-1 min-w-0">
-            <div className="font-medium">{ann.title}</div>
-            {ann.content && (
-              <div className="opacity-90 [&_a]:underline [&_a]:text-primary-foreground [&_p]:mb-2 [&_p:last-child]:mb-0 [&_div]:mb-2 [&_div:last-child]:mb-0 [&_strong]:font-bold [&_b]:font-bold [&_em]:italic [&_i]:italic [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:font-semibold [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_li]:mb-1 [&_br]:content-[''] [&_br]:block" dangerouslySetInnerHTML={createSafeHtml(ann.content)} />
+      {visibleAnnouncements.map(ann => {
+        const style = ann.banner_style || 'dark';
+        return (
+          <div
+            key={ann.id}
+            className={cn(
+              'px-4 py-2.5 flex items-center gap-3 text-sm',
+              bannerStyles[style]
             )}
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 shrink-0 text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
-            onClick={() => dismissMutation.mutate(ann.id)}
           >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      ))}
+            <Megaphone className="h-4 w-4 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="font-medium">{ann.title}</div>
+              {ann.content && (
+                <div className={cn(
+                  "opacity-90 [&_a]:underline [&_p]:mb-2 [&_p:last-child]:mb-0 [&_div]:mb-2 [&_div:last-child]:mb-0 [&_strong]:font-bold [&_b]:font-bold [&_em]:italic [&_i]:italic [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:font-semibold [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_li]:mb-1 [&_br]:content-[''] [&_br]:block",
+                  linkStyles[style]
+                )} dangerouslySetInnerHTML={createSafeHtml(ann.content)} />
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn('h-6 w-6 shrink-0', closeBtnStyles[style])}
+              onClick={() => dismissMutation.mutate(ann.id)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        );
+      })}
     </div>
   );
 }
