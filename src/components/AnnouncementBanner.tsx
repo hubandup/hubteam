@@ -103,7 +103,7 @@ export function AnnouncementBanner() {
           >
             <Megaphone className="h-4 w-4 shrink-0" />
             <div className="flex-1 min-w-0">
-              <div className="font-medium">{ann.title}</div>
+              <div style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 900, fontSize: '1.2em' }}>{ann.title}</div>
               {ann.content && (
                 <div className={cn(
                   "opacity-90 [&_a]:underline [&_p]:mb-2 [&_p:last-child]:mb-0 [&_div]:mb-2 [&_div:last-child]:mb-0 [&_strong]:font-bold [&_b]:font-bold [&_em]:italic [&_i]:italic [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:font-semibold [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_li]:mb-1 [&_br]:content-[''] [&_br]:block",
