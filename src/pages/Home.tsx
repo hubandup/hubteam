@@ -375,11 +375,9 @@ export default function Home() {
       )}
 
       {/* Existing widgets */}
-      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-6 lg:grid-cols-2">
         <TodoList />
         <QuickNotes />
-        <TodayTasks />
-        <MyWeeklySchedule />
       </div>
     </div>
   );
