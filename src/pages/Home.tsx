@@ -14,7 +14,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Bell, Calendar, Clock, Activity, Users, FolderKanban } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-      </div>
 
 interface ActiveProject {
   id: string;
@@ -310,6 +309,7 @@ export default function Home() {
             )}
           </CardContent>
         </Card>
+      </div>
 
       {/* Existing widgets */}
       <div className="grid gap-6 lg:grid-cols-2">
