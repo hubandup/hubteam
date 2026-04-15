@@ -189,11 +189,10 @@ export default function Home() {
     }
   };
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour >= 18 || hour < 6) return t('home.goodEvening');
-    return t('home.goodMorning');
-  };
+  const [greeting] = useState(() => {
+    const greetings = ['Bonjour', 'Hello', 'Salut', 'Hey', 'Content de te revoir'];
+    return greetings[Math.floor(Math.random() * greetings.length)];
+  });
 
   const dateLocale = i18n.language === 'en' ? enUS : fr;
   const today = format(new Date(), 'EEEE d MMMM yyyy', { locale: dateLocale });
@@ -217,8 +216,8 @@ export default function Home() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">
-            {getGreeting()} {userName}
+          <h1 className="font-bold" style={{ fontSize: '4rem', lineHeight: '3.5rem', marginBottom: '8px' }}>
+            {greeting}, {userName}
           </h1>
           <p className="text-muted-foreground mt-1 capitalize">{today}</p>
         </div>
