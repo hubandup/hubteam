@@ -31,6 +31,7 @@ interface Announcement {
   ends_at: string | null;
   created_at: string;
   created_by: string | null;
+  banner_style: 'dark' | 'yellow';
 }
 
 interface Profile {
@@ -64,6 +65,7 @@ export default function Announcements() {
   const [active, setActive] = useState(true);
   const [startsAt, setStartsAt] = useState('');
   const [endsAt, setEndsAt] = useState('');
+  const [bannerStyle, setBannerStyle] = useState<'dark' | 'yellow'>('dark');
 
   if (!isAdmin) return <Navigate to="/" replace />;
 
@@ -149,6 +151,7 @@ export default function Announcements() {
     setActive(true);
     setStartsAt(new Date().toISOString().slice(0, 16));
     setEndsAt('');
+    setBannerStyle('dark');
     setDialogOpen(true);
   }
 
@@ -162,6 +165,7 @@ export default function Announcements() {
     setActive(ann.active);
     setStartsAt(ann.starts_at ? new Date(ann.starts_at).toISOString().slice(0, 16) : '');
     setEndsAt(ann.ends_at ? new Date(ann.ends_at).toISOString().slice(0, 16) : '');
+    setBannerStyle(ann.banner_style || 'dark');
     setDialogOpen(true);
   }
 
@@ -184,6 +188,7 @@ export default function Announcements() {
       active,
       starts_at: startsAt ? new Date(startsAt).toISOString() : new Date().toISOString(),
       ends_at: endsAt ? new Date(endsAt).toISOString() : null,
+      banner_style: bannerStyle,
     });
   }
 
@@ -355,6 +360,26 @@ export default function Announcements() {
               <div>
                 <Label>Fin (optionnel)</Label>
                 <Input type="datetime-local" value={endsAt} onChange={e => setEndsAt(e.target.value)} />
+              </div>
+            </div>
+
+            <div>
+              <Label>Style du bandeau</Label>
+              <div className="flex gap-3 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setBannerStyle('dark')}
+                  className={`flex-1 px-4 py-3 text-sm font-medium rounded-md border-2 transition-all bg-black text-white ${bannerStyle === 'dark' ? 'border-primary ring-2 ring-primary/30' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                >
+                  Sombre
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBannerStyle('yellow')}
+                  className={`flex-1 px-4 py-3 text-sm font-medium rounded-md border-2 transition-all bg-[#DFFF00] text-black ${bannerStyle === 'yellow' ? 'border-primary ring-2 ring-primary/30' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                >
+                  Jaune fluo
+                </button>
               </div>
             </div>
 

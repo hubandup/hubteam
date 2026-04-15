@@ -336,6 +336,7 @@ export type Database = {
         Row: {
           active: boolean
           audience_type: string
+          banner_style: string
           content: string
           created_at: string
           created_by: string | null
@@ -350,6 +351,7 @@ export type Database = {
         Insert: {
           active?: boolean
           audience_type?: string
+          banner_style?: string
           content: string
           created_at?: string
           created_by?: string | null
@@ -364,6 +366,7 @@ export type Database = {
         Update: {
           active?: boolean
           audience_type?: string
+          banner_style?: string
           content?: string
           created_at?: string
           created_by?: string | null
