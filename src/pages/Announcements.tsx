@@ -292,7 +292,7 @@ export default function Announcements() {
             </div>
             <div>
               <Label>Contenu *</Label>
-              <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Contenu du message..." rows={4} />
+              <RichTextEditor value={content} onChange={setContent} />
             </div>
             <div>
               <Label>Audience</Label>
