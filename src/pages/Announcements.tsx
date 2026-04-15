@@ -101,6 +101,11 @@ export default function Announcements() {
           .update(ann as any)
           .eq('id', editingAnnouncement.id);
         if (error) throw error;
+        // Reset dismissals so all users see the updated message
+        await supabase
+          .from('announcement_dismissals')
+          .delete()
+          .eq('announcement_id', editingAnnouncement.id);
       } else {
         const { error } = await supabase
           .from('announcements')
