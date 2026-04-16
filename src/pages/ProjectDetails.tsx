@@ -30,7 +30,7 @@ import { ProjectTeamTab } from '@/components/project-details/ProjectTeamTab';
 import { ProjectTasksTab } from '@/components/project-details/ProjectTasksTab';
 import { ProjectTasksNotebookTab } from '@/components/project-details/ProjectTasksNotebookTab';
 import { ProjectNotesTab } from '@/components/project-details/ProjectNotesTab';
-import { ClientKDriveTab } from '@/components/client-details/ClientKDriveTab';
+import { ProjectKDriveTab } from '@/components/project-details/ProjectKDriveTab';
 import { SelectClientDialog } from '@/components/project-details/SelectClientDialog';
 import { EditProjectInfoDialog } from '@/components/project-details/EditProjectInfoDialog';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -429,13 +429,7 @@ export default function ProjectDetails() {
               value: 'kdrive',
               label: 'kDrive',
               icon: <ExternalLink className="h-4 w-4" />,
-              content: client ? (
-                <ClientKDriveTab clientId={client.id} />
-              ) : (
-                <div style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#9A9A9A', padding: '32px 0', textAlign: 'center' }}>
-                  Aucun client associé à ce projet
-                </div>
-              )
+              content: <ProjectKDriveTab projectId={id!} />
             },
             {
               value: 'info',
