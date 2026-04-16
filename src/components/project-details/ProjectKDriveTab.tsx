@@ -46,6 +46,7 @@ export function ProjectKDriveTab({ projectId }: ProjectKDriveTabProps) {
   const dragCounter = useRef(0);
   const [uploadQueue, setUploadQueue] = useState<UploadProgress[]>([]);
   const [hasProjectFolder, setHasProjectFolder] = useState(false);
+  const [clientFolderHint, setClientFolderHint] = useState<{ name: string; path: string } | null>(null);
 
   useEffect(() => {
     loadProjectFolder();
@@ -68,7 +69,19 @@ export function ProjectKDriveTab({ projectId }: ProjectKDriveTabProps) {
 
       if (projectError) throw projectError;
 
-      // Prefer project-level KDrive config, fallback to client's
+      const client = project.project_clients?.[0]?.clients;
+      const clientHasFolder = !!client?.kdrive_drive_id && !!client?.kdrive_folder_id;
+
+      setClientFolderHint(
+        clientHasFolder
+          ? {
+              name: client.company,
+              path: client.kdrive_folder_path || client.company,
+            }
+          : null
+      );
+
+      // Project tab now only uses project-level KDrive config
       const projectHasOwnFolder = !!project.kdrive_drive_id && !!project.kdrive_folder_id;
       setHasProjectFolder(projectHasOwnFolder);
 
@@ -81,19 +94,9 @@ export function ProjectKDriveTab({ projectId }: ProjectKDriveTabProps) {
         });
         await loadFiles(project.kdrive_drive_id!, project.kdrive_folder_id!);
       } else {
-        const client = project.project_clients?.[0]?.clients;
-        if (!client?.kdrive_drive_id || !client?.kdrive_folder_id) {
-          // No folder at all — show selector
-          setLoading(false);
-          return;
-        }
-        setDriveId(client.kdrive_drive_id);
-        setCurrentFolder({
-          id: client.kdrive_folder_id,
-          name: client.company,
-          path: client.kdrive_folder_path || ''
-        });
-        await loadFiles(client.kdrive_drive_id, client.kdrive_folder_id);
+        setDriveId(null);
+        setCurrentFolder(null);
+        setFiles([]);
       }
     } catch (error: any) {
       console.error('Error loading project folder:', error);
@@ -236,7 +239,12 @@ export function ProjectKDriveTab({ projectId }: ProjectKDriveTabProps) {
   if (!currentFolder) {
     return (
       <div className="text-center py-8 space-y-4">
-        <p className="text-muted-foreground">Aucun dossier kDrive connecté à ce projet</p>
+        <p className="text-muted-foreground">Aucun dossier kDrive propre à ce projet</p>
+        {clientFolderHint && (
+          <p className="text-sm text-muted-foreground">
+            Point de départ suggéré : {clientFolderHint.path}
+          </p>
+        )}
         <ProjectKDriveFolderSelector projectId={projectId} onFolderConnected={loadProjectFolder} />
       </div>
     );
@@ -263,7 +271,7 @@ export function ProjectKDriveTab({ projectId }: ProjectKDriveTabProps) {
         <div>
           <h3 className="text-lg font-semibold">Documents KDrive</h3>
           <p className="text-sm text-muted-foreground">
-            {hasProjectFolder ? '📁 Dossier projet' : '📁 Dossier client (hérité)'} — {currentFolder.path}
+            📁 Dossier projet — {currentFolder.path}
           </p>
         </div>
         <div className="flex gap-2">

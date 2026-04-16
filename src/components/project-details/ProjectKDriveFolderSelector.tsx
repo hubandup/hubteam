@@ -42,6 +42,7 @@ export function ProjectKDriveFolderSelector({
 }: ProjectKDriveFolderSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializingLocation, setIsInitializingLocation] = useState(false);
   const [folders, setFolders] = useState<KDriveFile[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentFolderId, setCurrentFolderId] = useState(KDRIVE_ROOT_FOLDER_ID);
@@ -54,9 +55,15 @@ export function ProjectKDriveFolderSelector({
 
   useEffect(() => {
     if (isOpen) {
+      initializeLocation();
+    }
+  }, [isOpen, projectId]);
+
+  useEffect(() => {
+    if (isOpen && !isInitializingLocation) {
       loadFolders();
     }
-  }, [isOpen, currentFolderId, searchQuery]);
+  }, [isOpen, isInitializingLocation, currentFolderId, searchQuery]);
 
   const filteredFolders = useMemo(() => {
     return [...folders].sort((a, b) => {
@@ -64,6 +71,57 @@ export function ProjectKDriveFolderSelector({
       return b.name.localeCompare(a.name);
     });
   }, [folders, sortBy]);
+
+  const resetLocationToRoot = () => {
+    setCurrentFolderId(KDRIVE_ROOT_FOLDER_ID);
+    setCurrentPath("Common documents");
+    setBreadcrumbs([{ id: KDRIVE_ROOT_FOLDER_ID, name: "Common documents" }]);
+  };
+
+  const initializeLocation = async () => {
+    setIsInitializingLocation(true);
+    setSearchQuery("");
+
+    try {
+      const { data: project, error } = await supabase
+        .from("projects")
+        .select(`
+          kdrive_folder_id,
+          kdrive_folder_path,
+          project_clients(
+            clients(company, kdrive_folder_id, kdrive_folder_path)
+          )
+        `)
+        .eq("id", projectId)
+        .single();
+
+      if (error) throw error;
+
+      const client = project.project_clients?.[0]?.clients;
+      const initialFolderId = project.kdrive_folder_id || client?.kdrive_folder_id || KDRIVE_ROOT_FOLDER_ID;
+      const initialPath = project.kdrive_folder_path || client?.kdrive_folder_path || "Common documents";
+
+      if (initialFolderId === KDRIVE_ROOT_FOLDER_ID) {
+        resetLocationToRoot();
+        return;
+      }
+
+      const pathSegments = initialPath.split("/").filter(Boolean);
+      const leafName = pathSegments[pathSegments.length - 1] || client?.company || "Dossier";
+
+      setCurrentFolderId(initialFolderId);
+      setCurrentPath(initialPath);
+      setBreadcrumbs([
+        { id: KDRIVE_ROOT_FOLDER_ID, name: "Common documents" },
+        { id: initialFolderId, name: leafName },
+      ]);
+    } catch (error) {
+      console.error("Erreur d'initialisation kDrive:", error);
+      resetLocationToRoot();
+    } finally {
+      setIsInitializingLocation(false);
+    }
+  };
 
   const loadFolders = async () => {
     setIsLoading(true);
@@ -106,7 +164,7 @@ export function ProjectKDriveFolderSelector({
           if (!seenIds.has(folder.id)) { seenIds.add(folder.id); allFolders.push(folder); newCount++; }
         });
         hasMore = response.data?.has_more === true && newCount > 0;
-        offset += 50;
+        offset += 200;
       }
       setFolders(allFolders);
     } catch (error: any) {
@@ -237,7 +295,7 @@ export function ProjectKDriveFolderSelector({
             </div>
 
             <ScrollArea className="h-[400px] rounded-md border p-4">
-              {isLoading ? (
+              {isLoading || isInitializingLocation ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
