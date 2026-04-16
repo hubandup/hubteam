@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,12 +15,34 @@ interface MessageNotificationRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // ── Auth guard: require authenticated user ──
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: userData, error: authError } = await supabase.auth.getUser();
+    if (authError || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const brevoApiKey = Deno.env.get("BREVO_API_KEY");
     if (!brevoApiKey) {
       throw new Error("BREVO_API_KEY is not configured");
@@ -27,11 +50,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { recipientEmail, recipientName, senderName, messagePreview, roomId }: MessageNotificationRequest = await req.json();
 
-    console.log("Sending message notification to:", recipientEmail, "from:", senderName);
-
     const messagesUrl = 'https://hubandup.org/messages';
 
-    // Send email via Brevo API using template
     const brevoResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
@@ -60,21 +80,19 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     if (!brevoResponse.ok) {
-      const errorText = await brevoResponse.text();
-      console.error("Brevo API error:", errorText);
-      throw new Error(`Failed to send email: ${errorText}`);
+      console.error("Brevo API error:", brevoResponse.status);
+      throw new Error("Failed to send email");
     }
 
     const result = await brevoResponse.json();
-    console.log("Email sent successfully:", result);
 
     return new Response(JSON.stringify({ success: true, messageId: result.messageId }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
-    console.error("Error sending message notification:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error("Error sending message notification:", error.message);
+    return new Response(JSON.stringify({ error: "Failed to send message notification" }), {
       status: 500,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });

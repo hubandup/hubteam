@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,20 +28,56 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // ── Auth guard: require authenticated admin user ──
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: claimsData, error: claimsError } = await supabase.auth.getUser();
+    if (claimsError || !claimsData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Verify caller is admin
+    const serviceClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { data: roleData } = await serviceClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", claimsData.user.id)
+      .single();
+
+    if (!roleData || roleData.role !== "admin") {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     console.log("=== Send Invitation Email via Brevo ===");
     
     const brevoApiKey = Deno.env.get("BREVO_API_KEY");
     if (!brevoApiKey) {
-      console.error("❌ BREVO_API_KEY not configured");
       throw new Error("BREVO_API_KEY not configured");
     }
 
     const { email, invitationUrl, role }: InvitationEmailRequest = await req.json();
-    console.log(`📧 Sending invitation to: ${email} (${role})`);
+    console.log(`Sending invitation to: ${email} (${role})`);
 
     const roleLabel = getRoleLabel(role);
     
-    // Utiliser le template Brevo ID 47
     const emailPayload = {
       sender: {
         name: "Hub & Up",
@@ -65,12 +102,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!brevoResponse.ok) {
       const errorText = await brevoResponse.text();
-      console.error("❌ Brevo error:", brevoResponse.status, errorText);
-      throw new Error(`Brevo API error: ${errorText}`);
+      console.error("Brevo error:", brevoResponse.status);
+      throw new Error("Failed to send email via Brevo");
     }
 
     const result = await brevoResponse.json();
-    console.log("✅ Email sent successfully via Brevo:", result.messageId);
+    console.log("Email sent successfully via Brevo");
 
     return new Response(
       JSON.stringify({ success: true, messageId: result.messageId }), 
@@ -80,9 +117,9 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
   } catch (error: any) {
-    console.error("❌ Error:", error.message);
+    console.error("Error:", error.message);
     return new Response(
-      JSON.stringify({ error: error.message }), 
+      JSON.stringify({ error: "Failed to send invitation email" }), 
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
