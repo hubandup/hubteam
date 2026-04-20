@@ -44,8 +44,9 @@ interface Props {
 export function LagostinaLearningsPanel({ activeTab }: Props) {
   const { role } = useUserRole();
   const { user } = useAuth();
+  const { hasAccess } = useLagostinaAccess();
   const queryClient = useQueryClient();
-  const canEdit = role === 'admin' || role === 'team';
+  const canEdit = role === 'admin' || role === 'team' || hasAccess;
   const levierKey = TAB_TO_LEVIER[activeTab] || activeTab;
 
   // ─── Learnings ───
