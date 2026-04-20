@@ -555,20 +555,14 @@ export function ScorecardRECC({
                         <span className="text-muted-foreground font-normal text-[10px] ml-1">({lev.kpis.length})</span>
                       </div>
                     </td>
-                    {visibleMonths.map((mo) => {
-                      const isExpanded = !!expandedMonths[mo.idx];
-                      const weeks = monthWeeks[mo.idx] || [];
-                      const span = isExpanded && weeks.length ? weeks.length + 1 : 1;
-                      return (
-                        <td
-                          key={mo.idx}
-                          colSpan={span}
-                          className={`border-l border-border/20 ${
-                            mo.idx === currentMonthIdx ? 'bg-[#E8FF4C]/10 dark:bg-[#E8FF4C]/5' : ''
-                          }`}
-                        />
-                      );
-                    })}
+                    {visibleMonths.map((mo) => (
+                      <td
+                        key={mo.idx}
+                        className={`border-l border-border/20 ${
+                          mo.idx === currentMonthIdx ? 'bg-[#E8FF4C]/10 dark:bg-[#E8FF4C]/5' : ''
+                        }`}
+                      />
+                    ))}
                   </tr>
                   {/* KPI rows (collapsible) */}
                   {isOpen && lev.kpis.map((kpi) => (
