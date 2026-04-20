@@ -515,28 +515,17 @@ export function ScorecardRECC({
               </th>
               {visibleMonths.map((mo) => {
                 const isCurrent = mo.idx === currentMonthIdx;
-                const isExpanded = !!expandedMonths[mo.idx];
-                const weeks = monthWeeks[mo.idx] || [];
-                const colSpan = isExpanded && weeks.length ? weeks.length + 1 : 1;
                 return (
                   <th
                     key={mo.idx}
                     data-month={mo.idx}
-                    colSpan={colSpan}
-                    className={`text-center px-2 py-2 uppercase tracking-wider text-[11px] min-w-[90px] border-l border-border/30 cursor-pointer select-none transition-colors ${
+                    className={`text-center px-2 py-2 uppercase tracking-wider text-[11px] min-w-[90px] border-l border-border/30 ${
                       isCurrent
                         ? 'bg-[#E8FF4C]/30 dark:bg-[#E8FF4C]/20 text-black dark:text-[#E8FF4C] font-bold'
-                        : 'text-muted-foreground font-medium hover:bg-black/[0.04] dark:hover:bg-white/[0.04]'
+                        : 'text-muted-foreground font-medium'
                     }`}
-                    onClick={() => weeks.length && toggleMonth(mo.idx)}
-                    title={weeks.length ? 'Cliquez pour afficher les semaines' : ''}
                   >
-                    <div className="inline-flex items-center gap-1 justify-center">
-                      {weeks.length > 0 && (
-                        isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />
-                      )}
-                      {mo.short}
-                    </div>
+                    {mo.short}
                     {isCurrent && (
                       <div className="text-[9px] font-normal mt-0.5 opacity-80">en cours</div>
                     )}
@@ -544,36 +533,6 @@ export function ScorecardRECC({
                 );
               })}
             </tr>
-            {/* Sub-header: weeks if any month is expanded */}
-            {Object.values(expandedMonths).some(Boolean) && (
-              <tr className="border-b border-border/30 bg-black/[0.03] dark:bg-white/[0.03]">
-                <th className="sticky left-0 bg-white dark:bg-[#0f1422] z-20 border-r border-border/30" />
-                {visibleMonths.map((mo) => {
-                  const isExpanded = !!expandedMonths[mo.idx];
-                  const weeks = monthWeeks[mo.idx] || [];
-                  if (!isExpanded || !weeks.length) {
-                    return <th key={mo.idx} className="border-l border-border/20" />;
-                  }
-                  return [
-                    ...weeks.map((wk) => (
-                      <th
-                        key={`${mo.idx}-w${wk}`}
-                        className={`text-center px-1.5 py-1 text-[10px] uppercase tracking-wider border-l border-border/10 min-w-[55px] ${
-                          wk === currentWeek
-                            ? 'bg-[#E8FF4C]/40 dark:bg-[#E8FF4C]/25 text-black dark:text-[#E8FF4C] font-bold'
-                            : 'text-muted-foreground/80'
-                        }`}
-                      >
-                        S{wk}
-                      </th>
-                    )),
-                    <th key={`${mo.idx}-total`} className="text-center px-1.5 py-1 text-[10px] uppercase tracking-wider border-l border-border/30 text-muted-foreground font-bold bg-black/[0.04] dark:bg-white/[0.04] min-w-[60px]">
-                      Total
-                    </th>,
-                  ];
-                })}
-              </tr>
-            )}
           </thead>
           <tbody>
             {LEVIERS.map((lev) => {
