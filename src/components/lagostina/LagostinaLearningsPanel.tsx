@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
+import { useLagostinaAccess } from '@/hooks/useLagostinaAccess';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, Trash2, MessageSquare, Reply } from 'lucide-react';
@@ -43,8 +44,9 @@ interface Props {
 export function LagostinaLearningsPanel({ activeTab }: Props) {
   const { role } = useUserRole();
   const { user } = useAuth();
+  const { hasAccess } = useLagostinaAccess();
   const queryClient = useQueryClient();
-  const canEdit = role === 'admin' || role === 'team';
+  const canEdit = role === 'admin' || role === 'team' || hasAccess;
   const levierKey = TAB_TO_LEVIER[activeTab] || activeTab;
 
   // ─── Learnings ───
