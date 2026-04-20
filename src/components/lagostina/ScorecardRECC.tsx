@@ -449,12 +449,9 @@ export function ScorecardRECC({
   const [openLeviers, setOpenLeviers] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(LEVIERS.map((l) => [l.id, true]))
   );
-  const [expandedMonths, setExpandedMonths] = useState<Record<number, boolean>>({});
 
   const toggleLevier = (id: string) =>
     setOpenLeviers((s) => ({ ...s, [id]: !s[id] }));
-  const toggleMonth = (mi: number) =>
-    setExpandedMonths((s) => ({ ...s, [mi]: !s[mi] }));
 
   // Auto-scroll to current month column
   useEffect(() => {
