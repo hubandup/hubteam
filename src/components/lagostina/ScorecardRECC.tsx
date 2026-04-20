@@ -258,18 +258,38 @@ export function ScorecardRECC({
 
   const isLoading = !influence || !affiliation || !press || !media;
 
-  // ── Build matrix [levier_kpi_key][monthIdx] = number ──
-  const matrix = useMemo(() => {
+  // ── Build matrix [kpi_key][monthIdx] = number AND weekly [kpi_key][monthIdx][weekNum] = number ──
+  const { matrix, weeklyMatrix, monthWeeks } = useMemo(() => {
     const m: Record<string, Record<number, number | null>> = {};
+    const w: Record<string, Record<number, Record<number, number | null>>> = {};
+    const mw: Record<number, Set<number>> = {};
     const ensure = (k: string) => (m[k] = m[k] || {});
+    const ensureW = (k: string, mi: number) => {
+      w[k] = w[k] || {};
+      w[k][mi] = w[k][mi] || {};
+      return w[k][mi];
+    };
+    const trackWeek = (mi: number, wk: number) => {
+      mw[mi] = mw[mi] || new Set();
+      mw[mi].add(wk);
+    };
 
-    // ── INFLUENCE ── (week field = month label like S2..S12; month col = french name)
+    const parseWeek = (week: string | null | undefined): number | null => {
+      if (!week) return null;
+      const num = parseInt(String(week).replace(/\D/g, ''));
+      return num && !isNaN(num) ? num : null;
+    };
+
+    // ── INFLUENCE ──
     (influence || []).forEach((row: any) => {
       const mi = monthIdxFromName(row.month);
       if (!mi) return;
+      const wk = parseWeek(row.week);
       const set = (kpiKey: string, val: any) => {
         if (val == null) return;
-        ensure(kpiKey)[mi] = Number(val);
+        const v = Number(val);
+        ensure(kpiKey)[mi] = v;
+        if (wk) { ensureW(kpiKey, mi)[wk] = v; trackWeek(mi, wk); }
       };
       set('inf_nb', row.influencer_count);
       set('inf_reach', row.reach_millions);
@@ -289,9 +309,12 @@ export function ScorecardRECC({
     (affiliation || []).forEach((row: any) => {
       const mi = monthIdxFromName(row.month);
       if (!mi) return;
+      const wk = parseWeek(row.week);
       const set = (kpiKey: string, val: any) => {
         if (val == null) return;
-        ensure(kpiKey)[mi] = Number(val);
+        const v = Number(val);
+        ensure(kpiKey)[mi] = v;
+        if (wk) { ensureW(kpiKey, mi)[wk] = v; trackWeek(mi, wk); }
       };
       set('aff_nb', row.influencer_count);
       set('aff_reach', row.reach_millions);
@@ -304,18 +327,23 @@ export function ScorecardRECC({
       set('aff_imp', row.impressions_globales);
     });
 
-    // ── PRESSE ── (real dates → group by month, count + reach by tonality)
+    // ── PRESSE ──
     const pressByMonth: Record<number, { pos: number; neu: number; neg: number; reachPos: number; reachNeu: number; reachNeg: number }> = {};
+    const pressByWeek: Record<number, Record<number, { pos: number; neu: number; neg: number; reachPos: number; reachNeu: number; reachNeg: number }>> = {};
     (press || []).forEach((row: any) => {
       if (!row.date) return;
       const d = new Date(row.date);
       const mi = d.getMonth() + 1;
-      const bucket = (pressByMonth[mi] = pressByMonth[mi] || { pos: 0, neu: 0, neg: 0, reachPos: 0, reachNeu: 0, reachNeg: 0 });
+      const wk = getISOWeek(d);
       const reach = Number(row.estimated_reach || 0);
       const tone = (row.tonality || '').toLowerCase();
-      if (tone.startsWith('pos')) { bucket.pos++; bucket.reachPos += reach; }
-      else if (tone.startsWith('neg')) { bucket.neg++; bucket.reachNeg += reach; }
-      else { bucket.neu++; bucket.reachNeu += reach; }
+      const bM = (pressByMonth[mi] = pressByMonth[mi] || { pos: 0, neu: 0, neg: 0, reachPos: 0, reachNeu: 0, reachNeg: 0 });
+      pressByWeek[mi] = pressByWeek[mi] || {};
+      const bW = (pressByWeek[mi][wk] = pressByWeek[mi][wk] || { pos: 0, neu: 0, neg: 0, reachPos: 0, reachNeu: 0, reachNeg: 0 });
+      trackWeek(mi, wk);
+      if (tone.startsWith('pos')) { bM.pos++; bM.reachPos += reach; bW.pos++; bW.reachPos += reach; }
+      else if (tone.startsWith('neg')) { bM.neg++; bM.reachNeg += reach; bW.neg++; bW.reachNeg += reach; }
+      else { bM.neu++; bM.reachNeu += reach; bW.neu++; bW.reachNeu += reach; }
     });
     Object.entries(pressByMonth).forEach(([miStr, b]) => {
       const mi = Number(miStr);
@@ -327,36 +355,54 @@ export function ScorecardRECC({
       ensure('press_reach_neu')[mi] = b.reachNeu;
       ensure('press_reach_neg')[mi] = b.reachNeg;
     });
+    Object.entries(pressByWeek).forEach(([miStr, weeks]) => {
+      const mi = Number(miStr);
+      Object.entries(weeks).forEach(([wkStr, b]) => {
+        const wk = Number(wkStr);
+        ensureW('press_total', mi)[wk] = b.pos + b.neu + b.neg;
+        ensureW('press_pos', mi)[wk] = b.pos;
+        ensureW('press_neu', mi)[wk] = b.neu;
+        ensureW('press_neg', mi)[wk] = b.neg;
+        ensureW('press_reach_pos', mi)[wk] = b.reachPos;
+        ensureW('press_reach_neu', mi)[wk] = b.reachNeu;
+        ensureW('press_reach_neg', mi)[wk] = b.reachNeg;
+      });
+    });
 
-    // ── MEDIA KPIs (SEA / SMA=Meta / TikTok) — week-based, aggregate to month ──
-    // Build: channel → kpi_name → month → list of weekly values
-    const mediaAgg: Record<string, Record<string, Record<number, number[]>>> = {};
+    // ── MEDIA KPIs (SEA / SMA=Meta / TikTok) ──
+    const mediaAgg: Record<string, Record<string, Record<number, Array<{ wk: number; v: number }>>>> = {};
     (media || []).forEach((row: any) => {
+      const wk = parseWeek(row.week);
       const mi = weekToMonthIdx(row.week);
-      if (!mi) return;
+      if (!mi || !wk) return;
       const ch = row.channel;
       const kn = row.kpi_name;
       mediaAgg[ch] = mediaAgg[ch] || {};
       mediaAgg[ch][kn] = mediaAgg[ch][kn] || {};
       mediaAgg[ch][kn][mi] = mediaAgg[ch][kn][mi] || [];
-      // value can be in actual, budget_spent or budget_allocated
       let v: number | null = null;
       if (row.actual != null) v = Number(row.actual);
       else if (kn === 'budget_depense' && row.budget_spent != null) v = Number(row.budget_spent);
       else if (kn === 'budget_alloue' && row.budget_allocated != null) v = Number(row.budget_allocated);
-      if (v != null && !isNaN(v)) mediaAgg[ch][kn][mi].push(v);
+      if (v != null && !isNaN(v)) {
+        mediaAgg[ch][kn][mi].push({ wk, v });
+        trackWeek(mi, wk);
+      }
     });
 
     const setMediaKpi = (channel: string, kpiName: string, kpiKey: string, agg: 'sum' | 'avg') => {
       const monthMap = mediaAgg[channel]?.[kpiName];
       if (!monthMap) return;
-      Object.entries(monthMap).forEach(([miStr, vals]) => {
+      Object.entries(monthMap).forEach(([miStr, entries]) => {
         const mi = Number(miStr);
+        const vals = entries.map((e) => e.v);
         ensure(kpiKey)[mi] = agg === 'sum' ? sum(vals) : avg(vals);
+        entries.forEach(({ wk, v }) => {
+          ensureW(kpiKey, mi)[wk] = v;
+        });
       });
     };
 
-    // SEA
     setMediaKpi('sea', 'roas', 'sea_roas', 'avg');
     setMediaKpi('sea', 'cpc_moyen', 'sea_cpc', 'avg');
     setMediaKpi('sea', 'ctr', 'sea_ctr', 'avg');
@@ -365,7 +411,6 @@ export function ScorecardRECC({
     setMediaKpi('sea', 'budget_depense', 'sea_budget_dep', 'sum');
     setMediaKpi('sea', 'budget_alloue', 'sea_budget_all', 'sum');
 
-    // META = sma channel
     setMediaKpi('sma', 'reach_3s_views', 'meta_reach3s', 'sum');
     setMediaKpi('sma', 'completion_video', 'meta_compl', 'avg');
     setMediaKpi('sma', 'traffic_qualifie_visites_site', 'meta_traffic', 'sum');
@@ -375,7 +420,6 @@ export function ScorecardRECC({
     setMediaKpi('sma', 'conversion_rate', 'meta_conv', 'avg');
     setMediaKpi('sma', 'roas', 'meta_roas', 'avg');
 
-    // TIKTOK
     setMediaKpi('tiktok', 'reach', 'tt_reach3s', 'sum');
     setMediaKpi('tiktok', 'completion', 'tt_compl', 'avg');
     setMediaKpi('tiktok', 'engagement_rate', 'tt_eng', 'avg');
@@ -383,10 +427,15 @@ export function ScorecardRECC({
     setMediaKpi('tiktok', 'cpc', 'tt_cpc', 'avg');
     setMediaKpi('tiktok', 'roas', 'tt_roas', 'avg');
 
-    return m;
+    const monthWeeksOut: Record<number, number[]> = {};
+    Object.entries(mw).forEach(([mi, set]) => {
+      monthWeeksOut[Number(mi)] = Array.from(set).sort((a, b) => a - b);
+    });
+
+    return { matrix: m, weeklyMatrix: w, monthWeeks: monthWeeksOut };
   }, [influence, affiliation, press, media]);
 
-  // Visible months: only those with at least one data point, plus current month always
+  // Visible months
   const visibleMonths = useMemo(() => {
     const monthsWithData = new Set<number>();
     Object.values(matrix).forEach((row) => {
@@ -395,6 +444,17 @@ export function ScorecardRECC({
     monthsWithData.add(currentMonthIdx);
     return MONTHS.filter((m) => monthsWithData.has(m.idx));
   }, [matrix, currentMonthIdx]);
+
+  // Toggle state
+  const [openLeviers, setOpenLeviers] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(LEVIERS.map((l) => [l.id, true]))
+  );
+  const [expandedMonths, setExpandedMonths] = useState<Record<number, boolean>>({});
+
+  const toggleLevier = (id: string) =>
+    setOpenLeviers((s) => ({ ...s, [id]: !s[id] }));
+  const toggleMonth = (mi: number) =>
+    setExpandedMonths((s) => ({ ...s, [mi]: !s[mi] }));
 
   // Auto-scroll to current month column
   useEffect(() => {
