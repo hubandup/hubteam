@@ -393,7 +393,7 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                   </tr>
                 </thead>
                 <tbody>
-                  {leviers.map((levier) => {
+                  {detailLeviers.map((levier) => {
                     const rows = ['planned', 'engaged', 'invoiced', 'remaining'] as const;
                     const labels = { planned: 'Prévu', engaged: 'Engagé', invoiced: 'Facturé', remaining: 'Reste' };
                     return rows.map((type, ti) => {
@@ -404,9 +404,9 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                             <td
                               rowSpan={4}
                               className="px-3 py-2 text-foreground font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10 border-l-2 capitalize"
-                              style={{ borderLeftColor: getLevierColor(levier, leviers.indexOf(levier)) }}
+                              style={{ borderLeftColor: getLevierColor(levier, detailLeviers.indexOf(levier)) }}
                             >
-                              {levier}
+                              {getLevierLabel(levier)}
                             </td>
                           )}
                           <td className="px-2 py-1.5 text-muted-foreground text-xs">{labels[type]}</td>
@@ -414,7 +414,7 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                             const val = getMonthVal(levier, m, type);
                             const isOver = type === 'engaged' && val > getMonthVal(levier, m, 'planned') && getMonthVal(levier, m, 'planned') > 0;
                             return (
-                              <NoteableCell key={m} levier={`budget_${levier}`} kpiName={type} week={m} notesMap={cellNotesMap} levierColor={getLevierColor(levier, leviers.indexOf(levier))} className={`px-2 py-1.5 text-center text-[13px] ${isOver ? 'bg-[#ef4444]/20 text-[#ef4444]' : 'text-foreground'}`}>
+                              <NoteableCell key={m} levier={`budget_${levier}`} kpiName={type} week={m} notesMap={cellNotesMap} levierColor={getLevierColor(levier, detailLeviers.indexOf(levier))} className={`px-2 py-1.5 text-center text-[13px] ${isOver ? 'bg-[#ef4444]/20 text-[#ef4444]' : 'text-foreground'}`}>
                                 {val > 0 ? val.toLocaleString('fr-FR') : '—'}
                               </NoteableCell>
                             );
