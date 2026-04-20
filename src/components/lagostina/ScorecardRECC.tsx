@@ -1,7 +1,7 @@
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo, useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Database, CalendarClock } from 'lucide-react';
+import { Database, CalendarClock, ChevronRight, ChevronDown } from 'lucide-react';
 import { NoteableCell, useCellNotes } from './CellNotePopover';
 
 // ──────────────────────────────────────────────────────────────────────────
