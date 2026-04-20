@@ -510,25 +510,33 @@ export function ScorecardRECC({
         <table className="w-full text-sm font-['Roboto'] border-collapse">
           <thead>
             <tr className="border-b border-border/40 bg-black/[0.02] dark:bg-white/[0.02]">
-              <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white dark:bg-[#0f1422] z-20 min-w-[140px] border-r border-border/30">
-                Levier
-              </th>
-              <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-[140px] bg-white dark:bg-[#0f1422] z-20 min-w-[200px] border-r border-border/30 text-[11px]">
-                KPI
+              <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white dark:bg-[#0f1422] z-20 min-w-[220px] border-r border-border/30 text-[11px]">
+                Levier / KPI
               </th>
               {visibleMonths.map((mo) => {
                 const isCurrent = mo.idx === currentMonthIdx;
+                const isExpanded = !!expandedMonths[mo.idx];
+                const weeks = monthWeeks[mo.idx] || [];
+                const colSpan = isExpanded && weeks.length ? weeks.length + 1 : 1;
                 return (
                   <th
                     key={mo.idx}
                     data-month={mo.idx}
-                    className={`text-center px-2 py-2 uppercase tracking-wider text-[11px] min-w-[90px] border-l border-border/20 ${
+                    colSpan={colSpan}
+                    className={`text-center px-2 py-2 uppercase tracking-wider text-[11px] min-w-[90px] border-l border-border/30 cursor-pointer select-none transition-colors ${
                       isCurrent
                         ? 'bg-[#E8FF4C]/30 dark:bg-[#E8FF4C]/20 text-black dark:text-[#E8FF4C] font-bold'
-                        : 'text-muted-foreground font-medium'
+                        : 'text-muted-foreground font-medium hover:bg-black/[0.04] dark:hover:bg-white/[0.04]'
                     }`}
+                    onClick={() => weeks.length && toggleMonth(mo.idx)}
+                    title={weeks.length ? 'Cliquez pour afficher les semaines' : ''}
                   >
-                    {mo.short}
+                    <div className="inline-flex items-center gap-1 justify-center">
+                      {weeks.length > 0 && (
+                        isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />
+                      )}
+                      {mo.short}
+                    </div>
                     {isCurrent && (
                       <div className="text-[9px] font-normal mt-0.5 opacity-80">en cours</div>
                     )}
@@ -536,48 +544,130 @@ export function ScorecardRECC({
                 );
               })}
             </tr>
+            {/* Sub-header: weeks if any month is expanded */}
+            {Object.values(expandedMonths).some(Boolean) && (
+              <tr className="border-b border-border/30 bg-black/[0.03] dark:bg-white/[0.03]">
+                <th className="sticky left-0 bg-white dark:bg-[#0f1422] z-20 border-r border-border/30" />
+                {visibleMonths.map((mo) => {
+                  const isExpanded = !!expandedMonths[mo.idx];
+                  const weeks = monthWeeks[mo.idx] || [];
+                  if (!isExpanded || !weeks.length) {
+                    return <th key={mo.idx} className="border-l border-border/20" />;
+                  }
+                  return [
+                    ...weeks.map((wk) => (
+                      <th
+                        key={`${mo.idx}-w${wk}`}
+                        className={`text-center px-1.5 py-1 text-[10px] uppercase tracking-wider border-l border-border/10 min-w-[55px] ${
+                          wk === currentWeek
+                            ? 'bg-[#E8FF4C]/40 dark:bg-[#E8FF4C]/25 text-black dark:text-[#E8FF4C] font-bold'
+                            : 'text-muted-foreground/80'
+                        }`}
+                      >
+                        S{wk}
+                      </th>
+                    )),
+                    <th key={`${mo.idx}-total`} className="text-center px-1.5 py-1 text-[10px] uppercase tracking-wider border-l border-border/30 text-muted-foreground font-bold bg-black/[0.04] dark:bg-white/[0.04] min-w-[60px]">
+                      Total
+                    </th>,
+                  ];
+                })}
+              </tr>
+            )}
           </thead>
           <tbody>
-            {LEVIERS.map((lev) => (
-              lev.kpis.map((kpi, ki) => (
-                <tr
-                  key={`${lev.id}-${kpi.key}`}
-                  className="border-b border-border/20 hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
-                >
-                  {ki === 0 && (
+            {LEVIERS.map((lev) => {
+              const isOpen = openLeviers[lev.id];
+              return (
+                <>
+                  {/* Levier header row (clickable) */}
+                  <tr
+                    key={`hdr-${lev.id}`}
+                    className="border-b border-border/30 cursor-pointer select-none hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                    onClick={() => toggleLevier(lev.id)}
+                  >
                     <td
-                      rowSpan={lev.kpis.length}
-                      className="px-3 py-2 text-foreground font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white dark:bg-[#0f1422] z-10 align-top border-r border-border/30"
+                      className="px-3 py-2 text-foreground font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white dark:bg-[#0f1422] z-10 border-r border-border/30"
                       style={{ borderLeft: `3px solid ${lev.color}` }}
                     >
-                      <div className="sticky top-2">{lev.label}</div>
+                      <div className="inline-flex items-center gap-1.5">
+                        {isOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                        <span>{lev.label}</span>
+                        <span className="text-muted-foreground font-normal text-[10px] ml-1">({lev.kpis.length})</span>
+                      </div>
                     </td>
-                  )}
-                  <td className="px-2 py-1.5 text-foreground text-[12px] sticky left-[140px] bg-white dark:bg-[#0f1422] z-10 border-r border-border/30">
-                    {kpi.label}
-                  </td>
-                  {visibleMonths.map((mo) => {
-                    const val = matrix[kpi.key]?.[mo.idx] ?? null;
-                    const isCurrent = mo.idx === currentMonthIdx;
-                    return (
-                      <NoteableCell
-                        key={mo.idx}
-                        levier={lev.id}
-                        kpiName={kpi.key}
-                        week={`M${mo.idx}`}
-                        notesMap={cellNotesMap}
-                        levierColor={lev.color}
-                        className={`px-2 py-1.5 text-center text-[12px] tabular-nums border-l border-border/10 ${
-                          isCurrent ? 'bg-[#E8FF4C]/10 dark:bg-[#E8FF4C]/5 font-medium' : ''
-                        } ${val == null ? 'text-muted-foreground/40' : 'text-foreground'}`}
+                    {visibleMonths.map((mo) => {
+                      const isExpanded = !!expandedMonths[mo.idx];
+                      const weeks = monthWeeks[mo.idx] || [];
+                      const span = isExpanded && weeks.length ? weeks.length + 1 : 1;
+                      return (
+                        <td
+                          key={mo.idx}
+                          colSpan={span}
+                          className={`border-l border-border/20 ${
+                            mo.idx === currentMonthIdx ? 'bg-[#E8FF4C]/10 dark:bg-[#E8FF4C]/5' : ''
+                          }`}
+                        />
+                      );
+                    })}
+                  </tr>
+                  {/* KPI rows (collapsible) */}
+                  {isOpen && lev.kpis.map((kpi) => (
+                    <tr
+                      key={`${lev.id}-${kpi.key}`}
+                      className="border-b border-border/20 hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
+                    >
+                      <td
+                        className="pl-9 pr-2 py-1.5 text-foreground text-[12px] sticky left-0 bg-white dark:bg-[#0f1422] z-10 border-r border-border/30"
+                        style={{ borderLeft: `3px solid ${lev.color}` }}
                       >
-                        {fmt(val, kpi.format)}
-                      </NoteableCell>
-                    );
-                  })}
-                </tr>
-              ))
-            ))}
+                        {kpi.label}
+                      </td>
+                      {visibleMonths.map((mo) => {
+                        const val = matrix[kpi.key]?.[mo.idx] ?? null;
+                        const isCurrent = mo.idx === currentMonthIdx;
+                        const isExpanded = !!expandedMonths[mo.idx];
+                        const weeks = monthWeeks[mo.idx] || [];
+                        const cells: JSX.Element[] = [];
+                        if (isExpanded && weeks.length) {
+                          weeks.forEach((wk) => {
+                            const wval = weeklyMatrix[kpi.key]?.[mo.idx]?.[wk] ?? null;
+                            cells.push(
+                              <td
+                                key={`${mo.idx}-w${wk}`}
+                                className={`px-1.5 py-1.5 text-center text-[11px] tabular-nums border-l border-border/10 ${
+                                  wk === currentWeek ? 'bg-[#E8FF4C]/15 dark:bg-[#E8FF4C]/10 font-medium' : ''
+                                } ${wval == null ? 'text-muted-foreground/40' : 'text-foreground'}`}
+                              >
+                                {fmt(wval, kpi.format)}
+                              </td>
+                            );
+                          });
+                        }
+                        cells.push(
+                          <NoteableCell
+                            key={`${mo.idx}-total`}
+                            levier={lev.id}
+                            kpiName={kpi.key}
+                            week={`M${mo.idx}`}
+                            notesMap={cellNotesMap}
+                            levierColor={lev.color}
+                            className={`px-2 py-1.5 text-center text-[12px] tabular-nums border-l ${
+                              isExpanded && weeks.length ? 'border-border/30 bg-black/[0.03] dark:bg-white/[0.03] font-bold' : 'border-border/10'
+                            } ${
+                              isCurrent ? 'bg-[#E8FF4C]/10 dark:bg-[#E8FF4C]/5 font-medium' : ''
+                            } ${val == null ? 'text-muted-foreground/40' : 'text-foreground'}`}
+                          >
+                            {fmt(val, kpi.format)}
+                          </NoteableCell>
+                        );
+                        return cells;
+                      })}
+                    </tr>
+                  ))}
+                </>
+              );
+            })}
           </tbody>
         </table>
       </div>
