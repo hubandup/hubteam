@@ -65,11 +65,11 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
   const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
-    if (learnings) {
+    if (learnings && !isDirty) {
       setLocal(learnings);
-      setIsDirty(false);
     }
-  }, [learnings]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [learnings?.works, learnings?.does_not_work]);
 
   const saveLearning = useMutation({
     mutationFn: async (data: LearningsData) => {
