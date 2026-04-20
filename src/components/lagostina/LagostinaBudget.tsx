@@ -89,6 +89,18 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
     return [...new Set(budgetData.map((b) => b.levier))].sort();
   }, [budgetData]);
 
+  // Détail mensuel : leviers exclus + renommage + ajout
+  const HIDDEN_LEVIERS = ['crm', 'digital_(display_+_vol)', 'promo_shopper'];
+  const LEVIER_LABEL_OVERRIDES: Record<string, string> = {
+    social_media_ads: 'META',
+  };
+  const detailLeviers = useMemo(() => {
+    const filtered = leviers.filter((l) => !HIDDEN_LEVIERS.includes(l));
+    if (!filtered.includes('tiktok')) filtered.push('tiktok');
+    return filtered;
+  }, [leviers]);
+  const getLevierLabel = (l: string) => LEVIER_LABEL_OVERRIDES[l] || l.replace(/_/g, ' ');
+
   const getMonthVal = (levier: string, month: string, field: 'planned' | 'engaged' | 'invoiced' | 'remaining') => {
     const entry = budgetData?.find((b) => b.levier === levier && b.month === month);
     if (!entry) return 0;
