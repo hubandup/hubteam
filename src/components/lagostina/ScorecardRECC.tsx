@@ -449,12 +449,9 @@ export function ScorecardRECC({
   const [openLeviers, setOpenLeviers] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(LEVIERS.map((l) => [l.id, true]))
   );
-  const [expandedMonths, setExpandedMonths] = useState<Record<number, boolean>>({});
 
   const toggleLevier = (id: string) =>
     setOpenLeviers((s) => ({ ...s, [id]: !s[id] }));
-  const toggleMonth = (mi: number) =>
-    setExpandedMonths((s) => ({ ...s, [mi]: !s[mi] }));
 
   // Auto-scroll to current month column
   useEffect(() => {
@@ -515,28 +512,17 @@ export function ScorecardRECC({
               </th>
               {visibleMonths.map((mo) => {
                 const isCurrent = mo.idx === currentMonthIdx;
-                const isExpanded = !!expandedMonths[mo.idx];
-                const weeks = monthWeeks[mo.idx] || [];
-                const colSpan = isExpanded && weeks.length ? weeks.length + 1 : 1;
                 return (
                   <th
                     key={mo.idx}
                     data-month={mo.idx}
-                    colSpan={colSpan}
-                    className={`text-center px-2 py-2 uppercase tracking-wider text-[11px] min-w-[90px] border-l border-border/30 cursor-pointer select-none transition-colors ${
+                    className={`text-center px-2 py-2 uppercase tracking-wider text-[11px] min-w-[90px] border-l border-border/30 ${
                       isCurrent
                         ? 'bg-[#E8FF4C]/30 dark:bg-[#E8FF4C]/20 text-black dark:text-[#E8FF4C] font-bold'
-                        : 'text-muted-foreground font-medium hover:bg-black/[0.04] dark:hover:bg-white/[0.04]'
+                        : 'text-muted-foreground font-medium'
                     }`}
-                    onClick={() => weeks.length && toggleMonth(mo.idx)}
-                    title={weeks.length ? 'Cliquez pour afficher les semaines' : ''}
                   >
-                    <div className="inline-flex items-center gap-1 justify-center">
-                      {weeks.length > 0 && (
-                        isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />
-                      )}
-                      {mo.short}
-                    </div>
+                    {mo.short}
                     {isCurrent && (
                       <div className="text-[9px] font-normal mt-0.5 opacity-80">en cours</div>
                     )}
@@ -544,36 +530,6 @@ export function ScorecardRECC({
                 );
               })}
             </tr>
-            {/* Sub-header: weeks if any month is expanded */}
-            {Object.values(expandedMonths).some(Boolean) && (
-              <tr className="border-b border-border/30 bg-black/[0.03] dark:bg-white/[0.03]">
-                <th className="sticky left-0 bg-white dark:bg-[#0f1422] z-20 border-r border-border/30" />
-                {visibleMonths.map((mo) => {
-                  const isExpanded = !!expandedMonths[mo.idx];
-                  const weeks = monthWeeks[mo.idx] || [];
-                  if (!isExpanded || !weeks.length) {
-                    return <th key={mo.idx} className="border-l border-border/20" />;
-                  }
-                  return [
-                    ...weeks.map((wk) => (
-                      <th
-                        key={`${mo.idx}-w${wk}`}
-                        className={`text-center px-1.5 py-1 text-[10px] uppercase tracking-wider border-l border-border/10 min-w-[55px] ${
-                          wk === currentWeek
-                            ? 'bg-[#E8FF4C]/40 dark:bg-[#E8FF4C]/25 text-black dark:text-[#E8FF4C] font-bold'
-                            : 'text-muted-foreground/80'
-                        }`}
-                      >
-                        S{wk}
-                      </th>
-                    )),
-                    <th key={`${mo.idx}-total`} className="text-center px-1.5 py-1 text-[10px] uppercase tracking-wider border-l border-border/30 text-muted-foreground font-bold bg-black/[0.04] dark:bg-white/[0.04] min-w-[60px]">
-                      Total
-                    </th>,
-                  ];
-                })}
-              </tr>
-            )}
           </thead>
           <tbody>
             {LEVIERS.map((lev) => {
@@ -596,20 +552,14 @@ export function ScorecardRECC({
                         <span className="text-muted-foreground font-normal text-[10px] ml-1">({lev.kpis.length})</span>
                       </div>
                     </td>
-                    {visibleMonths.map((mo) => {
-                      const isExpanded = !!expandedMonths[mo.idx];
-                      const weeks = monthWeeks[mo.idx] || [];
-                      const span = isExpanded && weeks.length ? weeks.length + 1 : 1;
-                      return (
-                        <td
-                          key={mo.idx}
-                          colSpan={span}
-                          className={`border-l border-border/20 ${
-                            mo.idx === currentMonthIdx ? 'bg-[#E8FF4C]/10 dark:bg-[#E8FF4C]/5' : ''
-                          }`}
-                        />
-                      );
-                    })}
+                    {visibleMonths.map((mo) => (
+                      <td
+                        key={mo.idx}
+                        className={`border-l border-border/20 ${
+                          mo.idx === currentMonthIdx ? 'bg-[#E8FF4C]/10 dark:bg-[#E8FF4C]/5' : ''
+                        }`}
+                      />
+                    ))}
                   </tr>
                   {/* KPI rows (collapsible) */}
                   {isOpen && lev.kpis.map((kpi) => (
@@ -626,42 +576,21 @@ export function ScorecardRECC({
                       {visibleMonths.map((mo) => {
                         const val = matrix[kpi.key]?.[mo.idx] ?? null;
                         const isCurrent = mo.idx === currentMonthIdx;
-                        const isExpanded = !!expandedMonths[mo.idx];
-                        const weeks = monthWeeks[mo.idx] || [];
-                        const cells: JSX.Element[] = [];
-                        if (isExpanded && weeks.length) {
-                          weeks.forEach((wk) => {
-                            const wval = weeklyMatrix[kpi.key]?.[mo.idx]?.[wk] ?? null;
-                            cells.push(
-                              <td
-                                key={`${mo.idx}-w${wk}`}
-                                className={`px-1.5 py-1.5 text-center text-[11px] tabular-nums border-l border-border/10 ${
-                                  wk === currentWeek ? 'bg-[#E8FF4C]/15 dark:bg-[#E8FF4C]/10 font-medium' : ''
-                                } ${wval == null ? 'text-muted-foreground/40' : 'text-foreground'}`}
-                              >
-                                {fmt(wval, kpi.format)}
-                              </td>
-                            );
-                          });
-                        }
-                        cells.push(
+                        return (
                           <NoteableCell
-                            key={`${mo.idx}-total`}
+                            key={mo.idx}
                             levier={lev.id}
                             kpiName={kpi.key}
                             week={`M${mo.idx}`}
                             notesMap={cellNotesMap}
                             levierColor={lev.color}
-                            className={`px-2 py-1.5 text-center text-[12px] tabular-nums border-l ${
-                              isExpanded && weeks.length ? 'border-border/30 bg-black/[0.03] dark:bg-white/[0.03] font-bold' : 'border-border/10'
-                            } ${
+                            className={`px-2 py-1.5 text-center text-[12px] tabular-nums border-l border-border/10 ${
                               isCurrent ? 'bg-[#E8FF4C]/10 dark:bg-[#E8FF4C]/5 font-medium' : ''
                             } ${val == null ? 'text-muted-foreground/40' : 'text-foreground'}`}
                           >
                             {fmt(val, kpi.format)}
                           </NoteableCell>
                         );
-                        return cells;
                       })}
                     </tr>
                   ))}
