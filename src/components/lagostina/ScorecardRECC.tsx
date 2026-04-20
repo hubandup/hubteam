@@ -579,42 +579,21 @@ export function ScorecardRECC({
                       {visibleMonths.map((mo) => {
                         const val = matrix[kpi.key]?.[mo.idx] ?? null;
                         const isCurrent = mo.idx === currentMonthIdx;
-                        const isExpanded = !!expandedMonths[mo.idx];
-                        const weeks = monthWeeks[mo.idx] || [];
-                        const cells: JSX.Element[] = [];
-                        if (isExpanded && weeks.length) {
-                          weeks.forEach((wk) => {
-                            const wval = weeklyMatrix[kpi.key]?.[mo.idx]?.[wk] ?? null;
-                            cells.push(
-                              <td
-                                key={`${mo.idx}-w${wk}`}
-                                className={`px-1.5 py-1.5 text-center text-[11px] tabular-nums border-l border-border/10 ${
-                                  wk === currentWeek ? 'bg-[#E8FF4C]/15 dark:bg-[#E8FF4C]/10 font-medium' : ''
-                                } ${wval == null ? 'text-muted-foreground/40' : 'text-foreground'}`}
-                              >
-                                {fmt(wval, kpi.format)}
-                              </td>
-                            );
-                          });
-                        }
-                        cells.push(
+                        return (
                           <NoteableCell
-                            key={`${mo.idx}-total`}
+                            key={mo.idx}
                             levier={lev.id}
                             kpiName={kpi.key}
                             week={`M${mo.idx}`}
                             notesMap={cellNotesMap}
                             levierColor={lev.color}
-                            className={`px-2 py-1.5 text-center text-[12px] tabular-nums border-l ${
-                              isExpanded && weeks.length ? 'border-border/30 bg-black/[0.03] dark:bg-white/[0.03] font-bold' : 'border-border/10'
-                            } ${
+                            className={`px-2 py-1.5 text-center text-[12px] tabular-nums border-l border-border/10 ${
                               isCurrent ? 'bg-[#E8FF4C]/10 dark:bg-[#E8FF4C]/5 font-medium' : ''
                             } ${val == null ? 'text-muted-foreground/40' : 'text-foreground'}`}
                           >
                             {fmt(val, kpi.format)}
                           </NoteableCell>
                         );
-                        return cells;
                       })}
                     </tr>
                   ))}
