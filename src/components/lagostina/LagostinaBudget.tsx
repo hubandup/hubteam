@@ -430,7 +430,7 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                     <td className="px-3 py-2 text-black dark:text-white font-semibold font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10">TOTAL</td>
                     <td className="px-2 py-1.5 text-muted-foreground text-xs">Engagé</td>
                     {MONTHS.map((m) => {
-                      const total = leviers.reduce((s, l) => s + getMonthVal(l, m, 'engaged'), 0);
+                      const total = detailLeviers.reduce((s, l) => s + getMonthVal(l, m, 'engaged'), 0);
                       return (
                         <td key={m} className="px-2 py-1.5 text-center text-[13px] text-black dark:text-white font-semibold font-medium">
                           {total > 0 ? total.toLocaleString('fr-FR') : '—'}
