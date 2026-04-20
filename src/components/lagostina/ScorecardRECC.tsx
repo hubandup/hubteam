@@ -1,497 +1,540 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Database, Plus, Minus } from 'lucide-react';
-
+import { Database, CalendarClock } from 'lucide-react';
 import { NoteableCell, useCellNotes } from './CellNotePopover';
-import {
-  LineChart, Line, BarChart, Bar, AreaChart, Area,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
-} from 'recharts';
 
-// Theme-aware chart accent: dark=#E8FF4C, light=#0f1422
-function getChartAccent(): string {
-  if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) return '#E8FF4C';
-  return '#0f1422';
-}
+// ──────────────────────────────────────────────────────────────────────────
+// LEVIER STRUCTURE — exact list & order requested
+// ──────────────────────────────────────────────────────────────────────────
+type KpiDef = {
+  key: string;          // unique id used for cell notes
+  label: string;        // display label
+  format?: 'number' | 'currency' | 'percent' | 'decimal';
+};
 
-type Scorecard = {
+type LevierDef = {
   id: string;
-  priority: string;
-  levier: string;
-  kpi_name: string;
-  week: string;
-  month: string | null;
-  actual: number | null;
-  objective: number | null;
+  label: string;
+  color: string;
+  kpis: KpiDef[];
 };
 
-// ── FRAMEWORK RECC STRUCTURE ──
-const HIDDEN_LEVIERS = ['crm', 'promo_shopper', 'digital_(display_+_vol)', 'event_(optional)'];
+const LEVIERS: LevierDef[] = [
+  {
+    id: 'influence',
+    label: 'Influence',
+    color: '#a78bfa',
+    kpis: [
+      { key: 'inf_nb', label: 'NB INFLUENCEURS', format: 'number' },
+      { key: 'inf_reach', label: 'REACH POTENTIEL (M)', format: 'decimal' },
+      { key: 'inf_budget', label: 'BUDGET MOIS', format: 'currency' },
+      { key: 'inf_eng', label: 'ENGAGEMENT RATE (%)', format: 'percent' },
+      { key: 'inf_emv', label: 'EMV', format: 'currency' },
+      { key: 'inf_conv', label: 'TAUX CONVERSION (%)', format: 'percent' },
+      { key: 'inf_cpr', label: 'COÛT / REACH POTENTIEL', format: 'decimal' },
+      { key: 'inf_cpm', label: 'CPM', format: 'currency' },
+      { key: 'inf_imp', label: 'IMPRESSIONS GLOBALES', format: 'number' },
+      { key: 'inf_reel', label: 'REEL ENGAGEMENT', format: 'number' },
+      { key: 'inf_st_vues', label: 'STORIES CLICS / VUES', format: 'percent' },
+      { key: 'inf_st_men', label: 'STORIES CLICS / MENTIONS', format: 'percent' },
+    ],
+  },
+  {
+    id: 'affiliation',
+    label: 'Affiliation',
+    color: '#f472b6',
+    kpis: [
+      { key: 'aff_nb', label: 'NB AFFILIÉS', format: 'number' },
+      { key: 'aff_reach', label: 'REACH (M)', format: 'decimal' },
+      { key: 'aff_budget', label: 'BUDGET MOIS', format: 'currency' },
+      { key: 'aff_eng', label: 'ENGAGEMENT (%)', format: 'percent' },
+      { key: 'aff_emv', label: 'EMV', format: 'currency' },
+      { key: 'aff_conv', label: 'CONVERSION (%)', format: 'percent' },
+      { key: 'aff_cpr', label: 'COÛT/REACH', format: 'decimal' },
+      { key: 'aff_cpm', label: 'CPM', format: 'currency' },
+      { key: 'aff_imp', label: 'IMPRESSIONS', format: 'number' },
+    ],
+  },
+  {
+    id: 'press',
+    label: 'Revue de presse',
+    color: '#34d399',
+    kpis: [
+      { key: 'press_total', label: 'NOMBRE DE RETOMBÉES', format: 'number' },
+      { key: 'press_pos', label: 'RETOMBÉES POSITIVES', format: 'number' },
+      { key: 'press_neu', label: 'RETOMBÉES NEUTRES', format: 'number' },
+      { key: 'press_neg', label: 'RETOMBÉES NÉGATIVES', format: 'number' },
+      { key: 'press_reach_pos', label: 'REACH POSITIF', format: 'number' },
+      { key: 'press_reach_neu', label: 'REACH NEUTRE', format: 'number' },
+      { key: 'press_reach_neg', label: 'REACH NÉGATIF', format: 'number' },
+    ],
+  },
+  {
+    id: 'sea',
+    label: 'SEA',
+    color: '#6366f1',
+    kpis: [
+      { key: 'sea_roas', label: 'ROAS', format: 'decimal' },
+      { key: 'sea_cpc', label: 'CPC', format: 'currency' },
+      { key: 'sea_ctr', label: 'CTR (%)', format: 'percent' },
+      { key: 'sea_imp', label: 'IMPRESSIONS', format: 'number' },
+      { key: 'sea_conv', label: 'CONVERSIONS', format: 'number' },
+      { key: 'sea_budget_dep', label: 'BUDGET DÉPENSÉ', format: 'currency' },
+      { key: 'sea_budget_all', label: 'BUDGET ALLOUÉ', format: 'currency' },
+    ],
+  },
+  {
+    id: 'meta',
+    label: 'Meta',
+    color: '#3b82f6',
+    kpis: [
+      { key: 'meta_reach3s', label: 'REACH 3S', format: 'number' },
+      { key: 'meta_compl', label: 'COMPLÉTION VIDÉO (%)', format: 'percent' },
+      { key: 'meta_traffic', label: 'TRAFFIC QUALIFIÉ', format: 'number' },
+      { key: 'meta_cpm', label: 'CPM', format: 'currency' },
+      { key: 'meta_cpvisite', label: 'CPVISITE', format: 'currency' },
+      { key: 'meta_cpc', label: 'CPC', format: 'currency' },
+      { key: 'meta_conv', label: 'TAUX CONVERSION (%)', format: 'percent' },
+      { key: 'meta_roas', label: 'ROAS', format: 'decimal' },
+    ],
+  },
+  {
+    id: 'tiktok',
+    label: 'TikTok',
+    color: '#fb923c',
+    kpis: [
+      { key: 'tt_reach3s', label: 'REACH 3S', format: 'number' },
+      { key: 'tt_compl', label: 'COMPLÉTION VIDÉO (%)', format: 'percent' },
+      { key: 'tt_eng', label: 'ENGAGEMENT RATE (%)', format: 'percent' },
+      { key: 'tt_cpv', label: 'CPV', format: 'currency' },
+      { key: 'tt_cpc', label: 'CPC', format: 'currency' },
+      { key: 'tt_roas', label: 'ROAS', format: 'decimal' },
+    ],
+  },
+];
 
-const isHiddenLevier = (levier: string) =>
-  HIDDEN_LEVIERS.some((h) => {
-    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-    return norm(levier) === norm(h) || norm(levier).includes(norm(h));
-  });
+// ──────────────────────────────────────────────────────────────────────────
+// MONTHS — fiscal axis used by all leviers (Jan→Dec, current year focus)
+// ──────────────────────────────────────────────────────────────────────────
+const MONTHS = [
+  { idx: 1, short: 'Jan', long: 'janvier' },
+  { idx: 2, short: 'Fév', long: 'février' },
+  { idx: 3, short: 'Mar', long: 'mars' },
+  { idx: 4, short: 'Avr', long: 'avril' },
+  { idx: 5, short: 'Mai', long: 'mai' },
+  { idx: 6, short: 'Juin', long: 'juin' },
+  { idx: 7, short: 'Juil', long: 'juillet' },
+  { idx: 8, short: 'Août', long: 'août' },
+  { idx: 9, short: 'Sep', long: 'septembre' },
+  { idx: 10, short: 'Oct', long: 'octobre' },
+  { idx: 11, short: 'Nov', long: 'novembre' },
+  { idx: 12, short: 'Déc', long: 'décembre' },
+];
 
-// Labels for known leviers
-const LEVIER_LABELS: Record<string, string> = {
-  media: 'Media',
-  influence: 'Influence',
-  social_media: 'Social Media',
-  seo: 'SEO',
-  crm: 'CRM',
-  promo_shopper: 'Promo Shopper',
-  'event_(optional)': 'Event',
-  'media_(affiliation)': 'Media Affiliation',
-  'media_(one_video_+_social)': 'Media One Video + Social',
-  'media_(sea)': 'Media SEA',
-  'media_(social_-_plateforme)': 'Media Social Plateforme',
-  'media_(vol)': 'Media VOL',
-};
-
-function getLevierLabel(levier: string): string {
-  return LEVIER_LABELS[levier] || levier.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+// ──────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ──────────────────────────────────────────────────────────────────────────
+function getISOWeek(d = new Date()): number {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
 }
 
-const LEVIER_COLORS: Record<string, string> = {
-  media: '#6366f1',
-  event: '#38bdf8',
-  influence: '#a78bfa',
-  social_media: '#f472b6',
-  crm: '#fb923c',
-  seo: '#34d399',
-  promo_shopper: '#fbbf24',
-};
-
-function getCondColor(actual: number | null, objective: number | null): string {
-  if (actual == null || objective == null || objective === 0) return '';
-  const ratio = actual / objective;
-  if (ratio >= 1) return 'bg-[#22c55e]/20 text-[#22c55e]';
-  if (ratio >= 0.8) return 'bg-black/20 dark:bg-white/20 text-black dark:text-white font-semibold';
-  return 'bg-[#ef4444]/20 text-[#ef4444]';
+function monthIdxFromName(name: string | null | undefined): number | null {
+  if (!name) return null;
+  const n = name.toString().toLowerCase().trim();
+  const m = MONTHS.find((m) => m.long === n || m.short.toLowerCase() === n);
+  return m?.idx ?? null;
 }
 
-function formatNum(n: number | null): string {
-  if (n == null) return '—';
-  if (Math.abs(n) >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-  if (Math.abs(n) >= 1000) return `${(n / 1000).toFixed(1)}K`;
-  if (n % 1 !== 0) return n.toFixed(2);
-  return String(n);
+function weekToMonthIdx(week: string | null | undefined): number | null {
+  if (!week) return null;
+  const num = parseInt(String(week).replace(/\D/g, ''));
+  if (!num || isNaN(num)) return null;
+  // ISO week to month: approximate via week × 7 days from Jan 1
+  const jan1 = new Date(new Date().getFullYear(), 0, 1);
+  const target = new Date(jan1.getTime() + (num - 1) * 7 * 86400000);
+  return target.getMonth() + 1;
 }
 
-// ── STATUS LOGIC ──
-function getCompletion(actual: number | null, objective: number | null): number | null {
-  if (actual == null || objective == null || objective === 0) return null;
-  return (actual / objective) * 100;
-}
-
-function getStatus(
-  actual: number | null,
-  objective: number | null,
-  weekIndex: number,
-  totalWeeks: number
-): { label: string; color: string } {
-  if (actual == null) return { label: 'À faire', color: 'bg-muted text-muted-foreground' };
-  if (objective == null) return { label: 'En cours', color: 'bg-[#22c55e]/20 text-[#22c55e]' };
-  const completion = (actual / objective) * 100;
-  // Expected progress based on position in timeline
-  const expectedProgress = totalWeeks > 0 ? ((weekIndex + 1) / totalWeeks) * 100 : 100;
-  if (completion < expectedProgress * 0.7) {
-    return { label: 'En retard', color: 'bg-[#ef4444]/20 text-[#ef4444]' };
+function fmt(n: number | null | undefined, format?: KpiDef['format']): string {
+  if (n == null || isNaN(Number(n))) return '—';
+  const v = Number(n);
+  switch (format) {
+    case 'percent':
+      return `${v.toFixed(v < 10 ? 2 : 1)}%`;
+    case 'currency':
+      if (Math.abs(v) >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}M€`;
+      if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(1)}K€`;
+      return `${v.toFixed(0)}€`;
+    case 'decimal':
+      return v.toFixed(2);
+    case 'number':
+    default:
+      if (Math.abs(v) >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+      if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(1)}K`;
+      return v % 1 !== 0 ? v.toFixed(1) : String(v);
   }
-  return { label: 'En cours', color: 'bg-[#22c55e]/20 text-[#22c55e]' };
 }
 
-// ── SPARKLINE ──
-function Sparkline({ data }: { data: number[] }) {
-  if (!data.length) return <span className="text-muted-foreground/40">—</span>;
-  const chartData = data.map((v, i) => ({ i, v }));
-  return (
-    <div className="w-16 h-6">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={chartData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
-          <Line type="monotone" dataKey="v" stroke={getChartAccent()} strokeWidth={1.5} dot={false} />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  );
+function avg(arr: number[]): number | null {
+  const f = arr.filter((v) => v != null && !isNaN(v));
+  if (!f.length) return null;
+  return f.reduce((a, b) => a + b, 0) / f.length;
 }
 
-// ── CUSTOM TOOLTIP ──
-function CustomTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-white dark:bg-[#0f1422] border border-border/30 border border-black dark:border-white px-3 py-2 font-['Roboto'] text-xs">
-      <p className="text-foreground font-medium mb-1">{label}</p>
-      {payload.map((p: any) => (
-        <p key={p.dataKey} style={{ color: p.color }}>
-          {p.name}: {formatNum(p.value)}
-        </p>
-      ))}
-    </div>
-  );
+function sum(arr: number[]): number | null {
+  const f = arr.filter((v) => v != null && !isNaN(v));
+  if (!f.length) return null;
+  return f.reduce((a, b) => a + b, 0);
 }
 
-// ── GAUGE ──
-function GaugeChart({ value, target }: { value: number; target: number }) {
-  const pct = Math.min(value / (target * 2), 1);
-  const angle = -90 + pct * 180;
-  const isGood = value <= target;
-  return (
-    <div className="flex flex-col items-center">
-      <svg viewBox="0 0 200 120" className="w-full max-w-[200px]">
-        <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#d1d5db" className="dark:stroke-[#1e293b]" strokeWidth="16" strokeLinecap="butt" />
-        <path d="M 20 100 A 80 80 0 0 1 100 20" fill="none" stroke="#22c55e" strokeWidth="16" strokeLinecap="butt" />
-        <path d="M 100 20 A 80 80 0 0 1 180 100" fill="none" stroke="#ef4444" strokeWidth="16" strokeLinecap="butt" />
-        <line
-          x1="100" y1="100"
-          x2={100 + 60 * Math.cos((angle * Math.PI) / 180)}
-          y2={100 + 60 * Math.sin((angle * Math.PI) / 180)}
-          stroke="white" strokeWidth="2"
-        />
-        <circle cx="100" cy="100" r="4" fill="white" />
-      </svg>
-      <div className={`text-lg font-bold font-['Instrument_Sans'] ${isGood ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
-        {value.toFixed(2)}€
-      </div>
-      <div className="text-muted-foreground text-xs font-['Roboto']">Target: {target}€</div>
-    </div>
-  );
+// Aggregation rule by KPI semantic: averages for rates/CPx, sums for counts/budgets/impressions
+function aggregateByKpi(values: number[], format?: KpiDef['format']): number | null {
+  if (format === 'percent' || format === 'decimal') return avg(values);
+  if (format === 'currency') {
+    // Heuristic: sums for budgets/EMV, but CPM/CPC/CPV should average — caller decides via key
+    return sum(values);
+  }
+  return sum(values);
 }
 
-// ── MAIN COMPONENT ──
-export function ScorecardRECC({ learningsButton, learningsPanel }: { learningsButton?: React.ReactNode; learningsPanel?: React.ReactNode }) {
-  const [showPastWeeks, setShowPastWeeks] = useState(false);
+// ──────────────────────────────────────────────────────────────────────────
+// MAIN COMPONENT
+// ──────────────────────────────────────────────────────────────────────────
+export function ScorecardRECC({
+  learningsButton,
+  learningsPanel,
+}: {
+  learningsButton?: React.ReactNode;
+  learningsPanel?: React.ReactNode;
+}) {
   const { data: cellNotesMap } = useCellNotes();
+  const tableRef = useRef<HTMLDivElement>(null);
 
-  const { data: scorecards, isLoading } = useQuery({
-    queryKey: ['lagostina-scorecards'],
+  const currentWeek = useMemo(() => getISOWeek(), []);
+  const currentMonthIdx = useMemo(() => new Date().getMonth() + 1, []);
+  const currentMonthLabel = MONTHS[currentMonthIdx - 1]?.long || '';
+
+  // ── Source queries ──
+  const { data: influence } = useQuery({
+    queryKey: ['lagostina-influence'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('lagostina_scorecards')
-        .select('*')
-        .order('week');
+      const { data, error } = await supabase.from('lagostina_influence').select('*');
       if (error) throw error;
-      return data as Scorecard[];
+      return data || [];
     },
   });
 
-  // Derive weeks/months
-  const { weeks, monthGroups } = useMemo(() => {
-    if (!scorecards?.length) return { weeks: [], monthGroups: [] as { month: string; weeks: string[] }[] };
-    const weekSet = new Set<string>();
-    const weekMonth = new Map<string, string>();
-    scorecards.forEach((s) => {
-      weekSet.add(s.week);
-      if (s.month) weekMonth.set(s.week, s.month);
-    });
-    const sortedWeeks = [...weekSet].sort((a, b) => {
-      const na = parseInt(a.replace(/\D/g, ''));
-      const nb = parseInt(b.replace(/\D/g, ''));
-      return na - nb;
-    });
-    const groups: { month: string; weeks: string[] }[] = [];
-    let current = '';
-    sortedWeeks.forEach((w) => {
-      const m = weekMonth.get(w) || current;
-      if (m !== current) {
-        groups.push({ month: m, weeks: [w] });
-        current = m;
-      } else if (groups.length) {
-        groups[groups.length - 1].weeks.push(w);
-      } else {
-        groups.push({ month: m || '?', weeks: [w] });
-        current = m;
-      }
-    });
-    return { weeks: sortedWeeks, monthGroups: groups };
-  }, [scorecards]);
+  const { data: affiliation } = useQuery({
+    queryKey: ['lagostina-affiliation'],
+    queryFn: async () => {
+      const { data, error } = await (supabase.from('lagostina_affiliation') as any).select('*');
+      if (error) throw error;
+      return data || [];
+    },
+  });
 
-  // Current week number (ISO)
-  const currentWeekNum = useMemo(() => {
-    const now = new Date();
-    const jan1 = new Date(now.getFullYear(), 0, 1);
-    const days = Math.floor((now.getTime() - jan1.getTime()) / 86400000);
-    return Math.ceil((days + jan1.getDay() + 1) / 7);
-  }, []);
+  const { data: press } = useQuery({
+    queryKey: ['lagostina-press'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('lagostina_press').select('*');
+      if (error) throw error;
+      return data || [];
+    },
+  });
 
-  // Split weeks into past (before current) and current+future
-  const { pastWeeks, currentAndFutureWeeks, visibleWeeks, visibleMonthGroups } = useMemo(() => {
-    const getNum = (w: string) => parseInt(w.replace(/\D/g, ''));
-    const past = weeks.filter((w) => getNum(w) < currentWeekNum);
-    const currentFuture = weeks.filter((w) => getNum(w) >= currentWeekNum);
-    // If no current/future weeks exist, show at least the last week
-    const baseFuture = currentFuture.length > 0 ? currentFuture : weeks.length > 0 ? [weeks[weeks.length - 1]] : [];
+  const { data: media } = useQuery({
+    queryKey: ['lagostina-media-kpis'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('lagostina_media_kpis').select('*');
+      if (error) throw error;
+      return data || [];
+    },
+  });
 
-    const visible = showPastWeeks ? [...past, ...baseFuture] : baseFuture;
-    const visibleSet = new Set(visible);
-    const filteredGroups = monthGroups
-      .map((mg) => ({ ...mg, weeks: mg.weeks.filter((w) => visibleSet.has(w)) }))
-      .filter((mg) => mg.weeks.length > 0);
-    return { pastWeeks: past, currentAndFutureWeeks: baseFuture, visibleWeeks: visible, visibleMonthGroups: filteredGroups };
-  }, [weeks, monthGroups, showPastWeeks, currentWeekNum]);
+  const isLoading = !influence || !affiliation || !press || !media;
 
-  const lookup = useMemo(() => {
-    const map = new Map<string, Scorecard>();
-    scorecards?.forEach((s) => {
-      map.set(`${s.levier}|${s.kpi_name}|${s.week}`, s);
-    });
-    return map;
-  }, [scorecards]);
+  // ── Build matrix [levier_kpi_key][monthIdx] = number ──
+  const matrix = useMemo(() => {
+    const m: Record<string, Record<number, number | null>> = {};
+    const ensure = (k: string) => (m[k] = m[k] || {});
 
-  // ── Dynamic structures from actual data ──
-  const syntheseGroups = useMemo(() => {
-    if (!scorecards?.length) return [];
-
-    // Group by levier — include ALL leviers and ALL KPIs, excluding hidden
-    const levierMap = new Map<string, Set<string>>();
-    scorecards.forEach((s) => {
-      if (!levierMap.has(s.levier)) levierMap.set(s.levier, new Set());
-      levierMap.get(s.levier)!.add(s.kpi_name);
-    });
-
-    const allLeviers = [...new Set(scorecards.filter(s => !isHiddenLevier(s.levier)).map(s => s.levier))];
-    return allLeviers.map((lev) => ({
-      levier: lev,
-      label: getLevierLabel(lev),
-      kpis: [...(levierMap.get(lev) || [])],
-    }));
-  }, [scorecards]);
-
-  const getVal = (levier: string, kpi: string, week: string) => lookup.get(`${levier}|${kpi}|${week}`);
-
-  // Charts data
-  const reachChartData = useMemo(() => {
-    return weeks.map((w) => {
-      const reachEntries = scorecards?.filter(
-        (s) => s.week === w && (s.kpi_name.toLowerCase().includes('reach') || s.kpi_name.toLowerCase().includes('potentiel'))
-      ) || [];
-      return {
-        week: w,
-        actual: reachEntries.reduce((sum, s) => sum + (Number(s.actual) || 0), 0) || null,
-        objective: reachEntries.reduce((sum, s) => sum + (Number(s.objective) || 0), 0) || null,
+    // ── INFLUENCE ── (week field = month label like S2..S12; month col = french name)
+    (influence || []).forEach((row: any) => {
+      const mi = monthIdxFromName(row.month);
+      if (!mi) return;
+      const set = (kpiKey: string, val: any) => {
+        if (val == null) return;
+        ensure(kpiKey)[mi] = Number(val);
       };
+      set('inf_nb', row.influencer_count);
+      set('inf_reach', row.reach_millions);
+      set('inf_budget', row.budget_mois);
+      set('inf_eng', row.engagement_rate);
+      set('inf_emv', row.emv);
+      set('inf_conv', row.conversion_rate);
+      set('inf_cpr', row.cost_per_reach);
+      set('inf_cpm', row.cpm);
+      set('inf_imp', row.impressions_globales);
+      set('inf_reel', row.reel_engagement);
+      set('inf_st_vues', row.stories_clics_vues);
+      set('inf_st_men', row.stories_clics_mentions);
     });
-  }, [scorecards, weeks]);
 
-  const budgetByLevier = useMemo(() => {
-    if (!scorecards?.length) return [];
-    const leviers = [...new Set(scorecards.map((s) => s.levier))].filter((l) => !isHiddenLevier(l));
-    return leviers.map((l) => ({
-      levier: l,
-      total: scorecards.filter((s) => s.levier === l).reduce((sum, s) => sum + (Number(s.actual) || 0), 0),
-    })).sort((a, b) => b.total - a.total).slice(0, 8);
-  }, [scorecards]);
-
-  const roasChartData = useMemo(() => {
-    return weeks.map((w) => {
-      const entries = scorecards?.filter((s) => s.week === w && s.kpi_name.toLowerCase().includes('roas')) || [];
-      const vals = entries.filter((e) => e.actual != null).map((e) => Number(e.actual));
-      return { week: w, roas: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null };
+    // ── AFFILIATION ──
+    (affiliation || []).forEach((row: any) => {
+      const mi = monthIdxFromName(row.month);
+      if (!mi) return;
+      const set = (kpiKey: string, val: any) => {
+        if (val == null) return;
+        ensure(kpiKey)[mi] = Number(val);
+      };
+      set('aff_nb', row.influencer_count);
+      set('aff_reach', row.reach_millions);
+      set('aff_budget', row.budget_mois);
+      set('aff_eng', row.engagement_rate);
+      set('aff_emv', row.emv);
+      set('aff_conv', row.conversion_rate);
+      set('aff_cpr', row.cost_per_reach);
+      set('aff_cpm', row.cpm);
+      set('aff_imp', row.impressions_globales);
     });
-  }, [scorecards, weeks]);
 
-  const cpvData = useMemo(() => {
-    const entries = scorecards?.filter((s) => s.kpi_name.toLowerCase().includes('cpv')) || [];
-    const vals = entries.filter((e) => e.actual != null);
-    return vals.length ? vals.reduce((sum, e) => sum + Number(e.actual), 0) / vals.length : 0;
-  }, [scorecards]);
+    // ── PRESSE ── (real dates → group by month, count + reach by tonality)
+    const pressByMonth: Record<number, { pos: number; neu: number; neg: number; reachPos: number; reachNeu: number; reachNeg: number }> = {};
+    (press || []).forEach((row: any) => {
+      if (!row.date) return;
+      const d = new Date(row.date);
+      const mi = d.getMonth() + 1;
+      const bucket = (pressByMonth[mi] = pressByMonth[mi] || { pos: 0, neu: 0, neg: 0, reachPos: 0, reachNeu: 0, reachNeg: 0 });
+      const reach = Number(row.estimated_reach || 0);
+      const tone = (row.tonality || '').toLowerCase();
+      if (tone.startsWith('pos')) { bucket.pos++; bucket.reachPos += reach; }
+      else if (tone.startsWith('neg')) { bucket.neg++; bucket.reachNeg += reach; }
+      else { bucket.neu++; bucket.reachNeu += reach; }
+    });
+    Object.entries(pressByMonth).forEach(([miStr, b]) => {
+      const mi = Number(miStr);
+      ensure('press_total')[mi] = b.pos + b.neu + b.neg;
+      ensure('press_pos')[mi] = b.pos;
+      ensure('press_neu')[mi] = b.neu;
+      ensure('press_neg')[mi] = b.neg;
+      ensure('press_reach_pos')[mi] = b.reachPos;
+      ensure('press_reach_neu')[mi] = b.reachNeu;
+      ensure('press_reach_neg')[mi] = b.reachNeg;
+    });
+
+    // ── MEDIA KPIs (SEA / SMA=Meta / TikTok) — week-based, aggregate to month ──
+    // Build: channel → kpi_name → month → list of weekly values
+    const mediaAgg: Record<string, Record<string, Record<number, number[]>>> = {};
+    (media || []).forEach((row: any) => {
+      const mi = weekToMonthIdx(row.week);
+      if (!mi) return;
+      const ch = row.channel;
+      const kn = row.kpi_name;
+      mediaAgg[ch] = mediaAgg[ch] || {};
+      mediaAgg[ch][kn] = mediaAgg[ch][kn] || {};
+      mediaAgg[ch][kn][mi] = mediaAgg[ch][kn][mi] || [];
+      // value can be in actual, budget_spent or budget_allocated
+      let v: number | null = null;
+      if (row.actual != null) v = Number(row.actual);
+      else if (kn === 'budget_depense' && row.budget_spent != null) v = Number(row.budget_spent);
+      else if (kn === 'budget_alloue' && row.budget_allocated != null) v = Number(row.budget_allocated);
+      if (v != null && !isNaN(v)) mediaAgg[ch][kn][mi].push(v);
+    });
+
+    const setMediaKpi = (channel: string, kpiName: string, kpiKey: string, agg: 'sum' | 'avg') => {
+      const monthMap = mediaAgg[channel]?.[kpiName];
+      if (!monthMap) return;
+      Object.entries(monthMap).forEach(([miStr, vals]) => {
+        const mi = Number(miStr);
+        ensure(kpiKey)[mi] = agg === 'sum' ? sum(vals) : avg(vals);
+      });
+    };
+
+    // SEA
+    setMediaKpi('sea', 'roas', 'sea_roas', 'avg');
+    setMediaKpi('sea', 'cpc_moyen', 'sea_cpc', 'avg');
+    setMediaKpi('sea', 'ctr', 'sea_ctr', 'avg');
+    setMediaKpi('sea', 'impressions', 'sea_imp', 'sum');
+    setMediaKpi('sea', 'conversions', 'sea_conv', 'sum');
+    setMediaKpi('sea', 'budget_depense', 'sea_budget_dep', 'sum');
+    setMediaKpi('sea', 'budget_alloue', 'sea_budget_all', 'sum');
+
+    // META = sma channel
+    setMediaKpi('sma', 'reach_3s_views', 'meta_reach3s', 'sum');
+    setMediaKpi('sma', 'completion_video', 'meta_compl', 'avg');
+    setMediaKpi('sma', 'traffic_qualifie_visites_site', 'meta_traffic', 'sum');
+    setMediaKpi('sma', 'cpm_reach_attentif', 'meta_cpm', 'avg');
+    setMediaKpi('sma', 'cpvisite', 'meta_cpvisite', 'avg');
+    setMediaKpi('sma', 'cpc', 'meta_cpc', 'avg');
+    setMediaKpi('sma', 'conversion_rate', 'meta_conv', 'avg');
+    setMediaKpi('sma', 'roas', 'meta_roas', 'avg');
+
+    // TIKTOK
+    setMediaKpi('tiktok', 'reach', 'tt_reach3s', 'sum');
+    setMediaKpi('tiktok', 'completion', 'tt_compl', 'avg');
+    setMediaKpi('tiktok', 'engagement_rate', 'tt_eng', 'avg');
+    setMediaKpi('tiktok', 'cpv', 'tt_cpv', 'avg');
+    setMediaKpi('tiktok', 'cpc', 'tt_cpc', 'avg');
+    setMediaKpi('tiktok', 'roas', 'tt_roas', 'avg');
+
+    return m;
+  }, [influence, affiliation, press, media]);
+
+  // Visible months: only those with at least one data point, plus current month always
+  const visibleMonths = useMemo(() => {
+    const monthsWithData = new Set<number>();
+    Object.values(matrix).forEach((row) => {
+      Object.keys(row).forEach((mi) => monthsWithData.add(Number(mi)));
+    });
+    monthsWithData.add(currentMonthIdx);
+    return MONTHS.filter((m) => monthsWithData.has(m.idx));
+  }, [matrix, currentMonthIdx]);
+
+  // Auto-scroll to current month column
+  useEffect(() => {
+    if (!tableRef.current) return;
+    const el = tableRef.current.querySelector(`[data-month="${currentMonthIdx}"]`);
+    if (el && 'scrollIntoView' in el) {
+      try {
+        (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      } catch {}
+    }
+  }, [currentMonthIdx, visibleMonths.length]);
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-12 bg-gray-100 animate-pulse" />
+      <div className="space-y-2">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="h-10 bg-black/5 dark:bg-white/5 animate-pulse" />
         ))}
       </div>
     );
   }
 
-  if (!scorecards?.length) {
+  const hasAnyData = Object.keys(matrix).length > 0;
+  if (!hasAnyData) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
         <Database className="h-16 w-16 text-muted-foreground" />
         <p className="text-foreground font-['Instrument_Sans'] text-lg font-bold">Données Scorecard non disponibles</p>
-        <p className="text-muted-foreground font-['Roboto'] text-sm">Importez un fichier Scorecard depuis l'admin</p>
+        <p className="text-muted-foreground font-['Roboto'] text-sm">
+          Aucune donnée trouvée dans Influence, Affiliation, Presse ou Médiatisation.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {learningsButton}
+    <div className="space-y-4">
+      {/* Header: current week badge + learnings */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white dark:bg-[#E8FF4C] dark:text-black font-['Roboto'] text-sm font-medium">
+          <CalendarClock className="h-4 w-4" />
+          <span>Semaine en cours&nbsp;: <strong>S{currentWeek}</strong></span>
+          <span className="opacity-60">·</span>
+          <span className="capitalize">{currentMonthLabel} {new Date().getFullYear()}</span>
+        </div>
+        {learningsButton}
+      </div>
+
       {learningsPanel}
-        <>
-          <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
-            <table className="w-full text-sm font-['Roboto']">
-              <thead>
-                <tr className="border-b border-border/40">
-                  <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10 min-w-[120px]">Levier</th>
-                  
-                  <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[140px]">KPI</th>
-                  <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[70px]">Objectif</th>
-                  {pastWeeks.length > 0 && (
-                    <th className="text-center px-1 py-2">
-                      <button
-                        onClick={() => setShowPastWeeks(!showPastWeeks)}
-                        className="inline-flex items-center justify-center w-6 h-6 bg-black text-white dark:bg-[#E8FF4C] dark:text-black transition-colors"
-                        title={showPastWeeks ? 'Masquer les mois précédents' : 'Mois précédents'}
-                      >
-                        {showPastWeeks ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
-                      </button>
-                    </th>
+
+      {/* Scorecard table */}
+      <div ref={tableRef} className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
+        <table className="w-full text-sm font-['Roboto'] border-collapse">
+          <thead>
+            <tr className="border-b border-border/40 bg-black/[0.02] dark:bg-white/[0.02]">
+              <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white dark:bg-[#0f1422] z-20 min-w-[140px] border-r border-border/30">
+                Levier
+              </th>
+              <th className="text-left px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-[140px] bg-white dark:bg-[#0f1422] z-20 min-w-[200px] border-r border-border/30 text-[11px]">
+                KPI
+              </th>
+              {visibleMonths.map((mo) => {
+                const isCurrent = mo.idx === currentMonthIdx;
+                return (
+                  <th
+                    key={mo.idx}
+                    data-month={mo.idx}
+                    className={`text-center px-2 py-2 uppercase tracking-wider text-[11px] min-w-[90px] border-l border-border/20 ${
+                      isCurrent
+                        ? 'bg-[#E8FF4C]/30 dark:bg-[#E8FF4C]/20 text-black dark:text-[#E8FF4C] font-bold'
+                        : 'text-muted-foreground font-medium'
+                    }`}
+                  >
+                    {mo.short}
+                    {isCurrent && (
+                      <div className="text-[9px] font-normal mt-0.5 opacity-80">en cours</div>
+                    )}
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {LEVIERS.map((lev) => (
+              lev.kpis.map((kpi, ki) => (
+                <tr
+                  key={`${lev.id}-${kpi.key}`}
+                  className="border-b border-border/20 hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
+                >
+                  {ki === 0 && (
+                    <td
+                      rowSpan={lev.kpis.length}
+                      className="px-3 py-2 text-foreground font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white dark:bg-[#0f1422] z-10 align-top border-r border-border/30"
+                      style={{ borderLeft: `3px solid ${lev.color}` }}
+                    >
+                      <div className="sticky top-2">{lev.label}</div>
+                    </td>
                   )}
-                  {visibleMonthGroups.map((mg) => (
-                    <th key={mg.month} colSpan={mg.weeks.length} className="text-center px-1 py-2 text-black dark:text-white font-semibold font-bold uppercase tracking-wider border-l border-border/20">
-                      {mg.month}
-                    </th>
-                  ))}
-                  <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[80px]">Complétion</th>
-                  <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[80px]">Statut</th>
-                  <th className="text-center px-2 py-2 text-muted-foreground font-medium uppercase tracking-wider min-w-[80px]">Trend</th>
-                </tr>
-                <tr className="border-b border-border/20">
-                  <th colSpan={3} className="sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10" />
-                  {pastWeeks.length > 0 && <th />}
-                  {visibleWeeks.map((w) => (
-                    <th key={w} className="text-center px-1 py-1 text-muted-foreground/60 text-xs">{w}</th>
-                  ))}
-                  <th />
-                  <th />
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {syntheseGroups.map((group) => (
-                  group.kpis.map((kpiName, ki) => {
-                    const actualVals = weeks.map((w) => getVal(group.levier, kpiName, w)?.actual ?? null);
-                    const objVals = weeks.map((w) => getVal(group.levier, kpiName, w)?.objective ?? null);
-                    const sparkData = actualVals.filter((v): v is number => v != null);
-
-                    const latestObj = [...objVals].reverse().find((v) => v != null) ?? null;
-                    const latestActual = [...actualVals].reverse().find((v) => v != null) ?? null;
-                    const latestActualIdx = actualVals.lastIndexOf(latestActual);
-                    const completion = getCompletion(latestActual, latestObj);
-                    const status = getStatus(latestActual, latestObj, latestActualIdx >= 0 ? latestActualIdx : 0, weeks.length);
-
+                  <td className="px-2 py-1.5 text-foreground text-[12px] sticky left-[140px] bg-white dark:bg-[#0f1422] z-10 border-r border-border/30">
+                    {kpi.label}
+                  </td>
+                  {visibleMonths.map((mo) => {
+                    const val = matrix[kpi.key]?.[mo.idx] ?? null;
+                    const isCurrent = mo.idx === currentMonthIdx;
                     return (
-                      <tr key={`${group.levier}-${kpiName}`} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
-                        {ki === 0 && (
-                          <td
-                            rowSpan={group.kpis.length}
-                            className="px-3 py-2 text-foreground font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white dark:bg-[#0f1422] border border-border/30 z-10 border-l-2"
-                            style={{ borderLeftColor: LEVIER_COLORS[group.levier] || '#E8FF4C' }}
-                          >
-                            {group.label}
-                          </td>
-                        )}
-                        <td className="px-2 py-1.5 text-foreground text-xs">{kpiName}</td>
-                        <td className="px-2 py-1.5 text-center text-muted-foreground text-xs">
-                          {formatNum(latestObj)}
-                        </td>
-                        {pastWeeks.length > 0 && <td />}
-                        {visibleWeeks.map((w) => {
-                          const wi = weeks.indexOf(w);
-                          const val = actualVals[wi];
-                          const obj = objVals[wi];
-                          const color = getCondColor(val, obj);
-                          return (
-                            <NoteableCell key={w} levier={group.levier} kpiName={kpiName} week={w} notesMap={cellNotesMap} levierColor={LEVIER_COLORS[group.levier]} className={`px-1 py-1.5 text-center text-[13px] ${color}`}>
-                              {formatNum(val)}
-                            </NoteableCell>
-                          );
-                        })}
-                        <td className="px-2 py-1.5 text-center text-xs font-medium">
-                          {completion != null ? `${completion.toFixed(0)}%` : '—'}
-                        </td>
-                        <td className="px-2 py-1.5 text-center">
-                          <span className={`inline-block px-2 py-0.5 text-[11px] font-medium ${status.color}`}>
-                            {status.label}
-                          </span>
-                        </td>
-                        <td className="px-2 py-1.5 text-center">
-                          <Sparkline data={sparkData} />
-                        </td>
-                      </tr>
+                      <NoteableCell
+                        key={mo.idx}
+                        levier={lev.id}
+                        kpiName={kpi.key}
+                        week={`M${mo.idx}`}
+                        notesMap={cellNotesMap}
+                        levierColor={lev.color}
+                        className={`px-2 py-1.5 text-center text-[12px] tabular-nums border-l border-border/10 ${
+                          isCurrent ? 'bg-[#E8FF4C]/10 dark:bg-[#E8FF4C]/5 font-medium' : ''
+                        } ${val == null ? 'text-muted-foreground/40' : 'text-foreground'}`}
+                      >
+                        {fmt(val, kpi.format)}
+                      </NoteableCell>
                     );
-                  })
-                ))}
-              </tbody>
-            </table>
+                  })}
+                </tr>
+              ))
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-3 text-xs font-['Roboto'] text-muted-foreground pt-2">
+        {LEVIERS.map((l) => (
+          <div key={l.id} className="inline-flex items-center gap-1.5">
+            <span className="inline-block w-3 h-3" style={{ background: l.color }} />
+            <span>{l.label}</span>
           </div>
-
-          {/* Charts 2x2 grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Reach Actuals vs Objectifs */}
-            <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
-              <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Reach — Actuals vs Objectifs</h3>
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={reachChartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
-                    <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" />
-                    <XAxis dataKey="week" tick={{ fill: '#9ca3af', fontSize: 10 }} />
-                    <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Line type="monotone" dataKey="actual" name="Actuals" stroke={getChartAccent()} strokeWidth={2} dot={{ fill: getChartAccent(), r: 3 }} />
-                    <Line type="monotone" dataKey="objective" name="Objectifs" stroke="#6b7280" strokeWidth={2} strokeDasharray="5 5" dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Budget par levier */}
-            <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
-              <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Répartition par levier</h3>
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={budgetByLevier} layout="vertical" margin={{ top: 5, right: 10, bottom: 5, left: 60 }}>
-                    <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" horizontal={false} />
-                    <XAxis type="number" tick={{ fill: '#9ca3af', fontSize: 10 }} />
-                    <YAxis dataKey="levier" type="category" tick={{ fill: '#9ca3af', fontSize: 10 }} width={55} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="total" name="Total">
-                      {budgetByLevier.map((entry) => (
-                        <Cell key={entry.levier} fill={LEVIER_COLORS[entry.levier] || '#E8FF4C'} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* ROAS Evolution */}
-            <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
-              <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Évolution ROAS</h3>
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={roasChartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
-                    <defs>
-                      <linearGradient id="roasGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={getChartAccent()} stopOpacity={0.3} />
-                        <stop offset="100%" stopColor={getChartAccent()} stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" />
-                    <XAxis dataKey="week" tick={{ fill: '#9ca3af', fontSize: 10 }} />
-                    <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Area type="monotone" dataKey="roas" name="ROAS" stroke="white" strokeWidth={2} fill="url(#roasGrad)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* CPV Gauge */}
-            <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
-              <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">CPV vs Target</h3>
-              <div className="flex items-center justify-center h-48">
-                <GaugeChart value={cpvData} target={1} />
-              </div>
-            </div>
-          </div>
-        </>
+        ))}
+        <div className="ml-auto inline-flex items-center gap-1.5">
+          <span className="inline-block w-3 h-3 bg-[#E8FF4C]/40" />
+          <span>Mois en cours</span>
+        </div>
+      </div>
     </div>
   );
 }
