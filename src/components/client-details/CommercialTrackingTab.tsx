@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Plus, Trash2, Upload, Calendar as CalIcon, Download, Link as LinkIcon, MessageSquarePlus, Send, RefreshCw, FileText } from 'lucide-react';
+import { Loader2, Plus, Trash2, Upload, Calendar as CalIcon, Download, Link as LinkIcon, MessageSquarePlus, Send, RefreshCw, FileText, Sparkles, Copy } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
@@ -861,6 +861,42 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
   const [scrapingId, setScrapingId] = useState<string | null>(null);
   const [scrapingAll, setScrapingAll] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestion, setSuggestion] = useState<string>('');
+  const [tone, setTone] = useState<'friendly' | 'formal' | 'direct'>('friendly');
+
+  const generateSuggestion = async () => {
+    setSuggesting(true);
+    setSuggestion('');
+    setSuggestOpen(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-followup', {
+        body: { tracking_id: trackingId, tone },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) {
+        toast.error((data as any).message || (data as any).error);
+        setSuggestOpen(false);
+        return;
+      }
+      setSuggestion((data as any).suggestion || '');
+    } catch (e: any) {
+      toast.error(e?.message || 'Erreur lors de la génération');
+      setSuggestOpen(false);
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
+  const copySuggestion = async () => {
+    try {
+      await navigator.clipboard.writeText(suggestion);
+      toast.success('Copié dans le presse-papiers');
+    } catch {
+      toast.error('Impossible de copier');
+    }
+  };
 
   const { data: urls = [] } = useQuery({
     queryKey: ['commercial-scrape-urls', trackingId],
@@ -939,12 +975,20 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
               Scraping automatique chaque lundi matin. Vous pouvez aussi déclencher manuellement.
             </p>
           </div>
-          {urls.length > 0 && (
-            <Button size="sm" variant="outline" onClick={scrapeAll} disabled={scrapingAll}>
-              {scrapingAll ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}
-              Scraper toutes
-            </Button>
-          )}
+          <div className="flex flex-wrap gap-2">
+            {urls.some((u: any) => u.last_scrape_status === 'success') && (
+              <Button size="sm" variant="default" onClick={generateSuggestion} disabled={suggesting}>
+                {suggesting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1" />}
+                Suggérer une excuse de relance
+              </Button>
+            )}
+            {urls.length > 0 && (
+              <Button size="sm" variant="outline" onClick={scrapeAll} disabled={scrapingAll}>
+                {scrapingAll ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}
+                Scraper toutes
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col md:flex-row gap-2">
@@ -996,6 +1040,54 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
             </DialogHeader>
             <div className="max-h-[60vh] overflow-y-auto whitespace-pre-wrap text-sm">
               {preview?.last_scrape_summary || 'Aucun résumé.'}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={suggestOpen} onOpenChange={setSuggestOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Suggestion de relance générée par l'IA
+              </DialogTitle>
+              <DialogDescription>
+                Basée sur les contenus scrappés des URLs ci-dessus.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <Label className="text-xs">Ton :</Label>
+              <Select value={tone} onValueChange={(v: any) => setTone(v)} disabled={suggesting}>
+                <SelectTrigger className="w-[180px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="friendly">Chaleureux</SelectItem>
+                  <SelectItem value="formal">Formel</SelectItem>
+                  <SelectItem value="direct">Direct</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button size="sm" variant="outline" onClick={generateSuggestion} disabled={suggesting}>
+                {suggesting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}
+                Régénérer
+              </Button>
+              {suggestion && (
+                <Button size="sm" variant="ghost" onClick={copySuggestion}>
+                  <Copy className="h-4 w-4 mr-1" /> Copier
+                </Button>
+              )}
+            </div>
+
+            <div className="max-h-[55vh] overflow-y-auto whitespace-pre-wrap text-sm border rounded-lg p-4 bg-muted/30">
+              {suggesting && !suggestion ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Analyse des contenus scrappés…
+                </div>
+              ) : (
+                suggestion || 'Aucune suggestion.'
+              )}
             </div>
           </DialogContent>
         </Dialog>
