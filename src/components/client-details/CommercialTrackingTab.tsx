@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Plus, Trash2, Upload, Calendar as CalIcon, Download, Link as LinkIcon, MessageSquarePlus, Send, RefreshCw, FileText, Sparkles, Copy } from 'lucide-react';
+import { Loader2, Plus, Trash2, Upload, Calendar as CalIcon, Download, Link as LinkIcon, MessageSquarePlus, Send, RefreshCw, FileText, Sparkles, Copy, Mail, History } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
