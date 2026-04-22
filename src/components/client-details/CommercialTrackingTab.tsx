@@ -1024,6 +1024,24 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
   const toneLabel = (t: string) =>
     t === 'friendly' ? 'Chaleureux' : t === 'formal' ? 'Formel' : t === 'direct' ? 'Direct' : t;
 
+  const senderName = "L'équipe HUB+UP";
+  const senderEmail = 'contact@hubandup.org';
+
+  const EmailPreview = ({ to, toName, subject, html }: { to?: string | null; toName?: string | null; subject: string; html: string }) => (
+    <div className="border rounded-md overflow-hidden bg-background shadow-sm">
+      <div className="bg-muted/50 border-b px-4 py-3 space-y-1 text-xs">
+        <div className="flex gap-2"><span className="text-muted-foreground w-16 shrink-0">De</span><span className="font-medium">{senderName} &lt;{senderEmail}&gt;</span></div>
+        <div className="flex gap-2"><span className="text-muted-foreground w-16 shrink-0">À</span><span className="font-medium">{toName ? `${toName} ` : ''}{to ? `<${to}>` : <span className="text-muted-foreground italic">(non renseigné)</span>}</span></div>
+        <div className="flex gap-2"><span className="text-muted-foreground w-16 shrink-0">Objet</span><span className="font-semibold text-foreground">{subject || <span className="italic text-muted-foreground">(aucun)</span>}</span></div>
+      </div>
+      <div
+        className="prose prose-sm max-w-none p-5 bg-background"
+        style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', lineHeight: 1.6 }}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    </div>
+  );
+
 
   const { data: urls = [] } = useQuery({
     queryKey: ['commercial-scrape-urls', trackingId],
@@ -1323,10 +1341,12 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
                   </div>
                 )}
                 <div>
-                  <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Message</p>
-                  <div
-                    className="prose prose-sm max-w-none border rounded-md p-3 bg-muted/30"
-                    dangerouslySetInnerHTML={{ __html: openedHistory.body_html || '' }}
+                  <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Aperçu de l'email</p>
+                  <EmailPreview
+                    to={openedHistory.recipient_email}
+                    toName={openedHistory.recipient_name}
+                    subject={openedHistory.subject || ''}
+                    html={openedHistory.body_html || ''}
                   />
                 </div>
                 {Array.isArray(openedHistory.sources) && openedHistory.sources.length > 0 && (
@@ -1398,17 +1418,15 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
                     </ul>
                   </div>
                 )}
-                <div>
-                  <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Objet</p>
-                  <p className="text-sm font-medium border rounded-md p-2 bg-background">{suggestion.subject}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Corps (HTML)</p>
-                  <div
-                    className="prose prose-sm max-w-none border rounded-md p-3 bg-muted/30"
-                    dangerouslySetInnerHTML={{ __html: suggestion.body_html }}
-                  />
-                </div>
+                {(() => {
+                  const r = resolveRecipient();
+                  return (
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Aperçu de l'email</p>
+                      <EmailPreview to={r.email} toName={r.name} subject={suggestion.subject} html={suggestion.body_html} />
+                    </div>
+                  );
+                })()}
                 <div className="flex flex-wrap gap-2 pt-2 border-t">
                   <Button size="sm" variant="outline" onClick={() => copySubject(suggestion.subject)}>
                     <Copy className="h-4 w-4 mr-1" /> Copier l'objet
