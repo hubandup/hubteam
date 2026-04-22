@@ -1001,6 +1001,7 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
           recipient_role: recipient.role,
           action_key: action,
           action_label: actionLabel,
+          address_form: address,
         },
       });
       if (error) throw error;
