@@ -36,6 +36,7 @@ export function useToggleTarget() {
     },
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ['client-targets'] });
+      qc.invalidateQueries({ queryKey: ['targets-clients'] });
       toast.success(vars.starred ? 'Retiré des Targets' : 'Ajouté aux Targets');
     },
     onError: (e: any) => toast.error(e.message || 'Erreur'),

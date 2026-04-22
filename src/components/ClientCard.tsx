@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Building2, Mail, Phone, Euro, Calendar, BellRing, FolderOpen, Star } from 'lucide-react';
@@ -6,6 +7,16 @@ import { fr } from 'date-fns/locale';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useTargets, useToggleTarget } from '@/hooks/useTargets';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ClientCardProps {
   client: {
