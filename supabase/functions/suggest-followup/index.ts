@@ -11,6 +11,8 @@ interface Payload {
   recipient_email?: string;
   recipient_name?: string;
   recipient_role?: string; // e.g. "Contact principal", "Contact additionnel", "Personnalisé"
+  action_key?: string; // ex: 'propose_slot', 'send_quote', 'schedule_call', 'custom'
+  action_label?: string; // libellé humain de l'action à proposer
   save?: boolean; // persist to history (default true)
 }
 
