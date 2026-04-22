@@ -1,9 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Mail, Phone, Euro, Calendar, BellRing, FolderOpen } from 'lucide-react';
+import { Building2, Mail, Phone, Euro, Calendar, BellRing, FolderOpen, Star } from 'lucide-react';
 import { format, isPast } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useTargets, useToggleTarget } from '@/hooks/useTargets';
+import { cn } from '@/lib/utils';
 
 interface ClientCardProps {
   client: {
@@ -32,8 +34,33 @@ interface ClientCardProps {
 export function ClientCard({ client, onClick }: ClientCardProps) {
   const { isAgency, loading: roleLoading } = useUserRole();
   const showRevenue = !roleLoading && !isAgency;
+  const { data: targets } = useTargets();
+  const toggleTarget = useToggleTarget();
+  const isStarred = !!targets?.has(client.id);
+
+  const handleStarClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    toggleTarget.mutate({ clientId: client.id, starred: isStarred });
+  };
+
   return (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow relative" onClick={onClick}>
+      <button
+        type="button"
+        onClick={handleStarClick}
+        onPointerDown={(e) => e.stopPropagation()}
+        className="absolute top-2 right-2 z-10 p-1 rounded hover:bg-accent transition-colors"
+        title={isStarred ? 'Retirer des Targets' : 'Ajouter aux Targets'}
+        aria-label="Toggle target"
+      >
+        <Star
+          className={cn(
+            'h-4 w-4 transition-colors',
+            isStarred ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
+          )}
+        />
+      </button>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-start gap-2 flex-1 min-w-0">
