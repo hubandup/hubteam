@@ -536,7 +536,7 @@ function MeetingsSection({ trackingId, client }: { trackingId: string; client: a
           {(() => {
             let rdvIdx = 0;
             return meetings.map((m: any) => {
-              const isRdv = m.meeting_type === 'rdv' || m.meeting_type === 'custom';
+              const isRdv = m.meeting_type === 'rdv' || m.meeting_type === 'custom' || m.meeting_type?.startsWith('rdv');
               if (isRdv) rdvIdx += 1;
               const displayLabel = isRdv ? `RDV ${rdvIdx}` : m.label;
               return (
