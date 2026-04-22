@@ -195,7 +195,7 @@ Destinataire choisi pour ce message :
 - Email : ${recipientEmail || 'N/A'}
 - Rôle : ${recipientRole}
 - Prénom à utiliser dans la salutation : ${recipientFirstName || recipientName || ''}
-${contextNotes}${contextMeetings}
+${contextNotes}${contextMeetings}${contextMeetingNotes}
 
 Contenus scrappés récemment :
 
