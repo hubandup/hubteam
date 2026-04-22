@@ -951,6 +951,10 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
       toast.error('Renseignez un email destinataire');
       return;
     }
+    if (action === 'custom' && !customAction.trim()) {
+      toast.error('Précisez l\'action à proposer');
+      return;
+    }
     setSuggesting(true);
     setSuggestion(null);
     setSuggestOpen(true);
