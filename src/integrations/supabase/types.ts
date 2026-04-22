@@ -3503,6 +3503,24 @@ export type Database = {
         }
         Relationships: []
       }
+      slack_excuses_history: {
+        Row: {
+          excuse: string
+          id: string
+          posted_at: string
+        }
+        Insert: {
+          excuse: string
+          id?: string
+          posted_at?: string
+        }
+        Update: {
+          excuse?: string
+          id?: string
+          posted_at?: string
+        }
+        Relationships: []
+      }
       target_relance_notifications: {
         Row: {
           channel: string
