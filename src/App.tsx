@@ -19,6 +19,7 @@ const Finances = lazy(() => import("./pages/Finances"));
 const Feed = lazy(() => import("./pages/Feed"));
 const Notes = lazy(() => import("./pages/Notes"));
 const CRM = lazy(() => import("./pages/CRM"));
+const Targets = lazy(() => import("./pages/Targets"));
 const Prospection = lazy(() => import("./pages/Prospection"));
 const ClientDetails = lazy(() => import("./pages/ClientDetails"));
 const Agencies = lazy(() => import("./pages/Agencies"));
@@ -92,6 +93,7 @@ function AppInner() {
         <Route path="/feed" element={<ProtectedRoute><Layout><PageSuspense><Feed /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="/notes" element={<ProtectedRoute><Layout><PageSuspense><Notes /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="/crm" element={<ProtectedRoute><Layout><PageSuspense><CRM /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/targets" element={<ProtectedRoute><Layout><PageSuspense><Targets /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="/prospection" element={<ProtectedRoute><Layout><PageSuspense><Prospection /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="/client/:id" element={<ProtectedRoute><Layout><PageSuspense><ClientDetails /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="/agencies" element={<ProtectedRoute><Layout><PageSuspense><Agencies /></PageSuspense></Layout></ProtectedRoute>} />
