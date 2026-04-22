@@ -84,10 +84,14 @@ async function getHubAndUpContext(supabase: any): Promise<string> {
   console.log('[hubandup-cache] cache stale, refreshing…');
   // Map then scrape up to 8 most relevant pages
   let urls = await firecrawlMap(HUBANDUP_BASE, 30);
+  urls = urls
+    .map((u: unknown) => (typeof u === 'string' ? u : ''))
+    .filter((u) => u.length > 0);
+
   if (urls.length === 0) urls = [HUBANDUP_BASE];
   // Prefer key pages
   const priority = urls
-    .filter((u) => u.startsWith(HUBANDUP_BASE))
+    .filter((u) => typeof u === 'string' && u.startsWith(HUBANDUP_BASE))
     .sort((a, b) => a.length - b.length)
     .slice(0, 8);
 
