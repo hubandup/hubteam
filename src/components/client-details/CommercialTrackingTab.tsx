@@ -955,6 +955,17 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
     setSuggestion(null);
     setSuggestOpen(true);
     try {
+      const ACTION_LABELS: Record<string, string> = {
+        propose_slot: 'Proposer un créneau de rendez-vous',
+        send_quote: 'Envoyer ou relancer un devis',
+        schedule_call: 'Planifier un call de découverte',
+        share_case_study: 'Partager un cas client / une référence pertinente',
+        invite_event: 'Inviter à un événement HUB+UP',
+        ask_feedback: 'Demander un retour / un avis',
+        custom: customAction.trim(),
+      };
+      const actionLabel = ACTION_LABELS[action] || ACTION_LABELS.propose_slot;
+
       const { data, error } = await supabase.functions.invoke('suggest-followup', {
         body: {
           tracking_id: trackingId,
@@ -962,6 +973,8 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
           recipient_email: recipient.email,
           recipient_name: recipient.name,
           recipient_role: recipient.role,
+          action_key: action,
+          action_label: actionLabel,
         },
       });
       if (error) throw error;
