@@ -872,6 +872,7 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
     angles: Array<{ title?: string; description?: string; source?: string }>;
   } | null>(null);
   const [tone, setTone] = useState<'friendly' | 'formal' | 'direct'>('friendly');
+  const [address, setAddress] = useState<'vous' | 'tu'>('vous');
   const [action, setAction] = useState<string>('propose_slot');
   const [customAction, setCustomAction] = useState<string>('');
 
