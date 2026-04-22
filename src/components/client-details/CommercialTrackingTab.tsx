@@ -191,6 +191,7 @@ function HeaderSection({ tracking, client }: { tracking: any; client: any }) {
 
   const updateStatus = async (status: string) => {
     const previousStatus = tracking.status;
+    if (status === previousStatus) return; // No-op: pas un vrai changement
     const { error } = await supabase
       .from('commercial_tracking')
       .update({ status: status as any })
@@ -199,19 +200,23 @@ function HeaderSection({ tracking, client }: { tracking: any; client: any }) {
     qc.invalidateQueries({ queryKey: ['commercial-tracking'] });
     toast.success('Statut mis à jour');
 
-    // Trigger Slack/email notification when transitioning to "to_followup"
-    if (status === 'to_followup' && previousStatus !== 'to_followup') {
+    // Notification: la détection finale de transition est faite côté serveur.
+    // L'edge function vérifie le statut courant + l'historique avant d'envoyer.
+    if (status === 'to_followup') {
       try {
-        const { error: notifError } = await supabase.functions.invoke('notify-target-relance', {
+        const { data: result, error: notifError } = await supabase.functions.invoke('notify-target-relance', {
           body: {
             client_id: tracking.client_id,
             tracking_id: tracking.id,
             company: client.company,
             contact_name: `${client.first_name} ${client.last_name}`,
+            expected_previous_status: previousStatus,
           },
         });
         if (notifError) {
           toast.error("Notification de relance non envoyée");
+        } else if ((result as any)?.skipped) {
+          // Pas de vrai changement détecté côté serveur — silencieux
         } else {
           toast.success("Équipe notifiée (Slack + email)");
           qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] });
