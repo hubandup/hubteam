@@ -482,58 +482,58 @@ function MeetingsSection({ trackingId, client }: { trackingId: string; client: a
           </Button>
         </div>
         <div className="space-y-3">
-          {meetings.map((m: any) => (
-            <div key={m.id} className="border rounded-lg p-3 space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                {m.meeting_type === 'custom' ? (
-                  <Input
-                    defaultValue={m.label}
-                    onBlur={(e) => update(m.id, { label: e.target.value })}
-                    className="font-medium max-w-[300px]"
-                  />
-                ) : (
-                  <p className="font-medium">{m.label}</p>
-                )}
-                {m.meeting_type === 'custom' && (
-                  <Button size="icon" variant="ghost" onClick={() => remove(m.id)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                )}
-              </div>
+          {(() => {
+            let rdvIdx = 0;
+            return meetings.map((m: any) => {
+              const isRdv = m.meeting_type === 'rdv' || m.meeting_type === 'custom';
+              if (isRdv) rdvIdx += 1;
+              const displayLabel = isRdv ? `RDV ${rdvIdx}` : m.label;
+              return (
+                <div key={m.id} className="border rounded-lg p-3 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-medium">{displayLabel}</p>
+                    {isRdv && (
+                      <Button size="icon" variant="ghost" onClick={() => remove(m.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
 
-              {m.meeting_type === 'first_contact' && (
-                <div>
-                  <Label className="text-xs">Source</Label>
-                  <Select value={m.source_type || ''} onValueChange={(v) => update(m.id, { source_type: v })}>
-                    <SelectTrigger className="w-full md:w-[240px] mt-1">
-                      <SelectValue placeholder="Choisir..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SOURCE_OPTIONS.map((s) => (
-                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+                  {m.meeting_type === 'first_contact' && (
+                    <div>
+                      <Label className="text-xs">Source</Label>
+                      <Select value={m.source_type || ''} onValueChange={(v) => update(m.id, { source_type: v })}>
+                        <SelectTrigger className="w-full md:w-[240px] mt-1">
+                          <SelectValue placeholder="Choisir..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SOURCE_OPTIONS.map((s) => (
+                            <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
-              <div className="flex flex-col md:flex-row gap-2 md:items-end">
-                <div className="flex-1">
-                  <Label className="text-xs">Date</Label>
-                  <Input
-                    type="datetime-local"
-                    defaultValue={m.meeting_date ? new Date(m.meeting_date).toISOString().slice(0, 16) : ''}
-                    onChange={(e) => update(m.id, { meeting_date: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                  />
+                  <div className="flex flex-col md:flex-row gap-2 md:items-end">
+                    <div className="flex-1">
+                      <Label className="text-xs">Date</Label>
+                      <Input
+                        type="datetime-local"
+                        defaultValue={m.meeting_date ? new Date(m.meeting_date).toISOString().slice(0, 16) : ''}
+                        onChange={(e) => update(m.id, { meeting_date: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                      />
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => exportICS({ ...m, label: displayLabel })} disabled={!m.meeting_date}>
+                      <CalIcon className="h-4 w-4 mr-1" />
+                      <Download className="h-3 w-3 mr-1" />
+                      .ics
+                    </Button>
+                  </div>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => exportICS(m)} disabled={!m.meeting_date}>
-                  <CalIcon className="h-4 w-4 mr-1" />
-                  <Download className="h-3 w-3 mr-1" />
-                  .ics
-                </Button>
-              </div>
-            </div>
-          ))}
+              );
+            });
+          })()}
         </div>
       </CardContent>
     </Card>
