@@ -735,6 +735,35 @@ export type Database = {
         }
         Relationships: []
       }
+      client_targets: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          starred_by: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          starred_by?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          starred_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_targets_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           action: string | null
@@ -847,6 +876,255 @@ export type Database = {
             columns: ["status_id"]
             isOneToOne: false
             referencedRelation: "client_statuses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commercial_contacts: {
+        Row: {
+          created_at: string
+          display_order: number
+          email: string | null
+          first_name: string
+          id: string
+          job_title: string | null
+          last_name: string
+          phone: string | null
+          tracking_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          email?: string | null
+          first_name?: string
+          id?: string
+          job_title?: string | null
+          last_name?: string
+          phone?: string | null
+          tracking_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          email?: string | null
+          first_name?: string
+          id?: string
+          job_title?: string | null
+          last_name?: string
+          phone?: string | null
+          tracking_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_contacts_tracking_id_fkey"
+            columns: ["tracking_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_tracking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commercial_meetings: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          label: string | null
+          meeting_date: string | null
+          meeting_type: string
+          source_type: string | null
+          tracking_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          label?: string | null
+          meeting_date?: string | null
+          meeting_type: string
+          source_type?: string | null
+          tracking_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          label?: string | null
+          meeting_date?: string | null
+          meeting_type?: string
+          source_type?: string | null
+          tracking_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_meetings_tracking_id_fkey"
+            columns: ["tracking_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_tracking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commercial_notes: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          tracking_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          tracking_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          tracking_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_notes_tracking_id_fkey"
+            columns: ["tracking_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_tracking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commercial_questionnaire: {
+        Row: {
+          answer: string | null
+          created_at: string
+          display_order: number
+          id: string
+          is_custom: boolean
+          question_key: string
+          question_label: string
+          tracking_id: string
+          updated_at: string
+        }
+        Insert: {
+          answer?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_custom?: boolean
+          question_key: string
+          question_label: string
+          tracking_id: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_custom?: boolean
+          question_key?: string
+          question_label?: string
+          tracking_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_questionnaire_tracking_id_fkey"
+            columns: ["tracking_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_tracking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commercial_scrape_urls: {
+        Row: {
+          created_at: string
+          id: string
+          label: string | null
+          last_scrape_summary: string | null
+          last_scraped_at: string | null
+          tracking_id: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          last_scrape_summary?: string | null
+          last_scraped_at?: string | null
+          tracking_id: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          last_scrape_summary?: string | null
+          last_scraped_at?: string | null
+          tracking_id?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_scrape_urls_tracking_id_fkey"
+            columns: ["tracking_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_tracking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commercial_tracking: {
+        Row: {
+          client_id: string
+          company_logo_url: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          status: Database["public"]["Enums"]["commercial_status"]
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          company_logo_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["commercial_status"]
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          company_logo_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["commercial_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_tracking_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
@@ -3592,6 +3870,11 @@ export type Database = {
         | "prospection"
         | "notes"
       app_role: "admin" | "team" | "client" | "agency"
+      commercial_status:
+        | "to_contact"
+        | "to_followup"
+        | "do_not_followup"
+        | "client"
       interaction_action_type:
         | "Email"
         | "Appel"
@@ -3796,6 +4079,12 @@ export const Constants = {
         "notes",
       ],
       app_role: ["admin", "team", "client", "agency"],
+      commercial_status: [
+        "to_contact",
+        "to_followup",
+        "do_not_followup",
+        "client",
+      ],
       interaction_action_type: [
         "Email",
         "Appel",
