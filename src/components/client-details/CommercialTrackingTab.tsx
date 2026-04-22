@@ -1398,20 +1398,102 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
                     html={openedHistory.body_html || ''}
                   />
                 </div>
-                {Array.isArray(openedHistory.sources) && openedHistory.sources.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Sources utilisées</p>
-                    <ul className="list-disc pl-5 text-sm space-y-0.5">
-                      {openedHistory.sources.map((s: any, i: number) => (
-                        <li key={i}>
-                          <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                            {s.label || s.url}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                {(() => {
+                  const s: any = openedHistory.sources;
+                  // Back-compat: anciennes entrées = tableau d'URLs
+                  const urls = Array.isArray(s) ? s : (s?.urls || []);
+                  const internalNotes = Array.isArray(s) ? [] : (s?.internal_notes || []);
+                  const meetingNotes = Array.isArray(s) ? [] : (s?.meeting_notes || []);
+                  const meetings = Array.isArray(s) ? [] : (s?.meetings || []);
+                  const total = urls.length + internalNotes.length + meetingNotes.length + meetings.length;
+                  if (total === 0) return null;
+                  return (
+                    <div className="border rounded-md p-3 bg-muted/30 space-y-3">
+                      <p className="text-xs font-semibold uppercase text-muted-foreground">
+                        Sources utilisées ({total})
+                      </p>
+
+                      {urls.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium mb-1">URLs scrappées ({urls.length})</p>
+                          <ul className="list-disc pl-5 text-sm space-y-0.5">
+                            {urls.map((u: any, i: number) => (
+                              <li key={i}>
+                                <a href={u.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">
+                                  {u.label || u.url}
+                                </a>
+                                {u.last_scraped_at && (
+                                  <span className="text-xs text-muted-foreground ml-1">
+                                    · scrappé le {format(new Date(u.last_scraped_at), 'd MMM yyyy', { locale: fr })}
+                                  </span>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {meetingNotes.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium mb-1">Comptes rendus client ({meetingNotes.length})</p>
+                          <ul className="list-disc pl-5 text-sm space-y-1">
+                            {meetingNotes.map((m: any, i: number) => (
+                              <li key={i}>
+                                <span className="font-medium">
+                                  {m.meeting_date
+                                    ? format(new Date(m.meeting_date), 'd MMM yyyy', { locale: fr })
+                                    : m.created_at
+                                      ? format(new Date(m.created_at), 'd MMM yyyy', { locale: fr })
+                                      : '—'}
+                                </span>
+                                {m.title && <> — {m.title}</>}
+                                {m.excerpt && (
+                                  <p className="text-xs text-muted-foreground italic mt-0.5 line-clamp-2">{m.excerpt}</p>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {internalNotes.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium mb-1">Notes internes Suivi commercial ({internalNotes.length})</p>
+                          <ul className="list-disc pl-5 text-sm space-y-1">
+                            {internalNotes.map((n: any, i: number) => (
+                              <li key={i}>
+                                {n.created_at && (
+                                  <span className="text-xs text-muted-foreground mr-1">
+                                    {format(new Date(n.created_at), 'd MMM yyyy', { locale: fr })} —
+                                  </span>
+                                )}
+                                <span className="text-muted-foreground italic">{n.content}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {meetings.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium mb-1">RDV récents ({meetings.length})</p>
+                          <ul className="list-disc pl-5 text-sm space-y-0.5">
+                            {meetings.map((m: any, i: number) => (
+                              <li key={i}>
+                                {m.label || m.meeting_type}
+                                {m.meeting_date && (
+                                  <span className="text-xs text-muted-foreground ml-1">
+                                    · {format(new Date(m.meeting_date), 'd MMM yyyy', { locale: fr })}
+                                  </span>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
                 <div className="flex flex-wrap gap-2 pt-2 border-t">
                   <Button size="sm" variant="outline" onClick={() => copySubject(openedHistory.subject || '')}>
                     <Copy className="h-4 w-4 mr-1" /> Copier l'objet
