@@ -921,7 +921,27 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
     },
   });
   const [historyOpenId, setHistoryOpenId] = useState<string | null>(null);
+  const [historyActionFilter, setHistoryActionFilter] = useState<string>('all');
   const openedHistory = history.find((h: any) => h.id === historyOpenId);
+
+  const ACTION_BADGES: Record<string, string> = {
+    propose_slot: 'Créneau RDV',
+    send_quote: 'Devis',
+    schedule_call: 'Call',
+    share_case_study: 'Cas client',
+    invite_event: 'Événement',
+    ask_feedback: 'Retour / avis',
+    just_hello: 'Coucou 👋',
+    custom: 'Personnalisé',
+  };
+  const actionBadgeLabel = (key?: string | null) => (key && ACTION_BADGES[key]) || 'Autre';
+
+  const availableActionKeys = Array.from(
+    new Set((history as any[]).map((h) => h.action_key).filter(Boolean))
+  ) as string[];
+  const filteredHistory = historyActionFilter === 'all'
+    ? history
+    : (history as any[]).filter((h) => (h.action_key || 'unknown') === historyActionFilter);
 
   const resolveRecipient = (): { email: string; name: string; role: string } => {
     if (recipientChoice === 'main') {
