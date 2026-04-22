@@ -1166,53 +1166,275 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
           </DialogContent>
         </Dialog>
 
+        {/* === Générateur d'excuse de relance === */}
+        {urls.some((u: any) => u.last_scrape_status === 'success') && (
+          <div className="border rounded-lg p-4 space-y-3 bg-muted/20">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <h4 className="font-semibold text-sm">Générer une excuse de relance</h4>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <Label className="text-xs">Destinataire</Label>
+                <Select value={recipientChoice} onValueChange={setRecipientChoice}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Choisir..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clientRow.email && (
+                      <SelectItem value="main">
+                        Contact principal — {clientRow.first_name} {clientRow.last_name} ({clientRow.email})
+                      </SelectItem>
+                    )}
+                    {extraContacts.filter((c: any) => c.email).map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.first_name} {c.last_name}{c.job_title ? ` — ${c.job_title}` : ''} ({c.email})
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="custom">Autre destinataire…</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-xs">Ton</Label>
+                <Select value={tone} onValueChange={(v: any) => setTone(v)}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="friendly">Chaleureux</SelectItem>
+                    <SelectItem value="formal">Formel</SelectItem>
+                    <SelectItem value="direct">Direct</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {recipientChoice === 'custom' && (
+                <>
+                  <div>
+                    <Label className="text-xs">Email destinataire</Label>
+                    <Input
+                      type="email"
+                      placeholder="prenom.nom@exemple.com"
+                      value={customEmail}
+                      onChange={(e) => setCustomEmail(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Nom (optionnel)</Label>
+                    <Input
+                      placeholder="Marie Dupont"
+                      value={customName}
+                      onChange={(e) => setCustomName(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            <Button size="sm" onClick={generateSuggestion} disabled={suggesting}>
+              {suggesting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1" />}
+              Générer l'excuse de relance
+            </Button>
+          </div>
+        )}
+
+        {/* === Historique des suggestions === */}
+        {history.length > 0 && (
+          <div className="border rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <History className="h-4 w-4 text-muted-foreground" />
+              <h4 className="font-semibold text-sm">Historique des excuses générées ({history.length})</h4>
+            </div>
+            <div className="space-y-2">
+              {history.map((h: any) => (
+                <div key={h.id} className="flex items-start gap-2 border rounded-md p-2.5">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{h.subject || '(sans objet)'}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(h.created_at), 'd MMM yyyy à HH:mm', { locale: fr })}
+                      {' · '}{toneLabel(h.tone)}
+                      {h.recipient_email && (
+                        <> · <span className="font-mono">{h.recipient_email}</span></>
+                      )}
+                      {Array.isArray(h.sources) && h.sources.length > 0 && (
+                        <> · {h.sources.length} source{h.sources.length > 1 ? 's' : ''}</>
+                      )}
+                    </p>
+                  </div>
+                  <Button size="icon" variant="ghost" onClick={() => setHistoryOpenId(h.id)} title="Voir">
+                    <FileText className="h-4 w-4" />
+                  </Button>
+                  {h.recipient_email && (
+                    <Button
+                      size="icon" variant="ghost"
+                      onClick={() => openMailto(h.recipient_email, h.subject, h.body_html)}
+                      title="Ouvrir dans le client mail"
+                    >
+                      <Mail className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button size="icon" variant="ghost" onClick={() => deleteHistoryItem(h.id)} title="Supprimer">
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* === Aperçu d'une suggestion historique === */}
+        <Dialog open={!!historyOpenId} onOpenChange={(o) => !o && setHistoryOpenId(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                {openedHistory?.subject || 'Suggestion de relance'}
+              </DialogTitle>
+              <DialogDescription>
+                {openedHistory && (
+                  <>
+                    {format(new Date(openedHistory.created_at), 'd MMMM yyyy à HH:mm', { locale: fr })}
+                    {' · '}Ton : {toneLabel(openedHistory.tone)}
+                    {openedHistory.recipient_email && <> · Destinataire : {openedHistory.recipient_email}</>}
+                  </>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+
+            {openedHistory && (
+              <div className="space-y-4 max-h-[65vh] overflow-y-auto">
+                {Array.isArray(openedHistory.angles) && openedHistory.angles.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Angles</p>
+                    <ul className="list-disc pl-5 text-sm space-y-1">
+                      {openedHistory.angles.map((a: any, i: number) => (
+                        <li key={i}>
+                          <span className="font-medium">{a.title}</span>
+                          {a.description && <> — {a.description}</>}
+                          {a.source && <span className="text-muted-foreground"> ({a.source})</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div>
+                  <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Message</p>
+                  <div
+                    className="prose prose-sm max-w-none border rounded-md p-3 bg-muted/30"
+                    dangerouslySetInnerHTML={{ __html: openedHistory.body_html || '' }}
+                  />
+                </div>
+                {Array.isArray(openedHistory.sources) && openedHistory.sources.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Sources utilisées</p>
+                    <ul className="list-disc pl-5 text-sm space-y-0.5">
+                      {openedHistory.sources.map((s: any, i: number) => (
+                        <li key={i}>
+                          <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                            {s.label || s.url}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2 pt-2 border-t">
+                  <Button size="sm" variant="outline" onClick={() => copySubject(openedHistory.subject || '')}>
+                    <Copy className="h-4 w-4 mr-1" /> Copier l'objet
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => copyHtml(openedHistory.body_html || '')}>
+                    <Copy className="h-4 w-4 mr-1" /> Copier le HTML
+                  </Button>
+                  {openedHistory.recipient_email && (
+                    <Button
+                      size="sm"
+                      onClick={() => openMailto(openedHistory.recipient_email, openedHistory.subject, openedHistory.body_html)}
+                    >
+                      <Mail className="h-4 w-4 mr-1" /> Ouvrir dans Mail
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* === Dialog résultat génération === */}
         <Dialog open={suggestOpen} onOpenChange={setSuggestOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary" />
-                Suggestion de relance générée par l'IA
+                Excuse de relance générée
               </DialogTitle>
               <DialogDescription>
-                Basée sur les contenus scrappés des URLs ci-dessus.
+                {suggestion?.subject || 'Basée sur les contenus scrappés des URLs ci-dessus.'}
               </DialogDescription>
             </DialogHeader>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <Label className="text-xs">Ton :</Label>
-              <Select value={tone} onValueChange={(v: any) => setTone(v)} disabled={suggesting}>
-                <SelectTrigger className="w-[180px] h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="friendly">Chaleureux</SelectItem>
-                  <SelectItem value="formal">Formel</SelectItem>
-                  <SelectItem value="direct">Direct</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button size="sm" variant="outline" onClick={generateSuggestion} disabled={suggesting}>
-                {suggesting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}
-                Régénérer
-              </Button>
-              {suggestion && (
-                <Button size="sm" variant="ghost" onClick={copySuggestion}>
-                  <Copy className="h-4 w-4 mr-1" /> Copier
-                </Button>
-              )}
-            </div>
-
-            <div className="max-h-[55vh] overflow-y-auto whitespace-pre-wrap text-sm border rounded-lg p-4 bg-muted/30">
-              {suggesting && !suggestion ? (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Analyse des contenus scrappés…
+            {suggesting && !suggestion ? (
+              <div className="flex items-center gap-2 text-muted-foreground py-8 justify-center">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Analyse des contenus scrappés…
+              </div>
+            ) : suggestion ? (
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+                {suggestion.angles.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Angles identifiés</p>
+                    <ul className="list-disc pl-5 text-sm space-y-1">
+                      {suggestion.angles.map((a, i) => (
+                        <li key={i}>
+                          <span className="font-medium">{a.title}</span>
+                          {a.description && <> — {a.description}</>}
+                          {a.source && <span className="text-muted-foreground"> ({a.source})</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div>
+                  <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Objet</p>
+                  <p className="text-sm font-medium border rounded-md p-2 bg-background">{suggestion.subject}</p>
                 </div>
-              ) : (
-                suggestion || 'Aucune suggestion.'
-              )}
-            </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Corps (HTML)</p>
+                  <div
+                    className="prose prose-sm max-w-none border rounded-md p-3 bg-muted/30"
+                    dangerouslySetInnerHTML={{ __html: suggestion.body_html }}
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2 pt-2 border-t">
+                  <Button size="sm" variant="outline" onClick={() => copySubject(suggestion.subject)}>
+                    <Copy className="h-4 w-4 mr-1" /> Copier l'objet
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => copyHtml(suggestion.body_html)}>
+                    <Copy className="h-4 w-4 mr-1" /> Copier le HTML
+                  </Button>
+                  {(() => {
+                    const r = resolveRecipient();
+                    return r.email ? (
+                      <Button size="sm" onClick={() => openMailto(r.email, suggestion.subject, suggestion.body_html)}>
+                        <Mail className="h-4 w-4 mr-1" /> Ouvrir dans Mail ({r.email})
+                      </Button>
+                    ) : null;
+                  })()}
+                  <Button size="sm" variant="ghost" onClick={generateSuggestion} disabled={suggesting}>
+                    <RefreshCw className="h-4 w-4 mr-1" /> Régénérer
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Aucune suggestion.</p>
+            )}
           </DialogContent>
         </Dialog>
+
       </CardContent>
     </Card>
   );
