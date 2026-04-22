@@ -290,21 +290,91 @@ function HeaderSection({ tracking, client }: { tracking: any; client: any }) {
             </div>
             <div>
               <Label>Statut</Label>
-              <Select value={tracking.status} onValueChange={updateStatus}>
-                <SelectTrigger className="w-full md:w-[280px] mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex flex-wrap gap-2 items-end mt-1">
+                <Select value={tracking.status} onValueChange={updateStatus}>
+                  <SelectTrigger className="w-full md:w-[280px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <ManualNotifyButton tracking={tracking} client={client} />
+              </div>
             </div>
           </div>
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+/* ---------- Bouton "Notifier l'équipe sur Slack" (manuel) ---------- */
+function ManualNotifyButton({ tracking, client }: { tracking: any; client: any }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const send = async () => {
+    setSending(true);
+    try {
+      const { data, error } = await notifyTeam({
+        client_id: tracking.client_id,
+        tracking_id: tracking.id,
+        company: client.company,
+        contact_name: `${client.first_name} ${client.last_name}`,
+        event_type: 'manual',
+        custom_message: message.trim() || `Action requise sur la fiche ${client.company}`,
+      });
+      if (error) throw error;
+      if ((data as any)?.success) {
+        toast.success('Équipe notifiée');
+      } else {
+        toast.warning('Notification enregistrée mais envoi partiel');
+      }
+      qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] });
+      setOpen(false);
+      setMessage('');
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur envoi');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          <Send className="h-4 w-4 mr-1" /> Notifier l'équipe
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Notifier l'équipe sur Slack</DialogTitle>
+          <DialogDescription>
+            Envoie un message immédiat dans <strong>#hubteam_sales</strong> et par email à l'équipe.
+          </DialogDescription>
+        </DialogHeader>
+        <Textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder={`Action requise sur la fiche ${client.company}…`}
+          rows={4}
+          autoFocus
+        />
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)} disabled={sending}>Annuler</Button>
+          <Button onClick={send} disabled={sending}>
+            {sending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}
+            Envoyer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
