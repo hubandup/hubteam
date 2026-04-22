@@ -274,7 +274,25 @@ Génère le JSON.`;
       }
     }
 
-    const subject = (parsed.subject || `À propos de ${clientRow.company || 'votre actualité'}`).trim();
+    let subject = (parsed.subject || '').trim();
+    const companyHint = clientRow.company || mainContactName || 'votre actualité';
+
+    // Garantit que l'objet mentionne explicitement l'action choisie
+    const ensureActionInSubject = (s: string): string => {
+      const stripped = s.replace(/\s+/g, ' ').trim();
+      const lower = stripped.toLowerCase();
+      const expected = (subjectPrefix || actionLabel).trim();
+      const expectedLower = expected.toLowerCase();
+      if (!stripped) {
+        return expected ? `${expected} — ${companyHint}` : `À propos de ${companyHint}`;
+      }
+      if (expectedLower && lower.includes(expectedLower.split(' ')[0])) {
+        return stripped.slice(0, 80);
+      }
+      // Préfixe l'objet généré avec l'intention de l'action
+      return `${expected} — ${stripped}`.slice(0, 80);
+    };
+    subject = ensureActionInSubject(subject);
     const bodyPlain = (parsed.body_plain || markdownLikeToPlainText(raw)).trim();
     const bodyHtml = plainTextToHtml(bodyPlain);
     const angles = Array.isArray(parsed.angles) ? parsed.angles.slice(0, 5).map(a => ({
