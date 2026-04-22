@@ -861,6 +861,42 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
   const [scrapingId, setScrapingId] = useState<string | null>(null);
   const [scrapingAll, setScrapingAll] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestion, setSuggestion] = useState<string>('');
+  const [tone, setTone] = useState<'friendly' | 'formal' | 'direct'>('friendly');
+
+  const generateSuggestion = async () => {
+    setSuggesting(true);
+    setSuggestion('');
+    setSuggestOpen(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-followup', {
+        body: { tracking_id: trackingId, tone },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) {
+        toast.error((data as any).message || (data as any).error);
+        setSuggestOpen(false);
+        return;
+      }
+      setSuggestion((data as any).suggestion || '');
+    } catch (e: any) {
+      toast.error(e?.message || 'Erreur lors de la génération');
+      setSuggestOpen(false);
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
+  const copySuggestion = async () => {
+    try {
+      await navigator.clipboard.writeText(suggestion);
+      toast.success('Copié dans le presse-papiers');
+    } catch {
+      toast.error('Impossible de copier');
+    }
+  };
 
   const { data: urls = [] } = useQuery({
     queryKey: ['commercial-scrape-urls', trackingId],
