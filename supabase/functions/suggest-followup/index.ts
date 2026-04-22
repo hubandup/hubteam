@@ -268,11 +268,29 @@ Génère le JSON.`;
       source: String(a.source || '').slice(0, 300),
     })) : [];
 
-    const sources = validScrapes.map(u => ({
-      url: u.url,
-      label: u.label || null,
-      last_scraped_at: u.last_scraped_at || null,
-    }));
+    // Structured sources used for generation: URLs scrappées + notes internes + comptes rendus client
+    const sources = {
+      urls: validScrapes.map(u => ({
+        url: u.url,
+        label: u.label || null,
+        last_scraped_at: u.last_scraped_at || null,
+      })),
+      internal_notes: (notes || []).map(n => ({
+        content: (n.content || '').slice(0, 500),
+        created_at: n.created_at || null,
+      })),
+      meeting_notes: (meetingNotes || []).map(m => ({
+        title: m.title || null,
+        meeting_date: m.meeting_date || null,
+        created_at: m.created_at || null,
+        excerpt: (m.content || '').replace(/\s+/g, ' ').slice(0, 400),
+      })),
+      meetings: (meetings || []).map(m => ({
+        label: m.label || null,
+        meeting_type: m.meeting_type || null,
+        meeting_date: m.meeting_date || null,
+      })),
+    };
 
     // Persist to history (unless explicitly disabled)
     let saved_id: string | null = null;
