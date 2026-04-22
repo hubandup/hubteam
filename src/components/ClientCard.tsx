@@ -48,14 +48,25 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
   const { data: targets } = useTargets();
   const toggleTarget = useToggleTarget();
   const isStarred = !!targets?.has(client.id);
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
   const handleStarClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    toggleTarget.mutate({ clientId: client.id, starred: isStarred });
+    if (isStarred) {
+      setConfirmRemove(true);
+    } else {
+      toggleTarget.mutate({ clientId: client.id, starred: false });
+    }
+  };
+
+  const confirmAndRemove = () => {
+    toggleTarget.mutate({ clientId: client.id, starred: true });
+    setConfirmRemove(false);
   };
 
   return (
+    <>
     <Card className="cursor-pointer hover:shadow-lg transition-shadow relative" onClick={onClick}>
       <button
         type="button"
