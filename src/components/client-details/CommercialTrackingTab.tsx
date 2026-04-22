@@ -861,18 +861,106 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
   const [scrapingId, setScrapingId] = useState<string | null>(null);
   const [scrapingAll, setScrapingAll] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
+
+  // Suggestion dialog state
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
-  const [suggestion, setSuggestion] = useState<string>('');
+  const [suggestion, setSuggestion] = useState<{
+    id?: string | null;
+    subject: string;
+    body_html: string;
+    angles: Array<{ title?: string; description?: string; source?: string }>;
+  } | null>(null);
   const [tone, setTone] = useState<'friendly' | 'formal' | 'direct'>('friendly');
 
+  // Recipient selection state
+  const [recipientChoice, setRecipientChoice] = useState<string>('main'); // 'main' | contact id | 'custom'
+  const [customEmail, setCustomEmail] = useState('');
+  const [customName, setCustomName] = useState('');
+
+  // Get tracking + client + contacts for recipient picker
+  const { data: tracking } = useQuery({
+    queryKey: ['commercial-tracking-row', trackingId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('commercial_tracking')
+        .select('client_id, clients(id, company, first_name, last_name, email)')
+        .eq('id', trackingId)
+        .maybeSingle();
+      return data as any;
+    },
+  });
+  const { data: extraContacts = [] } = useQuery({
+    queryKey: ['commercial-contacts', trackingId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('commercial_contacts')
+        .select('id, first_name, last_name, email, job_title')
+        .eq('tracking_id', trackingId)
+        .order('display_order');
+      return data || [];
+    },
+  });
+  const clientRow: any = tracking?.clients || {};
+  const clientId: string | undefined = tracking?.client_id;
+
+  // History of past suggestions
+  const { data: history = [] } = useQuery({
+    queryKey: ['followup-suggestions', trackingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('commercial_followup_suggestions')
+        .select('id, tone, recipient_email, recipient_name, subject, body_html, angles, sources, created_at')
+        .eq('tracking_id', trackingId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const [historyOpenId, setHistoryOpenId] = useState<string | null>(null);
+  const openedHistory = history.find((h: any) => h.id === historyOpenId);
+
+  const resolveRecipient = (): { email: string; name: string; role: string } => {
+    if (recipientChoice === 'main') {
+      return {
+        email: clientRow.email || '',
+        name: `${clientRow.first_name || ''} ${clientRow.last_name || ''}`.trim(),
+        role: 'Contact principal',
+      };
+    }
+    if (recipientChoice === 'custom') {
+      return { email: customEmail.trim(), name: customName.trim(), role: 'Personnalisé' };
+    }
+    const c = extraContacts.find((x: any) => x.id === recipientChoice);
+    if (c) {
+      return {
+        email: c.email || '',
+        name: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+        role: c.job_title ? `Contact additionnel (${c.job_title})` : 'Contact additionnel',
+      };
+    }
+    return { email: '', name: '', role: 'Contact' };
+  };
+
   const generateSuggestion = async () => {
+    const recipient = resolveRecipient();
+    if (recipientChoice === 'custom' && !recipient.email) {
+      toast.error('Renseignez un email destinataire');
+      return;
+    }
     setSuggesting(true);
-    setSuggestion('');
+    setSuggestion(null);
     setSuggestOpen(true);
     try {
       const { data, error } = await supabase.functions.invoke('suggest-followup', {
-        body: { tracking_id: trackingId, tone },
+        body: {
+          tracking_id: trackingId,
+          tone,
+          recipient_email: recipient.email,
+          recipient_name: recipient.name,
+          recipient_role: recipient.role,
+        },
       });
       if (error) throw error;
       if ((data as any)?.error) {
@@ -880,7 +968,13 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
         setSuggestOpen(false);
         return;
       }
-      setSuggestion((data as any).suggestion || '');
+      setSuggestion({
+        id: (data as any).id,
+        subject: (data as any).subject || '',
+        body_html: (data as any).body_html || '',
+        angles: (data as any).angles || [],
+      });
+      qc.invalidateQueries({ queryKey: ['followup-suggestions', trackingId] });
     } catch (e: any) {
       toast.error(e?.message || 'Erreur lors de la génération');
       setSuggestOpen(false);
@@ -889,14 +983,47 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
     }
   };
 
-  const copySuggestion = async () => {
+  const copyHtml = async (html: string) => {
     try {
-      await navigator.clipboard.writeText(suggestion);
-      toast.success('Copié dans le presse-papiers');
+      await navigator.clipboard.writeText(html);
+      toast.success('HTML copié');
     } catch {
       toast.error('Impossible de copier');
     }
   };
+
+  const copySubject = async (s: string) => {
+    try {
+      await navigator.clipboard.writeText(s);
+      toast.success('Objet copié');
+    } catch {
+      toast.error('Impossible de copier');
+    }
+  };
+
+  const openMailto = (to: string, subject: string, html: string) => {
+    // mailto only supports plain text body — strip tags for fallback
+    const plain = html
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+      .trim();
+    const url = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(plain)}`;
+    window.open(url, '_blank');
+  };
+
+  const deleteHistoryItem = async (id: string) => {
+    await supabase.from('commercial_followup_suggestions').delete().eq('id', id);
+    qc.invalidateQueries({ queryKey: ['followup-suggestions', trackingId] });
+    toast.success('Suggestion supprimée');
+    if (historyOpenId === id) setHistoryOpenId(null);
+  };
+
+  const toneLabel = (t: string) =>
+    t === 'friendly' ? 'Chaleureux' : t === 'formal' ? 'Formel' : t === 'direct' ? 'Direct' : t;
+
 
   const { data: urls = [] } = useQuery({
     queryKey: ['commercial-scrape-urls', trackingId],
