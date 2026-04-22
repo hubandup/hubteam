@@ -1171,6 +1171,18 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
             )}
           </div>
         </div>
+              <div>
+                <Label className="text-xs">Adresse</Label>
+                <Select value={address} onValueChange={(v: any) => setAddress(v)}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="vous">Vouvoiement (vous)</SelectItem>
+                    <SelectItem value="tu">Tutoiement (tu)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
 
         <div className="flex flex-col md:flex-row gap-2">
