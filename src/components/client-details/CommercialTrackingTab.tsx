@@ -1341,10 +1341,12 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
                   </div>
                 )}
                 <div>
-                  <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Message</p>
-                  <div
-                    className="prose prose-sm max-w-none border rounded-md p-3 bg-muted/30"
-                    dangerouslySetInnerHTML={{ __html: openedHistory.body_html || '' }}
+                  <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Aperçu de l'email</p>
+                  <EmailPreview
+                    to={openedHistory.recipient_email}
+                    toName={openedHistory.recipient_name}
+                    subject={openedHistory.subject || ''}
+                    html={openedHistory.body_html || ''}
                   />
                 </div>
                 {Array.isArray(openedHistory.sources) && openedHistory.sources.length > 0 && (
