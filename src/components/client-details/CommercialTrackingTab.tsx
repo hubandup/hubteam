@@ -1592,12 +1592,6 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
                   );
                 })()}
                 <div className="flex flex-wrap gap-2 pt-2 border-t">
-                  <Button size="sm" variant="outline" onClick={() => copySubject(openedHistory.subject || '')}>
-                    <Copy className="h-4 w-4 mr-1" /> Copier l'objet
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => copyHtml(openedHistory.body_html || '')}>
-                    <Copy className="h-4 w-4 mr-1" /> Copier le HTML
-                  </Button>
                   {openedHistory.recipient_email && (
                     <Button
                       size="sm"
@@ -1656,12 +1650,6 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
                   );
                 })()}
                 <div className="flex flex-wrap gap-2 pt-2 border-t">
-                  <Button size="sm" variant="outline" onClick={() => copySubject(suggestion.subject)}>
-                    <Copy className="h-4 w-4 mr-1" /> Copier l'objet
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => copyHtml(suggestion.body_html)}>
-                    <Copy className="h-4 w-4 mr-1" /> Copier le HTML
-                  </Button>
                   {(() => {
                     const r = resolveRecipient();
                     return r.email ? (
