@@ -845,6 +845,9 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
   const qc = useQueryClient();
   const [url, setUrl] = useState('');
   const [label, setLabel] = useState('');
+  const [scrapingId, setScrapingId] = useState<string | null>(null);
+  const [scrapingAll, setScrapingAll] = useState(false);
+  const [previewId, setPreviewId] = useState<string | null>(null);
 
   const { data: urls = [] } = useQuery({
     queryKey: ['commercial-scrape-urls', trackingId],
@@ -878,17 +881,57 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
     qc.invalidateQueries({ queryKey: ['commercial-scrape-urls', trackingId] });
   };
 
+  const scrapeOne = async (id: string) => {
+    setScrapingId(id);
+    try {
+      const { data, error } = await supabase.functions.invoke('scrape-commercial-urls', { body: { url_id: id } });
+      if (error) throw error;
+      const ok = (data as any)?.results?.[0]?.ok;
+      toast[ok ? 'success' : 'error'](ok ? 'URL scrapée' : 'Échec du scraping');
+      qc.invalidateQueries({ queryKey: ['commercial-scrape-urls', trackingId] });
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur scraping');
+    } finally {
+      setScrapingId(null);
+    }
+  };
+
+  const scrapeAll = async () => {
+    if (urls.length === 0) return;
+    setScrapingAll(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('scrape-commercial-urls', { body: { tracking_id: trackingId } });
+      if (error) throw error;
+      toast.success(`${(data as any)?.scraped || 0} URL(s) scrapée(s)`);
+      qc.invalidateQueries({ queryKey: ['commercial-scrape-urls', trackingId] });
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur scraping');
+    } finally {
+      setScrapingAll(false);
+    }
+  };
+
+  const preview = urls.find((u: any) => u.id === previewId);
+
   return (
     <Card>
       <CardContent className="pt-6 space-y-4">
-        <div>
-          <h3 className="font-semibold text-lg flex items-center gap-2">
-            <LinkIcon className="h-5 w-5" />
-            URLs à scrapper pour idées de relance
-          </h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            Ajoutez des URLs (site, blog, presse) à scrapper régulièrement pour générer des idées de relance.
-          </p>
+        <div className="flex items-start justify-between gap-2 flex-wrap">
+          <div>
+            <h3 className="font-semibold text-lg flex items-center gap-2">
+              <LinkIcon className="h-5 w-5" />
+              URLs à scrapper pour idées de relance
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Scraping automatique chaque lundi matin. Vous pouvez aussi déclencher manuellement.
+            </p>
+          </div>
+          {urls.length > 0 && (
+            <Button size="sm" variant="outline" onClick={scrapeAll} disabled={scrapingAll}>
+              {scrapingAll ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}
+              Scraper toutes
+            </Button>
+          )}
         </div>
 
         <div className="flex flex-col md:flex-row gap-2">
@@ -899,24 +942,50 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
 
         <div className="space-y-2">
           {urls.map((u: any) => (
-            <div key={u.id} className="flex items-center gap-2 border rounded-lg p-2">
-              <div className="flex-1 min-w-0">
-                {u.label && <p className="text-sm font-medium">{u.label}</p>}
-                <a href={u.url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block">
-                  {u.url}
-                </a>
-                {u.last_scraped_at && (
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Dernier scrape : {format(new Date(u.last_scraped_at), 'dd/MM/yyyy HH:mm', { locale: fr })}
-                  </p>
+            <div key={u.id} className="border rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  {u.label && <p className="text-sm font-medium">{u.label}</p>}
+                  <a href={u.url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block">
+                    {u.url}
+                  </a>
+                  {u.last_scraped_at && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Dernier scrape : {format(new Date(u.last_scraped_at), 'dd/MM/yyyy HH:mm', { locale: fr })}
+                      {u.last_scrape_status === 'failed' && <span className="text-destructive ml-1">· échec</span>}
+                    </p>
+                  )}
+                </div>
+                {u.last_scrape_summary && (
+                  <Button size="icon" variant="ghost" onClick={() => setPreviewId(u.id)} title="Voir le résumé">
+                    <FileText className="h-4 w-4" />
+                  </Button>
                 )}
+                <Button size="icon" variant="ghost" onClick={() => scrapeOne(u.id)} disabled={scrapingId === u.id} title="Scraper maintenant">
+                  {scrapingId === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                </Button>
+                <Button size="icon" variant="ghost" onClick={() => remove(u.id)}>
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
               </div>
-              <Button size="icon" variant="ghost" onClick={() => remove(u.id)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+              {u.last_scrape_summary && previewId !== u.id && (
+                <p className="text-xs text-muted-foreground line-clamp-2 pl-1">{u.last_scrape_summary}</p>
+              )}
             </div>
           ))}
         </div>
+
+        <Dialog open={!!previewId} onOpenChange={(o) => !o && setPreviewId(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{preview?.label || 'Résumé'}</DialogTitle>
+              <DialogDescription className="truncate">{preview?.url}</DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[60vh] overflow-y-auto whitespace-pre-wrap text-sm">
+              {preview?.last_scrape_summary || 'Aucun résumé.'}
+            </div>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
