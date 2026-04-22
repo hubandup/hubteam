@@ -216,8 +216,8 @@ function HeaderSection({ tracking, client }: { tracking: any; client: any }) {
     qc.invalidateQueries({ queryKey: ['commercial-tracking'] });
     toast.success('Statut mis à jour');
 
-    // Notification: la détection finale de transition est faite côté serveur.
-    // L'edge function vérifie le statut courant + l'historique avant d'envoyer.
+    // Notify on status change. For 'to_followup' the edge function performs server-side
+    // de-dup (Slack + email). For other transitions, send a lighter Slack-only notice.
     if (status === 'to_followup') {
       try {
         const { data: result, error: notifError } = await supabase.functions.invoke('notify-target-relance', {
@@ -226,20 +226,30 @@ function HeaderSection({ tracking, client }: { tracking: any; client: any }) {
             tracking_id: tracking.id,
             company: client.company,
             contact_name: `${client.first_name} ${client.last_name}`,
+            event_type: 'status_to_followup',
             expected_previous_status: previousStatus,
           },
         });
-        if (notifError) {
-          toast.error("Notification de relance non envoyée");
-        } else if ((result as any)?.skipped) {
-          // Pas de vrai changement détecté côté serveur — silencieux
-        } else {
+        if (notifError) toast.error("Notification de relance non envoyée");
+        else if (!(result as any)?.skipped) {
           toast.success("Équipe notifiée (Slack + email)");
           qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] });
         }
       } catch (e) {
         console.error('notify-target-relance error', e);
       }
+    } else {
+      const newLabel = STATUS_OPTIONS.find((s) => s.value === status)?.label || status;
+      const prevLabel = STATUS_OPTIONS.find((s) => s.value === previousStatus)?.label || previousStatus;
+      notifyTeam({
+        client_id: tracking.client_id,
+        tracking_id: tracking.id,
+        company: client.company,
+        contact_name: `${client.first_name} ${client.last_name}`,
+        event_type: 'status_change',
+        details: { previous_status: previousStatus, previous_status_label: prevLabel, new_status: status, new_status_label: newLabel },
+      }).then(() => qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] }))
+        .catch((e) => console.error('notify status_change failed', e));
     }
   };
 
