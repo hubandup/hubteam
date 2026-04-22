@@ -124,7 +124,7 @@ export function CommercialTrackingTab({ clientId, client }: Props) {
   return (
     <div className="space-y-6">
       <HeaderSection tracking={tracking} client={client} />
-      <RelanceHistorySection clientId={clientId} />
+      
       <ContactsSection trackingId={tracking.id} client={client} />
       <NotesSection trackingId={tracking.id} tracking={tracking} client={client} />
       <MeetingsSection trackingId={tracking.id} tracking={tracking} client={client} />
@@ -145,78 +145,6 @@ async function notifyTeam(params: {
   details?: Record<string, unknown>;
 }) {
   return supabase.functions.invoke('notify-target-relance', { body: params });
-}
-
-/* ---------- Historique des notifications de relance ---------- */
-function RelanceHistorySection({ clientId }: { clientId: string }) {
-  const { data: history = [] } = useQuery({
-    queryKey: ['target-relance-history', clientId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('target_relance_notifications')
-        .select('*')
-        .eq('client_id', clientId)
-        .order('created_at', { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  if (history.length === 0) return null;
-
-  const channelLabel = (c: string) => c === 'both' ? 'Slack + Email' : c === 'slack' ? 'Slack' : 'Email';
-  const eventLabel = (e: string) => {
-    switch (e) {
-      case 'status_to_followup': return 'À relancer';
-      case 'status_change': return 'Changement statut';
-      case 'note_added': return 'Note ajoutée';
-      case 'meeting_scheduled': return 'RDV planifié';
-      case 'manual': return 'Manuel';
-      default: return e;
-    }
-  };
-  const statusColor = (s: string) =>
-    s === 'sent' ? 'text-green-600' : s === 'failed' ? 'text-destructive' : 'text-muted-foreground';
-  const humanizeError = (msg: string) => {
-    if (!msg) return msg;
-    if (msg.includes('channel_not_found')) return "Slack : le bot n'a pas accès au canal #hubteam_sales (invitez-le dans le canal).";
-    if (msg.includes('not_in_channel')) return "Slack : le bot n'est pas membre du canal cible.";
-    if (msg.includes('invalid_auth') || msg.includes('token_revoked')) return "Slack : jeton invalide ou révoqué.";
-    if (msg.includes('SLACK_BOT_TOKEN not configured')) return "Slack non configuré.";
-    if (msg.includes('BREVO_API_KEY not configured')) return "Email non configuré.";
-    return msg;
-  };
-
-  return (
-    <Card>
-      <CardContent className="pt-6 space-y-3">
-        <h3 className="font-semibold text-lg">Historique des notifications équipe</h3>
-        <div className="space-y-2">
-          {history.map((h: any) => (
-            <div key={h.id} className="flex items-center justify-between text-sm border rounded-lg p-2.5 gap-2">
-              <div className="min-w-0 flex-1">
-                <p className="font-medium">
-                  {eventLabel(h.event_type || 'status_to_followup')}
-                  <span className="text-xs text-muted-foreground ml-2">· {channelLabel(h.channel)}</span>
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {format(new Date(h.created_at), 'd MMMM yyyy à HH:mm', { locale: fr })}
-                  {h.recipients_count > 0 && ` · ${h.recipients_count} destinataire${h.recipients_count > 1 ? 's' : ''}`}
-                </p>
-                {h.error_message && (
-                  <p className="text-xs text-destructive mt-1" title={h.error_message}>{humanizeError(h.error_message)}</p>
-                )}
-              </div>
-              <span className={`text-xs font-semibold uppercase shrink-0 ${statusColor(h.status)}`}>
-                {h.status === 'sent' ? 'Envoyé' : h.status === 'failed' ? 'Échec' : 'En attente'}
-              </span>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
 }
 
 /* ---------- Header (status + logo + name) ---------- */
