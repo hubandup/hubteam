@@ -11,6 +11,14 @@ interface Payload {
   all?: boolean;         // cron mode: scrape all URLs project-wide (admin or cron only)
 }
 
+function isBlockedDomain(url: string): string | null {
+  const lower = url.toLowerCase();
+  if (lower.includes('linkedin.com')) return 'LinkedIn bloque le scraping automatisé. Consultez la page manuellement.';
+  if (lower.includes('facebook.com') || lower.includes('fb.com')) return 'Facebook bloque le scraping automatisé. Consultez la page manuellement.';
+  if (lower.includes('instagram.com')) return 'Instagram bloque le scraping automatisé. Consultez la page manuellement.';
+  return null;
+}
+
 async function firecrawlScrape(apiKey: string, url: string): Promise<{ markdown?: string; summary?: string; title?: string; error?: string }> {
   try {
     const res = await fetch('https://api.firecrawl.dev/v2/scrape', {
@@ -23,14 +31,20 @@ async function firecrawlScrape(apiKey: string, url: string): Promise<{ markdown?
         url,
         formats: ['markdown', 'summary'],
         onlyMainContent: true,
+        waitFor: 2000,
       }),
     });
-    const data = await res.json();
-    if (!res.ok) return { error: data?.error || `http_${res.status}` };
-    // SDK v2: top-level `markdown` and `summary`; some envelopes nest under `data`
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = data?.error || data?.message || `Erreur HTTP ${res.status}`;
+      return { error: typeof msg === 'string' ? msg : JSON.stringify(msg) };
+    }
     const markdown = data.markdown ?? data.data?.markdown;
     const summary = data.summary ?? data.data?.summary;
     const title = data.metadata?.title ?? data.data?.metadata?.title;
+    if (!markdown && !summary) {
+      return { error: 'Aucun contenu extrait (page vide ou bloquée).' };
+    }
     return { markdown, summary, title };
   } catch (e) {
     return { error: (e as Error).message };
@@ -98,12 +112,14 @@ Deno.serve(async (req) => {
 
     const results: any[] = [];
     for (const u of urls) {
-      const r = await firecrawlScrape(FIRECRAWL_API_KEY, u.url);
+      const blocked = isBlockedDomain(u.url);
+      const r = blocked ? { error: blocked } : await firecrawlScrape(FIRECRAWL_API_KEY, u.url);
       const summaryText = r.summary || (r.markdown ? r.markdown.slice(0, 800) : null);
       const update: any = {
         last_scraped_at: new Date().toISOString(),
         last_scrape_status: r.error ? 'failed' : 'success',
-        last_scrape_summary: r.error ? null : summaryText,
+        // Stocker la raison de l'échec pour l'afficher dans l'UI
+        last_scrape_summary: r.error ? `⚠️ ${r.error}` : summaryText,
         last_scrape_content: r.error ? null : (r.markdown || null),
       };
       await admin.from('commercial_scrape_urls').update(update).eq('id', u.id);
