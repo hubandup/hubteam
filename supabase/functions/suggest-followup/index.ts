@@ -309,6 +309,8 @@ Génère le JSON.`;
           angles,
           sources,
           raw_model_output: raw,
+          action_key: body.action_key || null,
+          action_label: actionLabel,
         })
         .select('id')
         .single();
