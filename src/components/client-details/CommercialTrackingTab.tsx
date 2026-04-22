@@ -1262,6 +1262,7 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
                     <SelectItem value="share_case_study">Partager un cas client / référence</SelectItem>
                     <SelectItem value="invite_event">Inviter à un événement HUB+UP</SelectItem>
                     <SelectItem value="ask_feedback">Demander un retour / un avis</SelectItem>
+                    <SelectItem value="just_hello">Juste un coucou 👋</SelectItem>
                     <SelectItem value="custom">Personnalisé…</SelectItem>
                   </SelectContent>
                 </Select>
