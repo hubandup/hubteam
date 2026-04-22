@@ -1043,6 +1043,54 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
             </div>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={suggestOpen} onOpenChange={setSuggestOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Suggestion de relance générée par l'IA
+              </DialogTitle>
+              <DialogDescription>
+                Basée sur les contenus scrappés des URLs ci-dessus.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <Label className="text-xs">Ton :</Label>
+              <Select value={tone} onValueChange={(v: any) => setTone(v)} disabled={suggesting}>
+                <SelectTrigger className="w-[180px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="friendly">Chaleureux</SelectItem>
+                  <SelectItem value="formal">Formel</SelectItem>
+                  <SelectItem value="direct">Direct</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button size="sm" variant="outline" onClick={generateSuggestion} disabled={suggesting}>
+                {suggesting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}
+                Régénérer
+              </Button>
+              {suggestion && (
+                <Button size="sm" variant="ghost" onClick={copySuggestion}>
+                  <Copy className="h-4 w-4 mr-1" /> Copier
+                </Button>
+              )}
+            </div>
+
+            <div className="max-h-[55vh] overflow-y-auto whitespace-pre-wrap text-sm border rounded-lg p-4 bg-muted/30">
+              {suggesting && !suggestion ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Analyse des contenus scrappés…
+                </div>
+              ) : (
+                suggestion || 'Aucune suggestion.'
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
