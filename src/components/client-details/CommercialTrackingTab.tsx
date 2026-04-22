@@ -872,6 +872,8 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
     angles: Array<{ title?: string; description?: string; source?: string }>;
   } | null>(null);
   const [tone, setTone] = useState<'friendly' | 'formal' | 'direct'>('friendly');
+  const [action, setAction] = useState<string>('propose_slot');
+  const [customAction, setCustomAction] = useState<string>('');
 
   // Recipient selection state
   const [recipientChoice, setRecipientChoice] = useState<string>('main'); // 'main' | contact id | 'custom'
@@ -949,10 +951,25 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
       toast.error('Renseignez un email destinataire');
       return;
     }
+    if (action === 'custom' && !customAction.trim()) {
+      toast.error('Précisez l\'action à proposer');
+      return;
+    }
     setSuggesting(true);
     setSuggestion(null);
     setSuggestOpen(true);
     try {
+      const ACTION_LABELS: Record<string, string> = {
+        propose_slot: 'Proposer un créneau de rendez-vous',
+        send_quote: 'Envoyer ou relancer un devis',
+        schedule_call: 'Planifier un call de découverte',
+        share_case_study: 'Partager un cas client / une référence pertinente',
+        invite_event: 'Inviter à un événement HUB+UP',
+        ask_feedback: 'Demander un retour / un avis',
+        custom: customAction.trim(),
+      };
+      const actionLabel = ACTION_LABELS[action] || ACTION_LABELS.propose_slot;
+
       const { data, error } = await supabase.functions.invoke('suggest-followup', {
         body: {
           tracking_id: trackingId,
@@ -960,6 +977,8 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
           recipient_email: recipient.email,
           recipient_name: recipient.name,
           recipient_role: recipient.role,
+          action_key: action,
+          action_label: actionLabel,
         },
       });
       if (error) throw error;
@@ -1228,6 +1247,36 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div>
+                <Label className="text-xs">Action à proposer</Label>
+                <Select value={action} onValueChange={(v: any) => setAction(v)}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="propose_slot">Proposer un créneau de rendez-vous</SelectItem>
+                    <SelectItem value="send_quote">Envoyer ou relancer un devis</SelectItem>
+                    <SelectItem value="schedule_call">Planifier un call de découverte</SelectItem>
+                    <SelectItem value="share_case_study">Partager un cas client / référence</SelectItem>
+                    <SelectItem value="invite_event">Inviter à un événement HUB+UP</SelectItem>
+                    <SelectItem value="ask_feedback">Demander un retour / un avis</SelectItem>
+                    <SelectItem value="custom">Personnalisé…</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {action === 'custom' && (
+                <div className="md:col-span-2">
+                  <Label className="text-xs">Action personnalisée</Label>
+                  <Input
+                    placeholder="Ex: proposer une démo de notre nouvelle offre"
+                    value={customAction}
+                    onChange={(e) => setCustomAction(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              )}
 
               {recipientChoice === 'custom' && (
                 <>

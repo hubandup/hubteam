@@ -11,6 +11,8 @@ interface Payload {
   recipient_email?: string;
   recipient_name?: string;
   recipient_role?: string; // e.g. "Contact principal", "Contact additionnel", "Personnalisé"
+  action_key?: string; // ex: 'propose_slot', 'send_quote', 'schedule_call', 'custom'
+  action_label?: string; // libellé humain de l'action à proposer
   save?: boolean; // persist to history (default true)
 }
 
@@ -169,12 +171,15 @@ Deno.serve(async (req) => {
         }).join('\n')}`
       : '';
 
+    const actionLabel = (body.action_label || '').trim() || 'Proposer un créneau de rendez-vous';
+
     const systemPrompt = `Tu es un expert en développement commercial B2B pour HUB+UP (agence de communication). Tu génères une "excuse de relance" personnalisée pour un destinataire précis, en t'appuyant sur des actualités fraîches scrappées.
 
 Règles:
 - Identifie 1 à 3 angles concrets tirés du contenu fourni (URLs scrappées en priorité, mais EXPLOITE AUSSI les 3 derniers comptes rendus client et notes internes : sujets évoqués, points en suspens, engagements pris, prochaines étapes mentionnées).
 - Si un compte rendu mentionne un suivi ou un point à reprendre, utilise-le comme accroche naturelle ("Suite à notre échange du …").
 - Adapte le message au destinataire indiqué (rôle/relation : ${recipientRole}). Si c'est le contact principal habituel, ton plus familier ; sinon, présentation brève.
+- OBJECTIF / CALL-TO-ACTION (obligatoire) : l'email DOIT se conclure par une proposition claire correspondant à : « ${actionLabel} ». Formule-la naturellement dans la dernière phrase ou l'avant-dernière, avec une question ouverte ou une proposition concrète (créneau, lien, pièce jointe à venir, etc.). L'objet de l'email doit aussi refléter cette intention.
 - Ton : ${toneInstructions[tone]}. En français. Pas d'emoji. Pas de formules creuses ("j'espère que vous allez bien"). Signature "L'équipe HUB+UP".
 - Email court : 80–130 mots dans le corps.
 
@@ -184,7 +189,7 @@ Tu DOIS répondre UNIQUEMENT avec un JSON valide UTF-8 (pas de markdown, pas de 
     { "title": "string court", "description": "1 phrase", "source": "URL ou nom de source" }
   ],
   "subject": "Objet d'email concis et incarné",
-  "body_plain": "Corps de l'email en texte brut, paragraphes séparés par une ligne vide. Inclure la salutation et la signature 'L'équipe HUB+UP'."
+  "body_plain": "Corps de l'email en texte brut, paragraphes séparés par une ligne vide. Inclure la salutation, le call-to-action correspondant à l'action demandée, et la signature 'L'équipe HUB+UP'."
 }`;
 
     const userPrompt = `Prospect / Client : ${clientRow.company || 'N/A'}
@@ -196,6 +201,8 @@ Destinataire choisi pour ce message :
 - Email : ${recipientEmail || 'N/A'}
 - Rôle : ${recipientRole}
 - Prénom à utiliser dans la salutation : ${recipientFirstName || recipientName || ''}
+
+ACTION À PROPOSER (call-to-action obligatoire de l'email) : ${actionLabel}
 ${contextNotes}${contextMeetings}${contextMeetingNotes}
 
 Contenus scrappés récemment :
