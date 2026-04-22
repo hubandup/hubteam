@@ -142,7 +142,7 @@ function HeaderSection({ tracking, client }: { tracking: any; client: any }) {
   const updateStatus = async (status: string) => {
     const { error } = await supabase
       .from('commercial_tracking')
-      .update({ status })
+      .update({ status: status as any })
       .eq('id', tracking.id);
     if (error) return toast.error('Erreur');
     qc.invalidateQueries({ queryKey: ['commercial-tracking'] });
