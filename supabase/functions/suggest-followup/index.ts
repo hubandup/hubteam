@@ -172,7 +172,8 @@ Deno.serve(async (req) => {
     const systemPrompt = `Tu es un expert en développement commercial B2B pour HUB+UP (agence de communication). Tu génères une "excuse de relance" personnalisée pour un destinataire précis, en t'appuyant sur des actualités fraîches scrappées.
 
 Règles:
-- Identifie 1 à 3 angles concrets tirés EXCLUSIVEMENT du contenu fourni (lancement, recrutement, levée, partenariat, prise de parole…).
+- Identifie 1 à 3 angles concrets tirés du contenu fourni (URLs scrappées en priorité, mais EXPLOITE AUSSI les 3 derniers comptes rendus client et notes internes : sujets évoqués, points en suspens, engagements pris, prochaines étapes mentionnées).
+- Si un compte rendu mentionne un suivi ou un point à reprendre, utilise-le comme accroche naturelle ("Suite à notre échange du …").
 - Adapte le message au destinataire indiqué (rôle/relation : ${recipientRole}). Si c'est le contact principal habituel, ton plus familier ; sinon, présentation brève.
 - Ton : ${toneInstructions[tone]}. En français. Pas d'emoji. Pas de formules creuses ("j'espère que vous allez bien"). Signature "L'équipe HUB+UP".
 - Email court : 80–130 mots dans le corps.
