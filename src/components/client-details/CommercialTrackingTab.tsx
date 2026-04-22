@@ -1418,17 +1418,15 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
                     </ul>
                   </div>
                 )}
-                <div>
-                  <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Objet</p>
-                  <p className="text-sm font-medium border rounded-md p-2 bg-background">{suggestion.subject}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Corps (HTML)</p>
-                  <div
-                    className="prose prose-sm max-w-none border rounded-md p-3 bg-muted/30"
-                    dangerouslySetInnerHTML={{ __html: suggestion.body_html }}
-                  />
-                </div>
+                {(() => {
+                  const r = resolveRecipient();
+                  return (
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Aperçu de l'email</p>
+                      <EmailPreview to={r.email} toName={r.name} subject={suggestion.subject} html={suggestion.body_html} />
+                    </div>
+                  );
+                })()}
                 <div className="flex flex-wrap gap-2 pt-2 border-t">
                   <Button size="sm" variant="outline" onClick={() => copySubject(suggestion.subject)}>
                     <Copy className="h-4 w-4 mr-1" /> Copier l'objet
