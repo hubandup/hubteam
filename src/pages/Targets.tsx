@@ -156,12 +156,40 @@ export default function Targets() {
           <div className="overflow-y-auto h-full pb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filtered.map((client: any) => (
-                <ClientCard key={client.id} client={client} onClick={() => navigate(`/client/${client.id}?tab=info`)} />
+                <div key={client.id} className="relative">
+                  <ClientCard client={client} onClick={() => navigate(`/client/${client.id}?tab=info`)} />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="absolute top-2 right-10 z-10 h-7 px-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRemoveTarget({ id: client.id, company: client.company });
+                    }}
+                  >
+                    <X className="h-3 w-3 mr-1" /> Retirer
+                  </Button>
+                </div>
               ))}
             </div>
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!removeTarget} onOpenChange={(o) => !o && setRemoveTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Retirer des Targets ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Voulez-vous vraiment retirer <strong>{removeTarget?.company}</strong> de votre liste Targets ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRemove}>Retirer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
