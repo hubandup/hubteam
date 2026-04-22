@@ -1248,6 +1248,36 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
                 </Select>
               </div>
 
+              <div>
+                <Label className="text-xs">Action à proposer</Label>
+                <Select value={action} onValueChange={(v: any) => setAction(v)}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="propose_slot">Proposer un créneau de rendez-vous</SelectItem>
+                    <SelectItem value="send_quote">Envoyer ou relancer un devis</SelectItem>
+                    <SelectItem value="schedule_call">Planifier un call de découverte</SelectItem>
+                    <SelectItem value="share_case_study">Partager un cas client / référence</SelectItem>
+                    <SelectItem value="invite_event">Inviter à un événement HUB+UP</SelectItem>
+                    <SelectItem value="ask_feedback">Demander un retour / un avis</SelectItem>
+                    <SelectItem value="custom">Personnalisé…</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {action === 'custom' && (
+                <div className="md:col-span-2">
+                  <Label className="text-xs">Action personnalisée</Label>
+                  <Input
+                    placeholder="Ex: proposer une démo de notre nouvelle offre"
+                    value={customAction}
+                    onChange={(e) => setCustomAction(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              )}
+
               {recipientChoice === 'custom' && (
                 <>
                   <div>
