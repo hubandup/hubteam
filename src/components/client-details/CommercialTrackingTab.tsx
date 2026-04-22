@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Plus, Trash2, Upload, Calendar as CalIcon, Download, Link as LinkIcon, MessageSquarePlus, Send, RefreshCw, FileText, Sparkles, Copy } from 'lucide-react';
+import { Loader2, Plus, Trash2, Upload, Calendar as CalIcon, Download, Link as LinkIcon, MessageSquarePlus, Send, RefreshCw, FileText, Sparkles, Copy, Mail, History } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
@@ -861,18 +861,106 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
   const [scrapingId, setScrapingId] = useState<string | null>(null);
   const [scrapingAll, setScrapingAll] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
+
+  // Suggestion dialog state
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
-  const [suggestion, setSuggestion] = useState<string>('');
+  const [suggestion, setSuggestion] = useState<{
+    id?: string | null;
+    subject: string;
+    body_html: string;
+    angles: Array<{ title?: string; description?: string; source?: string }>;
+  } | null>(null);
   const [tone, setTone] = useState<'friendly' | 'formal' | 'direct'>('friendly');
 
+  // Recipient selection state
+  const [recipientChoice, setRecipientChoice] = useState<string>('main'); // 'main' | contact id | 'custom'
+  const [customEmail, setCustomEmail] = useState('');
+  const [customName, setCustomName] = useState('');
+
+  // Get tracking + client + contacts for recipient picker
+  const { data: tracking } = useQuery({
+    queryKey: ['commercial-tracking-row', trackingId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('commercial_tracking')
+        .select('client_id, clients(id, company, first_name, last_name, email)')
+        .eq('id', trackingId)
+        .maybeSingle();
+      return data as any;
+    },
+  });
+  const { data: extraContacts = [] } = useQuery({
+    queryKey: ['commercial-contacts', trackingId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('commercial_contacts')
+        .select('id, first_name, last_name, email, job_title')
+        .eq('tracking_id', trackingId)
+        .order('display_order');
+      return data || [];
+    },
+  });
+  const clientRow: any = tracking?.clients || {};
+  const clientId: string | undefined = tracking?.client_id;
+
+  // History of past suggestions
+  const { data: history = [] } = useQuery({
+    queryKey: ['followup-suggestions', trackingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('commercial_followup_suggestions')
+        .select('id, tone, recipient_email, recipient_name, subject, body_html, angles, sources, created_at')
+        .eq('tracking_id', trackingId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const [historyOpenId, setHistoryOpenId] = useState<string | null>(null);
+  const openedHistory = history.find((h: any) => h.id === historyOpenId);
+
+  const resolveRecipient = (): { email: string; name: string; role: string } => {
+    if (recipientChoice === 'main') {
+      return {
+        email: clientRow.email || '',
+        name: `${clientRow.first_name || ''} ${clientRow.last_name || ''}`.trim(),
+        role: 'Contact principal',
+      };
+    }
+    if (recipientChoice === 'custom') {
+      return { email: customEmail.trim(), name: customName.trim(), role: 'Personnalisé' };
+    }
+    const c = extraContacts.find((x: any) => x.id === recipientChoice);
+    if (c) {
+      return {
+        email: c.email || '',
+        name: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+        role: c.job_title ? `Contact additionnel (${c.job_title})` : 'Contact additionnel',
+      };
+    }
+    return { email: '', name: '', role: 'Contact' };
+  };
+
   const generateSuggestion = async () => {
+    const recipient = resolveRecipient();
+    if (recipientChoice === 'custom' && !recipient.email) {
+      toast.error('Renseignez un email destinataire');
+      return;
+    }
     setSuggesting(true);
-    setSuggestion('');
+    setSuggestion(null);
     setSuggestOpen(true);
     try {
       const { data, error } = await supabase.functions.invoke('suggest-followup', {
-        body: { tracking_id: trackingId, tone },
+        body: {
+          tracking_id: trackingId,
+          tone,
+          recipient_email: recipient.email,
+          recipient_name: recipient.name,
+          recipient_role: recipient.role,
+        },
       });
       if (error) throw error;
       if ((data as any)?.error) {
@@ -880,7 +968,13 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
         setSuggestOpen(false);
         return;
       }
-      setSuggestion((data as any).suggestion || '');
+      setSuggestion({
+        id: (data as any).id,
+        subject: (data as any).subject || '',
+        body_html: (data as any).body_html || '',
+        angles: (data as any).angles || [],
+      });
+      qc.invalidateQueries({ queryKey: ['followup-suggestions', trackingId] });
     } catch (e: any) {
       toast.error(e?.message || 'Erreur lors de la génération');
       setSuggestOpen(false);
@@ -889,14 +983,47 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
     }
   };
 
-  const copySuggestion = async () => {
+  const copyHtml = async (html: string) => {
     try {
-      await navigator.clipboard.writeText(suggestion);
-      toast.success('Copié dans le presse-papiers');
+      await navigator.clipboard.writeText(html);
+      toast.success('HTML copié');
     } catch {
       toast.error('Impossible de copier');
     }
   };
+
+  const copySubject = async (s: string) => {
+    try {
+      await navigator.clipboard.writeText(s);
+      toast.success('Objet copié');
+    } catch {
+      toast.error('Impossible de copier');
+    }
+  };
+
+  const openMailto = (to: string, subject: string, html: string) => {
+    // mailto only supports plain text body — strip tags for fallback
+    const plain = html
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+      .trim();
+    const url = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(plain)}`;
+    window.open(url, '_blank');
+  };
+
+  const deleteHistoryItem = async (id: string) => {
+    await supabase.from('commercial_followup_suggestions').delete().eq('id', id);
+    qc.invalidateQueries({ queryKey: ['followup-suggestions', trackingId] });
+    toast.success('Suggestion supprimée');
+    if (historyOpenId === id) setHistoryOpenId(null);
+  };
+
+  const toneLabel = (t: string) =>
+    t === 'friendly' ? 'Chaleureux' : t === 'formal' ? 'Formel' : t === 'direct' ? 'Direct' : t;
+
 
   const { data: urls = [] } = useQuery({
     queryKey: ['commercial-scrape-urls', trackingId],
@@ -976,12 +1103,6 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {urls.some((u: any) => u.last_scrape_status === 'success') && (
-              <Button size="sm" variant="default" onClick={generateSuggestion} disabled={suggesting}>
-                {suggesting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1" />}
-                Suggérer une excuse de relance
-              </Button>
-            )}
             {urls.length > 0 && (
               <Button size="sm" variant="outline" onClick={scrapeAll} disabled={scrapingAll}>
                 {scrapingAll ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}
@@ -990,6 +1111,7 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
             )}
           </div>
         </div>
+
 
         <div className="flex flex-col md:flex-row gap-2">
           <Input placeholder="https://..." value={url} onChange={(e) => setUrl(e.target.value)} className="flex-1" />
@@ -1044,53 +1166,275 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
           </DialogContent>
         </Dialog>
 
+        {/* === Générateur d'excuse de relance === */}
+        {urls.some((u: any) => u.last_scrape_status === 'success') && (
+          <div className="border rounded-lg p-4 space-y-3 bg-muted/20">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <h4 className="font-semibold text-sm">Générer une excuse de relance</h4>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <Label className="text-xs">Destinataire</Label>
+                <Select value={recipientChoice} onValueChange={setRecipientChoice}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Choisir..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clientRow.email && (
+                      <SelectItem value="main">
+                        Contact principal — {clientRow.first_name} {clientRow.last_name} ({clientRow.email})
+                      </SelectItem>
+                    )}
+                    {extraContacts.filter((c: any) => c.email).map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.first_name} {c.last_name}{c.job_title ? ` — ${c.job_title}` : ''} ({c.email})
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="custom">Autre destinataire…</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-xs">Ton</Label>
+                <Select value={tone} onValueChange={(v: any) => setTone(v)}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="friendly">Chaleureux</SelectItem>
+                    <SelectItem value="formal">Formel</SelectItem>
+                    <SelectItem value="direct">Direct</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {recipientChoice === 'custom' && (
+                <>
+                  <div>
+                    <Label className="text-xs">Email destinataire</Label>
+                    <Input
+                      type="email"
+                      placeholder="prenom.nom@exemple.com"
+                      value={customEmail}
+                      onChange={(e) => setCustomEmail(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Nom (optionnel)</Label>
+                    <Input
+                      placeholder="Marie Dupont"
+                      value={customName}
+                      onChange={(e) => setCustomName(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            <Button size="sm" onClick={generateSuggestion} disabled={suggesting}>
+              {suggesting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1" />}
+              Générer l'excuse de relance
+            </Button>
+          </div>
+        )}
+
+        {/* === Historique des suggestions === */}
+        {history.length > 0 && (
+          <div className="border rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <History className="h-4 w-4 text-muted-foreground" />
+              <h4 className="font-semibold text-sm">Historique des excuses générées ({history.length})</h4>
+            </div>
+            <div className="space-y-2">
+              {history.map((h: any) => (
+                <div key={h.id} className="flex items-start gap-2 border rounded-md p-2.5">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{h.subject || '(sans objet)'}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(h.created_at), 'd MMM yyyy à HH:mm', { locale: fr })}
+                      {' · '}{toneLabel(h.tone)}
+                      {h.recipient_email && (
+                        <> · <span className="font-mono">{h.recipient_email}</span></>
+                      )}
+                      {Array.isArray(h.sources) && h.sources.length > 0 && (
+                        <> · {h.sources.length} source{h.sources.length > 1 ? 's' : ''}</>
+                      )}
+                    </p>
+                  </div>
+                  <Button size="icon" variant="ghost" onClick={() => setHistoryOpenId(h.id)} title="Voir">
+                    <FileText className="h-4 w-4" />
+                  </Button>
+                  {h.recipient_email && (
+                    <Button
+                      size="icon" variant="ghost"
+                      onClick={() => openMailto(h.recipient_email, h.subject, h.body_html)}
+                      title="Ouvrir dans le client mail"
+                    >
+                      <Mail className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button size="icon" variant="ghost" onClick={() => deleteHistoryItem(h.id)} title="Supprimer">
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* === Aperçu d'une suggestion historique === */}
+        <Dialog open={!!historyOpenId} onOpenChange={(o) => !o && setHistoryOpenId(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                {openedHistory?.subject || 'Suggestion de relance'}
+              </DialogTitle>
+              <DialogDescription>
+                {openedHistory && (
+                  <>
+                    {format(new Date(openedHistory.created_at), 'd MMMM yyyy à HH:mm', { locale: fr })}
+                    {' · '}Ton : {toneLabel(openedHistory.tone)}
+                    {openedHistory.recipient_email && <> · Destinataire : {openedHistory.recipient_email}</>}
+                  </>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+
+            {openedHistory && (
+              <div className="space-y-4 max-h-[65vh] overflow-y-auto">
+                {Array.isArray(openedHistory.angles) && openedHistory.angles.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Angles</p>
+                    <ul className="list-disc pl-5 text-sm space-y-1">
+                      {openedHistory.angles.map((a: any, i: number) => (
+                        <li key={i}>
+                          <span className="font-medium">{a.title}</span>
+                          {a.description && <> — {a.description}</>}
+                          {a.source && <span className="text-muted-foreground"> ({a.source})</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div>
+                  <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Message</p>
+                  <div
+                    className="prose prose-sm max-w-none border rounded-md p-3 bg-muted/30"
+                    dangerouslySetInnerHTML={{ __html: openedHistory.body_html || '' }}
+                  />
+                </div>
+                {Array.isArray(openedHistory.sources) && openedHistory.sources.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Sources utilisées</p>
+                    <ul className="list-disc pl-5 text-sm space-y-0.5">
+                      {openedHistory.sources.map((s: any, i: number) => (
+                        <li key={i}>
+                          <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                            {s.label || s.url}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2 pt-2 border-t">
+                  <Button size="sm" variant="outline" onClick={() => copySubject(openedHistory.subject || '')}>
+                    <Copy className="h-4 w-4 mr-1" /> Copier l'objet
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => copyHtml(openedHistory.body_html || '')}>
+                    <Copy className="h-4 w-4 mr-1" /> Copier le HTML
+                  </Button>
+                  {openedHistory.recipient_email && (
+                    <Button
+                      size="sm"
+                      onClick={() => openMailto(openedHistory.recipient_email, openedHistory.subject, openedHistory.body_html)}
+                    >
+                      <Mail className="h-4 w-4 mr-1" /> Ouvrir dans Mail
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* === Dialog résultat génération === */}
         <Dialog open={suggestOpen} onOpenChange={setSuggestOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary" />
-                Suggestion de relance générée par l'IA
+                Excuse de relance générée
               </DialogTitle>
               <DialogDescription>
-                Basée sur les contenus scrappés des URLs ci-dessus.
+                {suggestion?.subject || 'Basée sur les contenus scrappés des URLs ci-dessus.'}
               </DialogDescription>
             </DialogHeader>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <Label className="text-xs">Ton :</Label>
-              <Select value={tone} onValueChange={(v: any) => setTone(v)} disabled={suggesting}>
-                <SelectTrigger className="w-[180px] h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="friendly">Chaleureux</SelectItem>
-                  <SelectItem value="formal">Formel</SelectItem>
-                  <SelectItem value="direct">Direct</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button size="sm" variant="outline" onClick={generateSuggestion} disabled={suggesting}>
-                {suggesting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}
-                Régénérer
-              </Button>
-              {suggestion && (
-                <Button size="sm" variant="ghost" onClick={copySuggestion}>
-                  <Copy className="h-4 w-4 mr-1" /> Copier
-                </Button>
-              )}
-            </div>
-
-            <div className="max-h-[55vh] overflow-y-auto whitespace-pre-wrap text-sm border rounded-lg p-4 bg-muted/30">
-              {suggesting && !suggestion ? (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Analyse des contenus scrappés…
+            {suggesting && !suggestion ? (
+              <div className="flex items-center gap-2 text-muted-foreground py-8 justify-center">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Analyse des contenus scrappés…
+              </div>
+            ) : suggestion ? (
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+                {suggestion.angles.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Angles identifiés</p>
+                    <ul className="list-disc pl-5 text-sm space-y-1">
+                      {suggestion.angles.map((a, i) => (
+                        <li key={i}>
+                          <span className="font-medium">{a.title}</span>
+                          {a.description && <> — {a.description}</>}
+                          {a.source && <span className="text-muted-foreground"> ({a.source})</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div>
+                  <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Objet</p>
+                  <p className="text-sm font-medium border rounded-md p-2 bg-background">{suggestion.subject}</p>
                 </div>
-              ) : (
-                suggestion || 'Aucune suggestion.'
-              )}
-            </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Corps (HTML)</p>
+                  <div
+                    className="prose prose-sm max-w-none border rounded-md p-3 bg-muted/30"
+                    dangerouslySetInnerHTML={{ __html: suggestion.body_html }}
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2 pt-2 border-t">
+                  <Button size="sm" variant="outline" onClick={() => copySubject(suggestion.subject)}>
+                    <Copy className="h-4 w-4 mr-1" /> Copier l'objet
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => copyHtml(suggestion.body_html)}>
+                    <Copy className="h-4 w-4 mr-1" /> Copier le HTML
+                  </Button>
+                  {(() => {
+                    const r = resolveRecipient();
+                    return r.email ? (
+                      <Button size="sm" onClick={() => openMailto(r.email, suggestion.subject, suggestion.body_html)}>
+                        <Mail className="h-4 w-4 mr-1" /> Ouvrir dans Mail ({r.email})
+                      </Button>
+                    ) : null;
+                  })()}
+                  <Button size="sm" variant="ghost" onClick={generateSuggestion} disabled={suggesting}>
+                    <RefreshCw className="h-4 w-4 mr-1" /> Régénérer
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Aucune suggestion.</p>
+            )}
           </DialogContent>
         </Dialog>
+
       </CardContent>
     </Card>
   );

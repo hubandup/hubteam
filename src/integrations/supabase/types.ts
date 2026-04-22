@@ -927,6 +927,69 @@ export type Database = {
           },
         ]
       }
+      commercial_followup_suggestions: {
+        Row: {
+          angles: Json
+          body_html: string
+          client_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          raw_model_output: string | null
+          recipient_email: string | null
+          recipient_name: string | null
+          sources: Json
+          subject: string
+          tone: string
+          tracking_id: string
+        }
+        Insert: {
+          angles?: Json
+          body_html?: string
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          raw_model_output?: string | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          sources?: Json
+          subject?: string
+          tone?: string
+          tracking_id: string
+        }
+        Update: {
+          angles?: Json
+          body_html?: string
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          raw_model_output?: string | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          sources?: Json
+          subject?: string
+          tone?: string
+          tracking_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_followup_suggestions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commercial_followup_suggestions_tracking_id_fkey"
+            columns: ["tracking_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_tracking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commercial_meetings: {
         Row: {
           created_at: string
