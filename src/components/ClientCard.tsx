@@ -172,5 +172,21 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
         )}
       </div>
     </Card>
+
+    <AlertDialog open={confirmRemove} onOpenChange={setConfirmRemove}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Retirer des Targets ?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Voulez-vous vraiment retirer <strong>{client.company}</strong> de votre liste Targets ?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Annuler</AlertDialogCancel>
+          <AlertDialogAction onClick={confirmAndRemove}>Retirer</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
