@@ -1067,6 +1067,39 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
   const senderName = "L'équipe HUB+UP";
   const senderEmail = 'contact@hubandup.org';
 
+  const copyHtmlEmail = async (subject: string, html: string) => {
+    const fullHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${subject || ''}</title></head><body>${html || ''}</body></html>`;
+    try {
+      // Rich-copy: collez en HTML dans Gmail/Outlook/etc.
+      if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
+        const blobHtml = new Blob([fullHtml], { type: 'text/html' });
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html || '';
+        const blobText = new Blob([tmp.innerText || ''], { type: 'text/plain' });
+        await navigator.clipboard.write([new ClipboardItem({ 'text/html': blobHtml, 'text/plain': blobText })]);
+      } else {
+        await navigator.clipboard.writeText(fullHtml);
+      }
+      toast.success('Email HTML copié');
+    } catch {
+      try { await navigator.clipboard.writeText(fullHtml); toast.success('Email HTML copié'); }
+      catch { toast.error('Impossible de copier'); }
+    }
+  };
+
+  const copyPlainText = async (subject: string, html: string) => {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html || '';
+    const text = (tmp.innerText || '').replace(/\n{3,}/g, '\n\n').trim();
+    const full = subject ? `Objet : ${subject}\n\n${text}` : text;
+    try {
+      await navigator.clipboard.writeText(full);
+      toast.success('Texte copié');
+    } catch {
+      toast.error('Impossible de copier');
+    }
+  };
+
   const EmailPreview = ({ to, toName, subject, html }: { to?: string | null; toName?: string | null; subject: string; html: string }) => (
     <div className="border rounded-md overflow-hidden bg-background shadow-sm">
       <div className="bg-muted/50 border-b px-4 py-3 space-y-1 text-xs">
@@ -1079,6 +1112,14 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
         style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', lineHeight: 1.6 }}
         dangerouslySetInnerHTML={{ __html: html }}
       />
+      <div className="border-t bg-muted/30 px-3 py-2 flex flex-wrap gap-2 justify-end">
+        <Button size="sm" variant="outline" onClick={() => copyHtmlEmail(subject, html)}>
+          <Copy className="h-3.5 w-3.5 mr-1.5" /> Copier l'email HTML
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => copyPlainText(subject, html)}>
+          <Copy className="h-3.5 w-3.5 mr-1.5" /> Copier le texte
+        </Button>
+      </div>
     </div>
   );
 
