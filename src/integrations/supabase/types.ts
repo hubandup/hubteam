@@ -1469,6 +1469,30 @@ export type Database = {
           },
         ]
       }
+      hubandup_site_cache: {
+        Row: {
+          content: string
+          id: string
+          scraped_at: string
+          title: string | null
+          url: string
+        }
+        Insert: {
+          content: string
+          id?: string
+          scraped_at?: string
+          title?: string | null
+          url: string
+        }
+        Update: {
+          content?: string
+          id?: string
+          scraped_at?: string
+          title?: string | null
+          url?: string
+        }
+        Relationships: []
+      }
       interactions: {
         Row: {
           action_type: Database["public"]["Enums"]["interaction_action_type"]

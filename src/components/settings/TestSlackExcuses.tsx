@@ -1,32 +1,34 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Sparkles, MessageSquare } from 'lucide-react';
+import { Loader2, Sparkles, Target } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+type ResultItem = { client: string; status: 'sent' | 'error'; error?: string; ideas?: string[] };
+
 export function TestSlackExcuses() {
   const [loading, setLoading] = useState(false);
-  const [lastExcuses, setLastExcuses] = useState<string[] | null>(null);
+  const [results, setResults] = useState<ResultItem[] | null>(null);
 
   const handleTrigger = async () => {
     setLoading(true);
-    setLastExcuses(null);
+    setResults(null);
     try {
       const { data, error } = await supabase.functions.invoke('weekly-slack-excuses', {
         body: { source: 'manual-test' },
       });
       if (error) throw error;
 
-      const excuses: string[] = data?.excuses ?? [];
-      setLastExcuses(excuses);
+      const items: ResultItem[] = data?.results ?? [];
+      setResults(items);
 
-      if (data?.success) {
-        toast.success(`✅ ${excuses.length} excuse(s) publiées sur #hubteam_sales`);
-      } else if (data?.slackError) {
-        toast.error(data.hint || `Échec Slack : ${data.slackError}`, { duration: 8000 });
+      if (data?.success && data?.sent > 0) {
+        toast.success(`✅ ${data.sent}/${data.total} client(s) envoyé(s) sur #hubteam_sales`);
+      } else if (data?.success && data?.sent === 0) {
+        toast.info(data.message || 'Aucun client Target éligible (ni CR ni URL).');
       } else if (data?.error) {
-        toast.error(`Échec : ${data.error}`);
+        toast.error(`Échec : ${data.error}`, { duration: 8000 });
       }
     } catch (e) {
       const msg = (e as Error).message || 'Erreur inconnue';
@@ -40,12 +42,13 @@ export function TestSlackExcuses() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          Test — Excuses Slack hebdomadaires
+          <Target className="h-5 w-5" />
+          Test — Idées de relance Slack (Targets)
         </CardTitle>
         <CardDescription>
-          Déclenche manuellement la génération et l'envoi de 3 excuses sur le canal{' '}
-          <code className="text-xs">#hubteam_sales</code>. La déduplication des semaines précédentes est appliquée.
+          Génère pour chaque client <strong>Target</strong> 3 idées de relance basées sur les URLs surveillées,
+          les 3 derniers comptes rendus et le site Hub & Up. Un message par client est posté sur{' '}
+          <code className="text-xs">#hubteam_sales</code>. Les clients sans CR <em>et</em> sans URL sont ignorés.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -63,14 +66,24 @@ export function TestSlackExcuses() {
           )}
         </Button>
 
-        {lastExcuses && lastExcuses.length > 0 && (
-          <div className="rounded-md border bg-muted/30 p-4">
-            <p className="text-sm font-medium mb-2">Dernières excuses envoyées :</p>
-            <ol className="list-decimal pl-5 space-y-1 text-sm">
-              {lastExcuses.map((e, i) => (
-                <li key={i}>{e}</li>
-              ))}
-            </ol>
+        {results && results.length > 0 && (
+          <div className="space-y-3">
+            {results.map((r, i) => (
+              <div key={i} className="rounded-md border bg-muted/30 p-4">
+                <p className="text-sm font-semibold mb-2">
+                  {r.status === 'sent' ? '✅' : '❌'} {r.client}
+                </p>
+                {r.status === 'sent' && r.ideas ? (
+                  <ol className="list-decimal pl-5 space-y-1 text-sm">
+                    {r.ideas.map((idea, j) => (
+                      <li key={j}>{idea}</li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="text-sm text-destructive">{r.error}</p>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </CardContent>
