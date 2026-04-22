@@ -89,8 +89,8 @@ Règles :
   return lines.slice(0, 3);
 }
 
-async function postToSlack(excuses: string[]): Promise<void> {
-  if (!SLACK_BOT_TOKEN) throw new Error('SLACK_BOT_TOKEN missing');
+async function postToSlack(excuses: string[]): Promise<{ ok: true } | { ok: false; error: string; hint?: string }> {
+  if (!SLACK_BOT_TOKEN) return { ok: false, error: 'SLACK_BOT_TOKEN missing', hint: 'Configurez le secret SLACK_BOT_TOKEN.' };
 
   const today = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long',
