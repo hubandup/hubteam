@@ -912,7 +912,7 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('commercial_followup_suggestions')
-        .select('id, tone, recipient_email, recipient_name, subject, body_html, angles, sources, created_at')
+        .select('id, tone, recipient_email, recipient_name, subject, body_html, angles, sources, action_key, action_label, created_at')
         .eq('tracking_id', trackingId)
         .order('created_at', { ascending: false })
         .limit(20);
