@@ -912,7 +912,7 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('commercial_followup_suggestions')
-        .select('id, tone, recipient_email, recipient_name, subject, body_html, angles, sources, created_at')
+        .select('id, tone, recipient_email, recipient_name, subject, body_html, angles, sources, action_key, action_label, created_at')
         .eq('tracking_id', trackingId)
         .order('created_at', { ascending: false })
         .limit(20);
@@ -921,7 +921,27 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
     },
   });
   const [historyOpenId, setHistoryOpenId] = useState<string | null>(null);
+  const [historyActionFilter, setHistoryActionFilter] = useState<string>('all');
   const openedHistory = history.find((h: any) => h.id === historyOpenId);
+
+  const ACTION_BADGES: Record<string, string> = {
+    propose_slot: 'Créneau RDV',
+    send_quote: 'Devis',
+    schedule_call: 'Call',
+    share_case_study: 'Cas client',
+    invite_event: 'Événement',
+    ask_feedback: 'Retour / avis',
+    just_hello: 'Coucou 👋',
+    custom: 'Personnalisé',
+  };
+  const actionBadgeLabel = (key?: string | null) => (key && ACTION_BADGES[key]) || 'Autre';
+
+  const availableActionKeys = Array.from(
+    new Set((history as any[]).map((h) => h.action_key).filter(Boolean))
+  ) as string[];
+  const filteredHistory = historyActionFilter === 'all'
+    ? history
+    : (history as any[]).filter((h) => (h.action_key || 'unknown') === historyActionFilter);
 
   const resolveRecipient = (): { email: string; name: string; role: string } => {
     if (recipientChoice === 'main') {
@@ -1315,15 +1335,45 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
         {/* === Historique des suggestions === */}
         {history.length > 0 && (
           <div className="border rounded-lg p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <History className="h-4 w-4 text-muted-foreground" />
-              <h4 className="font-semibold text-sm">Historique des excuses générées ({history.length})</h4>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <History className="h-4 w-4 text-muted-foreground" />
+                <h4 className="font-semibold text-sm">
+                  Historique des excuses générées ({filteredHistory.length}
+                  {filteredHistory.length !== history.length ? ` / ${history.length}` : ''})
+                </h4>
+              </div>
+              {availableActionKeys.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-muted-foreground">Filtrer :</Label>
+                  <Select value={historyActionFilter} onValueChange={setHistoryActionFilter}>
+                    <SelectTrigger className="h-8 w-[180px] text-xs">
+                      <SelectValue placeholder="Toutes les actions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Toutes les actions</SelectItem>
+                      {availableActionKeys.map((k) => (
+                        <SelectItem key={k} value={k}>{actionBadgeLabel(k)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
-              {history.map((h: any) => (
+              {filteredHistory.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic py-2">Aucune suggestion pour ce filtre.</p>
+              ) : filteredHistory.map((h: any) => (
                 <div key={h.id} className="flex items-start gap-2 border rounded-md p-2.5">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{h.subject || '(sans objet)'}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-medium truncate">{h.subject || '(sans objet)'}</p>
+                      {h.action_key && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">
+                          {actionBadgeLabel(h.action_key)}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {format(new Date(h.created_at), 'd MMM yyyy à HH:mm', { locale: fr })}
                       {' · '}{toneLabel(h.tone)}
