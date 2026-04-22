@@ -1328,9 +1328,13 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
                       {h.recipient_email && (
                         <> · <span className="font-mono">{h.recipient_email}</span></>
                       )}
-                      {Array.isArray(h.sources) && h.sources.length > 0 && (
-                        <> · {h.sources.length} source{h.sources.length > 1 ? 's' : ''}</>
-                      )}
+                      {(() => {
+                        const s: any = h.sources;
+                        const count = Array.isArray(s)
+                          ? s.length
+                          : (s?.urls?.length || 0) + (s?.internal_notes?.length || 0) + (s?.meeting_notes?.length || 0) + (s?.meetings?.length || 0);
+                        return count > 0 ? <> · {count} source{count > 1 ? 's' : ''}</> : null;
+                      })()}
                     </p>
                   </div>
                   <Button size="icon" variant="ghost" onClick={() => setHistoryOpenId(h.id)} title="Voir">
