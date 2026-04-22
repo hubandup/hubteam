@@ -1055,6 +1055,8 @@ export type Database = {
           created_at: string
           id: string
           label: string | null
+          last_scrape_content: string | null
+          last_scrape_status: string | null
           last_scrape_summary: string | null
           last_scraped_at: string | null
           tracking_id: string
@@ -1065,6 +1067,8 @@ export type Database = {
           created_at?: string
           id?: string
           label?: string | null
+          last_scrape_content?: string | null
+          last_scrape_status?: string | null
           last_scrape_summary?: string | null
           last_scraped_at?: string | null
           tracking_id: string
@@ -1075,6 +1079,8 @@ export type Database = {
           created_at?: string
           id?: string
           label?: string | null
+          last_scrape_content?: string | null
+          last_scrape_status?: string | null
           last_scrape_summary?: string | null
           last_scraped_at?: string | null
           tracking_id?: string
@@ -3434,6 +3440,7 @@ export type Database = {
           client_id: string
           created_at: string
           error_message: string | null
+          event_type: string
           id: string
           metadata: Json | null
           recipients_count: number | null
@@ -3446,6 +3453,7 @@ export type Database = {
           client_id: string
           created_at?: string
           error_message?: string | null
+          event_type?: string
           id?: string
           metadata?: Json | null
           recipients_count?: number | null
@@ -3458,6 +3466,7 @@ export type Database = {
           client_id?: string
           created_at?: string
           error_message?: string | null
+          event_type?: string
           id?: string
           metadata?: Json | null
           recipients_count?: number | null

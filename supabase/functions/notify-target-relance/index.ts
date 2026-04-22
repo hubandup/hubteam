@@ -5,13 +5,54 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+type EventType =
+  | 'status_to_followup' // automatic on status -> to_followup
+  | 'manual'             // user clicked "Notify team"
+  | 'note_added'
+  | 'meeting_scheduled'
+  | 'status_change';     // any other status change
+
 interface Payload {
   client_id: string;
   tracking_id?: string;
   company: string;
   contact_name?: string;
-  // Optional: client may pass its known previous status for extra safety
   expected_previous_status?: string;
+  event_type?: EventType;
+  custom_message?: string;
+  details?: Record<string, unknown>;
+}
+
+const EVENT_LABELS: Record<EventType, string> = {
+  status_to_followup: '🎯 Target à relancer',
+  manual: '📣 Notification équipe',
+  note_added: '📝 Nouvelle note',
+  meeting_scheduled: '📅 RDV planifié',
+  status_change: '🔄 Statut mis à jour',
+};
+
+function buildMessage(eventType: EventType, body: Payload): string {
+  const who = `*${body.company}*${body.contact_name ? ` (${body.contact_name})` : ''}`;
+  if (body.custom_message) return `${EVENT_LABELS[eventType]} — ${who}\n${body.custom_message}`;
+  switch (eventType) {
+    case 'status_to_followup':
+      return `🎯 *Target à relancer* : ${who}\nLa fiche vient de passer en statut « À relancer ». Pensez à organiser une action de courtoisie cette semaine.`;
+    case 'note_added': {
+      const preview = String(body.details?.note_preview || '').slice(0, 200);
+      return `📝 *Nouvelle note ajoutée* sur ${who}${preview ? `\n> ${preview}${preview.length === 200 ? '…' : ''}` : ''}`;
+    }
+    case 'meeting_scheduled': {
+      const label = body.details?.meeting_label || 'RDV';
+      const date = body.details?.meeting_date ? new Date(String(body.details.meeting_date)).toLocaleString('fr-FR') : '';
+      return `📅 *${label} planifié* avec ${who}${date ? `\n🕒 ${date}` : ''}`;
+    }
+    case 'status_change': {
+      const newStatus = body.details?.new_status_label || body.details?.new_status || '';
+      return `🔄 *Statut mis à jour* sur ${who}${newStatus ? ` → *${newStatus}*` : ''}`;
+    }
+    case 'manual':
+      return `📣 *Notification* sur ${who}\n${body.custom_message || 'Action requise'}`;
+  }
 }
 
 Deno.serve(async (req) => {
@@ -34,7 +75,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Verify caller (admin or team only)
     const userClient = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_ANON_KEY')!, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -55,64 +95,56 @@ Deno.serve(async (req) => {
     }
 
     const body = (await req.json()) as Payload;
-    if (!body.client_id || !body.company || !body.tracking_id) {
-      return new Response(JSON.stringify({ error: 'Missing fields (client_id, tracking_id, company required)' }), {
+    const eventType: EventType = body.event_type || 'status_to_followup';
+
+    if (!body.client_id || !body.company) {
+      return new Response(JSON.stringify({ error: 'Missing fields (client_id, company required)' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // ----- SERVER-SIDE STATE CHANGE DETECTION -----
-    // Fetch the current tracking row to verify it is actually in 'to_followup'
-    const { data: trackingRow, error: trackingErr } = await admin
-      .from('commercial_tracking')
-      .select('id, status')
-      .eq('id', body.tracking_id)
-      .maybeSingle();
-
-    if (trackingErr || !trackingRow) {
-      return new Response(JSON.stringify({ error: 'Tracking not found' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (trackingRow.status !== 'to_followup') {
-      return new Response(
-        JSON.stringify({ skipped: true, reason: 'current status is not to_followup', current_status: trackingRow.status }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Check if a notification was already sent for this tracking row in the most recent 'to_followup' streak.
-    // We look for the most recent notification — if it exists AND status hasn't been changed away since, skip.
-    const { data: lastNotif } = await admin
-      .from('target_relance_notifications')
-      .select('id, created_at, status')
-      .eq('tracking_id', body.tracking_id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (lastNotif && lastNotif.status === 'sent') {
-      // Look at activity_log or commercial_tracking updated_at to see if status was reset between then and now.
-      // Simplest robust check: if the tracking row's updated_at is older than the last notification, no real transition occurred.
-      const { data: trackingMeta } = await admin
+    // Server-side state-change detection ONLY for status_to_followup
+    if (eventType === 'status_to_followup') {
+      if (!body.tracking_id) {
+        return new Response(JSON.stringify({ error: 'tracking_id required for status_to_followup' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { data: trackingRow } = await admin
         .from('commercial_tracking')
-        .select('updated_at')
+        .select('id, status, updated_at')
         .eq('id', body.tracking_id)
         .maybeSingle();
 
-      if (trackingMeta && new Date(trackingMeta.updated_at) <= new Date(lastNotif.created_at)) {
+      if (!trackingRow) {
+        return new Response(JSON.stringify({ error: 'Tracking not found' }), {
+          status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (trackingRow.status !== 'to_followup') {
+        return new Response(
+          JSON.stringify({ skipped: true, reason: 'status not to_followup' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      const { data: lastNotif } = await admin
+        .from('target_relance_notifications')
+        .select('id, created_at, status')
+        .eq('tracking_id', body.tracking_id)
+        .eq('event_type', 'status_to_followup')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (lastNotif?.status === 'sent' && new Date(trackingRow.updated_at) <= new Date(lastNotif.created_at)) {
         return new Response(
           JSON.stringify({ skipped: true, reason: 'no status change since last notification' }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     }
-    // ----- END STATE CHANGE DETECTION -----
 
-    const message = `🎯 *Target à relancer* : *${body.company}*${body.contact_name ? ` (${body.contact_name})` : ''}\nLa fiche vient de passer en statut « À relancer ». Pensez à organiser une action de courtoisie cette semaine.`;
+    const message = buildMessage(eventType, body);
 
     let slackOk = false;
     let slackError: string | null = null;
@@ -136,11 +168,12 @@ Deno.serve(async (req) => {
       slackError = 'SLACK_BOT_TOKEN not configured';
     }
 
-    // Email team (admin + team users) via Brevo
+    // Email — only for status_to_followup and manual events (avoid spamming)
     let emailOk = false;
     let emailError: string | null = null;
     let recipientsCount = 0;
-    if (BREVO_API_KEY) {
+    const shouldEmail = eventType === 'status_to_followup' || eventType === 'manual';
+    if (shouldEmail && BREVO_API_KEY) {
       try {
         const { data: teamUsers } = await admin
           .from('user_roles')
@@ -155,6 +188,7 @@ Deno.serve(async (req) => {
         recipientsCount = recipients.length;
 
         if (recipients.length > 0) {
+          const subject = `${EVENT_LABELS[eventType]} : ${body.company}`;
           const res = await fetch('https://api.brevo.com/v3/smtp/email', {
             method: 'POST',
             headers: {
@@ -165,8 +199,8 @@ Deno.serve(async (req) => {
             body: JSON.stringify({
               sender: { name: 'Hub Team', email: 'noreply@hubandup.org' },
               to: recipients.map((r: any) => ({ email: r.email, name: r.first_name || '' })),
-              subject: `🎯 Target à relancer : ${body.company}`,
-              htmlContent: `<p>Bonjour,</p><p>La fiche <strong>${body.company}</strong>${body.contact_name ? ` (${body.contact_name})` : ''} vient de passer en statut « À relancer ».</p><p>Pensez à organiser une action de courtoisie cette semaine.</p>`,
+              subject,
+              htmlContent: `<p>${message.replace(/\n/g, '<br>')}</p>`,
             }),
           });
           emailOk = res.ok;
@@ -175,11 +209,13 @@ Deno.serve(async (req) => {
       } catch (e) {
         emailError = (e as Error).message;
       }
-    } else {
+    } else if (shouldEmail) {
       emailError = 'BREVO_API_KEY not configured';
     }
 
-    const channel = slackOk && emailOk ? 'both' : slackOk ? 'slack' : emailOk ? 'email' : 'both';
+    const channel = shouldEmail
+      ? (slackOk && emailOk ? 'both' : slackOk ? 'slack' : emailOk ? 'email' : 'both')
+      : 'slack';
     const status = slackOk || emailOk ? 'sent' : 'failed';
     const errorMessage = [slackError, emailError].filter(Boolean).join(' | ') || null;
 
@@ -188,14 +224,15 @@ Deno.serve(async (req) => {
       tracking_id: body.tracking_id || null,
       channel,
       status,
+      event_type: eventType,
       error_message: status === 'failed' ? errorMessage : null,
       triggered_by: callerId,
       recipients_count: recipientsCount,
-      metadata: { company: body.company, contact_name: body.contact_name },
+      metadata: { company: body.company, contact_name: body.contact_name, ...(body.details || {}) },
     });
 
     return new Response(
-      JSON.stringify({ success: status === 'sent', slackOk, emailOk, recipientsCount }),
+      JSON.stringify({ success: status === 'sent', slackOk, emailOk, recipientsCount, eventType }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (e) {

@@ -9,7 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Plus, Trash2, Upload, Calendar as CalIcon, Download, Link as LinkIcon, MessageSquarePlus } from 'lucide-react';
+import { Loader2, Plus, Trash2, Upload, Calendar as CalIcon, Download, Link as LinkIcon, MessageSquarePlus, Send, RefreshCw, FileText } from 'lucide-react';
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -123,12 +126,25 @@ export function CommercialTrackingTab({ clientId, client }: Props) {
       <HeaderSection tracking={tracking} client={client} />
       <RelanceHistorySection clientId={clientId} />
       <ContactsSection trackingId={tracking.id} client={client} />
-      <NotesSection trackingId={tracking.id} />
-      <MeetingsSection trackingId={tracking.id} client={client} />
+      <NotesSection trackingId={tracking.id} tracking={tracking} client={client} />
+      <MeetingsSection trackingId={tracking.id} tracking={tracking} client={client} />
       <QuestionnaireSection trackingId={tracking.id} />
       <ScrapeUrlsSection trackingId={tracking.id} />
     </div>
   );
+}
+
+/* ---------- Helper: invoke notify-target-relance ---------- */
+async function notifyTeam(params: {
+  client_id: string;
+  tracking_id: string;
+  company: string;
+  contact_name?: string;
+  event_type: 'manual' | 'note_added' | 'meeting_scheduled' | 'status_change';
+  custom_message?: string;
+  details?: Record<string, unknown>;
+}) {
+  return supabase.functions.invoke('notify-target-relance', { body: params });
 }
 
 /* ---------- Historique des notifications de relance ---------- */
@@ -150,27 +166,40 @@ function RelanceHistorySection({ clientId }: { clientId: string }) {
   if (history.length === 0) return null;
 
   const channelLabel = (c: string) => c === 'both' ? 'Slack + Email' : c === 'slack' ? 'Slack' : 'Email';
+  const eventLabel = (e: string) => {
+    switch (e) {
+      case 'status_to_followup': return 'À relancer';
+      case 'status_change': return 'Changement statut';
+      case 'note_added': return 'Note ajoutée';
+      case 'meeting_scheduled': return 'RDV planifié';
+      case 'manual': return 'Manuel';
+      default: return e;
+    }
+  };
   const statusColor = (s: string) =>
     s === 'sent' ? 'text-green-600' : s === 'failed' ? 'text-destructive' : 'text-muted-foreground';
 
   return (
     <Card>
       <CardContent className="pt-6 space-y-3">
-        <h3 className="font-semibold text-lg">Historique des relances envoyées à l'équipe</h3>
+        <h3 className="font-semibold text-lg">Historique des notifications équipe</h3>
         <div className="space-y-2">
           {history.map((h: any) => (
-            <div key={h.id} className="flex items-center justify-between text-sm border rounded-lg p-2.5">
-              <div>
-                <p className="font-medium">{channelLabel(h.channel)}</p>
+            <div key={h.id} className="flex items-center justify-between text-sm border rounded-lg p-2.5 gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">
+                  {eventLabel(h.event_type || 'status_to_followup')}
+                  <span className="text-xs text-muted-foreground ml-2">· {channelLabel(h.channel)}</span>
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {format(new Date(h.created_at), 'd MMMM yyyy à HH:mm', { locale: fr })}
                   {h.recipients_count > 0 && ` · ${h.recipients_count} destinataire${h.recipients_count > 1 ? 's' : ''}`}
                 </p>
                 {h.error_message && (
-                  <p className="text-xs text-destructive mt-1">{h.error_message}</p>
+                  <p className="text-xs text-destructive mt-1 truncate">{h.error_message}</p>
                 )}
               </div>
-              <span className={`text-xs font-semibold uppercase ${statusColor(h.status)}`}>
+              <span className={`text-xs font-semibold uppercase shrink-0 ${statusColor(h.status)}`}>
                 {h.status === 'sent' ? 'Envoyé' : h.status === 'failed' ? 'Échec' : 'En attente'}
               </span>
             </div>
@@ -200,8 +229,8 @@ function HeaderSection({ tracking, client }: { tracking: any; client: any }) {
     qc.invalidateQueries({ queryKey: ['commercial-tracking'] });
     toast.success('Statut mis à jour');
 
-    // Notification: la détection finale de transition est faite côté serveur.
-    // L'edge function vérifie le statut courant + l'historique avant d'envoyer.
+    // Notify on status change. For 'to_followup' the edge function performs server-side
+    // de-dup (Slack + email). For other transitions, send a lighter Slack-only notice.
     if (status === 'to_followup') {
       try {
         const { data: result, error: notifError } = await supabase.functions.invoke('notify-target-relance', {
@@ -210,20 +239,30 @@ function HeaderSection({ tracking, client }: { tracking: any; client: any }) {
             tracking_id: tracking.id,
             company: client.company,
             contact_name: `${client.first_name} ${client.last_name}`,
+            event_type: 'status_to_followup',
             expected_previous_status: previousStatus,
           },
         });
-        if (notifError) {
-          toast.error("Notification de relance non envoyée");
-        } else if ((result as any)?.skipped) {
-          // Pas de vrai changement détecté côté serveur — silencieux
-        } else {
+        if (notifError) toast.error("Notification de relance non envoyée");
+        else if (!(result as any)?.skipped) {
           toast.success("Équipe notifiée (Slack + email)");
           qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] });
         }
       } catch (e) {
         console.error('notify-target-relance error', e);
       }
+    } else {
+      const newLabel = STATUS_OPTIONS.find((s) => s.value === status)?.label || status;
+      const prevLabel = STATUS_OPTIONS.find((s) => s.value === previousStatus)?.label || previousStatus;
+      notifyTeam({
+        client_id: tracking.client_id,
+        tracking_id: tracking.id,
+        company: client.company,
+        contact_name: `${client.first_name} ${client.last_name}`,
+        event_type: 'status_change',
+        details: { previous_status: previousStatus, previous_status_label: prevLabel, new_status: status, new_status_label: newLabel },
+      }).then(() => qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] }))
+        .catch((e) => console.error('notify status_change failed', e));
     }
   };
 
@@ -274,21 +313,91 @@ function HeaderSection({ tracking, client }: { tracking: any; client: any }) {
             </div>
             <div>
               <Label>Statut</Label>
-              <Select value={tracking.status} onValueChange={updateStatus}>
-                <SelectTrigger className="w-full md:w-[280px] mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex flex-wrap gap-2 items-end mt-1">
+                <Select value={tracking.status} onValueChange={updateStatus}>
+                  <SelectTrigger className="w-full md:w-[280px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <ManualNotifyButton tracking={tracking} client={client} />
+              </div>
             </div>
           </div>
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+/* ---------- Bouton "Notifier l'équipe sur Slack" (manuel) ---------- */
+function ManualNotifyButton({ tracking, client }: { tracking: any; client: any }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const send = async () => {
+    setSending(true);
+    try {
+      const { data, error } = await notifyTeam({
+        client_id: tracking.client_id,
+        tracking_id: tracking.id,
+        company: client.company,
+        contact_name: `${client.first_name} ${client.last_name}`,
+        event_type: 'manual',
+        custom_message: message.trim() || `Action requise sur la fiche ${client.company}`,
+      });
+      if (error) throw error;
+      if ((data as any)?.success) {
+        toast.success('Équipe notifiée');
+      } else {
+        toast.warning('Notification enregistrée mais envoi partiel');
+      }
+      qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] });
+      setOpen(false);
+      setMessage('');
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur envoi');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          <Send className="h-4 w-4 mr-1" /> Notifier l'équipe
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Notifier l'équipe sur Slack</DialogTitle>
+          <DialogDescription>
+            Envoie un message immédiat dans <strong>#hubteam_sales</strong> et par email à l'équipe.
+          </DialogDescription>
+        </DialogHeader>
+        <Textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder={`Action requise sur la fiche ${client.company}…`}
+          rows={4}
+          autoFocus
+        />
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)} disabled={sending}>Annuler</Button>
+          <Button onClick={send} disabled={sending}>
+            {sending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}
+            Envoyer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -374,7 +483,7 @@ function ContactsSection({ trackingId, client }: { trackingId: string; client: a
 }
 
 /* ---------- Notes / commentaires ---------- */
-function NotesSection({ trackingId }: { trackingId: string }) {
+function NotesSection({ trackingId, tracking, client }: { trackingId: string; tracking: any; client: any }) {
   const qc = useQueryClient();
   const { user } = useAuth();
   const [adding, setAdding] = useState(false);
@@ -405,9 +514,10 @@ function NotesSection({ trackingId }: { trackingId: string }) {
 
   const submit = async () => {
     if (!content.trim() || !user) return;
+    const noteText = content.trim();
     const { error } = await supabase.from('commercial_notes').insert({
       tracking_id: trackingId,
-      content: content.trim(),
+      content: noteText,
       author_id: user.id,
     });
     if (error) return toast.error('Erreur');
@@ -415,6 +525,16 @@ function NotesSection({ trackingId }: { trackingId: string }) {
     setAdding(false);
     qc.invalidateQueries({ queryKey: ['commercial-notes', trackingId] });
     toast.success('Note ajoutée');
+    // Auto-notify Slack (no email)
+    notifyTeam({
+      client_id: tracking.client_id,
+      tracking_id: tracking.id,
+      company: client.company,
+      contact_name: `${client.first_name} ${client.last_name}`,
+      event_type: 'note_added',
+      details: { note_preview: noteText.slice(0, 200) },
+    }).then(() => qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] }))
+      .catch((e) => console.error('notify note_added failed', e));
   };
 
   const remove = async (id: string) => {
@@ -484,7 +604,7 @@ function NotesSection({ trackingId }: { trackingId: string }) {
 }
 
 /* ---------- Meetings (RDV) ---------- */
-function MeetingsSection({ trackingId, client }: { trackingId: string; client: any }) {
+function MeetingsSection({ trackingId, tracking, client }: { trackingId: string; tracking: any; client: any }) {
   const qc = useQueryClient();
   const { data: meetings = [] } = useQuery({
     queryKey: ['commercial-meetings', trackingId],
@@ -500,8 +620,22 @@ function MeetingsSection({ trackingId, client }: { trackingId: string; client: a
   });
 
   const update = async (id: string, patch: any) => {
+    const before = meetings.find((m: any) => m.id === id);
     await supabase.from('commercial_meetings').update(patch).eq('id', id);
     qc.invalidateQueries({ queryKey: ['commercial-meetings', trackingId] });
+    // Auto-notify when a meeting date is set/changed
+    if (patch.meeting_date && patch.meeting_date !== before?.meeting_date) {
+      const label = before?.label || 'RDV';
+      notifyTeam({
+        client_id: tracking.client_id,
+        tracking_id: tracking.id,
+        company: client.company,
+        contact_name: `${client.first_name} ${client.last_name}`,
+        event_type: 'meeting_scheduled',
+        details: { meeting_label: label, meeting_date: patch.meeting_date },
+      }).then(() => qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] }))
+        .catch((e) => console.error('notify meeting_scheduled failed', e));
+    }
   };
 
   const rdvCount = meetings.filter((m: any) => m.meeting_type === 'rdv' || m.meeting_type === 'custom').length;
@@ -724,6 +858,9 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
   const qc = useQueryClient();
   const [url, setUrl] = useState('');
   const [label, setLabel] = useState('');
+  const [scrapingId, setScrapingId] = useState<string | null>(null);
+  const [scrapingAll, setScrapingAll] = useState(false);
+  const [previewId, setPreviewId] = useState<string | null>(null);
 
   const { data: urls = [] } = useQuery({
     queryKey: ['commercial-scrape-urls', trackingId],
@@ -757,17 +894,57 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
     qc.invalidateQueries({ queryKey: ['commercial-scrape-urls', trackingId] });
   };
 
+  const scrapeOne = async (id: string) => {
+    setScrapingId(id);
+    try {
+      const { data, error } = await supabase.functions.invoke('scrape-commercial-urls', { body: { url_id: id } });
+      if (error) throw error;
+      const ok = (data as any)?.results?.[0]?.ok;
+      toast[ok ? 'success' : 'error'](ok ? 'URL scrapée' : 'Échec du scraping');
+      qc.invalidateQueries({ queryKey: ['commercial-scrape-urls', trackingId] });
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur scraping');
+    } finally {
+      setScrapingId(null);
+    }
+  };
+
+  const scrapeAll = async () => {
+    if (urls.length === 0) return;
+    setScrapingAll(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('scrape-commercial-urls', { body: { tracking_id: trackingId } });
+      if (error) throw error;
+      toast.success(`${(data as any)?.scraped || 0} URL(s) scrapée(s)`);
+      qc.invalidateQueries({ queryKey: ['commercial-scrape-urls', trackingId] });
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur scraping');
+    } finally {
+      setScrapingAll(false);
+    }
+  };
+
+  const preview = urls.find((u: any) => u.id === previewId);
+
   return (
     <Card>
       <CardContent className="pt-6 space-y-4">
-        <div>
-          <h3 className="font-semibold text-lg flex items-center gap-2">
-            <LinkIcon className="h-5 w-5" />
-            URLs à scrapper pour idées de relance
-          </h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            Ajoutez des URLs (site, blog, presse) à scrapper régulièrement pour générer des idées de relance.
-          </p>
+        <div className="flex items-start justify-between gap-2 flex-wrap">
+          <div>
+            <h3 className="font-semibold text-lg flex items-center gap-2">
+              <LinkIcon className="h-5 w-5" />
+              URLs à scrapper pour idées de relance
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Scraping automatique chaque lundi matin. Vous pouvez aussi déclencher manuellement.
+            </p>
+          </div>
+          {urls.length > 0 && (
+            <Button size="sm" variant="outline" onClick={scrapeAll} disabled={scrapingAll}>
+              {scrapingAll ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}
+              Scraper toutes
+            </Button>
+          )}
         </div>
 
         <div className="flex flex-col md:flex-row gap-2">
@@ -778,24 +955,50 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
 
         <div className="space-y-2">
           {urls.map((u: any) => (
-            <div key={u.id} className="flex items-center gap-2 border rounded-lg p-2">
-              <div className="flex-1 min-w-0">
-                {u.label && <p className="text-sm font-medium">{u.label}</p>}
-                <a href={u.url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block">
-                  {u.url}
-                </a>
-                {u.last_scraped_at && (
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Dernier scrape : {format(new Date(u.last_scraped_at), 'dd/MM/yyyy HH:mm', { locale: fr })}
-                  </p>
+            <div key={u.id} className="border rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  {u.label && <p className="text-sm font-medium">{u.label}</p>}
+                  <a href={u.url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block">
+                    {u.url}
+                  </a>
+                  {u.last_scraped_at && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Dernier scrape : {format(new Date(u.last_scraped_at), 'dd/MM/yyyy HH:mm', { locale: fr })}
+                      {u.last_scrape_status === 'failed' && <span className="text-destructive ml-1">· échec</span>}
+                    </p>
+                  )}
+                </div>
+                {u.last_scrape_summary && (
+                  <Button size="icon" variant="ghost" onClick={() => setPreviewId(u.id)} title="Voir le résumé">
+                    <FileText className="h-4 w-4" />
+                  </Button>
                 )}
+                <Button size="icon" variant="ghost" onClick={() => scrapeOne(u.id)} disabled={scrapingId === u.id} title="Scraper maintenant">
+                  {scrapingId === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                </Button>
+                <Button size="icon" variant="ghost" onClick={() => remove(u.id)}>
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
               </div>
-              <Button size="icon" variant="ghost" onClick={() => remove(u.id)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+              {u.last_scrape_summary && previewId !== u.id && (
+                <p className="text-xs text-muted-foreground line-clamp-2 pl-1">{u.last_scrape_summary}</p>
+              )}
             </div>
           ))}
         </div>
+
+        <Dialog open={!!previewId} onOpenChange={(o) => !o && setPreviewId(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{preview?.label || 'Résumé'}</DialogTitle>
+              <DialogDescription className="truncate">{preview?.url}</DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[60vh] overflow-y-auto whitespace-pre-wrap text-sm">
+              {preview?.last_scrape_summary || 'Aucun résumé.'}
+            </div>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
