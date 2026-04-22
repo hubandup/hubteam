@@ -174,7 +174,7 @@ Deno.serve(async (req) => {
     const actionLabel = (body.action_label || '').trim() || 'Proposer un créneau de rendez-vous';
     const actionKey = (body.action_key || '').trim();
 
-    // Préfixe d'objet déterministe selon l'action choisie (utilisé en fallback ou imposé au modèle)
+    // Préfixes d'objet déterministes selon l'action choisie
     const SUBJECT_PREFIXES: Record<string, string> = {
       propose_slot: 'Proposition de créneau',
       send_quote: 'Devis',
@@ -182,10 +182,22 @@ Deno.serve(async (req) => {
       share_case_study: 'Cas client à partager',
       invite_event: 'Invitation événement HUB+UP',
       ask_feedback: 'Votre retour',
-      just_hello: 'Petit coucou',
+      just_hello: 'Petites nouvelles',
       custom: '',
     };
     const subjectPrefix = SUBJECT_PREFIXES[actionKey] ?? '';
+
+    // Instruction call-to-action spécifique selon l'action choisie
+    const isJustHello = actionKey === 'just_hello';
+    const ctaRule = isJustHello
+      ? `- INTENTION DU MESSAGE : c'est un message de prise de nouvelles, sans rendez-vous ni demande commerciale. INTERDICTIONS STRICTES : n'utilise JAMAIS le mot "coucou", n'écris JAMAIS qu'il n'y a "pas d'objectif commercial" / "sans intention commerciale" / "juste pour prendre des nouvelles" ou toute formulation équivalente (c'est implicite, le destinataire le comprendra). Le message reste sobre, élégant et personnel : appuie-toi sur un angle concret (actu, échange passé) et termine par une formule ouverte légère ("Au plaisir d'échanger bientôt", "Tenez-moi au courant si ça résonne de votre côté", etc.) — sans demander explicitement de RDV ni de réponse formelle.`
+      : `- OBJECTIF / CALL-TO-ACTION (obligatoire) : l'email DOIT se conclure par une proposition claire correspondant à : « ${actionLabel} ». Formule-la naturellement dans la dernière phrase ou l'avant-dernière, avec une question ouverte ou une proposition concrète (créneau, lien, pièce jointe à venir, etc.).`;
+
+    const subjectRule = isJustHello
+      ? `- OBJET DE L'EMAIL : sobre et personnel, sans aucun mot du registre "coucou", "salut", "petit mot". Format suggéré : "${subjectPrefix} — [contexte court]" (≤ 60 caractères).`
+      : (subjectPrefix
+          ? `- OBJET DE L'EMAIL (obligatoire) : il DOIT mentionner explicitement l'action proposée. Commence l'objet par « ${subjectPrefix} » suivi d'un complément personnalisé court (ex: "${subjectPrefix} — [contexte/société/angle]"). Maximum 60 caractères.`
+          : `- OBJET DE L'EMAIL (obligatoire) : il DOIT mentionner explicitement l'action « ${actionLabel} » reformulée naturellement en début d'objet, suivi d'un complément contextuel court. Maximum 60 caractères.`);
 
     const systemPrompt = `Tu es un expert en développement commercial B2B pour HUB+UP (agence de communication). Tu génères une "excuse de relance" personnalisée pour un destinataire précis, en t'appuyant sur des actualités fraîches scrappées.
 
@@ -193,8 +205,8 @@ Règles:
 - Identifie 1 à 3 angles concrets tirés du contenu fourni (URLs scrappées en priorité, mais EXPLOITE AUSSI les 3 derniers comptes rendus client et notes internes : sujets évoqués, points en suspens, engagements pris, prochaines étapes mentionnées).
 - Si un compte rendu mentionne un suivi ou un point à reprendre, utilise-le comme accroche naturelle ("Suite à notre échange du …").
 - Adapte le message au destinataire indiqué (rôle/relation : ${recipientRole}). Si c'est le contact principal habituel, ton plus familier ; sinon, présentation brève.
-- OBJECTIF / CALL-TO-ACTION (obligatoire) : l'email DOIT se conclure par une proposition claire correspondant à : « ${actionLabel} ». Formule-la naturellement dans la dernière phrase ou l'avant-dernière, avec une question ouverte ou une proposition concrète (créneau, lien, pièce jointe à venir, etc.).
-- OBJET DE L'EMAIL (obligatoire) : il DOIT mentionner explicitement l'action proposée.${subjectPrefix ? ` Commence l'objet par « ${subjectPrefix} » suivi d'un complément personnalisé court (ex: "${subjectPrefix} — [contexte/société/angle]"). Format attendu : "${subjectPrefix} — …". Maximum 60 caractères.` : ` L'action est « ${actionLabel} » : reformule-la en début d'objet de manière naturelle, puis ajoute un complément contextuel court. Maximum 60 caractères.`}
+${ctaRule}
+${subjectRule}
 - Ton : ${toneInstructions[tone]}. En français. Pas d'emoji. Pas de formules creuses ("j'espère que vous allez bien"). Signature "L'équipe HUB+UP".
 - Email court : 80–130 mots dans le corps.
 
@@ -203,8 +215,8 @@ Tu DOIS répondre UNIQUEMENT avec un JSON valide UTF-8 (pas de markdown, pas de 
   "angles": [
     { "title": "string court", "description": "1 phrase", "source": "URL ou nom de source" }
   ],
-  "subject": "Objet d'email mentionnant l'action proposée",
-  "body_plain": "Corps de l'email en texte brut, paragraphes séparés par une ligne vide. Inclure la salutation, le call-to-action correspondant à l'action demandée, et la signature 'L'équipe HUB+UP'."
+  "subject": "Objet d'email${isJustHello ? ' sobre et personnel' : ' mentionnant l\'action proposée'}",
+  "body_plain": "Corps de l'email en texte brut, paragraphes séparés par une ligne vide. Inclure la salutation${isJustHello ? ', un angle concret puis une formule ouverte légère' : ', le call-to-action correspondant à l\'action demandée'}, et la signature 'L'équipe HUB+UP'."
 }`;
 
     const userPrompt = `Prospect / Client : ${clientRow.company || 'N/A'}
@@ -275,25 +287,40 @@ Génère le JSON.`;
     }
 
     let subject = (parsed.subject || '').trim();
+    let bodyPlain = (parsed.body_plain || markdownLikeToPlainText(raw)).trim();
     const companyHint = clientRow.company || mainContactName || 'votre actualité';
 
     // Garantit que l'objet mentionne explicitement l'action choisie
     const ensureActionInSubject = (s: string): string => {
       const stripped = s.replace(/\s+/g, ' ').trim();
-      const lower = stripped.toLowerCase();
       const expected = (subjectPrefix || actionLabel).trim();
-      const expectedLower = expected.toLowerCase();
-      if (!stripped) {
-        return expected ? `${expected} — ${companyHint}` : `À propos de ${companyHint}`;
-      }
-      if (expectedLower && lower.includes(expectedLower.split(' ')[0])) {
-        return stripped.slice(0, 80);
-      }
-      // Préfixe l'objet généré avec l'intention de l'action
+      const expectedFirstWord = expected.split(' ')[0]?.toLowerCase() || '';
+      if (!stripped) return expected ? `${expected} — ${companyHint}` : `À propos de ${companyHint}`;
+      if (expectedFirstWord && stripped.toLowerCase().includes(expectedFirstWord)) return stripped.slice(0, 80);
       return `${expected} — ${stripped}`.slice(0, 80);
     };
     subject = ensureActionInSubject(subject);
-    const bodyPlain = (parsed.body_plain || markdownLikeToPlainText(raw)).trim();
+
+    // Pour "just_hello" : retire le mot "coucou" et toute mention d'absence d'intention commerciale
+    if (isJustHello) {
+      const stripJustHelloLeaks = (txt: string): string => {
+        let out = txt;
+        // Mot "coucou" sous toutes ses formes
+        out = out.replace(/\b(petit\s+)?coucou\b[\s,!.…—-]*/gi, '');
+        // Phrases qui révèlent l'absence d'intention commerciale
+        out = out.replace(/[^.!?\n]*\b(sans (?:aucune? )?(?:intention|objectif|but|arrière[- ]pensée)[^.!?\n]*?(?:commercial[e]?|de vente|de relance)[^.!?\n]*[.!?…])/gi, '');
+        out = out.replace(/[^.!?\n]*\b(?:juste|simplement)\s+(?:pour\s+)?(?:prendre\s+(?:de\s+vos\s+)?nouvelles|vous\s+saluer|un\s+petit\s+mot|dire\s+bonjour)[^.!?\n]*[.!?…]/gi, '');
+        out = out.replace(/[^.!?\n]*\bpas\s+d['’]\s*(?:objectif|intention|arrière[- ]pensée)[^.!?\n]*[.!?…]/gi, '');
+        // Nettoyage espaces / lignes vides excessives
+        out = out.replace(/[ \t]+/g, ' ').replace(/ ?\n ?/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+        // Si le message commence par une virgule/tiret orphelin après salutation, on rétablit
+        out = out.replace(/^(Bonjour [^,\n]+),?\s*[—-]?\s*/i, '$1,\n\n');
+        return out;
+      };
+      bodyPlain = stripJustHelloLeaks(bodyPlain);
+      subject = subject.replace(/\bcoucou\b/gi, 'Quelques nouvelles').replace(/\s{2,}/g, ' ').trim();
+    }
+
     const bodyHtml = plainTextToHtml(bodyPlain);
     const angles = Array.isArray(parsed.angles) ? parsed.angles.slice(0, 5).map(a => ({
       title: String(a.title || '').slice(0, 200),
