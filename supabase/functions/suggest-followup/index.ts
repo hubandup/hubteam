@@ -286,8 +286,41 @@ Génère le JSON.`;
       }
     }
 
-    const subject = (parsed.subject || `À propos de ${clientRow.company || 'votre actualité'}`).trim();
-    const bodyPlain = (parsed.body_plain || markdownLikeToPlainText(raw)).trim();
+    let subject = (parsed.subject || '').trim();
+    let bodyPlain = (parsed.body_plain || markdownLikeToPlainText(raw)).trim();
+    const companyHint = clientRow.company || mainContactName || 'votre actualité';
+
+    // Garantit que l'objet mentionne explicitement l'action choisie
+    const ensureActionInSubject = (s: string): string => {
+      const stripped = s.replace(/\s+/g, ' ').trim();
+      const expected = (subjectPrefix || actionLabel).trim();
+      const expectedFirstWord = expected.split(' ')[0]?.toLowerCase() || '';
+      if (!stripped) return expected ? `${expected} — ${companyHint}` : `À propos de ${companyHint}`;
+      if (expectedFirstWord && stripped.toLowerCase().includes(expectedFirstWord)) return stripped.slice(0, 80);
+      return `${expected} — ${stripped}`.slice(0, 80);
+    };
+    subject = ensureActionInSubject(subject);
+
+    // Pour "just_hello" : retire le mot "coucou" et toute mention d'absence d'intention commerciale
+    if (isJustHello) {
+      const stripJustHelloLeaks = (txt: string): string => {
+        let out = txt;
+        // Mot "coucou" sous toutes ses formes
+        out = out.replace(/\b(petit\s+)?coucou\b[\s,!.…—-]*/gi, '');
+        // Phrases qui révèlent l'absence d'intention commerciale
+        out = out.replace(/[^.!?\n]*\b(sans (?:aucune? )?(?:intention|objectif|but|arrière[- ]pensée)[^.!?\n]*?(?:commercial[e]?|de vente|de relance)[^.!?\n]*[.!?…])/gi, '');
+        out = out.replace(/[^.!?\n]*\b(?:juste|simplement)\s+(?:pour\s+)?(?:prendre\s+(?:de\s+vos\s+)?nouvelles|vous\s+saluer|un\s+petit\s+mot|dire\s+bonjour)[^.!?\n]*[.!?…]/gi, '');
+        out = out.replace(/[^.!?\n]*\bpas\s+d['’]\s*(?:objectif|intention|arrière[- ]pensée)[^.!?\n]*[.!?…]/gi, '');
+        // Nettoyage espaces / lignes vides excessives
+        out = out.replace(/[ \t]+/g, ' ').replace(/ ?\n ?/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+        // Si le message commence par une virgule/tiret orphelin après salutation, on rétablit
+        out = out.replace(/^(Bonjour [^,\n]+),?\s*[—-]?\s*/i, '$1,\n\n');
+        return out;
+      };
+      bodyPlain = stripJustHelloLeaks(bodyPlain);
+      subject = subject.replace(/\bcoucou\b/gi, 'Quelques nouvelles').replace(/\s{2,}/g, ' ').trim();
+    }
+
     const bodyHtml = plainTextToHtml(bodyPlain);
     const angles = Array.isArray(parsed.angles) ? parsed.angles.slice(0, 5).map(a => ({
       title: String(a.title || '').slice(0, 200),
