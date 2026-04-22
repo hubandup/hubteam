@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Building2, Mail, Phone, Euro, Calendar, BellRing, FolderOpen, Star } from 'lucide-react';
@@ -6,6 +7,16 @@ import { fr } from 'date-fns/locale';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useTargets, useToggleTarget } from '@/hooks/useTargets';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ClientCardProps {
   client: {
@@ -37,14 +48,25 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
   const { data: targets } = useTargets();
   const toggleTarget = useToggleTarget();
   const isStarred = !!targets?.has(client.id);
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
   const handleStarClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    toggleTarget.mutate({ clientId: client.id, starred: isStarred });
+    if (isStarred) {
+      setConfirmRemove(true);
+    } else {
+      toggleTarget.mutate({ clientId: client.id, starred: false });
+    }
+  };
+
+  const confirmAndRemove = () => {
+    toggleTarget.mutate({ clientId: client.id, starred: true });
+    setConfirmRemove(false);
   };
 
   return (
+    <>
     <Card className="cursor-pointer hover:shadow-lg transition-shadow relative" onClick={onClick}>
       <button
         type="button"
@@ -150,5 +172,21 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
         )}
       </div>
     </Card>
+
+    <AlertDialog open={confirmRemove} onOpenChange={setConfirmRemove}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Retirer des Targets ?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Voulez-vous vraiment retirer <strong>{client.company}</strong> de votre liste Targets ?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Annuler</AlertDialogCancel>
+          <AlertDialogAction onClick={confirmAndRemove}>Retirer</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

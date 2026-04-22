@@ -7,19 +7,37 @@ import { ClientKanbanView } from '@/components/ClientKanbanView';
 import { ClientListView } from '@/components/ClientListView';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LayoutGrid, Columns3, List, Search, Star } from 'lucide-react';
-import { useTargets } from '@/hooks/useTargets';
+import { LayoutGrid, Columns3, List, Search, Star, X } from 'lucide-react';
+import { useTargets, useToggleTarget } from '@/hooks/useTargets';
 import { PageLoader } from '@/components/PageLoader';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function Targets() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { data: targetIds, isLoading: targetsLoading } = useTargets();
+  const toggleTarget = useToggleTarget();
   const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'grid'>(
     () => (localStorage.getItem('targets-view-mode') as any) || 'kanban'
   );
   const [search, setSearch] = useState('');
+  const [removeTarget, setRemoveTarget] = useState<{ id: string; company: string } | null>(null);
+
+  const confirmRemove = () => {
+    if (!removeTarget) return;
+    toggleTarget.mutate({ clientId: removeTarget.id, starred: true });
+    setRemoveTarget(null);
+  };
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ['targets-clients', Array.from(targetIds || [])],
@@ -138,12 +156,40 @@ export default function Targets() {
           <div className="overflow-y-auto h-full pb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filtered.map((client: any) => (
-                <ClientCard key={client.id} client={client} onClick={() => navigate(`/client/${client.id}?tab=info`)} />
+                <div key={client.id} className="relative">
+                  <ClientCard client={client} onClick={() => navigate(`/client/${client.id}?tab=info`)} />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="absolute top-2 right-10 z-10 h-7 px-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRemoveTarget({ id: client.id, company: client.company });
+                    }}
+                  >
+                    <X className="h-3 w-3 mr-1" /> Retirer
+                  </Button>
+                </div>
               ))}
             </div>
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!removeTarget} onOpenChange={(o) => !o && setRemoveTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Retirer des Targets ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Voulez-vous vraiment retirer <strong>{removeTarget?.company}</strong> de votre liste Targets ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRemove}>Retirer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

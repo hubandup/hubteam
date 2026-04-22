@@ -3428,6 +3428,60 @@ export type Database = {
         }
         Relationships: []
       }
+      target_relance_notifications: {
+        Row: {
+          channel: string
+          client_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          recipients_count: number | null
+          status: string
+          tracking_id: string | null
+          triggered_by: string | null
+        }
+        Insert: {
+          channel: string
+          client_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipients_count?: number | null
+          status?: string
+          tracking_id?: string | null
+          triggered_by?: string | null
+        }
+        Update: {
+          channel?: string
+          client_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipients_count?: number | null
+          status?: string
+          tracking_id?: string | null
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "target_relance_notifications_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "target_relance_notifications_tracking_id_fkey"
+            columns: ["tracking_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_tracking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_agencies: {
         Row: {
           agency_id: string

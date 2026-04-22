@@ -48,8 +48,7 @@ const DEFAULT_QUESTIONS = [
 const DEFAULT_MEETINGS = [
   { type: 'first_contact', label: '1er contact' },
   { type: 'hub_date', label: 'Hub Date' },
-  { type: 'rdv1', label: 'RDV 1' },
-  { type: 'rdv2', label: 'RDV 2' },
+  { type: 'rdv', label: 'RDV 1' },
 ];
 
 function generateICS(title: string, dateISO: string, description = '') {
@@ -122,12 +121,63 @@ export function CommercialTrackingTab({ clientId, client }: Props) {
   return (
     <div className="space-y-6">
       <HeaderSection tracking={tracking} client={client} />
+      <RelanceHistorySection clientId={clientId} />
       <ContactsSection trackingId={tracking.id} client={client} />
       <NotesSection trackingId={tracking.id} />
       <MeetingsSection trackingId={tracking.id} client={client} />
       <QuestionnaireSection trackingId={tracking.id} />
       <ScrapeUrlsSection trackingId={tracking.id} />
     </div>
+  );
+}
+
+/* ---------- Historique des notifications de relance ---------- */
+function RelanceHistorySection({ clientId }: { clientId: string }) {
+  const { data: history = [] } = useQuery({
+    queryKey: ['target-relance-history', clientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('target_relance_notifications')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  if (history.length === 0) return null;
+
+  const channelLabel = (c: string) => c === 'both' ? 'Slack + Email' : c === 'slack' ? 'Slack' : 'Email';
+  const statusColor = (s: string) =>
+    s === 'sent' ? 'text-green-600' : s === 'failed' ? 'text-destructive' : 'text-muted-foreground';
+
+  return (
+    <Card>
+      <CardContent className="pt-6 space-y-3">
+        <h3 className="font-semibold text-lg">Historique des relances envoyées à l'équipe</h3>
+        <div className="space-y-2">
+          {history.map((h: any) => (
+            <div key={h.id} className="flex items-center justify-between text-sm border rounded-lg p-2.5">
+              <div>
+                <p className="font-medium">{channelLabel(h.channel)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {format(new Date(h.created_at), 'd MMMM yyyy à HH:mm', { locale: fr })}
+                  {h.recipients_count > 0 && ` · ${h.recipients_count} destinataire${h.recipients_count > 1 ? 's' : ''}`}
+                </p>
+                {h.error_message && (
+                  <p className="text-xs text-destructive mt-1">{h.error_message}</p>
+                )}
+              </div>
+              <span className={`text-xs font-semibold uppercase ${statusColor(h.status)}`}>
+                {h.status === 'sent' ? 'Envoyé' : h.status === 'failed' ? 'Échec' : 'En attente'}
+              </span>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -140,6 +190,7 @@ function HeaderSection({ tracking, client }: { tracking: any; client: any }) {
   useEffect(() => setLogoUrl(tracking.company_logo_url), [tracking.company_logo_url]);
 
   const updateStatus = async (status: string) => {
+    const previousStatus = tracking.status;
     const { error } = await supabase
       .from('commercial_tracking')
       .update({ status: status as any })
@@ -147,6 +198,28 @@ function HeaderSection({ tracking, client }: { tracking: any; client: any }) {
     if (error) return toast.error('Erreur');
     qc.invalidateQueries({ queryKey: ['commercial-tracking'] });
     toast.success('Statut mis à jour');
+
+    // Trigger Slack/email notification when transitioning to "to_followup"
+    if (status === 'to_followup' && previousStatus !== 'to_followup') {
+      try {
+        const { error: notifError } = await supabase.functions.invoke('notify-target-relance', {
+          body: {
+            client_id: tracking.client_id,
+            tracking_id: tracking.id,
+            company: client.company,
+            contact_name: `${client.first_name} ${client.last_name}`,
+          },
+        });
+        if (notifError) {
+          toast.error("Notification de relance non envoyée");
+        } else {
+          toast.success("Équipe notifiée (Slack + email)");
+          qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] });
+        }
+      } catch (e) {
+        console.error('notify-target-relance error', e);
+      }
+    }
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -426,11 +499,14 @@ function MeetingsSection({ trackingId, client }: { trackingId: string; client: a
     qc.invalidateQueries({ queryKey: ['commercial-meetings', trackingId] });
   };
 
+  const rdvCount = meetings.filter((m: any) => m.meeting_type === 'rdv' || m.meeting_type === 'custom').length;
+
   const addCustom = async () => {
+    const nextNum = rdvCount + 1;
     await supabase.from('commercial_meetings').insert({
       tracking_id: trackingId,
-      meeting_type: 'custom',
-      label: 'Nouveau RDV',
+      meeting_type: 'rdv',
+      label: `RDV ${nextNum}`,
       display_order: meetings.length,
     });
     qc.invalidateQueries({ queryKey: ['commercial-meetings', trackingId] });
@@ -457,58 +533,58 @@ function MeetingsSection({ trackingId, client }: { trackingId: string; client: a
           </Button>
         </div>
         <div className="space-y-3">
-          {meetings.map((m: any) => (
-            <div key={m.id} className="border rounded-lg p-3 space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                {m.meeting_type === 'custom' ? (
-                  <Input
-                    defaultValue={m.label}
-                    onBlur={(e) => update(m.id, { label: e.target.value })}
-                    className="font-medium max-w-[300px]"
-                  />
-                ) : (
-                  <p className="font-medium">{m.label}</p>
-                )}
-                {m.meeting_type === 'custom' && (
-                  <Button size="icon" variant="ghost" onClick={() => remove(m.id)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                )}
-              </div>
+          {(() => {
+            let rdvIdx = 0;
+            return meetings.map((m: any) => {
+              const isRdv = m.meeting_type === 'rdv' || m.meeting_type === 'custom' || m.meeting_type?.startsWith('rdv');
+              if (isRdv) rdvIdx += 1;
+              const displayLabel = isRdv ? `RDV ${rdvIdx}` : m.label;
+              return (
+                <div key={m.id} className="border rounded-lg p-3 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-medium">{displayLabel}</p>
+                    {isRdv && (
+                      <Button size="icon" variant="ghost" onClick={() => remove(m.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
 
-              {m.meeting_type === 'first_contact' && (
-                <div>
-                  <Label className="text-xs">Source</Label>
-                  <Select value={m.source_type || ''} onValueChange={(v) => update(m.id, { source_type: v })}>
-                    <SelectTrigger className="w-full md:w-[240px] mt-1">
-                      <SelectValue placeholder="Choisir..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SOURCE_OPTIONS.map((s) => (
-                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+                  {m.meeting_type === 'first_contact' && (
+                    <div>
+                      <Label className="text-xs">Source</Label>
+                      <Select value={m.source_type || ''} onValueChange={(v) => update(m.id, { source_type: v })}>
+                        <SelectTrigger className="w-full md:w-[240px] mt-1">
+                          <SelectValue placeholder="Choisir..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SOURCE_OPTIONS.map((s) => (
+                            <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
-              <div className="flex flex-col md:flex-row gap-2 md:items-end">
-                <div className="flex-1">
-                  <Label className="text-xs">Date</Label>
-                  <Input
-                    type="datetime-local"
-                    defaultValue={m.meeting_date ? new Date(m.meeting_date).toISOString().slice(0, 16) : ''}
-                    onChange={(e) => update(m.id, { meeting_date: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                  />
+                  <div className="flex flex-col md:flex-row gap-2 md:items-end">
+                    <div className="flex-1">
+                      <Label className="text-xs">Date</Label>
+                      <Input
+                        type="datetime-local"
+                        defaultValue={m.meeting_date ? new Date(m.meeting_date).toISOString().slice(0, 16) : ''}
+                        onChange={(e) => update(m.id, { meeting_date: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                      />
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => exportICS({ ...m, label: displayLabel })} disabled={!m.meeting_date}>
+                      <CalIcon className="h-4 w-4 mr-1" />
+                      <Download className="h-3 w-3 mr-1" />
+                      .ics
+                    </Button>
+                  </div>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => exportICS(m)} disabled={!m.meeting_date}>
-                  <CalIcon className="h-4 w-4 mr-1" />
-                  <Download className="h-3 w-3 mr-1" />
-                  .ics
-                </Button>
-              </div>
-            </div>
-          ))}
+              );
+            });
+          })()}
         </div>
       </CardContent>
     </Card>
