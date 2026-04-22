@@ -460,7 +460,7 @@ function ContactsSection({ trackingId, client }: { trackingId: string; client: a
 }
 
 /* ---------- Notes / commentaires ---------- */
-function NotesSection({ trackingId }: { trackingId: string }) {
+function NotesSection({ trackingId, tracking, client }: { trackingId: string; tracking: any; client: any }) {
   const qc = useQueryClient();
   const { user } = useAuth();
   const [adding, setAdding] = useState(false);
@@ -491,9 +491,10 @@ function NotesSection({ trackingId }: { trackingId: string }) {
 
   const submit = async () => {
     if (!content.trim() || !user) return;
+    const noteText = content.trim();
     const { error } = await supabase.from('commercial_notes').insert({
       tracking_id: trackingId,
-      content: content.trim(),
+      content: noteText,
       author_id: user.id,
     });
     if (error) return toast.error('Erreur');
@@ -501,6 +502,16 @@ function NotesSection({ trackingId }: { trackingId: string }) {
     setAdding(false);
     qc.invalidateQueries({ queryKey: ['commercial-notes', trackingId] });
     toast.success('Note ajoutée');
+    // Auto-notify Slack (no email)
+    notifyTeam({
+      client_id: tracking.client_id,
+      tracking_id: tracking.id,
+      company: client.company,
+      contact_name: `${client.first_name} ${client.last_name}`,
+      event_type: 'note_added',
+      details: { note_preview: noteText.slice(0, 200) },
+    }).then(() => qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] }))
+      .catch((e) => console.error('notify note_added failed', e));
   };
 
   const remove = async (id: string) => {
@@ -570,7 +581,7 @@ function NotesSection({ trackingId }: { trackingId: string }) {
 }
 
 /* ---------- Meetings (RDV) ---------- */
-function MeetingsSection({ trackingId, client }: { trackingId: string; client: any }) {
+function MeetingsSection({ trackingId, tracking, client }: { trackingId: string; tracking: any; client: any }) {
   const qc = useQueryClient();
   const { data: meetings = [] } = useQuery({
     queryKey: ['commercial-meetings', trackingId],
@@ -586,8 +597,22 @@ function MeetingsSection({ trackingId, client }: { trackingId: string; client: a
   });
 
   const update = async (id: string, patch: any) => {
+    const before = meetings.find((m: any) => m.id === id);
     await supabase.from('commercial_meetings').update(patch).eq('id', id);
     qc.invalidateQueries({ queryKey: ['commercial-meetings', trackingId] });
+    // Auto-notify when a meeting date is set/changed
+    if (patch.meeting_date && patch.meeting_date !== before?.meeting_date) {
+      const label = before?.label || 'RDV';
+      notifyTeam({
+        client_id: tracking.client_id,
+        tracking_id: tracking.id,
+        company: client.company,
+        contact_name: `${client.first_name} ${client.last_name}`,
+        event_type: 'meeting_scheduled',
+        details: { meeting_label: label, meeting_date: patch.meeting_date },
+      }).then(() => qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] }))
+        .catch((e) => console.error('notify meeting_scheduled failed', e));
+    }
   };
 
   const rdvCount = meetings.filter((m: any) => m.meeting_type === 'rdv' || m.meeting_type === 'custom').length;
