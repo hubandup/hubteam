@@ -186,6 +186,12 @@ export default function ClientDetails() {
       icon: <BarChart3 className="h-4 w-4" />,
       content: <ClientBoardTab clientId={client.id} clientEmailDomain={clientEmailDomain} />
     }] : []),
+    ...(role === 'admin' ? [{
+      value: 'commercial',
+      label: 'Suivi commercial',
+      icon: <Briefcase className="h-4 w-4" />,
+      content: <CommercialTrackingTab clientId={client.id} client={client} />
+    }] : []),
   ];
 
   // Filter out invoices tab for agency role

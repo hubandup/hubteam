@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, HelpCircle, Rss, Euro, MessageSquare, ArrowUpFromLine, CookingPot, Flame, Megaphone } from 'lucide-react';
+import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, HelpCircle, Rss, Euro, MessageSquare, ArrowUpFromLine, CookingPot, Flame, Megaphone, Star } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -71,6 +71,7 @@ export function Sidebar() {
     { title: t('nav.activity'), url: '/dashboard', icon: LayoutDashboard, module: 'dashboard' as const },
     { title: t('nav.finances'), url: '/finances', icon: Euro, module: 'dashboard' as const, adminOnly: true },
     { title: t('nav.crm'), url: '/crm', icon: Users, module: 'crm' as const, matchParent: true },
+    { title: 'Targets', url: '/targets', icon: Star, module: 'crm' as const, hideForClient: true, hideForAgency: true },
     { title: t('nav.prospection'), url: '/prospection', icon: ListTodo, module: 'crm' as const, hideForAgency: true, hideForClient: true },
     { title: t('nav.agencies'), url: '/agencies', icon: Building2, module: 'agencies' as const, matchParent: true },
     { title: t('nav.projects'), url: '/projects', icon: FolderKanban, module: 'projects' as const, matchParent: true },
