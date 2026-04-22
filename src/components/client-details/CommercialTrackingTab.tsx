@@ -1024,6 +1024,24 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
   const toneLabel = (t: string) =>
     t === 'friendly' ? 'Chaleureux' : t === 'formal' ? 'Formel' : t === 'direct' ? 'Direct' : t;
 
+  const senderName = "L'équipe HUB+UP";
+  const senderEmail = 'contact@hubandup.org';
+
+  const EmailPreview = ({ to, toName, subject, html }: { to?: string | null; toName?: string | null; subject: string; html: string }) => (
+    <div className="border rounded-md overflow-hidden bg-background shadow-sm">
+      <div className="bg-muted/50 border-b px-4 py-3 space-y-1 text-xs">
+        <div className="flex gap-2"><span className="text-muted-foreground w-16 shrink-0">De</span><span className="font-medium">{senderName} &lt;{senderEmail}&gt;</span></div>
+        <div className="flex gap-2"><span className="text-muted-foreground w-16 shrink-0">À</span><span className="font-medium">{toName ? `${toName} ` : ''}{to ? `<${to}>` : <span className="text-muted-foreground italic">(non renseigné)</span>}</span></div>
+        <div className="flex gap-2"><span className="text-muted-foreground w-16 shrink-0">Objet</span><span className="font-semibold text-foreground">{subject || <span className="italic text-muted-foreground">(aucun)</span>}</span></div>
+      </div>
+      <div
+        className="prose prose-sm max-w-none p-5 bg-background"
+        style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', lineHeight: 1.6 }}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    </div>
+  );
+
 
   const { data: urls = [] } = useQuery({
     queryKey: ['commercial-scrape-urls', trackingId],
