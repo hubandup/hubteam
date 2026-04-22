@@ -48,8 +48,7 @@ const DEFAULT_QUESTIONS = [
 const DEFAULT_MEETINGS = [
   { type: 'first_contact', label: '1er contact' },
   { type: 'hub_date', label: 'Hub Date' },
-  { type: 'rdv1', label: 'RDV 1' },
-  { type: 'rdv2', label: 'RDV 2' },
+  { type: 'rdv', label: 'RDV 1' },
 ];
 
 function generateICS(title: string, dateISO: string, description = '') {
@@ -140,6 +139,7 @@ function HeaderSection({ tracking, client }: { tracking: any; client: any }) {
   useEffect(() => setLogoUrl(tracking.company_logo_url), [tracking.company_logo_url]);
 
   const updateStatus = async (status: string) => {
+    const previousStatus = tracking.status;
     const { error } = await supabase
       .from('commercial_tracking')
       .update({ status: status as any })
@@ -147,6 +147,28 @@ function HeaderSection({ tracking, client }: { tracking: any; client: any }) {
     if (error) return toast.error('Erreur');
     qc.invalidateQueries({ queryKey: ['commercial-tracking'] });
     toast.success('Statut mis à jour');
+
+    // Trigger Slack/email notification when transitioning to "to_followup"
+    if (status === 'to_followup' && previousStatus !== 'to_followup') {
+      try {
+        const { error: notifError } = await supabase.functions.invoke('notify-target-relance', {
+          body: {
+            client_id: tracking.client_id,
+            tracking_id: tracking.id,
+            company: client.company,
+            contact_name: `${client.first_name} ${client.last_name}`,
+          },
+        });
+        if (notifError) {
+          toast.error("Notification de relance non envoyée");
+        } else {
+          toast.success("Équipe notifiée (Slack + email)");
+          qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] });
+        }
+      } catch (e) {
+        console.error('notify-target-relance error', e);
+      }
+    }
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
