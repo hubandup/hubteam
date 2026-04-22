@@ -10,6 +10,8 @@ interface Payload {
   tracking_id?: string;
   company: string;
   contact_name?: string;
+  // Optional: client may pass its known previous status for extra safety
+  expected_previous_status?: string;
 }
 
 Deno.serve(async (req) => {
@@ -53,9 +55,62 @@ Deno.serve(async (req) => {
     }
 
     const body = (await req.json()) as Payload;
-    if (!body.client_id || !body.company) {
-      return new Response(JSON.stringify({ error: 'Missing fields' }), { status: 400, headers: corsHeaders });
+    if (!body.client_id || !body.company || !body.tracking_id) {
+      return new Response(JSON.stringify({ error: 'Missing fields (client_id, tracking_id, company required)' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
+
+    // ----- SERVER-SIDE STATE CHANGE DETECTION -----
+    // Fetch the current tracking row to verify it is actually in 'to_followup'
+    const { data: trackingRow, error: trackingErr } = await admin
+      .from('commercial_tracking')
+      .select('id, status')
+      .eq('id', body.tracking_id)
+      .maybeSingle();
+
+    if (trackingErr || !trackingRow) {
+      return new Response(JSON.stringify({ error: 'Tracking not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (trackingRow.status !== 'to_followup') {
+      return new Response(
+        JSON.stringify({ skipped: true, reason: 'current status is not to_followup', current_status: trackingRow.status }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if a notification was already sent for this tracking row in the most recent 'to_followup' streak.
+    // We look for the most recent notification — if it exists AND status hasn't been changed away since, skip.
+    const { data: lastNotif } = await admin
+      .from('target_relance_notifications')
+      .select('id, created_at, status')
+      .eq('tracking_id', body.tracking_id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (lastNotif && lastNotif.status === 'sent') {
+      // Look at activity_log or commercial_tracking updated_at to see if status was reset between then and now.
+      // Simplest robust check: if the tracking row's updated_at is older than the last notification, no real transition occurred.
+      const { data: trackingMeta } = await admin
+        .from('commercial_tracking')
+        .select('updated_at')
+        .eq('id', body.tracking_id)
+        .maybeSingle();
+
+      if (trackingMeta && new Date(trackingMeta.updated_at) <= new Date(lastNotif.created_at)) {
+        return new Response(
+          JSON.stringify({ skipped: true, reason: 'no status change since last notification' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+    // ----- END STATE CHANGE DETECTION -----
 
     const message = `🎯 *Target à relancer* : *${body.company}*${body.contact_name ? ` (${body.contact_name})` : ''}\nLa fiche vient de passer en statut « À relancer ». Pensez à organiser une action de courtoisie cette semaine.`;
 
