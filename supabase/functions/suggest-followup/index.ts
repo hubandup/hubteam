@@ -172,6 +172,20 @@ Deno.serve(async (req) => {
       : '';
 
     const actionLabel = (body.action_label || '').trim() || 'Proposer un créneau de rendez-vous';
+    const actionKey = (body.action_key || '').trim();
+
+    // Préfixe d'objet déterministe selon l'action choisie (utilisé en fallback ou imposé au modèle)
+    const SUBJECT_PREFIXES: Record<string, string> = {
+      propose_slot: 'Proposition de créneau',
+      send_quote: 'Devis',
+      schedule_call: 'Proposition de call',
+      share_case_study: 'Cas client à partager',
+      invite_event: 'Invitation événement HUB+UP',
+      ask_feedback: 'Votre retour',
+      just_hello: 'Petit coucou',
+      custom: '',
+    };
+    const subjectPrefix = SUBJECT_PREFIXES[actionKey] ?? '';
 
     const systemPrompt = `Tu es un expert en développement commercial B2B pour HUB+UP (agence de communication). Tu génères une "excuse de relance" personnalisée pour un destinataire précis, en t'appuyant sur des actualités fraîches scrappées.
 
@@ -179,7 +193,8 @@ Règles:
 - Identifie 1 à 3 angles concrets tirés du contenu fourni (URLs scrappées en priorité, mais EXPLOITE AUSSI les 3 derniers comptes rendus client et notes internes : sujets évoqués, points en suspens, engagements pris, prochaines étapes mentionnées).
 - Si un compte rendu mentionne un suivi ou un point à reprendre, utilise-le comme accroche naturelle ("Suite à notre échange du …").
 - Adapte le message au destinataire indiqué (rôle/relation : ${recipientRole}). Si c'est le contact principal habituel, ton plus familier ; sinon, présentation brève.
-- OBJECTIF / CALL-TO-ACTION (obligatoire) : l'email DOIT se conclure par une proposition claire correspondant à : « ${actionLabel} ». Formule-la naturellement dans la dernière phrase ou l'avant-dernière, avec une question ouverte ou une proposition concrète (créneau, lien, pièce jointe à venir, etc.). L'objet de l'email doit aussi refléter cette intention.
+- OBJECTIF / CALL-TO-ACTION (obligatoire) : l'email DOIT se conclure par une proposition claire correspondant à : « ${actionLabel} ». Formule-la naturellement dans la dernière phrase ou l'avant-dernière, avec une question ouverte ou une proposition concrète (créneau, lien, pièce jointe à venir, etc.).
+- OBJET DE L'EMAIL (obligatoire) : il DOIT mentionner explicitement l'action proposée.${subjectPrefix ? ` Commence l'objet par « ${subjectPrefix} » suivi d'un complément personnalisé court (ex: "${subjectPrefix} — [contexte/société/angle]"). Format attendu : "${subjectPrefix} — …". Maximum 60 caractères.` : ` L'action est « ${actionLabel} » : reformule-la en début d'objet de manière naturelle, puis ajoute un complément contextuel court. Maximum 60 caractères.`}
 - Ton : ${toneInstructions[tone]}. En français. Pas d'emoji. Pas de formules creuses ("j'espère que vous allez bien"). Signature "L'équipe HUB+UP".
 - Email court : 80–130 mots dans le corps.
 
@@ -188,7 +203,7 @@ Tu DOIS répondre UNIQUEMENT avec un JSON valide UTF-8 (pas de markdown, pas de 
   "angles": [
     { "title": "string court", "description": "1 phrase", "source": "URL ou nom de source" }
   ],
-  "subject": "Objet d'email concis et incarné",
+  "subject": "Objet d'email mentionnant l'action proposée",
   "body_plain": "Corps de l'email en texte brut, paragraphes séparés par une ligne vide. Inclure la salutation, le call-to-action correspondant à l'action demandée, et la signature 'L'équipe HUB+UP'."
 }`;
 
@@ -259,7 +274,25 @@ Génère le JSON.`;
       }
     }
 
-    const subject = (parsed.subject || `À propos de ${clientRow.company || 'votre actualité'}`).trim();
+    let subject = (parsed.subject || '').trim();
+    const companyHint = clientRow.company || mainContactName || 'votre actualité';
+
+    // Garantit que l'objet mentionne explicitement l'action choisie
+    const ensureActionInSubject = (s: string): string => {
+      const stripped = s.replace(/\s+/g, ' ').trim();
+      const lower = stripped.toLowerCase();
+      const expected = (subjectPrefix || actionLabel).trim();
+      const expectedLower = expected.toLowerCase();
+      if (!stripped) {
+        return expected ? `${expected} — ${companyHint}` : `À propos de ${companyHint}`;
+      }
+      if (expectedLower && lower.includes(expectedLower.split(' ')[0])) {
+        return stripped.slice(0, 80);
+      }
+      // Préfixe l'objet généré avec l'intention de l'action
+      return `${expected} — ${stripped}`.slice(0, 80);
+    };
+    subject = ensureActionInSubject(subject);
     const bodyPlain = (parsed.body_plain || markdownLikeToPlainText(raw)).trim();
     const bodyHtml = plainTextToHtml(bodyPlain);
     const angles = Array.isArray(parsed.angles) ? parsed.angles.slice(0, 5).map(a => ({
