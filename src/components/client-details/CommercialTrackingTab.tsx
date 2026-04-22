@@ -126,12 +126,25 @@ export function CommercialTrackingTab({ clientId, client }: Props) {
       <HeaderSection tracking={tracking} client={client} />
       <RelanceHistorySection clientId={clientId} />
       <ContactsSection trackingId={tracking.id} client={client} />
-      <NotesSection trackingId={tracking.id} />
-      <MeetingsSection trackingId={tracking.id} client={client} />
+      <NotesSection trackingId={tracking.id} tracking={tracking} client={client} />
+      <MeetingsSection trackingId={tracking.id} tracking={tracking} client={client} />
       <QuestionnaireSection trackingId={tracking.id} />
       <ScrapeUrlsSection trackingId={tracking.id} />
     </div>
   );
+}
+
+/* ---------- Helper: invoke notify-target-relance ---------- */
+async function notifyTeam(params: {
+  client_id: string;
+  tracking_id: string;
+  company: string;
+  contact_name?: string;
+  event_type: 'manual' | 'note_added' | 'meeting_scheduled' | 'status_change';
+  custom_message?: string;
+  details?: Record<string, unknown>;
+}) {
+  return supabase.functions.invoke('notify-target-relance', { body: params });
 }
 
 /* ---------- Historique des notifications de relance ---------- */
