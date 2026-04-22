@@ -1103,12 +1103,6 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {urls.some((u: any) => u.last_scrape_status === 'success') && (
-              <Button size="sm" variant="default" onClick={generateSuggestion} disabled={suggesting}>
-                {suggesting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1" />}
-                Suggérer une excuse de relance
-              </Button>
-            )}
             {urls.length > 0 && (
               <Button size="sm" variant="outline" onClick={scrapeAll} disabled={scrapingAll}>
                 {scrapingAll ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}
@@ -1117,6 +1111,7 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
             )}
           </div>
         </div>
+
 
         <div className="flex flex-col md:flex-row gap-2">
           <Input placeholder="https://..." value={url} onChange={(e) => setUrl(e.target.value)} className="flex-1" />
