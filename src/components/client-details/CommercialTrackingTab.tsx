@@ -448,11 +448,14 @@ function MeetingsSection({ trackingId, client }: { trackingId: string; client: a
     qc.invalidateQueries({ queryKey: ['commercial-meetings', trackingId] });
   };
 
+  const rdvCount = meetings.filter((m: any) => m.meeting_type === 'rdv' || m.meeting_type === 'custom').length;
+
   const addCustom = async () => {
+    const nextNum = rdvCount + 1;
     await supabase.from('commercial_meetings').insert({
       tracking_id: trackingId,
-      meeting_type: 'custom',
-      label: 'Nouveau RDV',
+      meeting_type: 'rdv',
+      label: `RDV ${nextNum}`,
       display_order: meetings.length,
     });
     qc.invalidateQueries({ queryKey: ['commercial-meetings', trackingId] });
