@@ -872,6 +872,7 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
     angles: Array<{ title?: string; description?: string; source?: string }>;
   } | null>(null);
   const [tone, setTone] = useState<'friendly' | 'formal' | 'direct'>('friendly');
+  const [address, setAddress] = useState<'vous' | 'tu'>('vous');
   const [action, setAction] = useState<string>('propose_slot');
   const [customAction, setCustomAction] = useState<string>('');
 
@@ -1000,6 +1001,7 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
           recipient_role: recipient.role,
           action_key: action,
           action_label: actionLabel,
+          address_form: address,
         },
       });
       if (error) throw error;
@@ -1170,7 +1172,6 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
           </div>
         </div>
 
-
         <div className="flex flex-col md:flex-row gap-2">
           <Input placeholder="https://..." value={url} onChange={(e) => setUrl(e.target.value)} className="flex-1" />
           <Input placeholder="Libellé (optionnel)" value={label} onChange={(e) => setLabel(e.target.value)} className="md:w-[220px]" />
@@ -1265,6 +1266,19 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
                     <SelectItem value="friendly">Chaleureux</SelectItem>
                     <SelectItem value="formal">Formel</SelectItem>
                     <SelectItem value="direct">Direct</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-xs">Adresse</Label>
+                <Select value={address} onValueChange={(v: any) => setAddress(v)}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="vous">Vouvoiement (vous)</SelectItem>
+                    <SelectItem value="tu">Tutoiement (tu)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

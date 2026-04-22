@@ -13,6 +13,7 @@ interface Payload {
   recipient_role?: string; // e.g. "Contact principal", "Contact additionnel", "Personnalisé"
   action_key?: string; // ex: 'propose_slot', 'send_quote', 'schedule_call', 'custom'
   action_label?: string; // libellé humain de l'action à proposer
+  address_form?: 'vous' | 'tu'; // forme d'adresse : vouvoiement (par défaut) ou tutoiement
   save?: boolean; // persist to history (default true)
 }
 
@@ -199,12 +200,18 @@ Deno.serve(async (req) => {
           ? `- OBJET DE L'EMAIL (obligatoire) : il DOIT mentionner explicitement l'action proposée. Commence l'objet par « ${subjectPrefix} » suivi d'un complément personnalisé court (ex: "${subjectPrefix} — [contexte/société/angle]"). Maximum 60 caractères.`
           : `- OBJET DE L'EMAIL (obligatoire) : il DOIT mentionner explicitement l'action « ${actionLabel} » reformulée naturellement en début d'objet, suivi d'un complément contextuel court. Maximum 60 caractères.`);
 
+    const addressForm: 'vous' | 'tu' = body.address_form === 'tu' ? 'tu' : 'vous';
+    const addressRule = addressForm === 'tu'
+      ? `- ADRESSE (obligatoire) : tutoiement à la 2ème personne du singulier. Utilise « tu », « ton/ta/tes », conjugaisons à la 2e pers. sing. (« peux-tu », « dis-moi », « tiens-moi au courant »). Salutation : « Bonjour [Prénom], » (jamais « Salut »). Aucun « vous » de politesse, jamais. Signature finale : « L'équipe HUB+UP ».`
+      : `- ADRESSE (obligatoire) : vouvoiement à la 2ème personne du pluriel. Utilise « vous », « votre/vos », conjugaisons à la 2e pers. plur. (« pouvez-vous », « dites-moi », « tenez-moi au courant »). Salutation : « Bonjour [Prénom], ». Aucun tutoiement.`;
+
     const systemPrompt = `Tu es un expert en développement commercial B2B pour HUB+UP (agence de communication). Tu génères une "excuse de relance" personnalisée pour un destinataire précis, en t'appuyant sur des actualités fraîches scrappées.
 
 Règles:
 - Identifie 1 à 3 angles concrets tirés du contenu fourni (URLs scrappées en priorité, mais EXPLOITE AUSSI les 3 derniers comptes rendus client et notes internes : sujets évoqués, points en suspens, engagements pris, prochaines étapes mentionnées).
 - Si un compte rendu mentionne un suivi ou un point à reprendre, utilise-le comme accroche naturelle ("Suite à notre échange du …").
 - Adapte le message au destinataire indiqué (rôle/relation : ${recipientRole}). Si c'est le contact principal habituel, ton plus familier ; sinon, présentation brève.
+${addressRule}
 ${ctaRule}
 ${subjectRule}
 - Ton : ${toneInstructions[tone]}. En français. Pas d'emoji. Pas de formules creuses ("j'espère que vous allez bien"). Signature "L'équipe HUB+UP".
