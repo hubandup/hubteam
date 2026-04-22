@@ -178,6 +178,15 @@ function RelanceHistorySection({ clientId }: { clientId: string }) {
   };
   const statusColor = (s: string) =>
     s === 'sent' ? 'text-green-600' : s === 'failed' ? 'text-destructive' : 'text-muted-foreground';
+  const humanizeError = (msg: string) => {
+    if (!msg) return msg;
+    if (msg.includes('channel_not_found')) return "Slack : le bot n'a pas accès au canal #hubteam_sales (invitez-le dans le canal).";
+    if (msg.includes('not_in_channel')) return "Slack : le bot n'est pas membre du canal cible.";
+    if (msg.includes('invalid_auth') || msg.includes('token_revoked')) return "Slack : jeton invalide ou révoqué.";
+    if (msg.includes('SLACK_BOT_TOKEN not configured')) return "Slack non configuré.";
+    if (msg.includes('BREVO_API_KEY not configured')) return "Email non configuré.";
+    return msg;
+  };
 
   return (
     <Card>
@@ -196,7 +205,7 @@ function RelanceHistorySection({ clientId }: { clientId: string }) {
                   {h.recipients_count > 0 && ` · ${h.recipients_count} destinataire${h.recipients_count > 1 ? 's' : ''}`}
                 </p>
                 {h.error_message && (
-                  <p className="text-xs text-destructive mt-1 truncate">{h.error_message}</p>
+                  <p className="text-xs text-destructive mt-1" title={h.error_message}>{humanizeError(h.error_message)}</p>
                 )}
               </div>
               <span className={`text-xs font-semibold uppercase shrink-0 ${statusColor(h.status)}`}>
