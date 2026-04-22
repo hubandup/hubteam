@@ -123,6 +123,15 @@ Deno.serve(async (req) => {
       .from('commercial_meetings').select('label, meeting_type, meeting_date').eq('tracking_id', body.tracking_id)
       .order('meeting_date', { ascending: false }).limit(3);
 
+    // Récupérer les 3 derniers comptes rendus client (meeting_notes)
+    const { data: meetingNotes } = await admin
+      .from('meeting_notes')
+      .select('title, content, meeting_date, created_at')
+      .eq('client_id', tracking.client_id)
+      .order('meeting_date', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false })
+      .limit(3);
+
     const tone = body.tone || 'friendly';
     const toneInstructions: Record<string, string> = {
       friendly: 'chaleureux, naturel, sincère, sans flagornerie',
