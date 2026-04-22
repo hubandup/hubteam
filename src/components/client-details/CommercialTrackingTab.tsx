@@ -121,12 +121,63 @@ export function CommercialTrackingTab({ clientId, client }: Props) {
   return (
     <div className="space-y-6">
       <HeaderSection tracking={tracking} client={client} />
+      <RelanceHistorySection clientId={clientId} />
       <ContactsSection trackingId={tracking.id} client={client} />
       <NotesSection trackingId={tracking.id} />
       <MeetingsSection trackingId={tracking.id} client={client} />
       <QuestionnaireSection trackingId={tracking.id} />
       <ScrapeUrlsSection trackingId={tracking.id} />
     </div>
+  );
+}
+
+/* ---------- Historique des notifications de relance ---------- */
+function RelanceHistorySection({ clientId }: { clientId: string }) {
+  const { data: history = [] } = useQuery({
+    queryKey: ['target-relance-history', clientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('target_relance_notifications')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  if (history.length === 0) return null;
+
+  const channelLabel = (c: string) => c === 'both' ? 'Slack + Email' : c === 'slack' ? 'Slack' : 'Email';
+  const statusColor = (s: string) =>
+    s === 'sent' ? 'text-green-600' : s === 'failed' ? 'text-destructive' : 'text-muted-foreground';
+
+  return (
+    <Card>
+      <CardContent className="pt-6 space-y-3">
+        <h3 className="font-semibold text-lg">Historique des relances envoyées à l'équipe</h3>
+        <div className="space-y-2">
+          {history.map((h: any) => (
+            <div key={h.id} className="flex items-center justify-between text-sm border rounded-lg p-2.5">
+              <div>
+                <p className="font-medium">{channelLabel(h.channel)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {format(new Date(h.created_at), 'd MMMM yyyy à HH:mm', { locale: fr })}
+                  {h.recipients_count > 0 && ` · ${h.recipients_count} destinataire${h.recipients_count > 1 ? 's' : ''}`}
+                </p>
+                {h.error_message && (
+                  <p className="text-xs text-destructive mt-1">{h.error_message}</p>
+                )}
+              </div>
+              <span className={`text-xs font-semibold uppercase ${statusColor(h.status)}`}>
+                {h.status === 'sent' ? 'Envoyé' : h.status === 'failed' ? 'Échec' : 'En attente'}
+              </span>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
