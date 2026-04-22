@@ -132,8 +132,17 @@ async function postToSlack(excuses: string[]): Promise<{ ok: true } | { ok: fals
 
   const json = await res.json();
   if (!json.ok) {
-    throw new Error(`Slack error: ${json.error || 'unknown'}${json.error === 'channel_not_found' ? ' — invitez le bot dans #hubteam_sales' : ''}`);
+    const code = json.error || 'unknown';
+    const hints: Record<string, string> = {
+      channel_not_found: `Le bot Slack n'a pas accès au canal ${SLACK_CHANNEL}. Invitez-le avec /invite @NomDuBot dans ce canal.`,
+      not_in_channel: `Le bot Slack n'est pas membre du canal ${SLACK_CHANNEL}. Invitez-le avec /invite @NomDuBot.`,
+      invalid_auth: 'Token Slack invalide ou expiré. Régénérez le SLACK_BOT_TOKEN.',
+      missing_scope: 'Le bot Slack n\'a pas les permissions nécessaires (scope chat:write requis).',
+      account_inactive: 'Le compte Slack associé au token est inactif.',
+    };
+    return { ok: false, error: code, hint: hints[code] || `Erreur Slack : ${code}` };
   }
+  return { ok: true };
 }
 
 Deno.serve(async (req) => {
@@ -226,7 +235,20 @@ Deno.serve(async (req) => {
 
     console.log('[weekly-slack-excuses] final excuses:', finalExcuses);
 
-    await postToSlack(finalExcuses);
+    const slackResult = await postToSlack(finalExcuses);
+    if (!slackResult.ok) {
+      console.error('[weekly-slack-excuses] slack post failed:', slackResult);
+      // Return 200 with structured error so client SDK can read body
+      return new Response(
+        JSON.stringify({
+          success: false,
+          slackError: slackResult.error,
+          hint: slackResult.hint,
+          excuses: finalExcuses,
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     console.log('[weekly-slack-excuses] posted to Slack ok');
 
     // Persist to history
