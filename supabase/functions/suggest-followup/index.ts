@@ -155,10 +155,18 @@ Deno.serve(async (req) => {
     }).join('\n\n---\n\n');
 
     const contextNotes = (notes && notes.length > 0)
-      ? `\n\nDernières notes internes:\n${notes.map(n => `- ${n.content?.slice(0, 200)}`).join('\n')}`
+      ? `\n\nDernières notes internes (Suivi commercial):\n${notes.map(n => `- ${n.content?.slice(0, 200)}`).join('\n')}`
       : '';
     const contextMeetings = (meetings && meetings.length > 0)
-      ? `\n\nDerniers RDV:\n${meetings.map(m => `- ${m.label || m.meeting_type}${m.meeting_date ? ` (${m.meeting_date})` : ''}`).join('\n')}`
+      ? `\n\nDerniers RDV planifiés:\n${meetings.map(m => `- ${m.label || m.meeting_type}${m.meeting_date ? ` (${m.meeting_date})` : ''}`).join('\n')}`
+      : '';
+    const contextMeetingNotes = (meetingNotes && meetingNotes.length > 0)
+      ? `\n\nDerniers comptes rendus client (3 plus récents) :\n${meetingNotes.map(m => {
+          const date = m.meeting_date || m.created_at?.slice(0, 10) || '';
+          const title = m.title ? ` — ${m.title}` : '';
+          const content = (m.content || '').replace(/\s+/g, ' ').slice(0, 600);
+          return `• [${date}]${title}\n  ${content}`;
+        }).join('\n')}`
       : '';
 
     const systemPrompt = `Tu es un expert en développement commercial B2B pour HUB+UP (agence de communication). Tu génères une "excuse de relance" personnalisée pour un destinataire précis, en t'appuyant sur des actualités fraîches scrappées.
