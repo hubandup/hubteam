@@ -123,6 +123,15 @@ Deno.serve(async (req) => {
       .from('commercial_meetings').select('label, meeting_type, meeting_date').eq('tracking_id', body.tracking_id)
       .order('meeting_date', { ascending: false }).limit(3);
 
+    // Récupérer les 3 derniers comptes rendus client (meeting_notes)
+    const { data: meetingNotes } = await admin
+      .from('meeting_notes')
+      .select('title, content, meeting_date, created_at')
+      .eq('client_id', tracking.client_id)
+      .order('meeting_date', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false })
+      .limit(3);
+
     const tone = body.tone || 'friendly';
     const toneInstructions: Record<string, string> = {
       friendly: 'chaleureux, naturel, sincère, sans flagornerie',
@@ -146,16 +155,25 @@ Deno.serve(async (req) => {
     }).join('\n\n---\n\n');
 
     const contextNotes = (notes && notes.length > 0)
-      ? `\n\nDernières notes internes:\n${notes.map(n => `- ${n.content?.slice(0, 200)}`).join('\n')}`
+      ? `\n\nDernières notes internes (Suivi commercial):\n${notes.map(n => `- ${n.content?.slice(0, 200)}`).join('\n')}`
       : '';
     const contextMeetings = (meetings && meetings.length > 0)
-      ? `\n\nDerniers RDV:\n${meetings.map(m => `- ${m.label || m.meeting_type}${m.meeting_date ? ` (${m.meeting_date})` : ''}`).join('\n')}`
+      ? `\n\nDerniers RDV planifiés:\n${meetings.map(m => `- ${m.label || m.meeting_type}${m.meeting_date ? ` (${m.meeting_date})` : ''}`).join('\n')}`
+      : '';
+    const contextMeetingNotes = (meetingNotes && meetingNotes.length > 0)
+      ? `\n\nDerniers comptes rendus client (3 plus récents) :\n${meetingNotes.map(m => {
+          const date = m.meeting_date || m.created_at?.slice(0, 10) || '';
+          const title = m.title ? ` — ${m.title}` : '';
+          const content = (m.content || '').replace(/\s+/g, ' ').slice(0, 600);
+          return `• [${date}]${title}\n  ${content}`;
+        }).join('\n')}`
       : '';
 
     const systemPrompt = `Tu es un expert en développement commercial B2B pour HUB+UP (agence de communication). Tu génères une "excuse de relance" personnalisée pour un destinataire précis, en t'appuyant sur des actualités fraîches scrappées.
 
 Règles:
-- Identifie 1 à 3 angles concrets tirés EXCLUSIVEMENT du contenu fourni (lancement, recrutement, levée, partenariat, prise de parole…).
+- Identifie 1 à 3 angles concrets tirés du contenu fourni (URLs scrappées en priorité, mais EXPLOITE AUSSI les 3 derniers comptes rendus client et notes internes : sujets évoqués, points en suspens, engagements pris, prochaines étapes mentionnées).
+- Si un compte rendu mentionne un suivi ou un point à reprendre, utilise-le comme accroche naturelle ("Suite à notre échange du …").
 - Adapte le message au destinataire indiqué (rôle/relation : ${recipientRole}). Si c'est le contact principal habituel, ton plus familier ; sinon, présentation brève.
 - Ton : ${toneInstructions[tone]}. En français. Pas d'emoji. Pas de formules creuses ("j'espère que vous allez bien"). Signature "L'équipe HUB+UP".
 - Email court : 80–130 mots dans le corps.
@@ -178,7 +196,7 @@ Destinataire choisi pour ce message :
 - Email : ${recipientEmail || 'N/A'}
 - Rôle : ${recipientRole}
 - Prénom à utiliser dans la salutation : ${recipientFirstName || recipientName || ''}
-${contextNotes}${contextMeetings}
+${contextNotes}${contextMeetings}${contextMeetingNotes}
 
 Contenus scrappés récemment :
 
