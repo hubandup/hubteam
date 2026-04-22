@@ -17,11 +17,17 @@ export function TestSlackExcuses() {
         body: { source: 'manual-test' },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
 
       const excuses: string[] = data?.excuses ?? [];
       setLastExcuses(excuses);
-      toast.success(`✅ ${excuses.length} excuse(s) publiées sur #hubteam_sales`);
+
+      if (data?.success) {
+        toast.success(`✅ ${excuses.length} excuse(s) publiées sur #hubteam_sales`);
+      } else if (data?.slackError) {
+        toast.error(data.hint || `Échec Slack : ${data.slackError}`, { duration: 8000 });
+      } else if (data?.error) {
+        toast.error(`Échec : ${data.error}`);
+      }
     } catch (e) {
       const msg = (e as Error).message || 'Erreur inconnue';
       toast.error(`Échec : ${msg}`);
