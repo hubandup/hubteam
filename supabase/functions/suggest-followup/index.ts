@@ -13,6 +13,7 @@ interface Payload {
   recipient_role?: string; // e.g. "Contact principal", "Contact additionnel", "Personnalisé"
   action_key?: string; // ex: 'propose_slot', 'send_quote', 'schedule_call', 'custom'
   action_label?: string; // libellé humain de l'action à proposer
+  address_form?: 'vous' | 'tu'; // forme d'adresse : vouvoiement (par défaut) ou tutoiement
   save?: boolean; // persist to history (default true)
 }
 
