@@ -26,10 +26,18 @@ export default function Targets() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { data: targetIds, isLoading: targetsLoading } = useTargets();
+  const toggleTarget = useToggleTarget();
   const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'grid'>(
     () => (localStorage.getItem('targets-view-mode') as any) || 'kanban'
   );
   const [search, setSearch] = useState('');
+  const [removeTarget, setRemoveTarget] = useState<{ id: string; company: string } | null>(null);
+
+  const confirmRemove = () => {
+    if (!removeTarget) return;
+    toggleTarget.mutate({ clientId: removeTarget.id, starred: true });
+    setRemoveTarget(null);
+  };
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ['targets-clients', Array.from(targetIds || [])],
