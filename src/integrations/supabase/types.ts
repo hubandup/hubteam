@@ -929,6 +929,8 @@ export type Database = {
       }
       commercial_followup_suggestions: {
         Row: {
+          action_key: string | null
+          action_label: string | null
           angles: Json
           body_html: string
           client_id: string
@@ -944,6 +946,8 @@ export type Database = {
           tracking_id: string
         }
         Insert: {
+          action_key?: string | null
+          action_label?: string | null
           angles?: Json
           body_html?: string
           client_id: string
@@ -959,6 +963,8 @@ export type Database = {
           tracking_id: string
         }
         Update: {
+          action_key?: string | null
+          action_label?: string | null
           angles?: Json
           body_html?: string
           client_id?: string
