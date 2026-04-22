@@ -11,6 +11,7 @@ import { DesignTab } from '@/components/settings/DesignTab';
 import { FaqCategoriesTab } from '@/components/settings/FaqCategoriesTab';
 import { AgencyTagsTab } from '@/components/settings/AgencyTagsTab';
 import { TestInvitationEmail } from '@/components/settings/TestInvitationEmail';
+import { TestSlackExcuses } from '@/components/settings/TestSlackExcuses';
 import { LagostinaAccessTab } from '@/components/settings/LagostinaAccessTab';
 import { BrisachAccessTab } from '@/components/settings/BrisachAccessTab';
 import { useTranslation } from 'react-i18next';
@@ -81,7 +82,12 @@ export default function Settings() {
       value: 'test-email',
       label: t('settings.tabs.testEmail'),
       icon: <Mail className="h-4 w-4" />,
-      content: <TestInvitationEmail />
+      content: (
+        <div className="space-y-6">
+          <TestInvitationEmail />
+          <TestSlackExcuses />
+        </div>
+      )
     },
     {
       value: 'lagostina-access',
