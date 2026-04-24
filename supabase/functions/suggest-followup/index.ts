@@ -236,8 +236,9 @@ Deno.serve(async (req) => {
     const contextNotes = (notes && notes.length > 0)
       ? `\n\nDernières notes internes (Suivi commercial):\n${notes.map(n => `- ${n.content?.slice(0, 200)}`).join('\n')}`
       : '';
-    const contextMeetings = (meetings && meetings.length > 0)
-      ? `\n\nDerniers RDV planifiés:\n${meetings.map(m => `- ${m.label || m.meeting_type}${m.meeting_date ? ` (${m.meeting_date})` : ''}`).join('\n')}`
+    const meetingsWithDate = (meetings || []).filter(m => !!m.meeting_date);
+    const contextMeetings = meetingsWithDate.length > 0
+      ? `\n\nDerniers RDV planifiés (avec date confirmée):\n${meetingsWithDate.map(m => `- ${m.label || m.meeting_type} (${m.meeting_date})`).join('\n')}`
       : '';
     const contextMeetingNotes = (meetingNotes && meetingNotes.length > 0)
       ? `\n\nDerniers comptes rendus client (3 plus récents) :\n${meetingNotes.map(m => {
