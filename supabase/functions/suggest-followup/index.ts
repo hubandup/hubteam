@@ -330,6 +330,22 @@ Génère le JSON.`;
       subject = subject.replace(/\bcoucou\b/gi, 'Quelques nouvelles').replace(/\s{2,}/g, ' ').trim();
     }
 
+    // Safety net : strip any closing signature the model may still emit
+    const stripClosingSignature = (txt: string): string => {
+      let out = txt;
+      // Remove common closing salutations + optional name/team line that follows
+      const patterns = [
+        /\n+\s*(?:cordialement|bien (?:à|a) (?:vous|toi)|sincèrement|à très vite|à bientôt|au plaisir|belle journée|bonne journée|bonne soirée|amicalement|chaleureusement)[^\n]*(?:\n+[^\n]*)?\s*$/i,
+        /\n+\s*(?:l['’]\s*équipe\s+)?hub\s*(?:&|et|\+)\s*up[^\n]*\s*$/i,
+        /\n+\s*l['’]\s*équipe[^\n]*\s*$/i,
+      ];
+      for (const re of patterns) {
+        out = out.replace(re, '');
+      }
+      return out.trim();
+    };
+    bodyPlain = stripClosingSignature(bodyPlain);
+
     const bodyHtml = plainTextToHtml(bodyPlain);
     const angles = Array.isArray(parsed.angles) ? parsed.angles.slice(0, 5).map(a => ({
       title: String(a.title || '').slice(0, 200),
