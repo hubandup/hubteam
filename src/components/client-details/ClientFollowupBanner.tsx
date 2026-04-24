@@ -142,7 +142,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
               <Loader2 className="h-4 w-4 animate-spin" /> Chargement…
             </div>
           ) : !latest ? (
-            <p className="text-sm text-white/70 max-w-4xl mb-4 leading-relaxed">
+            <p className="text-sm text-white/70 mb-4 leading-relaxed">
               Aucune excuse générée pour ce client. Cliquez sur <strong className="text-white">Régénérer</strong> pour en créer une à partir des URLs veille, des comptes rendus et du site Hub & Up.
             </p>
           ) : (
