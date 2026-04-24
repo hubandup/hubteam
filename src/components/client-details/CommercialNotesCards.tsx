@@ -174,6 +174,35 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
     toast.success('CR supprimé');
   };
 
+  const openEdit = (n: any) => {
+    setEditingNote(n);
+    setEditContent(n.content || '');
+    setEditIsPrivate(!!n.is_private);
+  };
+
+  const saveEdit = async () => {
+    if (!editingNote || !editContent.trim()) return;
+    setSavingEdit(true);
+    try {
+      const { error } = await supabase
+        .from('commercial_notes')
+        .update({
+          content: editContent.trim(),
+          is_private: editIsPrivate,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', editingNote.id);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ['commercial-notes', trackingId] });
+      toast.success('CR modifié');
+      setEditingNote(null);
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur lors de la modification');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   return (
     <section className="bg-white border border-neutral-200">
       {/* Header */}
