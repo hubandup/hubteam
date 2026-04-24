@@ -305,15 +305,30 @@ Deno.serve(async (req) => {
       ? `- ADRESSE (obligatoire) : tutoiement à la 2ème personne du singulier. Utilise « tu », « ton/ta/tes », conjugaisons à la 2e pers. sing. (« peux-tu », « dis-moi », « tiens-moi au courant »). Salutation : « Bonjour [Prénom], » (jamais « Salut »). Aucun « vous » de politesse, jamais.`
       : `- ADRESSE (obligatoire) : vouvoiement à la 2ème personne du pluriel. Utilise « vous », « votre/vos », conjugaisons à la 2e pers. plur. (« pouvez-vous », « dites-moi », « tenez-moi au courant »). Salutation : « Bonjour [Prénom], ». Aucun tutoiement.`;
 
-    const systemPrompt = `Tu es un expert en développement commercial B2B pour HUB+UP (agence de communication). Tu génères une "excuse de relance" personnalisée pour un destinataire précis, en t'appuyant sur des actualités fraîches scrappées.
+    // Bloc Calendly conditionnel : si une action de proposition de RDV/call est demandée ET qu'un lien Calendly est disponible
+    const wantsBookingLink = ['propose_slot', 'schedule_call'].includes(actionKey);
+    const calendlyRule = (wantsBookingLink && calendly.url)
+      ? `- LIEN CALENDLY (obligatoire pour cette action) : intègre EXPLICITEMENT le lien Calendly suivant attribué à l'expéditeur (${calendly.owner === 'amandine' ? 'Amandine' : 'Charles'}) : ${calendly.url}\n  Présente-le naturellement dans la dernière phrase du corps (ex : "Voici mon agenda si vous souhaitez réserver un créneau directement : ${calendly.url}"). N'invente AUCUN autre lien Calendly.`
+      : `- LIEN CALENDLY : n'inclus AUCUN lien Calendly dans cet email (l'action choisie ne le requiert pas, ou aucun lien n'est configuré).`;
+
+    const systemPrompt = `Tu es un expert en développement commercial B2B pour HUB+UP (agence de communication). Tu génères une "excuse de relance" personnalisée pour un destinataire précis, en t'appuyant sur plusieurs sources de contexte fraîches : actualités scrappées du client, comptes rendus internes, projets en cours, contexte HUB+UP (résumé du site officiel) et Google Alerts liées au client.
+
+Hiérarchie des sources (du + important au - important pour construire l'angle de relance) :
+1. Comptes rendus client récents (suivi promis, point en suspens, prochaine étape) — accroche idéale.
+2. URLs scrapées récemment (actualité de l'entreprise, prises de parole, recrutements, levée).
+3. Google Alerts (actu externe sur l'entreprise / le secteur).
+4. Notes internes (suivi commercial) et derniers RDV planifiés.
+5. Projets liés (sujets sur lesquels HUB+UP a déjà travaillé pour ce client).
+6. Contexte HUB+UP (rappel discret de notre positionnement / actu récente, à n'utiliser QUE si pertinent pour ouvrir une porte — jamais de listing d'expertises).
 
 Règles:
-- Identifie 1 à 3 angles concrets tirés du contenu fourni (URLs scrappées en priorité, mais EXPLOITE AUSSI les 3 derniers comptes rendus client et notes internes : sujets évoqués, points en suspens, engagements pris, prochaines étapes mentionnées).
-- Si un compte rendu mentionne un suivi ou un point à reprendre, utilise-le comme accroche naturelle ("Suite à notre échange du …").
+- Identifie 1 à 3 angles concrets en respectant la hiérarchie ci-dessus. Cite la source réelle dans le champ "source" des angles.
+- Si un compte rendu mentionne un suivi ou un point à reprendre, utilise-le en priorité comme accroche naturelle ("Suite à notre échange du …").
 - Adapte le message au destinataire indiqué (rôle/relation : ${recipientRole}). Si c'est le contact principal habituel, ton plus familier ; sinon, présentation brève.
 ${addressRule}
 ${ctaRule}
 ${subjectRule}
+${calendlyRule}
 - Ton : ${toneInstructions[tone]}. En français. Pas d'emoji. Pas de formules creuses ("j'espère que vous allez bien").
 - Email court : 80–130 mots dans le corps.
 - RÈGLE IMPORTANTE — AUCUNE SIGNATURE : ne termine JAMAIS le message par une signature. Pas de "L'équipe Hub & Up", pas de "L'équipe HUB+UP", pas de "Cordialement, [prénom]", pas de "Bien à vous", pas de "Bonne journée, [prénom]", pas de nom propre en fin de message. Le message doit s'arrêter NET après la dernière phrase utile (appel à l'action, proposition de créneau, lien Calendly, formule ouverte). La signature personnelle de l'expéditeur sera ajoutée automatiquement par son client mail lors de l'envoi.
@@ -322,7 +337,7 @@ ${subjectRule}
 Tu DOIS répondre UNIQUEMENT avec un JSON valide UTF-8 (pas de markdown, pas de \`\`\`), strictement avec cette forme :
 {
   "angles": [
-    { "title": "string court", "description": "1 phrase", "source": "URL ou nom de source" }
+    { "title": "string court", "description": "1 phrase", "source": "URL ou nom de source réellement utilisée" }
   ],
   "subject": "Objet d'email${isJustHello ? ' sobre et personnel' : ' mentionnant l\'action proposée'}",
   "body_plain": "Corps de l'email en texte brut, paragraphes séparés par une ligne vide. Inclure la salutation et${isJustHello ? ' un angle concret puis une formule ouverte légère' : ' le call-to-action correspondant à l\'action demandée'}. AUCUNE SIGNATURE en fin de message — le texte se termine sur la dernière phrase utile, c'est tout."
@@ -339,9 +354,10 @@ Destinataire choisi pour ce message :
 - Prénom à utiliser dans la salutation : ${recipientFirstName || recipientName || ''}
 
 ACTION À PROPOSER (call-to-action obligatoire de l'email) : ${actionLabel}
-${contextNotes}${contextMeetings}${contextMeetingNotes}
+${wantsBookingLink && calendly.url ? `LIEN CALENDLY À INTÉGRER : ${calendly.url} (attribué à ${calendly.owner === 'amandine' ? 'Amandine' : 'Charles'})` : ''}
+${contextNotes}${contextMeetings}${contextMeetingNotes}${contextProjects}${contextGoogleAlerts}${contextHubAndUp}
 
-Contenus scrappés récemment :
+Contenus scrappés récemment (URLs veille du client) :
 
 ${sourcesText}
 
