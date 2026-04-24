@@ -246,9 +246,6 @@ function StatusActionsBar({ tracking, client }: { tracking: any; client: any }) 
           ))}
         </SelectContent>
       </Select>
-      <div className="ml-auto">
-        <ManualNotifyButton tracking={tracking} client={client} />
-      </div>
     </div>
   );
 }
