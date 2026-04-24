@@ -18,6 +18,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useClients } from '@/hooks/useClients';
 import { useQueryClient } from '@tanstack/react-query';
+import { prefetchClientDetails } from '@/hooks/usePrefetchAppData';
 import { useUserRole } from '@/hooks/useUserRole';
 import { PageLoader } from '@/components/PageLoader';
 
@@ -276,6 +277,7 @@ export default function CRM() {
                   key={client.id}
                   client={client}
                   onClick={() => navigate(`/client/${client.id}?tab=info`)}
+                  onMouseEnter={() => prefetchClientDetails(queryClient, client.id)}
                 />
               ))}
             </div>
@@ -285,6 +287,7 @@ export default function CRM() {
             <ClientListView
               clients={filteredClients}
               onClientClick={(clientId) => navigate(`/client/${clientId}?tab=info`)}
+              onClientHover={(clientId) => prefetchClientDetails(queryClient, clientId)}
             />
           </div>
         ) : viewMode === 'kanban' ? (
@@ -293,6 +296,7 @@ export default function CRM() {
               <ClientKanbanView
                 clients={filteredClients}
                 onClientClick={(clientId) => navigate(`/client/${clientId}?tab=info`)}
+                onClientHover={(clientId) => prefetchClientDetails(queryClient, clientId)}
                 onStageChange={handleStageChange}
               />
             </div>
@@ -305,6 +309,7 @@ export default function CRM() {
                   key={client.id}
                   client={client}
                   onClick={() => navigate(`/client/${client.id}?tab=info`)}
+                  onMouseEnter={() => prefetchClientDetails(queryClient, client.id)}
                 />
               ))}
             </div>
