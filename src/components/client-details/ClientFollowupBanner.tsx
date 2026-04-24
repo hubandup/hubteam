@@ -98,16 +98,9 @@ export function ClientFollowupBanner({ clientId }: Props) {
   return (
     <>
       <div
-        className="relative overflow-hidden"
+        className="relative"
         style={{ background: '#0f1422', border: '2px solid #0f1422', marginBottom: 20 }}
       >
-        {/* Decorative square */}
-        <div
-          aria-hidden
-          className="absolute top-0 right-0 -translate-y-12 translate-x-12"
-          style={{ width: 128, height: 128, background: '#E8FF4C', opacity: 0.15 }}
-        />
-
         {/* Header */}
         <div
           className="relative flex items-center justify-between px-5 py-4"
@@ -149,14 +142,11 @@ export function ClientFollowupBanner({ clientId }: Props) {
               <Loader2 className="h-4 w-4 animate-spin" /> Chargement…
             </div>
           ) : !latest ? (
-            <p className="text-sm text-white/70 max-w-4xl mb-4 leading-relaxed">
+            <p className="text-sm text-white/70 mb-4 leading-relaxed">
               Aucune excuse générée pour ce client. Cliquez sur <strong className="text-white">Régénérer</strong> pour en créer une à partir des URLs veille, des comptes rendus et du site Hub & Up.
             </p>
           ) : (
-            <p
-              className="text-sm text-white/90 max-w-4xl mb-4 leading-relaxed whitespace-pre-wrap"
-              style={{ display: '-webkit-box', WebkitLineClamp: 6, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
-            >
+            <p className="text-sm text-white/90 mb-4 leading-relaxed whitespace-pre-wrap">
               {plainBody}
             </p>
           )}
