@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { ChevronDown, Plus, Loader2, Trash2 } from 'lucide-react';
+import { ChevronDown, Plus, Loader2, Trash2, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -94,6 +94,7 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
   const [openAdd, setOpenAdd] = useState(false);
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [privacyFilter, setPrivacyFilter] = useState<'all' | 'public' | 'private'>('all');
 
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['commercial-notes', trackingId],
@@ -117,9 +118,15 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
     },
   });
 
+  const filteredNotes = useMemo(() => {
+    if (privacyFilter === 'public') return notes.filter((n: any) => !n.is_private);
+    if (privacyFilter === 'private') return notes.filter((n: any) => n.is_private);
+    return notes;
+  }, [notes, privacyFilter]);
+
   const visible = useMemo(
-    () => (showAll ? notes : notes.slice(0, 3)),
-    [showAll, notes],
+    () => (showAll ? filteredNotes : filteredNotes.slice(0, 3)),
+    [showAll, filteredNotes],
   );
 
   const submit = async () => {
@@ -163,23 +170,52 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
   return (
     <section className="bg-white border border-neutral-200">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-neutral-200 flex items-center justify-between gap-3">
+      <div className="px-5 py-4 border-b border-neutral-200 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-baseline gap-3 min-w-0">
           <h3 className="display leading-none" style={{ fontSize: 18, fontWeight: 700, color: '#0f1422' }}>
             Comptes rendus
           </h3>
           <span className="text-neutral-500 whitespace-nowrap leading-none" style={{ fontSize: 12 }}>
-            {visible.length} affiché{visible.length > 1 ? 's' : ''} · {notes.length} au total
+            {visible.length} affiché{visible.length > 1 ? 's' : ''} · {filteredNotes.length}{filteredNotes.length !== notes.length ? ` / ${notes.length}` : ''} au total
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => setOpenAdd(true)}
-          className="inline-flex items-center gap-1 font-semibold text-white shrink-0"
-          style={{ background: '#0f1422', padding: '6px 12px', fontSize: 12 }}
-        >
-          <Plus size={12} /> Ajouter un CR
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Filter */}
+          <div className="inline-flex border border-neutral-200" role="group" aria-label="Filtrer par confidentialité">
+            {([
+              { value: 'all', label: 'Tous' },
+              { value: 'public', label: 'Publics' },
+              { value: 'private', label: 'Privés' },
+            ] as const).map((opt) => {
+              const active = privacyFilter === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => { setPrivacyFilter(opt.value); setShowAll(false); }}
+                  className={`leading-none transition-colors ${active ? 'text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}
+                  style={{
+                    background: active ? '#0f1422' : 'transparent',
+                    padding: '6px 10px',
+                    fontSize: 11,
+                    fontWeight: 600,
+                  }}
+                  aria-pressed={active}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            onClick={() => setOpenAdd(true)}
+            className="inline-flex items-center gap-1 font-semibold text-white shrink-0"
+            style={{ background: '#0f1422', padding: '6px 12px', fontSize: 12 }}
+          >
+            <Plus size={12} /> Ajouter un CR
+          </button>
+        </div>
       </div>
 
       {/* List */}
@@ -187,9 +223,11 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
         <div className="px-5 py-8 flex items-center justify-center text-neutral-500 text-sm">
           <Loader2 className="h-4 w-4 animate-spin mr-2" /> Chargement…
         </div>
-      ) : notes.length === 0 ? (
+      ) : filteredNotes.length === 0 ? (
         <div className="px-5 py-8 text-center text-sm text-neutral-500">
-          Aucun compte rendu pour ce client.
+          {notes.length === 0
+            ? 'Aucun compte rendu pour ce client.'
+            : `Aucun compte rendu ${privacyFilter === 'private' ? 'privé' : 'public'} pour ce client.`}
         </div>
       ) : (
         <ul className="divide-y divide-neutral-100">
@@ -210,9 +248,19 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                     {TYPE_EMOJI(n.content || '')}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold" style={{ fontSize: 14, color: '#0f1422' }}>
-                      {format(extractMeetingDate(n.content || '', n.created_at), 'd MMMM yyyy', { locale: fr })}
-                    </p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-semibold" style={{ fontSize: 14, color: '#0f1422' }}>
+                        {format(extractMeetingDate(n.content || '', n.created_at), 'd MMMM yyyy', { locale: fr })}
+                      </p>
+                      {n.is_private && (
+                        <span
+                          className="inline-flex items-center gap-1 text-neutral-600"
+                          style={{ background: '#f3f4f6', padding: '2px 6px', fontSize: 10, fontWeight: 600 }}
+                        >
+                          <Lock size={10} /> Privé
+                        </span>
+                      )}
+                    </div>
                     <p className="text-neutral-500" style={{ fontSize: 12 }}>{authorName}</p>
                   </div>
                   <ChevronDown
@@ -248,17 +296,17 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
       )}
 
       {/* Footer */}
-      {notes.length > 3 && !showAll && (
+      {filteredNotes.length > 3 && !showAll && (
         <button
           type="button"
           onClick={() => setShowAll(true)}
           className="w-full uppercase tracking-wider font-semibold text-neutral-600 hover:bg-neutral-50 border-t border-neutral-200 transition-colors"
           style={{ fontSize: 12, padding: '12px 0' }}
         >
-          Voir les {notes.length - 3} autre{notes.length - 3 > 1 ? 's' : ''} compte{notes.length - 3 > 1 ? 's' : ''} rendu{notes.length - 3 > 1 ? 's' : ''}
+          Voir les {filteredNotes.length - 3} autre{filteredNotes.length - 3 > 1 ? 's' : ''} compte{filteredNotes.length - 3 > 1 ? 's' : ''} rendu{filteredNotes.length - 3 > 1 ? 's' : ''}
         </button>
       )}
-      {showAll && notes.length > 3 && (
+      {showAll && filteredNotes.length > 3 && (
         <button
           type="button"
           onClick={() => setShowAll(false)}
