@@ -170,23 +170,52 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
   return (
     <section className="bg-white border border-neutral-200">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-neutral-200 flex items-center justify-between gap-3">
+      <div className="px-5 py-4 border-b border-neutral-200 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-baseline gap-3 min-w-0">
           <h3 className="display leading-none" style={{ fontSize: 18, fontWeight: 700, color: '#0f1422' }}>
             Comptes rendus
           </h3>
           <span className="text-neutral-500 whitespace-nowrap leading-none" style={{ fontSize: 12 }}>
-            {visible.length} affiché{visible.length > 1 ? 's' : ''} · {notes.length} au total
+            {visible.length} affiché{visible.length > 1 ? 's' : ''} · {filteredNotes.length}{filteredNotes.length !== notes.length ? ` / ${notes.length}` : ''} au total
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => setOpenAdd(true)}
-          className="inline-flex items-center gap-1 font-semibold text-white shrink-0"
-          style={{ background: '#0f1422', padding: '6px 12px', fontSize: 12 }}
-        >
-          <Plus size={12} /> Ajouter un CR
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Filter */}
+          <div className="inline-flex border border-neutral-200" role="group" aria-label="Filtrer par confidentialité">
+            {([
+              { value: 'all', label: 'Tous' },
+              { value: 'public', label: 'Publics' },
+              { value: 'private', label: 'Privés' },
+            ] as const).map((opt) => {
+              const active = privacyFilter === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => { setPrivacyFilter(opt.value); setShowAll(false); }}
+                  className={`leading-none transition-colors ${active ? 'text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}
+                  style={{
+                    background: active ? '#0f1422' : 'transparent',
+                    padding: '6px 10px',
+                    fontSize: 11,
+                    fontWeight: 600,
+                  }}
+                  aria-pressed={active}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            onClick={() => setOpenAdd(true)}
+            className="inline-flex items-center gap-1 font-semibold text-white shrink-0"
+            style={{ background: '#0f1422', padding: '6px 12px', fontSize: 12 }}
+          >
+            <Plus size={12} /> Ajouter un CR
+          </button>
+        </div>
       </div>
 
       {/* List */}
