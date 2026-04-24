@@ -227,6 +227,20 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
                   ? format(new Date(m.meeting_date), 'd MMM yyyy', { locale: fr })
                   : 'Date à définir'}
               </span>
+              <span
+                className={`shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 border ${
+                  hasDate
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : 'border-neutral-200 bg-neutral-50 text-neutral-500'
+                }`}
+                style={{ fontSize: 9, lineHeight: 1, letterSpacing: '0.02em' }}
+                title={hasDate ? 'Date renseignée' : 'Date à définir'}
+              >
+                <span
+                  className={`inline-block w-1.5 h-1.5 rounded-full ${hasDate ? 'bg-emerald-500' : 'bg-neutral-400'}`}
+                />
+                {hasDate ? 'renseignée' : 'à définir'}
+              </span>
               <button
                 type="button"
                 onClick={() => setEditingId(m.id)}
