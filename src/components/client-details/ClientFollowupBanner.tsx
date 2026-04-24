@@ -101,6 +101,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
     const meetingNotes = s.meeting_notes || [];
     const meetings = s.meetings || [];
     const projects = s.projects || [];
+    const qualification = s.qualification || [];
     const hubandup = s.hubandup || [];
     const googleAlerts = s.google_alerts || [];
     const calendly = s.calendly;
@@ -109,6 +110,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
       ...meetingNotes.map((m: any) => ({ kind: 'CR', label: m.title || 'Compte rendu' })),
       ...meetings.map((m: any) => ({ kind: 'RDV', label: m.label || m.meeting_type })),
       ...projects.map((p: any) => ({ kind: 'PROJET', label: p.name })),
+      ...(qualification.length > 0 ? [{ kind: 'QUALIF', label: `Qualification du besoin (${qualification.length} réponse${qualification.length > 1 ? 's' : ''})` }] : []),
       ...hubandup.map((h: any) => ({ kind: 'HUB+UP', label: h.url?.replace(/^https?:\/\//, '') || 'Site Hub & Up' })),
       ...googleAlerts.map((g: any) => ({ kind: 'ALERT', label: `Google Alerts (${g.entries_count || 0} entrées)` })),
       ...(calendly && calendly.used ? [{ kind: 'CALENDLY', label: `${calendly.owner === 'amandine' ? 'Amandine' : 'Charles'} — ${calendly.url}` }] : []),

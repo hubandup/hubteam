@@ -143,6 +143,16 @@ Deno.serve(async (req) => {
       .order('updated_at', { ascending: false })
       .limit(5);
 
+    // Qualification du besoin (commercial_questionnaire)
+    const { data: qualificationRows } = await admin
+      .from('commercial_questionnaire')
+      .select('question_label, answer, display_order')
+      .eq('tracking_id', body.tracking_id)
+      .order('display_order');
+    const qualification = (qualificationRows || []).filter(
+      (q: any) => (q.answer || '').toString().trim().length > 0,
+    );
+
     // Cache Hub & Up (site)
     const { data: hubCache } = await admin
       .from('hubandup_context_cache')
@@ -248,6 +258,13 @@ Deno.serve(async (req) => {
         }).join('\n')}`
       : '';
 
+    const contextQualification = (qualification && qualification.length > 0)
+      ? `\n\nQualification du besoin (réponses du client recueillies en suivi commercial) :\n${qualification.map((q: any) => {
+          const ans = String(q.answer || '').replace(/\s+/g, ' ').slice(0, 300);
+          return `• ${q.question_label} → ${ans}`;
+        }).join('\n')}`
+      : '';
+
     const contextHubAndUp = (hubCache && hubCache.length > 0)
       ? `\n\nContexte HUB+UP (résumé du site, mis à jour le ${(hubCache[0] as any).last_scraped_at?.slice(0, 10) || 'N/A'}) :\n${hubCache.map((h: any) => {
           const sum = (h.summary || '').replace(/\s+/g, ' ').slice(0, 1500);
@@ -315,11 +332,12 @@ Deno.serve(async (req) => {
 
 Hiérarchie des sources (du + important au - important pour construire l'angle de relance) :
 1. Comptes rendus client récents (suivi promis, point en suspens, prochaine étape) — accroche idéale.
-2. URLs scrapées récemment (actualité de l'entreprise, prises de parole, recrutements, levée).
-3. Google Alerts (actu externe sur l'entreprise / le secteur).
-4. Notes internes (suivi commercial) et derniers RDV planifiés.
-5. Projets liés (sujets sur lesquels HUB+UP a déjà travaillé pour ce client).
-6. Contexte HUB+UP (rappel discret de notre positionnement / actu récente, à n'utiliser QUE si pertinent pour ouvrir une porte — jamais de listing d'expertises).
+2. Qualification du besoin (réponses du client : taille, cibles, objectifs, agence habituelle, etc.) — utilise-les pour personnaliser l'angle, démontrer une compréhension fine du contexte client et calibrer la proposition de valeur. NE PAS recracher littéralement les réponses ; les exploiter de manière subtile.
+3. URLs scrapées récemment (actualité de l'entreprise, prises de parole, recrutements, levée).
+4. Google Alerts (actu externe sur l'entreprise / le secteur).
+5. Notes internes (suivi commercial) et derniers RDV planifiés.
+6. Projets liés (sujets sur lesquels HUB+UP a déjà travaillé pour ce client).
+7. Contexte HUB+UP (rappel discret de notre positionnement / actu récente, à n'utiliser QUE si pertinent pour ouvrir une porte — jamais de listing d'expertises).
 
 Règles:
 - Identifie 1 à 3 angles concrets en respectant la hiérarchie ci-dessus. Cite la source réelle dans le champ "source" des angles.
@@ -355,7 +373,7 @@ Destinataire choisi pour ce message :
 
 ACTION À PROPOSER (call-to-action obligatoire de l'email) : ${actionLabel}
 ${wantsBookingLink && calendly.url ? `LIEN CALENDLY À INTÉGRER : ${calendly.url} (attribué à ${calendly.owner === 'amandine' ? 'Amandine' : 'Charles'})` : ''}
-${contextNotes}${contextMeetings}${contextMeetingNotes}${contextProjects}${contextGoogleAlerts}${contextHubAndUp}
+${contextNotes}${contextMeetings}${contextMeetingNotes}${contextQualification}${contextProjects}${contextGoogleAlerts}${contextHubAndUp}
 
 Contenus scrappés récemment (URLs veille du client) :
 
@@ -496,6 +514,10 @@ Génère le JSON.`;
         status: p.status || null,
         start_date: p.start_date || null,
         end_date: p.end_date || null,
+      })),
+      qualification: qualification.map((q: any) => ({
+        question: q.question_label,
+        answer: String(q.answer || '').slice(0, 300),
       })),
       hubandup: (hubCache || []).map((h: any) => ({
         url: h.source_url,
