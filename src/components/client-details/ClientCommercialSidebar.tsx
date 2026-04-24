@@ -262,7 +262,7 @@ export function ClientCommercialSidebar({ client }: Props) {
       {/* ÉQUIPE SUR LE COMPTE */}
       <SectionShell title="Équipe sur le compte">
         {team.length === 0 ? (
-          <p className="text-xs text-neutral-400 italic">Aucun membre rattaché.</p>
+          <p className="text-xs text-neutral-400 italic">Aucun membre assigné</p>
         ) : (
           <ul className="space-y-2">
             {team.map((m: any) => {
