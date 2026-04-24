@@ -226,19 +226,9 @@ function StatusActionsBar({ tracking, client }: { tracking: any; client: any }) 
       } catch (e) {
         console.error('notify-target-relance error', e);
       }
-    } else {
-      const newLabel = STATUS_OPTIONS.find((s) => s.value === status)?.label || status;
-      const prevLabel = STATUS_OPTIONS.find((s) => s.value === previousStatus)?.label || previousStatus;
-      notifyTeam({
-        client_id: tracking.client_id,
-        tracking_id: tracking.id,
-        company: client.company,
-        contact_name: `${client.first_name} ${client.last_name}`,
-        event_type: 'status_change',
-        details: { previous_status: previousStatus, previous_status_label: prevLabel, new_status: status, new_status_label: newLabel },
-      }).then(() => qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] }))
-        .catch((e) => console.error('notify status_change failed', e));
     }
+    // Note: les autres changements de statut ne déclenchent plus de notif Slack auto.
+    // Utilisez le bouton manuel "Notifier l'équipe sur Slack" pour notifier explicitement.
   };
 
   return (
@@ -317,19 +307,8 @@ function HeaderSection({ tracking, client }: { tracking: any; client: any }) {
       } catch (e) {
         console.error('notify-target-relance error', e);
       }
-    } else {
-      const newLabel = STATUS_OPTIONS.find((s) => s.value === status)?.label || status;
-      const prevLabel = STATUS_OPTIONS.find((s) => s.value === previousStatus)?.label || previousStatus;
-      notifyTeam({
-        client_id: tracking.client_id,
-        tracking_id: tracking.id,
-        company: client.company,
-        contact_name: `${client.first_name} ${client.last_name}`,
-        event_type: 'status_change',
-        details: { previous_status: previousStatus, previous_status_label: prevLabel, new_status: status, new_status_label: newLabel },
-      }).then(() => qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] }))
-        .catch((e) => console.error('notify status_change failed', e));
     }
+    // Note: les autres changements de statut ne déclenchent plus de notif Slack auto.
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -680,16 +659,8 @@ function NotesSection({ trackingId, tracking, client }: { trackingId: string; tr
     setAdding(false);
     qc.invalidateQueries({ queryKey: ['commercial-notes', trackingId] });
     toast.success('Note ajoutée');
-    // Auto-notify Slack (no email)
-    notifyTeam({
-      client_id: tracking.client_id,
-      tracking_id: tracking.id,
-      company: client.company,
-      contact_name: `${client.first_name} ${client.last_name}`,
-      event_type: 'note_added',
-      details: { note_preview: noteText.slice(0, 200) },
-    }).then(() => qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] }))
-      .catch((e) => console.error('notify note_added failed', e));
+    // Note: l'ajout d'une note ne déclenche plus de notif Slack auto.
+    // Utilisez le bouton manuel "Notifier l'équipe sur Slack" pour notifier explicitement.
   };
 
   const remove = async (id: string) => {
@@ -778,19 +749,8 @@ function MeetingsSection({ trackingId, tracking, client }: { trackingId: string;
     const before = meetings.find((m: any) => m.id === id);
     await supabase.from('commercial_meetings').update(patch).eq('id', id);
     qc.invalidateQueries({ queryKey: ['commercial-meetings', trackingId] });
-    // Auto-notify when a meeting date is set/changed
-    if (patch.meeting_date && patch.meeting_date !== before?.meeting_date) {
-      const label = before?.label || 'RDV';
-      notifyTeam({
-        client_id: tracking.client_id,
-        tracking_id: tracking.id,
-        company: client.company,
-        contact_name: `${client.first_name} ${client.last_name}`,
-        event_type: 'meeting_scheduled',
-        details: { meeting_label: label, meeting_date: patch.meeting_date },
-      }).then(() => qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] }))
-        .catch((e) => console.error('notify meeting_scheduled failed', e));
-    }
+    // Note: la planification/modification d'une date de RDV ne déclenche plus de notif Slack auto.
+    // Utilisez le bouton manuel "Notifier l'équipe sur Slack" pour notifier explicitement.
   };
 
   const rdvCount = meetings.filter((m: any) => m.meeting_type === 'rdv' || m.meeting_type === 'custom').length;

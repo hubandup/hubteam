@@ -1,55 +1,30 @@
+## Contexte — ce qui pousse aujourd'hui sur Slack depuis une fiche client
 
-Objectif: corriger l’erreur de synchro partielle sur Lagostina. Le vrai problème n’est pas le fichier Excel ni les logs `content.js`/extensions navigateur. La cause visible dans les logs est claire : `new row violates row-level security policy for table "lagostina_top_keywords"`.
+Dans `CommercialTrackingTab.tsx`, **3 actions sur la fiche client** déclenchent automatiquement un message Slack via l'edge function `notify-target-relance` (canal `#hubteam_sales`) :
 
-Constat
-- Le parsing du fichier médiatisation fonctionne :
-  - l’onglet `SEA` est bien lu
-  - l’onglet `Top Keywords SEA` est bien détecté
-  - les colonnes `clics / impressions / ctr / coût / conversions / cpc_moyen` sont bien reconnues
-- L’échec survient au moment du `insert` sur `lagostina_top_keywords`.
-- Les politiques RLS actuelles de `lagostina_top_keywords` autorisent seulement les utilisateurs ayant une ligne `lagostina_access(granted = true)`.
-- Or, dans l’app, les rôles `admin` et `team` ont un accès Lagostina “par défaut” côté UI, sans forcément avoir de ligne dans `lagostina_access`.
-- Résultat : un admin/team peut lancer la synchro, mais l’écriture dans `lagostina_top_keywords` est bloquée par la base.
+1. **Changement de statut commercial** vers `to_followup` → Slack + email (avec dédup serveur).
+2. **Tout autre changement de statut commercial** → Slack uniquement (`event_type: 'status_change'`, lignes 229-241 et 320-332).
+3. **Ajout d'une note / compte rendu** dans l'onglet Commercial → Slack uniquement (`event_type: 'note_added'`, lignes 683-692).
 
-Plan de correction
-1. Corriger les politiques RLS de `lagostina_top_keywords`
-- Remplacer les policies `SELECT / INSERT / UPDATE / DELETE` pour autoriser :
-  - `admin`
-  - `team`
-  - ou un utilisateur avec `lagostina_access.granted = true`
-- Aligner cette table sur la même logique que les autres tables Lagostina déjà étendues.
+À côté, il existe aussi un **bouton manuel** "Notifier l'équipe sur Slack" (`ManualNotifyButton`, ligne 403+) qui n'est déclenché que sur clic explicite — celui-là, on le garde tel quel.
 
-2. Vérifier la cohérence lecture/écriture
-- S’assurer que la lecture des Top Keywords dans `LagostinaMediatisation.tsx` utilisera exactement la même règle d’accès que l’écriture.
-- Éviter le cas où la synchro fonctionnerait mais l’affichage resterait vide pour certains rôles.
+Les autres flux Slack du projet (`slack-sync` Feed↔Slack, `weekly-slack-excuses` cron Targets) **ne sont pas concernés** : ils ne se déclenchent pas sur des modifs de fiche client.
 
-3. Renforcer la robustesse du sync média
-- Garder `parseMediaFile` en l’état pour le parsing, car la détection du fichier est correcte.
-- Ajouter une gestion d’erreur plus explicite autour du bloc Top Keywords pour que, si un souci réapparaît, le message indique clairement que l’échec vient des keywords et non du fichier SEA entier.
-- Optionnel mais recommandé : journaliser séparément le nombre de KPI média importés et le nombre de keywords importés.
+## Ce que je propose de faire
 
-4. Valider le flux complet
-- Relancer une synchronisation depuis kDrive avec un compte `admin/team`.
-- Vérifier :
-  - absence d’erreur 403 sur `lagostina_top_keywords`
-  - disparition du message “Synchronisation partielle”
-  - affichage effectif de `CPC / CTR / Budget dépensé`
-  - affichage du tableau `Top Keywords SEA`
+Couper les **deux notifications Slack automatiques** déclenchées par les modifs de fiche client, et **garder uniquement** :
+- Le bouton manuel "Notifier l'équipe sur Slack" (clic explicite).
+- La notif Slack + email du passage en statut `to_followup` (workflow Target structurant — dis-moi si tu veux aussi la couper).
 
-Détails techniques
-- Fichiers concernés :
-  - `supabase/migrations/...` : nouvelle migration pour corriger les policies RLS
-  - éventuellement `src/lib/lagostina-parsers.ts` : message d’erreur/logging plus précis
-- Cause racine :
-  ```text
-  UI: admin/team = accès automatique
-  Base: lagostina_top_keywords = accès seulement via lagostina_access
-  => incohérence d’autorisation
-  ```
-- Les erreurs `content.js`, `runtime/sendMessage`, `optibutton`, etc. ressemblent à du bruit venant d’extensions navigateur et ne sont pas la cause de l’échec de synchronisation.
+### Modifications
 
-Résultat attendu après implémentation
-- La synchronisation médiatisation devient complète
-- Les Top Keywords SEA s’insèrent correctement
-- Les KPI SEA associés remontent sans erreur
-- Le comportement d’accès Lagostina devient cohérent entre l’interface et la base
+**`src/components/client-details/CommercialTrackingTab.tsx`**
+- Supprimer l'appel `notifyTeam({ event_type: 'status_change', ... })` dans les deux blocs `updateStatus` (≈ lignes 229-241 et 320-332). Garder l'`update` du statut + le toast "Statut mis à jour".
+- Supprimer l'appel `notifyTeam({ event_type: 'note_added', ... })` après l'insertion d'une note (≈ lignes 683-692). Garder l'insert + le toast "Note ajoutée".
+- Conserver intacts : bloc `to_followup` (sauf si tu demandes de le couper), `ManualNotifyButton`, helper `notifyTeam` (toujours utilisé par le bouton manuel).
+
+L'edge function `notify-target-relance` reste inchangée — elle continue de fonctionner pour le bouton manuel et pour le passage en `to_followup`.
+
+## Question rapide avant d'exécuter
+
+Pour le passage de statut vers **"À relancer" (`to_followup`)** : c'est aujourd'hui une notif Slack + email automatique avec dédup. Je la **garde** ou je la **coupe aussi** ? (Par défaut je la garde car c'est un événement structurant du workflow Target, pas une "modif" classique.)
