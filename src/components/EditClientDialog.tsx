@@ -38,6 +38,7 @@ const clientSchema = z.object({
   company: z.string().trim().min(1, "L'entreprise est requise").max(200),
   email: z.string().trim().email('Email invalide').max(255),
   phone: z.string().trim().max(20).optional(),
+  address: z.string().trim().max(500).optional(),
   revenue: z.number().min(0, 'Le CA doit être positif'),
   active: z.boolean(),
   activity_sector_id: z.string().optional(),
@@ -60,6 +61,7 @@ interface EditClientDialogProps {
     company: string;
     email: string;
     phone?: string;
+    address?: string;
     revenue: number;
     active: boolean;
     logo_url?: string;
@@ -108,6 +110,7 @@ export function EditClientDialog({ client, onClientUpdated, open: controlledOpen
       company: client.company,
       email: client.email,
       phone: client.phone || '',
+      address: (client as any).address || '',
       revenue: client.revenue,
       active: client.active,
       activity_sector_id: client.activity_sector_id || '',
@@ -191,6 +194,7 @@ export function EditClientDialog({ client, onClientUpdated, open: controlledOpen
         company: client.company,
         email: client.email,
         phone: client.phone || '',
+        address: (client as any).address || '',
         revenue: client.revenue,
         active: client.active,
         activity_sector_id: client.activity_sector_id || '',
@@ -260,6 +264,7 @@ export function EditClientDialog({ client, onClientUpdated, open: controlledOpen
           company: data.company,
           email: data.email,
           phone: data.phone || null,
+          address: data.address || null,
           revenue: data.revenue,
           active: data.active,
           logo_url: logoUrl,
@@ -349,6 +354,18 @@ export function EditClientDialog({ client, onClientUpdated, open: controlledOpen
             />
             {errors.company && (
               <p className="text-sm text-destructive">{errors.company.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="address">Adresse de l'entreprise</Label>
+            <Input
+              id="address"
+              {...register('address')}
+              placeholder="12 rue de Paris, 75001 Paris"
+            />
+            {errors.address && (
+              <p className="text-sm text-destructive">{errors.address.message}</p>
             )}
           </div>
 
