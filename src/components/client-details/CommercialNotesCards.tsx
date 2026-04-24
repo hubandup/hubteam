@@ -96,6 +96,10 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [privacyFilter, setPrivacyFilter] = useState<'all' | 'public' | 'private'>('all');
   const [newIsPrivate, setNewIsPrivate] = useState(false);
+  const [editingNote, setEditingNote] = useState<any | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [editIsPrivate, setEditIsPrivate] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['commercial-notes', trackingId],
