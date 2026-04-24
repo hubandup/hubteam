@@ -95,6 +95,7 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [privacyFilter, setPrivacyFilter] = useState<'all' | 'public' | 'private'>('all');
+  const [newIsPrivate, setNewIsPrivate] = useState(false);
 
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['commercial-notes', trackingId],
@@ -138,9 +139,11 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
         tracking_id: trackingId,
         content: noteText,
         author_id: user.id,
+        is_private: newIsPrivate,
       });
       if (error) throw error;
       setContent('');
+      setNewIsPrivate(false);
       setOpenAdd(false);
       qc.invalidateQueries({ queryKey: ['commercial-notes', trackingId] });
       toast.success('CR ajouté');
@@ -318,7 +321,7 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
       )}
 
       {/* Add modal */}
-      <Dialog open={openAdd} onOpenChange={setOpenAdd}>
+      <Dialog open={openAdd} onOpenChange={(o) => { setOpenAdd(o); if (!o) { setContent(''); setNewIsPrivate(false); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="display" style={{ fontWeight: 700 }}>Nouveau compte rendu</DialogTitle>
@@ -330,8 +333,42 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
             rows={8}
             autoFocus
           />
+          {/* Visibility selector */}
+          <div className="flex items-center gap-2 pt-1">
+            <span className="text-xs text-neutral-500 mr-1">Visibilité :</span>
+            <div className="inline-flex border border-neutral-200" role="group" aria-label="Visibilité du compte rendu">
+              {([
+                { value: false, label: 'Public' },
+                { value: true, label: 'Privé' },
+              ] as const).map((opt) => {
+                const active = newIsPrivate === opt.value;
+                return (
+                  <button
+                    key={String(opt.value)}
+                    type="button"
+                    onClick={() => setNewIsPrivate(opt.value)}
+                    className={`leading-none transition-colors ${active ? 'text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}
+                    style={{
+                      background: active ? '#0f1422' : 'transparent',
+                      padding: '6px 12px',
+                      fontSize: 11,
+                      fontWeight: 600,
+                    }}
+                    aria-pressed={active}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+            {newIsPrivate && (
+              <span className="text-xs text-neutral-500">
+                Visible uniquement par l'équipe interne.
+              </span>
+            )}
+          </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => { setOpenAdd(false); setContent(''); }} disabled={submitting}>
+            <Button variant="ghost" onClick={() => { setOpenAdd(false); setContent(''); setNewIsPrivate(false); }} disabled={submitting}>
               Annuler
             </Button>
             <Button onClick={submit} disabled={!content.trim() || submitting}>
