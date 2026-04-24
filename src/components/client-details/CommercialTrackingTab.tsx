@@ -125,12 +125,68 @@ export function CommercialTrackingTab({ clientId, client }: Props) {
 
   return (
     <div className="space-y-4">
+      {/* Interlocuteur Hub & Up (déplacé depuis l'onglet Infos) */}
+      <MainContactSection client={client} />
+
       {/* Compact status + notify bar (unique actions, no duplicate of header) */}
       <StatusActionsBar tracking={tracking} client={client} />
 
       <ContactsSection trackingId={tracking.id} client={client} />
       <QualificationCollapsible trackingId={tracking.id} />
       <CommercialNotesCards trackingId={tracking.id} tracking={tracking} client={client} />
+    </div>
+  );
+}
+
+/* ---------- Interlocuteur Hub & Up ---------- */
+function MainContactSection({ client }: { client: any }) {
+  const qc = useQueryClient();
+  const { data: teamMembers = [] } = useQuery({
+    queryKey: ['hubup-team-members'],
+    queryFn: async () => {
+      const { data: rolesData } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('role', ['admin', 'team']);
+      const ids = (rolesData || []).map((r: any) => r.user_id);
+      if (ids.length === 0) return [];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', ids);
+      return profiles || [];
+    },
+  });
+
+  const handleChange = async (userId: string) => {
+    const contactId = userId === 'none' ? null : userId;
+    const { error } = await supabase
+      .from('clients')
+      .update({ main_contact_id: contactId })
+      .eq('id', client.id);
+    if (error) return toast.error('Erreur lors de la mise à jour');
+    toast.success('Interlocuteur Hub & Up mis à jour');
+    qc.invalidateQueries({ queryKey: ['client', client.id] });
+  };
+
+  return (
+    <div className="bg-white border border-neutral-200 px-4 py-3 flex items-center gap-3 flex-wrap">
+      <span className="uppercase tracking-wider font-semibold text-neutral-500" style={{ fontSize: 10 }}>
+        Interlocuteur Hub & Up
+      </span>
+      <Select value={client.main_contact_id || 'none'} onValueChange={handleChange}>
+        <SelectTrigger className="w-[260px] h-8 text-xs rounded-none">
+          <SelectValue placeholder="Sélectionner un interlocuteur" />
+        </SelectTrigger>
+        <SelectContent className="rounded-none">
+          <SelectItem value="none">Aucun</SelectItem>
+          {teamMembers.map((m: any) => (
+            <SelectItem key={m.id} value={m.id}>
+              {m.first_name} {m.last_name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
