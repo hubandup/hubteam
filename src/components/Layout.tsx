@@ -18,6 +18,7 @@ import { SkipToContent } from './common/SkipToContent';
 import { ArrowUpFromLine, Search } from 'lucide-react';
 import { Button } from './ui/button';
 import logo from '@/assets/logo-hubandup.svg';
+import { usePrefetchAppData } from '@/hooks/usePrefetchAppData';
 
 interface LayoutProps {
   children: ReactNode;
@@ -27,6 +28,8 @@ export function Layout({ children }: LayoutProps) {
   const isMobile = useIsMobile();
   const { isNative } = useCapacitor();
   const [smashOpen, setSmashOpen] = useState(false);
+  // Précharge en arrière-plan les données des pages clés (CRM, Projets, Tâches)
+  usePrefetchAppData();
 
   // Sur mobile/PWA, layout simplifié sans sidebar
   if (isMobile || isNative) {
