@@ -223,9 +223,11 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
         <div className="px-5 py-8 flex items-center justify-center text-neutral-500 text-sm">
           <Loader2 className="h-4 w-4 animate-spin mr-2" /> Chargement…
         </div>
-      ) : notes.length === 0 ? (
+      ) : filteredNotes.length === 0 ? (
         <div className="px-5 py-8 text-center text-sm text-neutral-500">
-          Aucun compte rendu pour ce client.
+          {notes.length === 0
+            ? 'Aucun compte rendu pour ce client.'
+            : `Aucun compte rendu ${privacyFilter === 'private' ? 'privé' : 'public'} pour ce client.`}
         </div>
       ) : (
         <ul className="divide-y divide-neutral-100">
@@ -246,9 +248,19 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                     {TYPE_EMOJI(n.content || '')}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold" style={{ fontSize: 14, color: '#0f1422' }}>
-                      {format(extractMeetingDate(n.content || '', n.created_at), 'd MMMM yyyy', { locale: fr })}
-                    </p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-semibold" style={{ fontSize: 14, color: '#0f1422' }}>
+                        {format(extractMeetingDate(n.content || '', n.created_at), 'd MMMM yyyy', { locale: fr })}
+                      </p>
+                      {n.is_private && (
+                        <span
+                          className="inline-flex items-center gap-1 text-neutral-600"
+                          style={{ background: '#f3f4f6', padding: '2px 6px', fontSize: 10, fontWeight: 600 }}
+                        >
+                          <Lock size={10} /> Privé
+                        </span>
+                      )}
+                    </div>
                     <p className="text-neutral-500" style={{ fontSize: 12 }}>{authorName}</p>
                   </div>
                   <ChevronDown
