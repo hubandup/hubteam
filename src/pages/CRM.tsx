@@ -101,22 +101,30 @@ export default function CRM() {
   }, [clients]);
 
   const handleStageChange = async (clientId: string, newStage: string) => {
-    try {
-      const { error } = await supabase
-        .from('clients')
-        .update({ kanban_stage: newStage })
-        .eq('id', clientId);
+    // Snapshot pour rollback éventuel
+    const previousClients = queryClient.getQueryData<any[]>(['clients']);
 
-      if (error) throw error;
+    // Patch optimiste : la card change de colonne instantanément
+    queryClient.setQueryData<any[]>(['clients'], (old) =>
+      (old || []).map((c) => (c.id === clientId ? { ...c, kanban_stage: newStage } : c)),
+    );
 
-      // Invalidate cache to refresh data
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
+    const { error } = await supabase
+      .from('clients')
+      .update({ kanban_stage: newStage })
+      .eq('id', clientId);
 
-      toast.success(t('crm.statusUpdated'));
-    } catch (error) {
+    if (error) {
+      // Rollback
+      if (previousClients) queryClient.setQueryData(['clients'], previousClients);
       console.error('Error updating client stage:', error);
       toast.error(t('crm.statusUpdateError'));
+      return;
     }
+
+    // Sync final avec la base
+    queryClient.invalidateQueries({ queryKey: ['clients'] });
+    toast.success(t('crm.statusUpdated'));
   };
 
   if (loading) {
