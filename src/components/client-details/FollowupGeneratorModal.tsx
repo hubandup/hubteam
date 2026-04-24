@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Loader2, Sparkles, History } from 'lucide-react';
+import { Loader2, Sparkles, History, CalendarClock, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -66,6 +66,56 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
       return data || [];
     },
   });
+
+  // Configuration Calendly (app_config) — utilisée pour afficher l'attribution
+  // uniquement quand l'action choisie nécessite un lien de réservation.
+  const { data: calendlyCfg } = useQuery({
+    queryKey: ['app-config-calendly'],
+    enabled: open,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('app_config')
+        .select('key, value')
+        .in('key', [
+          'calendly_charles_email',
+          'calendly_charles_url',
+          'calendly_amandine_email',
+          'calendly_amandine_url',
+        ]);
+      const cfg: Record<string, string> = {};
+      (data || []).forEach((r: any) => { cfg[r.key] = r.value || ''; });
+      return cfg;
+    },
+  });
+
+  const ACTIONS_REQUIRING_BOOKING = ['propose_slot', 'schedule_call'];
+  const wantsBookingLink = ACTIONS_REQUIRING_BOOKING.includes(action);
+
+  // Résolution de l'attribution via l'email de l'utilisateur authentifié
+  const [resolvedCalendly, setResolvedCalendly] = useState<
+    null | { owner: 'charles' | 'amandine'; url: string; email: string }
+  >(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!wantsBookingLink || !calendlyCfg) { setResolvedCalendly(null); return; }
+      const { data: { user } } = await supabase.auth.getUser();
+      const me = (user?.email || '').toLowerCase();
+      const cfg = calendlyCfg;
+      const charlesEmail = (cfg.calendly_charles_email || '').toLowerCase();
+      const amandineEmail = (cfg.calendly_amandine_email || '').toLowerCase();
+      let pick: typeof resolvedCalendly = null;
+      if (me && me === amandineEmail && cfg.calendly_amandine_url) {
+        pick = { owner: 'amandine', email: cfg.calendly_amandine_email, url: cfg.calendly_amandine_url };
+      } else if (me && me === charlesEmail && cfg.calendly_charles_url) {
+        pick = { owner: 'charles', email: cfg.calendly_charles_email, url: cfg.calendly_charles_url };
+      } else if (cfg.calendly_charles_url) {
+        pick = { owner: 'charles', email: cfg.calendly_charles_email, url: cfg.calendly_charles_url };
+      }
+      if (!cancelled) setResolvedCalendly(pick);
+    })();
+    return () => { cancelled = true; };
+  }, [wantsBookingLink, calendlyCfg]);
 
   const clientRow: any = tracking?.clients || {};
 
@@ -226,6 +276,35 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
                 <Input value={customName} onChange={(e) => setCustomName(e.target.value)} className="mt-1" />
               </div>
             </>
+          )}
+
+          {wantsBookingLink && (
+            <div className="md:col-span-2">
+              {resolvedCalendly ? (
+                <div
+                  className="flex items-start gap-2 px-3 py-2 text-xs"
+                  style={{ background: 'rgba(232,255,76,0.15)', border: '1px solid rgba(15,20,34,0.15)' }}
+                >
+                  <CalendarClock className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: '#0f1422' }} />
+                  <div className="min-w-0">
+                    <p className="font-semibold" style={{ color: '#0f1422' }}>
+                      Lien Calendly attribué : {resolvedCalendly.owner === 'amandine' ? 'Amandine' : 'Charles'}
+                    </p>
+                    <p className="text-[11px] text-neutral-700 truncate">{resolvedCalendly.url}</p>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="flex items-start gap-2 px-3 py-2 text-xs"
+                  style={{ background: 'rgba(255,200,0,0.12)', border: '1px solid rgba(255,160,0,0.35)' }}
+                >
+                  <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: '#a15c00' }} />
+                  <p className="text-neutral-800">
+                    Aucun lien Calendly configuré pour cette action. Le message sera généré sans lien de réservation.
+                  </p>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
