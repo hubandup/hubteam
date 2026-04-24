@@ -384,30 +384,7 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
             </div>
           )}
 
-          {!isClient && !isAgency && (
-            <div className="flex items-start gap-3">
-              <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div className="flex-1">
-                <p className="text-sm text-muted-foreground mb-2">Interlocuteur Hub & Up</p>
-                <Select
-                  value={client.main_contact_id || 'none'}
-                  onValueChange={handleMainContactChange}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un interlocuteur" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Aucun</SelectItem>
-                    {teamMembers.map((member) => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.first_name} {member.last_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
+          {/* Interlocuteur Hub & Up déplacé dans l'onglet "Commercial" */}
         </CardContent>
       </Card>
 
