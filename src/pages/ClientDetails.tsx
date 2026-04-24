@@ -24,6 +24,8 @@ import { ClientKDriveTab } from '@/components/client-details/ClientKDriveTab';
 import { ClientInvoicesTab } from '@/components/client-details/ClientInvoicesTab';
 import { ClientBoardTab } from '@/components/client-details/ClientBoardTab';
 import { CommercialTrackingTab } from '@/components/client-details/CommercialTrackingTab';
+import { ClientFollowupBanner } from '@/components/client-details/ClientFollowupBanner';
+import { ClientCommercialSidebar } from '@/components/client-details/ClientCommercialSidebar';
 import { useUserRole } from '@/hooks/useUserRole';
 
 interface TabDef {
@@ -333,15 +335,21 @@ export default function ClientDetails() {
 
         {/* STRUCTURE PRÉPARÉE pour les prochaines étapes */}
         <div className="space-y-4">
-          {/* Zone "actions commerciales" (à remplir dans une étape suivante) */}
-          <div data-zone="commercial-actions" />
+          {/* Zone "actions commerciales" : bandeau Excuse de relance IA (admin only) */}
+          {role === 'admin' && (
+            <div data-zone="commercial-actions">
+              <ClientFollowupBanner clientId={client.id} />
+            </div>
+          )}
 
           {/* Grid 2/3 + 1/3 (corps) */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2 min-w-0">
               {currentTab?.content}
             </div>
-            <aside className="lg:col-span-1 min-w-0" data-zone="commercial-sidebar" />
+            <aside className="lg:col-span-1 min-w-0" data-zone="commercial-sidebar">
+              <ClientCommercialSidebar client={client} />
+            </aside>
           </div>
         </div>
       </div>
