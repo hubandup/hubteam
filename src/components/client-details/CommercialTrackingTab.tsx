@@ -124,14 +124,14 @@ export function CommercialTrackingTab({ clientId, client }: Props) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <HeaderSection tracking={tracking} client={client} />
-      
+
       <ContactsSection trackingId={tracking.id} client={client} />
-      <NotesSection trackingId={tracking.id} tracking={tracking} client={client} />
+      <CommercialNotesCards trackingId={tracking.id} tracking={tracking} client={client} />
       <MeetingsSection trackingId={tracking.id} tracking={tracking} client={client} />
-      <QuestionnaireSection trackingId={tracking.id} />
       <ScrapeUrlsSection trackingId={tracking.id} />
+      <QualificationCollapsible trackingId={tracking.id} />
     </div>
   );
 }
