@@ -94,24 +94,27 @@ export function ClientCommercialSidebar({ client }: Props) {
     enabled: !!clientId,
     queryFn: async () => {
       // 1. project ids linked to this client
-      const { data: links } = await supabase
+      const { data: links, error: linksErr } = await supabase
         .from('project_clients')
         .select('project_id')
         .eq('client_id', clientId);
+      console.log('[ClientCommercialSidebar] project_clients →', { links, linksErr, clientId });
       const projectIds = (links || []).map((l: any) => l.project_id);
       if (projectIds.length === 0) return [];
       // 2. profile-type team members on those projects
-      const { data: members } = await supabase
+      const { data: members, error: membersErr } = await supabase
         .from('project_team_members')
         .select('member_id, member_type')
         .in('project_id', projectIds)
         .eq('member_type', 'profile');
+      console.log('[ClientCommercialSidebar] project_team_members →', { members, membersErr });
       const memberIds = Array.from(new Set((members || []).map((m: any) => m.member_id))).filter(Boolean);
       if (memberIds.length === 0) return [];
-      const { data: profiles } = await supabase
+      const { data: profiles, error: profilesErr } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, role, avatar_url')
         .in('id', memberIds);
+      console.log('[ClientCommercialSidebar] profiles →', { profiles, profilesErr });
       return profiles || [];
     },
   });
@@ -121,11 +124,12 @@ export function ClientCommercialSidebar({ client }: Props) {
     queryKey: ['client-owner', client?.main_contact_id],
     enabled: !!client?.main_contact_id && teamMembers.length === 0,
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, role, avatar_url')
         .eq('id', client.main_contact_id)
         .maybeSingle();
+      console.log('[ClientCommercialSidebar] owner fallback →', { data, error, main_contact_id: client?.main_contact_id });
       return data;
     },
   });
