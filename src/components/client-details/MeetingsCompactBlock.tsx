@@ -124,10 +124,12 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
   return (
     <section className="bg-white border border-neutral-200">
       <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Calendar size={14} style={{ color: '#0f1422' }} />
+        <div className="flex items-center gap-2 leading-none">
+          <span className="flex items-center justify-center shrink-0">
+            <Calendar size={14} style={{ color: '#0f1422' }} />
+          </span>
           <h3
-            className="uppercase tracking-wider font-bold display"
+            className="uppercase tracking-wider font-bold display leading-none"
             style={{ color: '#0f1422', fontSize: 10 }}
           >
             Étapes de rendez-vous

@@ -164,11 +164,11 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
     <section className="bg-white border border-neutral-200">
       {/* Header */}
       <div className="px-5 py-4 border-b border-neutral-200 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <h3 className="display" style={{ fontSize: 18, fontWeight: 700, color: '#0f1422' }}>
+        <div className="flex items-baseline gap-3 min-w-0">
+          <h3 className="display leading-none" style={{ fontSize: 18, fontWeight: 700, color: '#0f1422' }}>
             Comptes rendus
           </h3>
-          <span className="text-neutral-500 whitespace-nowrap" style={{ fontSize: 12 }}>
+          <span className="text-neutral-500 whitespace-nowrap leading-none" style={{ fontSize: 12 }}>
             {visible.length} affiché{visible.length > 1 ? 's' : ''} · {notes.length} au total
           </span>
         </div>
