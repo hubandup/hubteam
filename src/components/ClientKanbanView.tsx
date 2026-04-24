@@ -232,6 +232,7 @@ export function ClientKanbanView({ clients, onClientClick, onClientHover, onStag
             stage={stage}
             clients={clientsByStage[stage.id] || []}
             onClientClick={onClientClick}
+            onClientHover={onClientHover}
           />
         ))}
       </div>
