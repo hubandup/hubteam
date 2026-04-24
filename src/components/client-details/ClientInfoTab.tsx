@@ -291,20 +291,15 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
 
   return (
     <div className="space-y-6">
-      {!isMobile && (
+      {!isMobile && client.kdrive_drive_id && client.kdrive_folder_id && !isAgency && !isClient && (
         <div className="flex justify-end gap-2">
-          {client.kdrive_drive_id && client.kdrive_folder_id && !isAgency && !isClient && (
-            <Button
-              variant="outline"
-              onClick={() => window.open(`https://kdrive.infomaniak.com/app/drive/${client.kdrive_drive_id}/files/${client.kdrive_folder_id}`, '_blank')}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Ouvrir dans KDrive
-            </Button>
-          )}
-          <ProtectedAction module="crm" action="update">
-            <EditClientDialog client={client} onClientUpdated={onUpdate} />
-          </ProtectedAction>
+          <Button
+            variant="outline"
+            onClick={() => window.open(`https://kdrive.infomaniak.com/app/drive/${client.kdrive_drive_id}/files/${client.kdrive_folder_id}`, '_blank')}
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Ouvrir dans KDrive
+          </Button>
         </div>
       )}
       
