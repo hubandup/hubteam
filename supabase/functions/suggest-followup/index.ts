@@ -480,6 +480,9 @@ Génère le JSON.`;
     };
     bodyPlain = stripClosingSignature(bodyPlain);
 
+    // Collapse double (or more) line breaks into a single line break
+    bodyPlain = bodyPlain.replace(/\n{2,}/g, '\n').trim();
+
     const bodyHtml = plainTextToHtml(bodyPlain);
     const angles = Array.isArray(parsed.angles) ? parsed.angles.slice(0, 5).map(a => ({
       title: String(a.title || '').slice(0, 200),
