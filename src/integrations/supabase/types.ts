@@ -380,6 +380,30 @@ export type Database = {
         }
         Relationships: []
       }
+      app_config: {
+        Row: {
+          created_at: string
+          description: string | null
+          key: string
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          key: string
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          key?: string
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
       brisach_access: {
         Row: {
           created_at: string
@@ -1133,10 +1157,12 @@ export type Database = {
       }
       commercial_scrape_urls: {
         Row: {
+          content_summary: string | null
           created_at: string
           id: string
           label: string | null
           last_scrape_content: string | null
+          last_scrape_error: string | null
           last_scrape_status: string | null
           last_scrape_summary: string | null
           last_scraped_at: string | null
@@ -1145,10 +1171,12 @@ export type Database = {
           url: string
         }
         Insert: {
+          content_summary?: string | null
           created_at?: string
           id?: string
           label?: string | null
           last_scrape_content?: string | null
+          last_scrape_error?: string | null
           last_scrape_status?: string | null
           last_scrape_summary?: string | null
           last_scraped_at?: string | null
@@ -1157,10 +1185,12 @@ export type Database = {
           url: string
         }
         Update: {
+          content_summary?: string | null
           created_at?: string
           id?: string
           label?: string | null
           last_scrape_content?: string | null
+          last_scrape_error?: string | null
           last_scrape_status?: string | null
           last_scrape_summary?: string | null
           last_scraped_at?: string | null
@@ -1480,6 +1510,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      google_alerts_cache: {
+        Row: {
+          created_at: string
+          entries: Json
+          feed_url: string
+          fetch_error: string | null
+          fetch_status: string | null
+          fetched_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entries?: Json
+          feed_url: string
+          fetch_error?: string | null
+          fetch_status?: string | null
+          fetched_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entries?: Json
+          feed_url?: string
+          fetch_error?: string | null
+          fetch_status?: string | null
+          fetched_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hubandup_context_cache: {
+        Row: {
+          created_at: string
+          id: string
+          last_scrape_error: string | null
+          last_scrape_status: string | null
+          last_scraped_at: string | null
+          source_url: string
+          summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_scrape_error?: string | null
+          last_scrape_status?: string | null
+          last_scraped_at?: string | null
+          source_url: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_scrape_error?: string | null
+          last_scrape_status?: string | null
+          last_scraped_at?: string | null
+          source_url?: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       hubandup_site_cache: {
         Row: {
