@@ -135,6 +135,26 @@ export function ClientCommercialSidebar({ client }: Props) {
     [currentStage],
   );
 
+  const qc = useQueryClient();
+  const [updatingStage, setUpdatingStage] = useState<string | null>(null);
+
+  const updateStage = async (stageId: string) => {
+    if (!client?.id || stageId === currentStage || updatingStage) return;
+    setUpdatingStage(stageId);
+    const { error } = await supabase
+      .from('clients')
+      .update({ kanban_stage: stageId as any })
+      .eq('id', client.id);
+    setUpdatingStage(null);
+    if (error) {
+      toast.error('Impossible de mettre à jour l\'étape');
+      return;
+    }
+    toast.success('Étape mise à jour');
+    qc.invalidateQueries({ queryKey: ['client', client.id] });
+    qc.invalidateQueries({ queryKey: ['clients'] });
+  };
+
   return (
     <div className="space-y-4">
       {/* 1. PIPELINE */}
@@ -151,15 +171,25 @@ export function ClientCommercialSidebar({ client }: Props) {
             const labelClass = isCurrent
               ? 'font-semibold text-neutral-900'
               : isDone ? 'text-neutral-700' : 'text-neutral-400';
+            const isUpdating = updatingStage === s.id;
             return (
-              <li key={s.id} className="flex items-center gap-2.5 text-xs">
-                <span
-                  className="inline-flex items-center justify-center flex-shrink-0"
-                  style={{ width: 16, height: 16, border: '1px solid', ...stepStyle }}
+              <li key={s.id}>
+                <button
+                  type="button"
+                  onClick={() => updateStage(s.id)}
+                  disabled={!!updatingStage || isCurrent}
+                  className="w-full flex items-center gap-2.5 text-xs text-left hover:bg-neutral-50 -mx-1 px-1 py-0.5 transition-colors disabled:cursor-default disabled:hover:bg-transparent"
+                  aria-label={`Passer à l'étape ${s.label}`}
+                  aria-current={isCurrent ? 'step' : undefined}
                 >
-                  {isDone && <CheckCircle2 size={10} className="text-white" />}
-                </span>
-                <span className={labelClass}>{s.label}</span>
+                  <span
+                    className="inline-flex items-center justify-center flex-shrink-0"
+                    style={{ width: 16, height: 16, border: '1px solid', ...stepStyle, opacity: isUpdating ? 0.5 : 1 }}
+                  >
+                    {isDone && <CheckCircle2 size={10} className="text-white" />}
+                  </span>
+                  <span className={labelClass}>{s.label}</span>
+                </button>
               </li>
             );
           })}
