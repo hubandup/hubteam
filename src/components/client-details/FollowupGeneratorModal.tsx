@@ -108,7 +108,7 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
     }
     setBusy(true);
     try {
-      const labels = { ...ACTION_LABELS, custom: customAction.trim() };
+      const labels: Record<string, string> = { ...ACTION_LABELS, custom: customAction.trim() };
       const actionLabel = labels[action] || labels.propose_slot;
       const { data, error } = await supabase.functions.invoke('suggest-followup', {
         body: {

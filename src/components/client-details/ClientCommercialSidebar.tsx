@@ -106,21 +106,19 @@ export function ClientCommercialSidebar({ client }: Props) {
         .eq('client_id', clientId);
       const projectIds = (links || []).map((l: any) => l.project_id);
       if (projectIds.length === 0) return [];
-      // 2. team members on those projects
+      // 2. profile-type team members on those projects
       const { data: members } = await supabase
         .from('project_team_members')
-        .select('user_id, profiles:user_id(id, first_name, last_name, role, avatar_url)')
-        .in('project_id', projectIds);
-      // dedupe by user_id
-      const seen = new Set<string>();
-      const out: any[] = [];
-      for (const m of members || []) {
-        if (m.user_id && !seen.has(m.user_id)) {
-          seen.add(m.user_id);
-          out.push(m.profiles);
-        }
-      }
-      return out.filter(Boolean);
+        .select('member_id, member_type')
+        .in('project_id', projectIds)
+        .eq('member_type', 'profile');
+      const memberIds = Array.from(new Set((members || []).map((m: any) => m.member_id))).filter(Boolean);
+      if (memberIds.length === 0) return [];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, role, avatar_url')
+        .in('id', memberIds);
+      return profiles || [];
     },
   });
 
