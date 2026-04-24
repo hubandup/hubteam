@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   ArrowLeft, Loader2, FileText, Receipt, Users, FolderKanban, Trash2,
-  BarChart3, Briefcase, MoreHorizontal, User as UserIcon, Mail, Phone, Clock,
+  BarChart3, Briefcase, MoreHorizontal, User as UserIcon, Mail, Phone, Clock, Pencil,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -26,6 +26,8 @@ import { ClientBoardTab } from '@/components/client-details/ClientBoardTab';
 import { CommercialTrackingTab } from '@/components/client-details/CommercialTrackingTab';
 import { ClientFollowupBanner } from '@/components/client-details/ClientFollowupBanner';
 import { ClientCommercialSidebar } from '@/components/client-details/ClientCommercialSidebar';
+import { EditClientDialog } from '@/components/EditClientDialog';
+import { ProtectedAction } from '@/components/ProtectedAction';
 import { useUserRole } from '@/hooks/useUserRole';
 
 interface TabDef {
@@ -48,6 +50,7 @@ export default function ClientDetails() {
   const [invoicesCount, setInvoicesCount] = useState(0);
   const [sectorName, setSectorName] = useState<string>('');
   const [statusName, setStatusName] = useState<string>('');
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [sourceName, setSourceName] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('commercial');
 
@@ -264,8 +267,14 @@ export default function ClientDetails() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="rounded-none">
+                <ProtectedAction module="crm" action="update">
+                  <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setEditDialogOpen(true); }}>
+                    <Pencil className="h-4 w-4 mr-2" /> Modifier
+                  </DropdownMenuItem>
+                </ProtectedAction>
                 {canDelete && (
                   <>
+                    <DropdownMenuSeparator />
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
@@ -289,11 +298,15 @@ export default function ClientDetails() {
                     </AlertDialog>
                   </>
                 )}
-                {!canDelete && (
-                  <DropdownMenuItem disabled>Aucune action disponible</DropdownMenuItem>
-                )}
               </DropdownMenuContent>
             </DropdownMenu>
+            <EditClientDialog
+              client={client}
+              onClientUpdated={fetchClientDetails}
+              open={editDialogOpen}
+              onOpenChange={setEditDialogOpen}
+              hideTrigger
+            />
           </div>
 
           {/* Tabs sous le header dans le même conteneur */}

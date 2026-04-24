@@ -73,10 +73,18 @@ interface EditClientDialogProps {
     linkedin_connected?: boolean;
   };
   onClientUpdated: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }
 
-export function EditClientDialog({ client, onClientUpdated }: EditClientDialogProps) {
-  const [open, setOpen] = useState(false);
+export function EditClientDialog({ client, onClientUpdated, open: controlledOpen, onOpenChange, hideTrigger }: EditClientDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = (v: boolean) => {
+    if (onOpenChange) onOpenChange(v);
+    if (controlledOpen === undefined) setInternalOpen(v);
+  };
   const [loading, setLoading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(client.logo_url || null);
@@ -282,19 +290,21 @@ export function EditClientDialog({ client, onClientUpdated }: EditClientDialogPr
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            type="button"
-            onClick={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-          >
-            <Pencil className="mr-2 h-4 w-4" />
-            Modifier
-          </Button>
-        </DialogTrigger>
+        {!hideTrigger && (
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <Pencil className="mr-2 h-4 w-4" />
+              Modifier
+            </Button>
+          </DialogTrigger>
+        )}
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
             <DialogTitle>Modifier le client</DialogTitle>
