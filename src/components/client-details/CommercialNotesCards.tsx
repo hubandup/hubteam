@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { ChevronDown, Plus, Loader2, Trash2, Lock } from 'lucide-react';
+import { ChevronDown, Plus, Loader2, Trash2, Lock, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -96,6 +96,10 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [privacyFilter, setPrivacyFilter] = useState<'all' | 'public' | 'private'>('all');
   const [newIsPrivate, setNewIsPrivate] = useState(false);
+  const [editingNote, setEditingNote] = useState<any | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [editIsPrivate, setEditIsPrivate] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['commercial-notes', trackingId],
@@ -168,6 +172,35 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
     await supabase.from('commercial_notes').delete().eq('id', id);
     qc.invalidateQueries({ queryKey: ['commercial-notes', trackingId] });
     toast.success('CR supprimé');
+  };
+
+  const openEdit = (n: any) => {
+    setEditingNote(n);
+    setEditContent(n.content || '');
+    setEditIsPrivate(!!n.is_private);
+  };
+
+  const saveEdit = async () => {
+    if (!editingNote || !editContent.trim()) return;
+    setSavingEdit(true);
+    try {
+      const { error } = await supabase
+        .from('commercial_notes')
+        .update({
+          content: editContent.trim(),
+          is_private: editIsPrivate,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', editingNote.id);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ['commercial-notes', trackingId] });
+      toast.success('CR modifié');
+      setEditingNote(null);
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur lors de la modification');
+    } finally {
+      setSavingEdit(false);
+    }
   };
 
   return (
@@ -278,13 +311,22 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                       <p className="text-sm text-neutral-700 leading-relaxed whitespace-pre-wrap">
                         {n.content}
                       </p>
-                      <button
-                        type="button"
-                        onClick={() => remove(n.id)}
-                        className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-red-600"
-                      >
-                        <Trash2 size={12} /> Supprimer
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => openEdit(n)}
+                          className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-900"
+                        >
+                          <Pencil size={12} /> Modifier
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => remove(n.id)}
+                          className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-red-600"
+                        >
+                          <Trash2 size={12} /> Supprimer
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <p className="text-sm text-neutral-700 leading-relaxed">
@@ -374,6 +416,59 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
             <Button onClick={submit} disabled={!content.trim() || submitting}>
               {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
               Ajouter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit modal */}
+      <Dialog open={!!editingNote} onOpenChange={(o) => { if (!o) setEditingNote(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="display" style={{ fontWeight: 700 }}>Modifier le compte rendu</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            placeholder="Décrivez l'échange, les points clés, les prochaines étapes…"
+            rows={8}
+            autoFocus
+          />
+          <div className="flex items-center gap-2 pt-1">
+            <span className="text-xs text-neutral-500 mr-1">Visibilité :</span>
+            <div className="inline-flex border border-neutral-200" role="group" aria-label="Visibilité du compte rendu">
+              {([
+                { value: false, label: 'Public' },
+                { value: true, label: 'Privé' },
+              ] as const).map((opt) => {
+                const active = editIsPrivate === opt.value;
+                return (
+                  <button
+                    key={String(opt.value)}
+                    type="button"
+                    onClick={() => setEditIsPrivate(opt.value)}
+                    className={`leading-none transition-colors ${active ? 'text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}
+                    style={{
+                      background: active ? '#0f1422' : 'transparent',
+                      padding: '6px 12px',
+                      fontSize: 11,
+                      fontWeight: 600,
+                    }}
+                    aria-pressed={active}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditingNote(null)} disabled={savingEdit}>
+              Annuler
+            </Button>
+            <Button onClick={saveEdit} disabled={!editContent.trim() || savingEdit}>
+              {savingEdit ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Pencil className="h-4 w-4 mr-1" />}
+              Enregistrer
             </Button>
           </DialogFooter>
         </DialogContent>
