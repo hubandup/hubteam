@@ -133,13 +133,13 @@ export function QualificationCollapsible({ trackingId }: Props) {
         onClick={() => setOpen((o) => !o)}
         className="w-full px-5 py-4 flex items-center justify-between hover:bg-neutral-50 transition-colors text-left"
       >
-        <div className="min-w-0">
+        <div className="flex items-center gap-3 min-w-0">
           <h3 className="display" style={{ fontSize: 18, fontWeight: 700, color: '#0f1422' }}>
             Qualification du besoin
           </h3>
-          <p className="text-neutral-500" style={{ fontSize: 12 }}>
+          <span className="text-neutral-500 whitespace-nowrap" style={{ fontSize: 12 }}>
             {filledCount}/{questions.length} renseigné{filledCount > 1 ? 's' : ''}
-          </p>
+          </span>
         </div>
         <ChevronDown
           size={18}
