@@ -131,8 +131,14 @@ Deno.serve(async (req) => {
 
     const results: any[] = [];
     for (const u of urls) {
-      const blocked = isBlockedDomain(u.url);
-      const r = blocked ? { error: blocked } : await firecrawlScrape(FIRECRAWL_API_KEY, u.url);
+      const normalized = normalizeUrl(u.url);
+      const invalid = !isValidUrl(normalized) ? 'URL invalide (format incorrect).' : null;
+      const blocked = invalid ? null : isBlockedDomain(normalized);
+      const r = invalid
+        ? { error: invalid }
+        : blocked
+          ? { error: blocked }
+          : await firecrawlScrape(FIRECRAWL_API_KEY, normalized);
       const summaryText = r.summary || (r.markdown ? r.markdown.slice(0, 800) : null);
 
       // Generate AI content_summary for relance context (if scrape succeeded and Gemini available)
