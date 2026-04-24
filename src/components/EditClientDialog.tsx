@@ -73,10 +73,18 @@ interface EditClientDialogProps {
     linkedin_connected?: boolean;
   };
   onClientUpdated: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }
 
-export function EditClientDialog({ client, onClientUpdated }: EditClientDialogProps) {
-  const [open, setOpen] = useState(false);
+export function EditClientDialog({ client, onClientUpdated, open: controlledOpen, onOpenChange, hideTrigger }: EditClientDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = (v: boolean) => {
+    if (onOpenChange) onOpenChange(v);
+    if (controlledOpen === undefined) setInternalOpen(v);
+  };
   const [loading, setLoading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(client.logo_url || null);
