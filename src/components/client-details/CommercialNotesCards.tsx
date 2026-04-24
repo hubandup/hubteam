@@ -420,6 +420,59 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit modal */}
+      <Dialog open={!!editingNote} onOpenChange={(o) => { if (!o) setEditingNote(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="display" style={{ fontWeight: 700 }}>Modifier le compte rendu</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            placeholder="Décrivez l'échange, les points clés, les prochaines étapes…"
+            rows={8}
+            autoFocus
+          />
+          <div className="flex items-center gap-2 pt-1">
+            <span className="text-xs text-neutral-500 mr-1">Visibilité :</span>
+            <div className="inline-flex border border-neutral-200" role="group" aria-label="Visibilité du compte rendu">
+              {([
+                { value: false, label: 'Public' },
+                { value: true, label: 'Privé' },
+              ] as const).map((opt) => {
+                const active = editIsPrivate === opt.value;
+                return (
+                  <button
+                    key={String(opt.value)}
+                    type="button"
+                    onClick={() => setEditIsPrivate(opt.value)}
+                    className={`leading-none transition-colors ${active ? 'text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}
+                    style={{
+                      background: active ? '#0f1422' : 'transparent',
+                      padding: '6px 12px',
+                      fontSize: 11,
+                      fontWeight: 600,
+                    }}
+                    aria-pressed={active}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditingNote(null)} disabled={savingEdit}>
+              Annuler
+            </Button>
+            <Button onClick={saveEdit} disabled={!editContent.trim() || savingEdit}>
+              {savingEdit ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Pencil className="h-4 w-4 mr-1" />}
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
