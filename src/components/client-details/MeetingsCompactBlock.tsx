@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -96,14 +96,16 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
     qc.invalidateQueries({ queryKey: ['commercial-meetings', trackingId] });
   };
 
-  // Auto-create structural on mount if missing
-  if (!isLoading && meetings.length >= 0) {
+  // Auto-create structural rows if missing
+  useEffect(() => {
+    if (isLoading) return;
     const hasFirst = meetings.find((m: any) => m.meeting_type === 'first_contact');
     const hasHub = meetings.find((m: any) => m.meeting_type === 'hub_date');
     if (!hasFirst || !hasHub) {
       ensureStructural();
     }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, meetings.length]);
 
   const update = async (id: string, patch: any) => {
     const before = meetings.find((m: any) => m.id === id);
