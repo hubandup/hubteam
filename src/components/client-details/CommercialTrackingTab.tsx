@@ -449,25 +449,28 @@ function ContactsSection({ trackingId, client }: { trackingId: string; client: a
     toast.success('Contact supprimé');
   };
 
+  // Hide the section entirely if there are no additional contacts (main contact already shown in page header)
+  if (contacts.length === 0) {
+    return (
+      <div className="bg-white border border-neutral-200 px-4 py-3 flex items-center justify-between">
+        <span className="uppercase tracking-wider font-semibold text-neutral-500" style={{ fontSize: 10 }}>
+          Contacts additionnels
+        </span>
+        <Button size="sm" variant="outline" onClick={addContact} className="rounded-none h-7 text-xs">
+          <Plus className="h-3 w-3 mr-1" /> Ajouter un contact
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <Card>
       <CardContent className="pt-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-lg">Informations de contact</h3>
+          <h3 className="font-semibold text-lg">Contacts additionnels</h3>
           <Button size="sm" variant="outline" onClick={addContact}>
             <Plus className="h-4 w-4 mr-1" /> Ajouter un contact
           </Button>
-        </div>
-
-        {/* Main contact (from client) */}
-        <div className="border rounded-lg p-4 bg-muted/30">
-          <p className="text-xs uppercase text-muted-foreground mb-2 font-semibold">Contact principal</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-            <div><span className="text-muted-foreground">Prénom :</span> {client.first_name}</div>
-            <div><span className="text-muted-foreground">Nom :</span> {client.last_name}</div>
-            <div><span className="text-muted-foreground">Email :</span> {client.email}</div>
-            <div><span className="text-muted-foreground">Téléphone :</span> {client.phone || '—'}</div>
-          </div>
         </div>
 
         {contacts.map((c: any) => (
