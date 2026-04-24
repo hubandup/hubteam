@@ -1233,8 +1233,9 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
     try {
       const { data, error } = await supabase.functions.invoke('scrape-commercial-urls', { body: { url_id: id } });
       if (error) throw error;
-      const ok = (data as any)?.results?.[0]?.ok;
-      toast[ok ? 'success' : 'error'](ok ? 'URL scrapée' : 'Échec du scraping');
+      const result = (data as any)?.results?.[0];
+      const ok = result?.ok;
+      toast[ok ? 'success' : 'error'](ok ? 'URL scrapée' : `Échec du scraping${result?.error ? ` : ${result.error}` : ''}`);
       qc.invalidateQueries({ queryKey: ['commercial-scrape-urls', trackingId] });
     } catch (e: any) {
       toast.error(e.message || 'Erreur scraping');
