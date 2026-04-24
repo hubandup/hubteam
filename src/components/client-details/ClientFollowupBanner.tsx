@@ -146,10 +146,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
               Aucune excuse générée pour ce client. Cliquez sur <strong className="text-white">Régénérer</strong> pour en créer une à partir des URLs veille, des comptes rendus et du site Hub & Up.
             </p>
           ) : (
-            <p
-              className="text-sm text-white/90 max-w-4xl mb-4 leading-relaxed whitespace-pre-wrap"
-              style={{ display: '-webkit-box', WebkitLineClamp: 6, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
-            >
+            <p className="text-sm text-white/90 mb-4 leading-relaxed whitespace-pre-wrap">
               {plainBody}
             </p>
           )}
