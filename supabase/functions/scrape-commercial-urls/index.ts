@@ -110,17 +110,54 @@ Deno.serve(async (req) => {
       });
     }
 
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+
     const results: any[] = [];
     for (const u of urls) {
       const blocked = isBlockedDomain(u.url);
       const r = blocked ? { error: blocked } : await firecrawlScrape(FIRECRAWL_API_KEY, u.url);
       const summaryText = r.summary || (r.markdown ? r.markdown.slice(0, 800) : null);
+
+      // Generate AI content_summary for relance context (if scrape succeeded and Gemini available)
+      let contentSummary: string | null = null;
+      if (!r.error && r.markdown && LOVABLE_API_KEY) {
+        try {
+          const gemRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: 'google/gemini-2.5-flash',
+              messages: [
+                { role: 'system', content: `Tu analyses une page web qu'un agent commercial suit pour trouver des prétextes de relance d'un prospect/client. Résume le contenu en 150 mots maximum, en français, en mettant l'accent sur :
+- Actualités, annonces récentes, changements stratégiques
+- Événements à venir, lancements, nouveautés produits
+- Changements d'organisation, nouvelles nominations, acquisitions
+- Signaux faibles exploitables pour une approche commerciale (nouveaux besoins, orientations)
+
+Ignore le contenu statique générique (mentions légales, footer, navigation). Si la page ne contient aucune actualité exploitable, réponds exactement : AUCUNE_ACTUALITE_EXPLOITABLE
+
+N'invente AUCUNE info qui ne soit pas explicitement dans le contenu fourni.` },
+                { role: 'user', content: r.markdown.slice(0, 30000) },
+              ],
+            }),
+          });
+          const gemData = await gemRes.json().catch(() => ({}));
+          if (gemRes.ok) {
+            contentSummary = gemData.choices?.[0]?.message?.content?.trim() || null;
+          }
+        } catch (e) {
+          console.warn('Gemini summary failed for', u.url, (e as Error).message);
+        }
+      }
+
       const update: any = {
         last_scraped_at: new Date().toISOString(),
         last_scrape_status: r.error ? 'failed' : 'success',
-        // Stocker la raison de l'échec pour l'afficher dans l'UI
         last_scrape_summary: r.error ? `⚠️ ${r.error}` : summaryText,
         last_scrape_content: r.error ? null : (r.markdown || null),
+        last_scrape_error: r.error || null,
+        // Keep previous content_summary on error (don't overwrite with null)
+        ...(contentSummary !== null ? { content_summary: contentSummary } : {}),
       };
       await admin.from('commercial_scrape_urls').update(update).eq('id', u.id);
       results.push({ id: u.id, url: u.url, ok: !r.error, error: r.error });
