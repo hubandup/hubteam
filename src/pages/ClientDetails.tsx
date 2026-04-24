@@ -335,8 +335,8 @@ export default function ClientDetails() {
 
         {/* STRUCTURE PRÉPARÉE pour les prochaines étapes */}
         <div className="space-y-4">
-          {/* Zone "actions commerciales" : bandeau Excuse de relance IA (admin only) */}
-          {role === 'admin' && (
+          {/* Zone "actions commerciales" : bandeau Excuse de relance IA (admin only, onglet Commercial uniquement) */}
+          {role === 'admin' && activeTab === 'commercial' && (
             <div data-zone="commercial-actions">
               <ClientFollowupBanner clientId={client.id} />
             </div>
