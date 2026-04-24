@@ -493,16 +493,16 @@ serve(async (req) => {
           
           if (!listResp.ok) {
             // Fallback to v2
-            const listUrl2 = `${KDRIVE_API_BASE}/2/drive/${resolveDriveId}/files/${currentFolderId}/children`;
-            const listResp2 = await fetch(listUrl2, { headers: kdriveHeaders });
+            const listUrl2: string = `${KDRIVE_API_BASE}/2/drive/${resolveDriveId}/files/${currentFolderId}/children`;
+            const listResp2: Response = await fetch(listUrl2, { headers: kdriveHeaders });
             if (!listResp2.ok) {
               return new Response(JSON.stringify({ error: `Cannot list folder ${currentFolderId}`, segment }), {
                 status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
               });
             }
-            const listData2 = await listResp2.json();
-            const items2 = listData2?.data || [];
-            const found2 = items2.find((f: any) => (f.name || '').toLowerCase() === segment.toLowerCase() && f.type === 'dir');
+            const listData2: any = await listResp2.json();
+            const items2: any[] = listData2?.data || [];
+            const found2: any = items2.find((f: any) => (f.name || '').toLowerCase() === segment.toLowerCase() && f.type === 'dir');
             if (!found2) {
               return new Response(JSON.stringify({ error: `Folder "${segment}" not found in ${currentFolderId}`, available: items2.filter((f: any) => f.type === 'dir').map((f: any) => f.name).slice(0, 20) }), {
                 status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
