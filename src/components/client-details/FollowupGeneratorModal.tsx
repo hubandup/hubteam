@@ -67,6 +67,64 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
     },
   });
 
+  // Configuration Calendly (app_config) — utilisée pour afficher l'attribution
+  // uniquement quand l'action choisie nécessite un lien de réservation.
+  const { data: calendlyCfg } = useQuery({
+    queryKey: ['app-config-calendly'],
+    enabled: open,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('app_config')
+        .select('key, value')
+        .in('key', [
+          'calendly_charles_email',
+          'calendly_charles_url',
+          'calendly_amandine_email',
+          'calendly_amandine_url',
+        ]);
+      const cfg: Record<string, string> = {};
+      (data || []).forEach((r: any) => { cfg[r.key] = r.value || ''; });
+      return cfg;
+    },
+  });
+
+  const ACTIONS_REQUIRING_BOOKING = ['propose_slot', 'schedule_call'];
+  const wantsBookingLink = ACTIONS_REQUIRING_BOOKING.includes(action);
+
+  const calendlyAttribution = useMemo(() => {
+    if (!wantsBookingLink) return null;
+    const cfg = calendlyCfg || {};
+    const userEmail = (supabase.auth.getSession ? null : null); // placeholder, see below
+    // Resolve via current session email
+    return null as null | { owner: 'charles' | 'amandine'; url: string; email: string };
+  }, [wantsBookingLink, calendlyCfg]);
+
+  // Resolve attribution using the current authenticated user's email
+  const [resolvedCalendly, setResolvedCalendly] = useState<
+    null | { owner: 'charles' | 'amandine'; url: string; email: string }
+  >(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!wantsBookingLink || !calendlyCfg) { setResolvedCalendly(null); return; }
+      const { data: { user } } = await supabase.auth.getUser();
+      const me = (user?.email || '').toLowerCase();
+      const cfg = calendlyCfg;
+      const charlesEmail = (cfg.calendly_charles_email || '').toLowerCase();
+      const amandineEmail = (cfg.calendly_amandine_email || '').toLowerCase();
+      let pick: typeof resolvedCalendly = null;
+      if (me && me === amandineEmail && cfg.calendly_amandine_url) {
+        pick = { owner: 'amandine', email: cfg.calendly_amandine_email, url: cfg.calendly_amandine_url };
+      } else if (me && me === charlesEmail && cfg.calendly_charles_url) {
+        pick = { owner: 'charles', email: cfg.calendly_charles_email, url: cfg.calendly_charles_url };
+      } else if (cfg.calendly_charles_url) {
+        pick = { owner: 'charles', email: cfg.calendly_charles_email, url: cfg.calendly_charles_url };
+      }
+      if (!cancelled) setResolvedCalendly(pick);
+    })();
+    return () => { cancelled = true; };
+  }, [wantsBookingLink, calendlyCfg]);
+
   const clientRow: any = tracking?.clients || {};
 
   useEffect(() => {
