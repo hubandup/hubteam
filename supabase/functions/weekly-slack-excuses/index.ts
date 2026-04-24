@@ -305,7 +305,7 @@ async function postTargetToSlack(target: TargetData, ideas: string[]): Promise<{
     },
     {
       type: 'context',
-      elements: [{ type: 'mrkdwn', text: `_Basé sur ${target.notes.length} CR + ${target.scraped_urls.length} URL(s) surveillée(s)_` }],
+      elements: [{ type: 'mrkdwn', text: `_Basé sur ${target.notes.length} CR + ${target.scraped_urls.length} URL(s) surveillée(s) + fiche client & ${target.projects.length} projet(s)_` }],
     },
     { type: 'divider' },
     ...ideas.map((idea, i) => ({
