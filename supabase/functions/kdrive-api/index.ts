@@ -1372,33 +1372,26 @@ serve(async (req) => {
 
         const fileIdNum = Number(fileId);
 
-        // Try the working endpoints used by delete-files (v3 then v2 trash)
-        const singleAttempts = [
-          {
-            url: `${KDRIVE_API_BASE}/3/drive/${resolvedDriveId}/files/trash`,
-            body: { file_ids: [fileIdNum] },
-            label: 'v3 files/trash (json file_ids)'
-          },
-          {
-            url: `${KDRIVE_API_BASE}/2/drive/${resolvedDriveId}/files/trash`,
-            body: { file_ids: [fileIdNum] },
-            label: 'v2 files/trash (json file_ids)'
-          },
+        // Per-file attempts (proven working in delete-files batch fallback)
+        const singleAttempts: Array<{ url: string; method: 'POST' | 'DELETE'; label: string }> = [
+          { url: `${KDRIVE_API_BASE}/3/drive/${resolvedDriveId}/files/${fileIdNum}/trash`, method: 'POST', label: 'v3 file trash (POST)' },
+          { url: `${KDRIVE_API_BASE}/2/drive/${resolvedDriveId}/files/${fileIdNum}/trash`, method: 'POST', label: 'v2 file trash (POST)' },
+          { url: `${KDRIVE_API_BASE}/3/drive/${resolvedDriveId}/files/${fileIdNum}`, method: 'DELETE', label: 'v3 file delete (DELETE)' },
+          { url: `${KDRIVE_API_BASE}/2/drive/${resolvedDriveId}/files/${fileIdNum}`, method: 'DELETE', label: 'v2 file delete (DELETE)' },
         ];
 
         let lastError: any = null;
         for (const attempt of singleAttempts) {
-          console.log('════ DELETE-FILE attempt:', attempt.label, attempt.url);
+          console.log('════ DELETE-FILE attempt:', attempt.label, attempt.method, attempt.url);
           const r = await fetch(attempt.url, {
-            method: 'POST',
-            headers: { ...kdriveHeaders, 'Content-Type': 'application/json' },
-            body: JSON.stringify(attempt.body),
+            method: attempt.method,
+            headers: { 'Authorization': `Bearer ${KDRIVE_TOKEN}` },
           });
           const t = await r.text();
           let d: any = {};
           try { d = JSON.parse(t); } catch (_) { d = { raw: t }; }
           console.log('HTTP status:', r.status, 'Response:', d);
-          if (r.ok) {
+          if (r.ok || r.status === 204) {
             return new Response(
               JSON.stringify({ success: true, data: d }),
               { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
