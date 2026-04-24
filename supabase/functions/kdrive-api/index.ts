@@ -1334,33 +1334,74 @@ serve(async (req) => {
         );
 
       case 'delete-file':
-
-      case 'delete-file':
-      case 'delete-folder':
-        const deleteResponse = await fetch(
-          `${KDRIVE_API_BASE}/2/drive/${driveId}/files/${fileId}/trash`,
-          { 
-            method: 'POST',
-            headers: kdriveHeaders 
-          }
-        );
-        
-        if (!deleteResponse.ok) {
-          const errorData = await deleteResponse.json().catch(() => ({}));
-          console.error('Error deleting item:', deleteResponse.status, errorData);
+      case 'delete-folder': {
+        if (!fileId) {
           return new Response(
-            JSON.stringify({ error: 'Failed to delete item', details: errorData }),
-            { 
-              status: deleteResponse.status,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-            }
+            JSON.stringify({ error: 'fileId is required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
-        
+
+        // Resolve driveId from product if not provided
+        let resolvedDriveId = driveId;
+        if (!resolvedDriveId) {
+          const productsResp = await fetch(`${KDRIVE_API_BASE}/1/product`, { headers: kdriveHeaders });
+          if (productsResp.ok) {
+            const productsData = await productsResp.json();
+            const driveProduct = productsData?.data?.find((p: any) => String(p.id) === String(KDRIVE_PRODUCT_ID));
+            resolvedDriveId = driveProduct?.id;
+          }
+        }
+
+        if (!resolvedDriveId) {
+          return new Response(
+            JSON.stringify({ error: 'Drive ID not found' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const fileIdNum = Number(fileId);
+
+        // Try the working endpoints used by delete-files (v3 then v2 trash)
+        const singleAttempts = [
+          {
+            url: `${KDRIVE_API_BASE}/3/drive/${resolvedDriveId}/files/trash`,
+            body: { file_ids: [fileIdNum] },
+            label: 'v3 files/trash (json file_ids)'
+          },
+          {
+            url: `${KDRIVE_API_BASE}/2/drive/${resolvedDriveId}/files/trash`,
+            body: { file_ids: [fileIdNum] },
+            label: 'v2 files/trash (json file_ids)'
+          },
+        ];
+
+        let lastError: any = null;
+        for (const attempt of singleAttempts) {
+          console.log('════ DELETE-FILE attempt:', attempt.label, attempt.url);
+          const r = await fetch(attempt.url, {
+            method: 'POST',
+            headers: { ...kdriveHeaders, 'Content-Type': 'application/json' },
+            body: JSON.stringify(attempt.body),
+          });
+          const t = await r.text();
+          let d: any = {};
+          try { d = JSON.parse(t); } catch (_) { d = { raw: t }; }
+          console.log('HTTP status:', r.status, 'Response:', d);
+          if (r.ok) {
+            return new Response(
+              JSON.stringify({ success: true, data: d }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+          lastError = { status: r.status, data: d };
+        }
+
         return new Response(
-          JSON.stringify({ success: true }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: 'Failed to delete item', details: lastError?.data }),
+          { status: lastError?.status || 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+      }
 
       case 'rename':
         if (!fileId || !newName) {
