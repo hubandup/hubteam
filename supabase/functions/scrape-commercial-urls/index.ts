@@ -11,6 +11,23 @@ interface Payload {
   all?: boolean;         // cron mode: scrape all URLs project-wide (admin or cron only)
 }
 
+function normalizeUrl(raw: string): string {
+  let u = (raw || '').trim();
+  if (!u) return u;
+  // Fix common typos like "ttps://" or "ttp://" or "://example.com"
+  if (/^ttps:\/\//i.test(u)) u = 'h' + u;
+  else if (/^ttp:\/\//i.test(u)) u = 'h' + u;
+  else if (/^tps:\/\//i.test(u)) u = 'ht' + u;
+  else if (/^tp:\/\//i.test(u)) u = 'ht' + u;
+  else if (/^\/\//.test(u)) u = 'https:' + u;
+  else if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  return u;
+}
+
+function isValidUrl(u: string): boolean {
+  try { const x = new URL(u); return x.protocol === 'http:' || x.protocol === 'https:'; } catch { return false; }
+}
+
 function isBlockedDomain(url: string): string | null {
   const lower = url.toLowerCase();
   if (lower.includes('linkedin.com')) return 'LinkedIn bloque le scraping automatisé. Consultez la page manuellement.';
