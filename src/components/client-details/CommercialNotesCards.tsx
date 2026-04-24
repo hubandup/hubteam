@@ -311,13 +311,22 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                       <p className="text-sm text-neutral-700 leading-relaxed whitespace-pre-wrap">
                         {n.content}
                       </p>
-                      <button
-                        type="button"
-                        onClick={() => remove(n.id)}
-                        className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-red-600"
-                      >
-                        <Trash2 size={12} /> Supprimer
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => openEdit(n)}
+                          className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-900"
+                        >
+                          <Pencil size={12} /> Modifier
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => remove(n.id)}
+                          className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-red-600"
+                        >
+                          <Trash2 size={12} /> Supprimer
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <p className="text-sm text-neutral-700 leading-relaxed">
