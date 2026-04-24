@@ -206,10 +206,6 @@ export function ClientCommercialSidebar({ client }: Props) {
               const d = daysSince(u.last_scraped_at);
               return (
                 <li key={u.id} className="flex items-center gap-2">
-                  <span
-                    className={`flex-shrink-0 ${ageColor(d)}`}
-                    style={{ width: 6, height: 6, borderRadius: '9999px' }}
-                  />
                   <a
                     href={u.url}
                     target="_blank"
