@@ -357,6 +357,18 @@ export function EditClientDialog({ client, onClientUpdated, open: controlledOpen
             )}
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="address">Adresse de l'entreprise</Label>
+            <Input
+              id="address"
+              {...register('address')}
+              placeholder="12 rue de Paris, 75001 Paris"
+            />
+            {errors.address && (
+              <p className="text-sm text-destructive">{errors.address.message}</p>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email *</Label>
