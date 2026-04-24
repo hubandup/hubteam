@@ -91,15 +91,7 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
   const ACTIONS_REQUIRING_BOOKING = ['propose_slot', 'schedule_call'];
   const wantsBookingLink = ACTIONS_REQUIRING_BOOKING.includes(action);
 
-  const calendlyAttribution = useMemo(() => {
-    if (!wantsBookingLink) return null;
-    const cfg = calendlyCfg || {};
-    const userEmail = (supabase.auth.getSession ? null : null); // placeholder, see below
-    // Resolve via current session email
-    return null as null | { owner: 'charles' | 'amandine'; url: string; email: string };
-  }, [wantsBookingLink, calendlyCfg]);
-
-  // Resolve attribution using the current authenticated user's email
+  // Résolution de l'attribution via l'email de l'utilisateur authentifié
   const [resolvedCalendly, setResolvedCalendly] = useState<
     null | { owner: 'charles' | 'amandine'; url: string; email: string }
   >(null);
