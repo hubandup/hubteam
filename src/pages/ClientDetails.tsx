@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   ArrowLeft, Loader2, FileText, Receipt, Users, FolderKanban, Trash2,
-  BarChart3, Briefcase, MoreHorizontal, User as UserIcon, Mail, Phone, Clock,
+  BarChart3, Briefcase, MoreHorizontal, User as UserIcon, Mail, Phone, Clock, Pencil,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
