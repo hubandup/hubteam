@@ -136,9 +136,9 @@ export function ClientCommercialSidebar({ client }: Props) {
     },
   });
 
-  const team = teamMembers.length > 0
+  const team: any[] = teamMembers.length > 0
     ? teamMembers
-    : (ownerProfile ? [{ ...ownerProfile, _fallback: true }] : []);
+    : (ownerProfile ? [{ ...(ownerProfile as any), _fallback: true }] : []);
 
   // Pipeline progression
   const currentStage = client?.kanban_stage || 'prospect';
