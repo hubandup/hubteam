@@ -94,13 +94,24 @@ export function ClientFollowupBanner({ clientId }: Props) {
   const sourcesList = useMemo(() => {
     if (!latest?.sources) return [];
     const s: any = latest.sources;
-    const urls = Array.isArray(s) ? s : (s?.urls || []);
-    const meetingNotes = Array.isArray(s) ? [] : (s?.meeting_notes || []);
-    const meetings = Array.isArray(s) ? [] : (s?.meetings || []);
+    if (Array.isArray(s)) {
+      return s.map((u: any) => ({ kind: 'URL', label: u.label || u.url }));
+    }
+    const urls = s.urls || [];
+    const meetingNotes = s.meeting_notes || [];
+    const meetings = s.meetings || [];
+    const projects = s.projects || [];
+    const hubandup = s.hubandup || [];
+    const googleAlerts = s.google_alerts || [];
+    const calendly = s.calendly;
     return [
       ...urls.map((u: any) => ({ kind: 'URL', label: u.label || u.url })),
       ...meetingNotes.map((m: any) => ({ kind: 'CR', label: m.title || 'Compte rendu' })),
       ...meetings.map((m: any) => ({ kind: 'RDV', label: m.label || m.meeting_type })),
+      ...projects.map((p: any) => ({ kind: 'PROJET', label: p.name })),
+      ...hubandup.map((h: any) => ({ kind: 'HUB+UP', label: h.url?.replace(/^https?:\/\//, '') || 'Site Hub & Up' })),
+      ...googleAlerts.map((g: any) => ({ kind: 'ALERT', label: `Google Alerts (${g.entries_count || 0} entrées)` })),
+      ...(calendly && calendly.used ? [{ kind: 'CALENDLY', label: `${calendly.owner === 'amandine' ? 'Amandine' : 'Charles'} — ${calendly.url}` }] : []),
     ];
   }, [latest]);
 

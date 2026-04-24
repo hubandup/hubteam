@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
 
     const { data: tracking, error: trErr } = await admin
       .from('commercial_tracking')
-      .select('id, client_id, status, clients(company, first_name, last_name, email)')
+      .select('id, client_id, status, created_by, clients(company, first_name, last_name, email)')
       .eq('id', body.tracking_id)
       .maybeSingle();
     if (trErr || !tracking) throw trErr || new Error('Tracking not found');
@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
     }
 
     const { data: notes } = await admin
-      .from('commercial_notes').select('content, created_at').eq('tracking_id', body.tracking_id)
+      .from('commercial_notes').select('content, created_at, created_by').eq('tracking_id', body.tracking_id)
       .order('created_at', { ascending: false }).limit(3);
     const { data: meetings } = await admin
       .from('commercial_meetings').select('label, meeting_type, meeting_date').eq('tracking_id', body.tracking_id)
@@ -134,6 +134,74 @@ Deno.serve(async (req) => {
       .order('meeting_date', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
       .limit(3);
+
+    // Projets liés
+    const { data: projects } = await admin
+      .from('projects')
+      .select('name, status, start_date, end_date, description')
+      .eq('client_id', tracking.client_id)
+      .order('updated_at', { ascending: false })
+      .limit(5);
+
+    // Cache Hub & Up (site)
+    const { data: hubCache } = await admin
+      .from('hubandup_context_cache')
+      .select('source_url, summary, last_scraped_at, last_scrape_status')
+      .eq('last_scrape_status', 'success');
+
+    // Détection feeds Google Alerts parmi les URLs du client (heuristique)
+    const isGoogleAlertsFeed = (u: string) =>
+      /google\.[a-z.]+\/alerts\/feeds?\//i.test(u) || /alerts\.google\.[a-z.]+/i.test(u);
+    const feedUrls = (urls || []).map(u => u.url).filter(isGoogleAlertsFeed);
+
+    let googleAlerts: any[] = [];
+    if (feedUrls.length > 0) {
+      const { data: gaRows } = await admin
+        .from('google_alerts_cache')
+        .select('feed_url, entries, fetched_at, fetch_status')
+        .in('feed_url', feedUrls);
+      googleAlerts = gaRows || [];
+    }
+
+    // Configuration Calendly (app_config)
+    const { data: cfgRows } = await admin
+      .from('app_config')
+      .select('key, value')
+      .in('key', ['calendly_charles_email', 'calendly_charles_url', 'calendly_amandine_email', 'calendly_amandine_url']);
+    const cfg: Record<string, string> = {};
+    for (const r of (cfgRows || [])) cfg[r.key] = r.value || '';
+
+    // Helper: choisit l'attribution Calendly (Charles vs Amandine)
+    // Stratégie : on cherche l'auteur principal (created_by du tracking, ou de la dernière note),
+    // puis on compare son email Auth aux emails Calendly configurés.
+    const pickCalendlyAttribution = async (): Promise<{ owner: 'charles'|'amandine'|null; email: string; url: string }> => {
+      const ownerId =
+        (tracking as any).created_by ||
+        (notes && notes[0]?.created_by) ||
+        null;
+      let ownerEmail = '';
+      if (ownerId) {
+        try {
+          const { data: u } = await admin.auth.admin.getUserById(ownerId);
+          ownerEmail = (u?.user?.email || '').toLowerCase();
+        } catch { /* noop */ }
+      }
+      const charlesEmail = (cfg.calendly_charles_email || '').toLowerCase();
+      const amandineEmail = (cfg.calendly_amandine_email || '').toLowerCase();
+      if (ownerEmail && ownerEmail === amandineEmail) {
+        return { owner: 'amandine', email: cfg.calendly_amandine_email, url: cfg.calendly_amandine_url };
+      }
+      if (ownerEmail && ownerEmail === charlesEmail) {
+        return { owner: 'charles', email: cfg.calendly_charles_email, url: cfg.calendly_charles_url };
+      }
+      // Fallback : Charles si configuré
+      if (cfg.calendly_charles_url) {
+        return { owner: 'charles', email: cfg.calendly_charles_email, url: cfg.calendly_charles_url };
+      }
+      return { owner: null, email: '', url: '' };
+    };
+    const calendly = await pickCalendlyAttribution();
+
 
     const tone = body.tone || 'friendly';
     const toneInstructions: Record<string, string> = {
@@ -172,6 +240,38 @@ Deno.serve(async (req) => {
         }).join('\n')}`
       : '';
 
+    const contextProjects = (projects && projects.length > 0)
+      ? `\n\nProjets liés à ce client (5 plus récents) :\n${projects.map((p: any) => {
+          const desc = (p.description || '').replace(/\s+/g, ' ').slice(0, 200);
+          const dates = [p.start_date, p.end_date].filter(Boolean).join(' → ');
+          return `• ${p.name}${p.status ? ` [${p.status}]` : ''}${dates ? ` (${dates})` : ''}${desc ? `\n  ${desc}` : ''}`;
+        }).join('\n')}`
+      : '';
+
+    const contextHubAndUp = (hubCache && hubCache.length > 0)
+      ? `\n\nContexte HUB+UP (résumé du site, mis à jour le ${(hubCache[0] as any).last_scraped_at?.slice(0, 10) || 'N/A'}) :\n${hubCache.map((h: any) => {
+          const sum = (h.summary || '').replace(/\s+/g, ' ').slice(0, 1500);
+          return `### ${h.source_url}\n${sum}`;
+        }).join('\n\n')}`
+      : '';
+
+    const allAlertEntries: Array<{ title: string; link?: string; published?: string; summary?: string; feed_url: string }> = [];
+    for (const ga of googleAlerts) {
+      const entries = Array.isArray(ga.entries) ? ga.entries : [];
+      for (const e of entries.slice(0, 5)) {
+        allAlertEntries.push({
+          title: String(e.title || '').slice(0, 200),
+          link: e.link || e.url || '',
+          published: e.published || e.updated || '',
+          summary: String(e.summary || e.content || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').slice(0, 400),
+          feed_url: ga.feed_url,
+        });
+      }
+    }
+    const contextGoogleAlerts = allAlertEntries.length > 0
+      ? `\n\nDernières Google Alerts pour ce client (${allAlertEntries.length} entrées) :\n${allAlertEntries.map(e => `• ${e.published ? `[${String(e.published).slice(0, 10)}] ` : ''}${e.title}${e.summary ? `\n  ${e.summary}` : ''}${e.link ? `\n  ${e.link}` : ''}`).join('\n')}`
+      : '';
+
     const actionLabel = (body.action_label || '').trim() || 'Proposer un créneau de rendez-vous';
     const actionKey = (body.action_key || '').trim();
 
@@ -205,15 +305,30 @@ Deno.serve(async (req) => {
       ? `- ADRESSE (obligatoire) : tutoiement à la 2ème personne du singulier. Utilise « tu », « ton/ta/tes », conjugaisons à la 2e pers. sing. (« peux-tu », « dis-moi », « tiens-moi au courant »). Salutation : « Bonjour [Prénom], » (jamais « Salut »). Aucun « vous » de politesse, jamais.`
       : `- ADRESSE (obligatoire) : vouvoiement à la 2ème personne du pluriel. Utilise « vous », « votre/vos », conjugaisons à la 2e pers. plur. (« pouvez-vous », « dites-moi », « tenez-moi au courant »). Salutation : « Bonjour [Prénom], ». Aucun tutoiement.`;
 
-    const systemPrompt = `Tu es un expert en développement commercial B2B pour HUB+UP (agence de communication). Tu génères une "excuse de relance" personnalisée pour un destinataire précis, en t'appuyant sur des actualités fraîches scrappées.
+    // Bloc Calendly conditionnel : si une action de proposition de RDV/call est demandée ET qu'un lien Calendly est disponible
+    const wantsBookingLink = ['propose_slot', 'schedule_call'].includes(actionKey);
+    const calendlyRule = (wantsBookingLink && calendly.url)
+      ? `- LIEN CALENDLY (obligatoire pour cette action) : intègre EXPLICITEMENT le lien Calendly suivant attribué à l'expéditeur (${calendly.owner === 'amandine' ? 'Amandine' : 'Charles'}) : ${calendly.url}\n  Présente-le naturellement dans la dernière phrase du corps (ex : "Voici mon agenda si vous souhaitez réserver un créneau directement : ${calendly.url}"). N'invente AUCUN autre lien Calendly.`
+      : `- LIEN CALENDLY : n'inclus AUCUN lien Calendly dans cet email (l'action choisie ne le requiert pas, ou aucun lien n'est configuré).`;
+
+    const systemPrompt = `Tu es un expert en développement commercial B2B pour HUB+UP (agence de communication). Tu génères une "excuse de relance" personnalisée pour un destinataire précis, en t'appuyant sur plusieurs sources de contexte fraîches : actualités scrappées du client, comptes rendus internes, projets en cours, contexte HUB+UP (résumé du site officiel) et Google Alerts liées au client.
+
+Hiérarchie des sources (du + important au - important pour construire l'angle de relance) :
+1. Comptes rendus client récents (suivi promis, point en suspens, prochaine étape) — accroche idéale.
+2. URLs scrapées récemment (actualité de l'entreprise, prises de parole, recrutements, levée).
+3. Google Alerts (actu externe sur l'entreprise / le secteur).
+4. Notes internes (suivi commercial) et derniers RDV planifiés.
+5. Projets liés (sujets sur lesquels HUB+UP a déjà travaillé pour ce client).
+6. Contexte HUB+UP (rappel discret de notre positionnement / actu récente, à n'utiliser QUE si pertinent pour ouvrir une porte — jamais de listing d'expertises).
 
 Règles:
-- Identifie 1 à 3 angles concrets tirés du contenu fourni (URLs scrappées en priorité, mais EXPLOITE AUSSI les 3 derniers comptes rendus client et notes internes : sujets évoqués, points en suspens, engagements pris, prochaines étapes mentionnées).
-- Si un compte rendu mentionne un suivi ou un point à reprendre, utilise-le comme accroche naturelle ("Suite à notre échange du …").
+- Identifie 1 à 3 angles concrets en respectant la hiérarchie ci-dessus. Cite la source réelle dans le champ "source" des angles.
+- Si un compte rendu mentionne un suivi ou un point à reprendre, utilise-le en priorité comme accroche naturelle ("Suite à notre échange du …").
 - Adapte le message au destinataire indiqué (rôle/relation : ${recipientRole}). Si c'est le contact principal habituel, ton plus familier ; sinon, présentation brève.
 ${addressRule}
 ${ctaRule}
 ${subjectRule}
+${calendlyRule}
 - Ton : ${toneInstructions[tone]}. En français. Pas d'emoji. Pas de formules creuses ("j'espère que vous allez bien").
 - Email court : 80–130 mots dans le corps.
 - RÈGLE IMPORTANTE — AUCUNE SIGNATURE : ne termine JAMAIS le message par une signature. Pas de "L'équipe Hub & Up", pas de "L'équipe HUB+UP", pas de "Cordialement, [prénom]", pas de "Bien à vous", pas de "Bonne journée, [prénom]", pas de nom propre en fin de message. Le message doit s'arrêter NET après la dernière phrase utile (appel à l'action, proposition de créneau, lien Calendly, formule ouverte). La signature personnelle de l'expéditeur sera ajoutée automatiquement par son client mail lors de l'envoi.
@@ -222,7 +337,7 @@ ${subjectRule}
 Tu DOIS répondre UNIQUEMENT avec un JSON valide UTF-8 (pas de markdown, pas de \`\`\`), strictement avec cette forme :
 {
   "angles": [
-    { "title": "string court", "description": "1 phrase", "source": "URL ou nom de source" }
+    { "title": "string court", "description": "1 phrase", "source": "URL ou nom de source réellement utilisée" }
   ],
   "subject": "Objet d'email${isJustHello ? ' sobre et personnel' : ' mentionnant l\'action proposée'}",
   "body_plain": "Corps de l'email en texte brut, paragraphes séparés par une ligne vide. Inclure la salutation et${isJustHello ? ' un angle concret puis une formule ouverte légère' : ' le call-to-action correspondant à l\'action demandée'}. AUCUNE SIGNATURE en fin de message — le texte se termine sur la dernière phrase utile, c'est tout."
@@ -239,9 +354,10 @@ Destinataire choisi pour ce message :
 - Prénom à utiliser dans la salutation : ${recipientFirstName || recipientName || ''}
 
 ACTION À PROPOSER (call-to-action obligatoire de l'email) : ${actionLabel}
-${contextNotes}${contextMeetings}${contextMeetingNotes}
+${wantsBookingLink && calendly.url ? `LIEN CALENDLY À INTÉGRER : ${calendly.url} (attribué à ${calendly.owner === 'amandine' ? 'Amandine' : 'Charles'})` : ''}
+${contextNotes}${contextMeetings}${contextMeetingNotes}${contextProjects}${contextGoogleAlerts}${contextHubAndUp}
 
-Contenus scrappés récemment :
+Contenus scrappés récemment (URLs veille du client) :
 
 ${sourcesText}
 
@@ -353,7 +469,7 @@ Génère le JSON.`;
       source: String(a.source || '').slice(0, 300),
     })) : [];
 
-    // Structured sources used for generation: URLs scrappées + notes internes + comptes rendus client
+    // Structured sources used for generation
     const sources = {
       urls: validScrapes.map(u => ({
         url: u.url,
@@ -375,6 +491,27 @@ Génère le JSON.`;
         meeting_type: m.meeting_type || null,
         meeting_date: m.meeting_date || null,
       })),
+      projects: (projects || []).map((p: any) => ({
+        name: p.name,
+        status: p.status || null,
+        start_date: p.start_date || null,
+        end_date: p.end_date || null,
+      })),
+      hubandup: (hubCache || []).map((h: any) => ({
+        url: h.source_url,
+        last_scraped_at: h.last_scraped_at || null,
+      })),
+      google_alerts: googleAlerts.map((g: any) => ({
+        feed_url: g.feed_url,
+        fetched_at: g.fetched_at || null,
+        entries_count: Array.isArray(g.entries) ? g.entries.length : 0,
+      })),
+      calendly: calendly.url ? {
+        owner: calendly.owner,
+        email: calendly.email || null,
+        url: calendly.url,
+        used: ['propose_slot', 'schedule_call'].includes(actionKey),
+      } : null,
     };
 
     // Persist to history (unless explicitly disabled)

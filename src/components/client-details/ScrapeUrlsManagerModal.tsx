@@ -88,6 +88,33 @@ export function ScrapeUrlsManagerModal({ open, onOpenChange, trackingId }: Props
     }
   };
 
+  // Caches globaux : Hub & Up + Google Alerts (lecture seule, debug fraîcheur)
+  const { data: hubFresh } = useQuery({
+    queryKey: ['hubandup-context-cache-fresh'],
+    enabled: open,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('hubandup_context_cache')
+        .select('source_url, last_scraped_at, last_scrape_status')
+        .order('last_scraped_at', { ascending: false, nullsFirst: false });
+      return data || [];
+    },
+  });
+  const { data: alertsFresh } = useQuery({
+    queryKey: ['google-alerts-cache-fresh'],
+    enabled: open,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('google_alerts_cache')
+        .select('feed_url, fetched_at, fetch_status')
+        .order('fetched_at', { ascending: false, nullsFirst: false });
+      return data || [];
+    },
+  });
+
+  const lastHubScrape = (hubFresh || []).find((h: any) => h.last_scraped_at)?.last_scraped_at || null;
+  const lastAlertsFetch = (alertsFresh || []).find((g: any) => g.fetched_at)?.fetched_at || null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -100,6 +127,16 @@ export function ScrapeUrlsManagerModal({ open, onOpenChange, trackingId }: Props
             Scraping automatique chaque lundi matin. Vous pouvez aussi déclencher manuellement.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Bandeau fraîcheur des caches globaux (debug) */}
+        <div className="flex flex-wrap gap-2 -mt-2">
+          <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-2 py-1 bg-neutral-100 text-neutral-700">
+            Cache HUB+UP : {lastHubScrape ? format(new Date(lastHubScrape), 'd MMM yyyy HH:mm', { locale: fr }) : 'jamais'}
+          </span>
+          <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-2 py-1 bg-neutral-100 text-neutral-700">
+            Google Alerts : {lastAlertsFetch ? format(new Date(lastAlertsFetch), 'd MMM yyyy HH:mm', { locale: fr }) : 'jamais'}
+          </span>
+        </div>
 
         {/* Add form */}
         <div className="space-y-3">
