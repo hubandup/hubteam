@@ -1081,20 +1081,28 @@ serve(async (req) => {
           );
         }
         
-        // Stream the file back directly to avoid loading it fully in memory
-        // (previous base64 conversion exceeded the edge function memory limit on large files)
+        // Stream + chunked base64 to avoid memory blowups on large files.
+        // The previous version built a JS string char-by-char from the full
+        // ArrayBuffer, which exceeded the edge function memory limit.
         {
-          const passthroughHeaders: Record<string, string> = {
-            ...corsHeaders,
-            'Content-Type': response.headers.get('content-type') || 'application/octet-stream',
-            'Cache-Control': 'no-store',
-          };
-          const cl = response.headers.get('content-length');
-          if (cl) passthroughHeaders['Content-Length'] = cl;
-          return new Response(response.body, {
-            status: response.status,
-            headers: passthroughHeaders,
-          });
+          const reader = response.body!.getReader();
+          let binary = '';
+          const CHUNK = 0x8000; // 32KB sub-chunks for fromCharCode.apply
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            for (let i = 0; i < value.length; i += CHUNK) {
+              binary += String.fromCharCode.apply(
+                null,
+                value.subarray(i, i + CHUNK) as unknown as number[],
+              );
+            }
+          }
+          const base64 = btoa(binary);
+          return new Response(
+            JSON.stringify({ data: base64 }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
 
       case 'get-folder-info':
