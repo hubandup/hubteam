@@ -32,12 +32,6 @@ function daysSince(iso?: string | null) {
   return Math.floor(ms / (1000 * 60 * 60 * 24));
 }
 
-function ageColor(days: number) {
-  if (days < 7) return 'bg-green-500';
-  if (days < 30) return 'bg-amber-500';
-  return 'bg-red-500';
-}
-
 function ageLabel(days: number) {
   if (!isFinite(days)) return '—';
   if (days === 0) return "auj.";
