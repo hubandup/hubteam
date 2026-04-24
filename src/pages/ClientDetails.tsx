@@ -26,6 +26,8 @@ import { ClientBoardTab } from '@/components/client-details/ClientBoardTab';
 import { CommercialTrackingTab } from '@/components/client-details/CommercialTrackingTab';
 import { ClientFollowupBanner } from '@/components/client-details/ClientFollowupBanner';
 import { ClientCommercialSidebar } from '@/components/client-details/ClientCommercialSidebar';
+import { EditClientDialog } from '@/components/EditClientDialog';
+import { ProtectedAction } from '@/components/ProtectedAction';
 import { useUserRole } from '@/hooks/useUserRole';
 
 interface TabDef {
