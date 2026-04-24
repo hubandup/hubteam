@@ -515,6 +515,10 @@ Génère le JSON.`;
         start_date: p.start_date || null,
         end_date: p.end_date || null,
       })),
+      qualification: qualification.map((q: any) => ({
+        question: q.question_label,
+        answer: String(q.answer || '').slice(0, 300),
+      })),
       hubandup: (hubCache || []).map((h: any) => ({
         url: h.source_url,
         last_scraped_at: h.last_scraped_at || null,
