@@ -77,9 +77,9 @@ export function ClientFollowupBanner({ clientId }: Props) {
   const sendMail = () => {
     if (!latest) return;
     const to = latest.recipient_email || '';
-    const subject = latest.subject || '';
-    const url = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(plainBody)}`;
-    window.open(url, '_blank');
+    const subject = 'Suite à notre échange';
+    const mailto = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(plainBody)}`;
+    window.location.href = mailto;
   };
 
   const sourcesList = useMemo(() => {
@@ -168,7 +168,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
               className="inline-flex items-center gap-1.5 text-sm text-white hover:bg-white/10 disabled:opacity-50"
               style={{ border: '1px solid rgba(255,255,255,0.2)', padding: '8px 16px' }}
             >
-              <Send size={14} /> Envoyer via Gmail
+              <Send size={14} /> Envoyer par email
             </button>
             {sourcesList.length > 0 && (
               <button
