@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckCircle2, Link2, Plus, Calendar, ChevronRight } from 'lucide-react';
+import { toast } from 'sonner';
 import { MeetingsCompactBlock } from './MeetingsCompactBlock';
 import { ScrapeUrlsManagerModal } from './ScrapeUrlsManagerModal';
 
