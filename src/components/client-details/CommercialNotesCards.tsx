@@ -164,18 +164,18 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
     <section className="bg-white border border-neutral-200">
       {/* Header */}
       <div className="px-5 py-4 border-b border-neutral-200 flex items-center justify-between gap-3">
-        <div className="min-w-0">
+        <div className="flex items-center gap-3 min-w-0">
           <h3 className="display" style={{ fontSize: 18, fontWeight: 700, color: '#0f1422' }}>
             Comptes rendus
           </h3>
-          <p className="text-neutral-500" style={{ fontSize: 12 }}>
+          <span className="text-neutral-500 whitespace-nowrap" style={{ fontSize: 12 }}>
             {visible.length} affiché{visible.length > 1 ? 's' : ''} · {notes.length} au total
-          </p>
+          </span>
         </div>
         <button
           type="button"
           onClick={() => setOpenAdd(true)}
-          className="inline-flex items-center gap-1 font-semibold text-white"
+          className="inline-flex items-center gap-1 font-semibold text-white shrink-0"
           style={{ background: '#0f1422', padding: '6px 12px', fontSize: 12 }}
         >
           <Plus size={12} /> Ajouter un CR
