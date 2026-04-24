@@ -530,23 +530,17 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
         )}
       </div>
 
-      {!isAgency && !isClient && (
-        <>
-          {client.kdrive_drive_id && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">KDrive</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm text-muted-foreground">
-                  Dossier kDrive connecté
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <ClientContactsManager clientId={client.id} />
-        </>
+      {!isAgency && !isClient && client.kdrive_drive_id && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">KDrive</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm text-muted-foreground">
+              Dossier kDrive connecté
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {isClient && teamMember && (
