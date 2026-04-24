@@ -211,7 +211,7 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold" style={{ fontSize: 14, color: '#0f1422' }}>
-                      {format(new Date(n.created_at), 'd MMMM yyyy', { locale: fr })}
+                      {format(extractMeetingDate(n.content || '', n.created_at), 'd MMMM yyyy', { locale: fr })}
                     </p>
                     <p className="text-neutral-500" style={{ fontSize: 12 }}>{authorName}</p>
                   </div>
