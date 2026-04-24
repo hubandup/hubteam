@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 interface ClientKanbanViewProps {
   clients: any[];
   onClientClick: (clientId: string) => void;
+  onClientHover?: (clientId: string) => void;
   onStageChange: (clientId: string, newStage: string) => void;
 }
 
@@ -135,7 +136,7 @@ function DroppableColumn({
   );
 }
 
-export function ClientKanbanView({ clients, onClientClick, onStageChange }: ClientKanbanViewProps) {
+export function ClientKanbanView({ clients, onClientClick, onClientHover, onStageChange }: ClientKanbanViewProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
 
