@@ -659,16 +659,8 @@ function NotesSection({ trackingId, tracking, client }: { trackingId: string; tr
     setAdding(false);
     qc.invalidateQueries({ queryKey: ['commercial-notes', trackingId] });
     toast.success('Note ajoutée');
-    // Auto-notify Slack (no email)
-    notifyTeam({
-      client_id: tracking.client_id,
-      tracking_id: tracking.id,
-      company: client.company,
-      contact_name: `${client.first_name} ${client.last_name}`,
-      event_type: 'note_added',
-      details: { note_preview: noteText.slice(0, 200) },
-    }).then(() => qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] }))
-      .catch((e) => console.error('notify note_added failed', e));
+    // Note: l'ajout d'une note ne déclenche plus de notif Slack auto.
+    // Utilisez le bouton manuel "Notifier l'équipe sur Slack" pour notifier explicitement.
   };
 
   const remove = async (id: string) => {
