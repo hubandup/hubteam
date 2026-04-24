@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2, Sparkles, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +12,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { FollowupHistoryList } from './FollowupHistoryList';
 
 interface Props {
   open: boolean;
@@ -140,9 +141,9 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 display">
             <Sparkles className="h-5 w-5" style={{ color: '#0f1422' }} />
             Régénérer une excuse de relance
           </DialogTitle>
@@ -236,9 +237,20 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
             style={{ background: '#0f1422', color: '#fff' }}
           >
             {busy ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1" />}
-            Générer
+            Régénérer
           </Button>
         </DialogFooter>
+
+        {/* Historique des excuses générées */}
+        <div className="mt-2 pt-4 border-t border-neutral-200">
+          <div className="flex items-center gap-2 mb-3">
+            <History className="h-4 w-4" style={{ color: '#0f1422' }} />
+            <h4 className="display font-bold" style={{ fontSize: 14, color: '#0f1422' }}>
+              Historique des excuses générées
+            </h4>
+          </div>
+          <FollowupHistoryList trackingId={trackingId} />
+        </div>
       </DialogContent>
     </Dialog>
   );
