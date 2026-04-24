@@ -1505,15 +1505,13 @@ serve(async (req) => {
     }
 
     let data = await response.json();
-    console.log('Raw API response for list-files:', { 
-      action, 
-      targetFolderId: listTargetFolderId, 
+    console.log('kDrive response summary:', {
+      action,
+      targetFolderId: listTargetFolderId,
       dataLength: Array.isArray(data?.data) ? data.data.length : 'NOT_ARRAY',
       debugNoFilter,
       dataType: typeof data?.data,
       isArray: Array.isArray(data?.data),
-      allItems: Array.isArray(data?.data) ? data.data.map((f: any) => ({ id: f.id, name: f.name, parent_id: f.parent_id, type: f.type })) : data?.data,
-      rawResponse: data
     });
     
     if (action === 'list-files' && !debugNoFilter && listTargetFolderId !== undefined && data && Array.isArray(data.data)) {
@@ -1524,23 +1522,13 @@ serve(async (req) => {
       let filtered = data.data.filter((item: any) => {
         const itemParentNum = Number(item.parent_id);
         const itemParentStr = String(item.parent_id);
-        const matches = itemParentNum === targetIdNum || itemParentStr === targetIdStr;
-        if (!matches) {
-          console.log('Filtered out by parent:', { name: item.name, parent_id: item.parent_id, expected: targetIdStr });
-        }
-        return matches;
+        return itemParentNum === targetIdNum || itemParentStr === targetIdStr;
       });
       
       // Apply search filter if searchQuery is provided
       if (searchQuery && typeof searchQuery === 'string' && searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
-        filtered = filtered.filter((item: any) => {
-          const nameMatch = item.name && item.name.toLowerCase().includes(query);
-          if (!nameMatch) {
-            console.log('Filtered out by search:', { name: item.name, query });
-          }
-          return nameMatch;
-        });
+        filtered = filtered.filter((item: any) => item.name && item.name.toLowerCase().includes(query));
         console.log('After search filtering:', { filteredLength: filtered.length, searchQuery: query });
       }
       
