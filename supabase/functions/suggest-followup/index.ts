@@ -469,7 +469,7 @@ Génère le JSON.`;
       source: String(a.source || '').slice(0, 300),
     })) : [];
 
-    // Structured sources used for generation: URLs scrappées + notes internes + comptes rendus client
+    // Structured sources used for generation
     const sources = {
       urls: validScrapes.map(u => ({
         url: u.url,
@@ -491,6 +491,27 @@ Génère le JSON.`;
         meeting_type: m.meeting_type || null,
         meeting_date: m.meeting_date || null,
       })),
+      projects: (projects || []).map((p: any) => ({
+        name: p.name,
+        status: p.status || null,
+        start_date: p.start_date || null,
+        end_date: p.end_date || null,
+      })),
+      hubandup: (hubCache || []).map((h: any) => ({
+        url: h.source_url,
+        last_scraped_at: h.last_scraped_at || null,
+      })),
+      google_alerts: googleAlerts.map((g: any) => ({
+        feed_url: g.feed_url,
+        fetched_at: g.fetched_at || null,
+        entries_count: Array.isArray(g.entries) ? g.entries.length : 0,
+      })),
+      calendly: calendly.url ? {
+        owner: calendly.owner,
+        email: calendly.email || null,
+        url: calendly.url,
+        used: ['propose_slot', 'schedule_call'].includes(actionKey),
+      } : null,
     };
 
     // Persist to history (unless explicitly disabled)
