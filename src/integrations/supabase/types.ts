@@ -793,6 +793,7 @@ export type Database = {
           action: string | null
           active: boolean
           activity_sector_id: string | null
+          address: string | null
           company: string
           created_at: string
           email: string
@@ -821,6 +822,7 @@ export type Database = {
           action?: string | null
           active?: boolean
           activity_sector_id?: string | null
+          address?: string | null
           company: string
           created_at?: string
           email: string
@@ -849,6 +851,7 @@ export type Database = {
           action?: string | null
           active?: boolean
           activity_sector_id?: string | null
+          address?: string | null
           company?: string
           created_at?: string
           email?: string
