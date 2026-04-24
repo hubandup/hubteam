@@ -296,17 +296,17 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
       )}
 
       {/* Footer */}
-      {notes.length > 3 && !showAll && (
+      {filteredNotes.length > 3 && !showAll && (
         <button
           type="button"
           onClick={() => setShowAll(true)}
           className="w-full uppercase tracking-wider font-semibold text-neutral-600 hover:bg-neutral-50 border-t border-neutral-200 transition-colors"
           style={{ fontSize: 12, padding: '12px 0' }}
         >
-          Voir les {notes.length - 3} autre{notes.length - 3 > 1 ? 's' : ''} compte{notes.length - 3 > 1 ? 's' : ''} rendu{notes.length - 3 > 1 ? 's' : ''}
+          Voir les {filteredNotes.length - 3} autre{filteredNotes.length - 3 > 1 ? 's' : ''} compte{filteredNotes.length - 3 > 1 ? 's' : ''} rendu{filteredNotes.length - 3 > 1 ? 's' : ''}
         </button>
       )}
-      {showAll && notes.length > 3 && (
+      {showAll && filteredNotes.length > 3 && (
         <button
           type="button"
           onClick={() => setShowAll(false)}
