@@ -35,7 +35,7 @@ const stageColumns = [
   { id: 'sans_suite', label: 'Sans suite', color: 'bg-gray-50 dark:bg-gray-900' },
 ];
 
-function DraggableClientCard({ client, onClick }: { client: any; onClick: () => void }) {
+function DraggableClientCard({ client, onClick, onMouseEnter }: { client: any; onClick: () => void; onMouseEnter?: () => void }) {
   const {
     attributes,
     listeners,
@@ -71,6 +71,7 @@ function DraggableClientCard({ client, onClick }: { client: any; onClick: () => 
       tabIndex={0}
       role="button"
       aria-label={`Client: ${client.company || ''}`}
+      onMouseEnter={onMouseEnter}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -88,11 +89,13 @@ function DraggableClientCard({ client, onClick }: { client: any; onClick: () => 
 function DroppableColumn({ 
   stage, 
   clients, 
-  onClientClick 
+  onClientClick,
+  onClientHover,
 }: { 
   stage: typeof stageColumns[0]; 
   clients: any[];
   onClientClick: (clientId: string) => void;
+  onClientHover?: (clientId: string) => void;
 }) {
   const clientIds = clients.map((c) => c.id);
   const { setNodeRef, isOver } = useDroppable({
@@ -123,6 +126,7 @@ function DroppableColumn({
               key={client.id}
               client={client}
               onClick={() => onClientClick(client.id)}
+              onMouseEnter={() => onClientHover?.(client.id)}
             />
           ))}
           {clients.length === 0 && (
