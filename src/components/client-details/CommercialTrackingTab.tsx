@@ -366,7 +366,6 @@ function HeaderSection({ tracking, client }: { tracking: any; client: any }) {
                     ))}
                   </SelectContent>
                 </Select>
-                <ManualNotifyButton tracking={tracking} client={client} />
               </div>
             </div>
           </div>
