@@ -117,8 +117,11 @@ Deno.serve(async (req) => {
     const { data: notes } = await admin
       .from('commercial_notes').select('content, created_at, created_by').eq('tracking_id', body.tracking_id)
       .order('created_at', { ascending: false }).limit(3);
+    // On ne récupère que les RDV qui ont une date renseignée :
+    // les étapes sans date ne doivent PAS influencer la génération de l'excuse.
     const { data: meetings } = await admin
       .from('commercial_meetings').select('label, meeting_type, meeting_date').eq('tracking_id', body.tracking_id)
+      .not('meeting_date', 'is', null)
       .order('meeting_date', { ascending: false }).limit(3);
 
     // Récupérer les 3 derniers comptes rendus client (meeting_notes)
