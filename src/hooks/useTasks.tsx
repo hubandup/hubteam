@@ -34,7 +34,7 @@ interface Task {
   };
 }
 
-async function fetchTasks() {
+export async function fetchTasks() {
   const { data, error } = await supabase
     .from('tasks')
     .select(`

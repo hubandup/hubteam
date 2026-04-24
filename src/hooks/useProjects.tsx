@@ -73,7 +73,7 @@ async function addTaskCounts(projects: Project[]): Promise<Project[]> {
   }));
 }
 
-async function fetchProjects(userId: string | null) {
+export async function fetchProjects(userId: string | null) {
   if (!userId) return [];
 
   // Path 1: Projects where user is a profile member in project_team_members
