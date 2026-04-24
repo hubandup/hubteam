@@ -119,23 +119,26 @@ type TargetData = {
   tracking_id: string;
   notes: string[];
   scraped_urls: { url: string; label: string | null; content: string }[];
+  client_info: Record<string, any>;
+  projects: Record<string, any>[];
 };
 
 async function loadTargets(supabase: any): Promise<TargetData[]> {
   const { data: targets } = await supabase
     .from('client_targets')
-    .select('client_id, clients!inner(id, company)');
+    .select('client_id, clients!inner(*, activity_sectors(name), client_statuses(name), client_sources(name))');
 
   if (!targets) return [];
 
   const out: TargetData[] = [];
   for (const t of targets as any[]) {
     const client_id = t.client_id;
-    const client_company = t.clients.company;
+    const clientFull = t.clients;
+    const client_company = clientFull.company;
 
     const { data: tracking } = await supabase
       .from('commercial_tracking')
-      .select('id')
+      .select('id, status')
       .eq('client_id', client_id)
       .maybeSingle();
 
@@ -153,6 +156,15 @@ async function loadTargets(supabase: any): Promise<TargetData[]> {
       .select('url, label')
       .eq('tracking_id', tracking.id);
 
+    // Projets associés
+    const { data: projectLinks } = await supabase
+      .from('project_clients')
+      .select('project_id, projects(*)')
+      .eq('client_id', client_id);
+    const projects = (projectLinks ?? [])
+      .map((pl: any) => pl.projects)
+      .filter(Boolean);
+
     const noteContents = (notes ?? []).map((n: any) => n.content as string);
     const scrapedUrls: { url: string; label: string | null; content: string }[] = [];
 
@@ -168,12 +180,33 @@ async function loadTargets(supabase: any): Promise<TargetData[]> {
       continue;
     }
 
+    // Construire un objet "client_info" allégé/lisible
+    const client_info = {
+      company: clientFull.company,
+      contact: [clientFull.first_name, clientFull.last_name].filter(Boolean).join(' '),
+      email: clientFull.email,
+      phone: clientFull.phone,
+      address: clientFull.address,
+      kanban_stage: clientFull.kanban_stage,
+      action: clientFull.action,
+      follow_up_date: clientFull.follow_up_date,
+      last_contact: clientFull.last_contact,
+      revenue_current_year: clientFull.revenue_current_year,
+      revenue_total: clientFull.revenue,
+      activity_sector: clientFull.activity_sectors?.name,
+      status: clientFull.client_statuses?.name,
+      source: clientFull.client_sources?.name,
+      commercial_status: tracking.status,
+    };
+
     out.push({
       client_id,
       client_company,
       tracking_id: tracking.id,
       notes: noteContents,
       scraped_urls: scrapedUrls,
+      client_info,
+      projects,
     });
   }
   return out;
@@ -193,12 +226,35 @@ async function generateRelanceIdeas(target: TargetData, hubandupContext: string)
         .join('\n\n---\n\n')
     : '(aucune URL scrapée)';
 
+  const clientInfoBlock = JSON.stringify(target.client_info, null, 2);
+
+  const projectsBlock = target.projects.length
+    ? target.projects
+        .map((p, i) => {
+          const lines = [
+            `Projet ${i + 1}: ${p.name ?? '(sans nom)'}`,
+            p.status ? `  Statut: ${p.status}` : null,
+            p.start_date || p.end_date ? `  Période: ${p.start_date ?? '?'} → ${p.end_date ?? '?'}` : null,
+            p.archived ? '  (archivé)' : null,
+            p.description ? `  Description: ${String(p.description).slice(0, 600)}` : null,
+          ].filter(Boolean);
+          return lines.join('\n');
+        })
+        .join('\n\n')
+    : '(aucun projet associé)';
+
   const prompt = `Tu es un consultant senior chez Hub & Up, agence de communication. Génère 3 idées de relance commerciale ULTRA-CIBLÉES pour le client "${target.client_company}".
 
-## Contexte client – Derniers comptes rendus de Suivi Commercial
+## Fiche client (informations générales)
+${clientInfoBlock}
+
+## Projets associés
+${projectsBlock}
+
+## Derniers comptes rendus de Suivi Commercial
 ${notesBlock}
 
-## Contexte client – Veille (URLs surveillées)
+## Veille (URLs surveillées)
 ${urlsBlock}
 
 ## Offre Hub & Up (extraits du site)
@@ -207,7 +263,7 @@ ${hubandupContext.slice(0, 6000)}
 ## Règles de sortie
 - Exactement 3 idées de relance, une par ligne
 - Chaque idée fait 1 phrase concrète (max 30 mots)
-- Doit faire le lien explicite entre un signal client (CR ou veille) et une expertise Hub & Up
+- Doit faire le lien explicite entre un signal client (fiche, projet, CR ou veille) et une expertise Hub & Up
 - Pas de numérotation, pas de tirets, pas de guillemets
 - Pas d'introduction ni conclusion
 - Ton professionnel, actionnable, en français`;
