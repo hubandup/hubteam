@@ -108,13 +108,45 @@ export function useClients() {
       )
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'client_statuses',
-        },
+        { event: '*', schema: 'public', table: 'client_statuses' },
+        () => queryClient.invalidateQueries({ queryKey: ['clients'] })
+      )
+      // Liens projet-client : ajout/suppression d'association
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'project_clients' },
+        () => queryClient.invalidateQueries({ queryKey: ['clients'] })
+      )
+      // Projets : changement de statut influe sur "hasActiveProjects"
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'projects' },
+        () => queryClient.invalidateQueries({ queryKey: ['clients'] })
+      )
+      // Devis et factures : impactent les indicateurs de la card client
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'quotes' },
         () => {
           queryClient.invalidateQueries({ queryKey: ['clients'] });
+          queryClient.invalidateQueries({ queryKey: ['client-revenue'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'invoices' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['clients'] });
+          queryClient.invalidateQueries({ queryKey: ['client-revenue'] });
+        }
+      )
+      // Commentaires de tâches : maj des indicateurs d'activité
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'task_comments' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['clients'] });
+          queryClient.invalidateQueries({ queryKey: ['tasks'] });
         }
       )
       .subscribe();
