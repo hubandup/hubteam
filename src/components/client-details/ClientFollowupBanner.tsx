@@ -98,16 +98,9 @@ export function ClientFollowupBanner({ clientId }: Props) {
   return (
     <>
       <div
-        className="relative overflow-hidden"
+        className="relative"
         style={{ background: '#0f1422', border: '2px solid #0f1422', marginBottom: 20 }}
       >
-        {/* Decorative square */}
-        <div
-          aria-hidden
-          className="absolute top-0 right-0 -translate-y-12 translate-x-12"
-          style={{ width: 128, height: 128, background: '#E8FF4C', opacity: 0.15 }}
-        />
-
         {/* Header */}
         <div
           className="relative flex items-center justify-between px-5 py-4"
