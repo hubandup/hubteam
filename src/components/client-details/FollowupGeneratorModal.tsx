@@ -285,6 +285,35 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
               </div>
             </>
           )}
+
+          {wantsBookingLink && (
+            <div className="md:col-span-2">
+              {resolvedCalendly ? (
+                <div
+                  className="flex items-start gap-2 px-3 py-2 text-xs"
+                  style={{ background: 'rgba(232,255,76,0.15)', border: '1px solid rgba(15,20,34,0.15)' }}
+                >
+                  <CalendarClock className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: '#0f1422' }} />
+                  <div className="min-w-0">
+                    <p className="font-semibold" style={{ color: '#0f1422' }}>
+                      Lien Calendly attribué : {resolvedCalendly.owner === 'amandine' ? 'Amandine' : 'Charles'}
+                    </p>
+                    <p className="text-[11px] text-neutral-700 truncate">{resolvedCalendly.url}</p>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="flex items-start gap-2 px-3 py-2 text-xs"
+                  style={{ background: 'rgba(255,200,0,0.12)', border: '1px solid rgba(255,160,0,0.35)' }}
+                >
+                  <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: '#a15c00' }} />
+                  <p className="text-neutral-800">
+                    Aucun lien Calendly configuré pour cette action. Le message sera généré sans lien de réservation.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <DialogFooter>
