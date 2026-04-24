@@ -314,6 +314,9 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
             <div>
               <p className="text-sm text-muted-foreground">Entreprise</p>
               <p className="font-medium uppercase">{client.company}</p>
+              {(client as any).address && (
+                <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line">{(client as any).address}</p>
+              )}
             </div>
           </div>
 
