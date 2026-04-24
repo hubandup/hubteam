@@ -32,6 +32,56 @@ function preview(text: string, max = 180) {
   return trimmed.slice(0, max).trimEnd() + '…';
 }
 
+// Try to find an explicit business date in the note content (FR formats).
+// Falls back to the row's created_at when nothing meaningful is found.
+const FR_MONTHS: Record<string, number> = {
+  janvier: 0, 'janv.': 0, janv: 0,
+  février: 1, fevrier: 1, 'févr.': 1, fevr: 1,
+  mars: 2,
+  avril: 3, 'avr.': 3, avr: 3,
+  mai: 4,
+  juin: 5,
+  juillet: 6, 'juil.': 6, juil: 6,
+  août: 7, aout: 7,
+  septembre: 8, 'sept.': 8, sept: 8,
+  octobre: 9, 'oct.': 9, oct: 9,
+  novembre: 10, 'nov.': 10, nov: 10,
+  décembre: 11, decembre: 11, 'déc.': 11, dec: 11,
+};
+
+function extractMeetingDate(content: string, fallbackISO: string): Date {
+  if (!content) return new Date(fallbackISO);
+  const fallback = new Date(fallbackISO);
+  const fallbackYear = fallback.getFullYear();
+
+  // 1) "12 mars 2025" or "12 mars" (year optional)
+  const reFr = /\b(\d{1,2})\s+([A-Za-zÀ-ÿ.]+)\s*(\d{4})?\b/g;
+  let m: RegExpExecArray | null;
+  while ((m = reFr.exec(content)) !== null) {
+    const day = parseInt(m[1], 10);
+    const monthKey = m[2].toLowerCase();
+    const month = FR_MONTHS[monthKey];
+    if (month === undefined) continue;
+    const year = m[3] ? parseInt(m[3], 10) : fallbackYear;
+    if (day < 1 || day > 31) continue;
+    return new Date(year, month, day);
+  }
+
+  // 2) "12/03/2025" or "12-03-2025"
+  const reNum = /\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/.exec(content);
+  if (reNum) {
+    const day = parseInt(reNum[1], 10);
+    const month = parseInt(reNum[2], 10) - 1;
+    let year = parseInt(reNum[3], 10);
+    if (year < 100) year += 2000;
+    if (day >= 1 && day <= 31 && month >= 0 && month <= 11) {
+      return new Date(year, month, day);
+    }
+  }
+
+  return fallback;
+}
+
 async function notifyTeam(params: any) {
   return supabase.functions.invoke('notify-target-relance', { body: params });
 }
