@@ -16,6 +16,8 @@ import {
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { CommercialNotesCards } from './CommercialNotesCards';
+import { QualificationCollapsible } from './QualificationCollapsible';
 
 interface Props {
   clientId: string;
