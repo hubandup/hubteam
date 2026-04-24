@@ -202,7 +202,7 @@ Deno.serve(async (req) => {
 
     const addressForm: 'vous' | 'tu' = body.address_form === 'tu' ? 'tu' : 'vous';
     const addressRule = addressForm === 'tu'
-      ? `- ADRESSE (obligatoire) : tutoiement à la 2ème personne du singulier. Utilise « tu », « ton/ta/tes », conjugaisons à la 2e pers. sing. (« peux-tu », « dis-moi », « tiens-moi au courant »). Salutation : « Bonjour [Prénom], » (jamais « Salut »). Aucun « vous » de politesse, jamais. Signature finale : « L'équipe HUB+UP ».`
+      ? `- ADRESSE (obligatoire) : tutoiement à la 2ème personne du singulier. Utilise « tu », « ton/ta/tes », conjugaisons à la 2e pers. sing. (« peux-tu », « dis-moi », « tiens-moi au courant »). Salutation : « Bonjour [Prénom], » (jamais « Salut »). Aucun « vous » de politesse, jamais.`
       : `- ADRESSE (obligatoire) : vouvoiement à la 2ème personne du pluriel. Utilise « vous », « votre/vos », conjugaisons à la 2e pers. plur. (« pouvez-vous », « dites-moi », « tenez-moi au courant »). Salutation : « Bonjour [Prénom], ». Aucun tutoiement.`;
 
     const systemPrompt = `Tu es un expert en développement commercial B2B pour HUB+UP (agence de communication). Tu génères une "excuse de relance" personnalisée pour un destinataire précis, en t'appuyant sur des actualités fraîches scrappées.
@@ -214,8 +214,10 @@ Règles:
 ${addressRule}
 ${ctaRule}
 ${subjectRule}
-- Ton : ${toneInstructions[tone]}. En français. Pas d'emoji. Pas de formules creuses ("j'espère que vous allez bien"). Signature "L'équipe HUB+UP".
+- Ton : ${toneInstructions[tone]}. En français. Pas d'emoji. Pas de formules creuses ("j'espère que vous allez bien").
 - Email court : 80–130 mots dans le corps.
+- RÈGLE IMPORTANTE — AUCUNE SIGNATURE : ne termine JAMAIS le message par une signature. Pas de "L'équipe Hub & Up", pas de "L'équipe HUB+UP", pas de "Cordialement, [prénom]", pas de "Bien à vous", pas de "Bonne journée, [prénom]", pas de nom propre en fin de message. Le message doit s'arrêter NET après la dernière phrase utile (appel à l'action, proposition de créneau, lien Calendly, formule ouverte). La signature personnelle de l'expéditeur sera ajoutée automatiquement par son client mail lors de l'envoi.
+- TON PERSONNEL : écris à la 1ère personne du singulier (je/moi/mon), JAMAIS au collectif (nous/notre/l'équipe). C'est un message individuel envoyé par une personne, pas par une agence.
 
 Tu DOIS répondre UNIQUEMENT avec un JSON valide UTF-8 (pas de markdown, pas de \`\`\`), strictement avec cette forme :
 {
@@ -223,7 +225,7 @@ Tu DOIS répondre UNIQUEMENT avec un JSON valide UTF-8 (pas de markdown, pas de 
     { "title": "string court", "description": "1 phrase", "source": "URL ou nom de source" }
   ],
   "subject": "Objet d'email${isJustHello ? ' sobre et personnel' : ' mentionnant l\'action proposée'}",
-  "body_plain": "Corps de l'email en texte brut, paragraphes séparés par une ligne vide. Inclure la salutation${isJustHello ? ', un angle concret puis une formule ouverte légère' : ', le call-to-action correspondant à l\'action demandée'}, et la signature 'L'équipe HUB+UP'."
+  "body_plain": "Corps de l'email en texte brut, paragraphes séparés par une ligne vide. Inclure la salutation et${isJustHello ? ' un angle concret puis une formule ouverte légère' : ' le call-to-action correspondant à l\'action demandée'}. AUCUNE SIGNATURE en fin de message — le texte se termine sur la dernière phrase utile, c'est tout."
 }`;
 
     const userPrompt = `Prospect / Client : ${clientRow.company || 'N/A'}
