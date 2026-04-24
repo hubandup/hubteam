@@ -749,19 +749,8 @@ function MeetingsSection({ trackingId, tracking, client }: { trackingId: string;
     const before = meetings.find((m: any) => m.id === id);
     await supabase.from('commercial_meetings').update(patch).eq('id', id);
     qc.invalidateQueries({ queryKey: ['commercial-meetings', trackingId] });
-    // Auto-notify when a meeting date is set/changed
-    if (patch.meeting_date && patch.meeting_date !== before?.meeting_date) {
-      const label = before?.label || 'RDV';
-      notifyTeam({
-        client_id: tracking.client_id,
-        tracking_id: tracking.id,
-        company: client.company,
-        contact_name: `${client.first_name} ${client.last_name}`,
-        event_type: 'meeting_scheduled',
-        details: { meeting_label: label, meeting_date: patch.meeting_date },
-      }).then(() => qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] }))
-        .catch((e) => console.error('notify meeting_scheduled failed', e));
-    }
+    // Note: la planification/modification d'une date de RDV ne déclenche plus de notif Slack auto.
+    // Utilisez le bouton manuel "Notifier l'équipe sur Slack" pour notifier explicitement.
   };
 
   const rdvCount = meetings.filter((m: any) => m.meeting_type === 'rdv' || m.meeting_type === 'custom').length;
