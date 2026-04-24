@@ -143,6 +143,16 @@ Deno.serve(async (req) => {
       .order('updated_at', { ascending: false })
       .limit(5);
 
+    // Qualification du besoin (commercial_questionnaire)
+    const { data: qualificationRows } = await admin
+      .from('commercial_questionnaire')
+      .select('question_label, answer, display_order')
+      .eq('tracking_id', body.tracking_id)
+      .order('display_order');
+    const qualification = (qualificationRows || []).filter(
+      (q: any) => (q.answer || '').toString().trim().length > 0,
+    );
+
     // Cache Hub & Up (site)
     const { data: hubCache } = await admin
       .from('hubandup_context_cache')
