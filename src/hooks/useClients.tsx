@@ -35,7 +35,7 @@ interface Client {
   hasActiveProjects?: boolean;
 }
 
-async function fetchClients() {
+export async function fetchClients() {
   // Fetch clients with projects count
   const { data: clientsData, error: clientsError } = await supabase
     .from('clients')

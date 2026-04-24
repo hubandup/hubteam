@@ -6,9 +6,10 @@ import { useUserRole } from '@/hooks/useUserRole';
 interface ClientListViewProps {
   clients: any[];
   onClientClick: (id: string) => void;
+  onClientHover?: (id: string) => void;
 }
 
-export function ClientListView({ clients, onClientClick }: ClientListViewProps) {
+export function ClientListView({ clients, onClientClick, onClientHover }: ClientListViewProps) {
   const { isAgency, loading: roleLoading } = useUserRole();
   const showRevenue = !roleLoading && !isAgency;
   return (
@@ -36,6 +37,7 @@ export function ClientListView({ clients, onClientClick }: ClientListViewProps) 
             key={client.id}
             className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
             onClick={() => onClientClick(client.id)}
+            onMouseEnter={() => onClientHover?.(client.id)}
           >
             <Avatar className="h-10 w-10 flex-shrink-0">
               <AvatarImage src={client.logo_url} alt={client.company} />
