@@ -50,6 +50,7 @@ export default function ClientDetails() {
   const [invoicesCount, setInvoicesCount] = useState(0);
   const [sectorName, setSectorName] = useState<string>('');
   const [statusName, setStatusName] = useState<string>('');
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [sourceName, setSourceName] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('commercial');
 
