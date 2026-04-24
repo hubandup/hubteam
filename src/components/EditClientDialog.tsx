@@ -38,6 +38,7 @@ const clientSchema = z.object({
   company: z.string().trim().min(1, "L'entreprise est requise").max(200),
   email: z.string().trim().email('Email invalide').max(255),
   phone: z.string().trim().max(20).optional(),
+  address: z.string().trim().max(500).optional(),
   revenue: z.number().min(0, 'Le CA doit être positif'),
   active: z.boolean(),
   activity_sector_id: z.string().optional(),
@@ -60,6 +61,7 @@ interface EditClientDialogProps {
     company: string;
     email: string;
     phone?: string;
+    address?: string;
     revenue: number;
     active: boolean;
     logo_url?: string;
