@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
 
     const { data: tracking, error: trErr } = await admin
       .from('commercial_tracking')
-      .select('id, client_id, status, clients(company, first_name, last_name, email)')
+      .select('id, client_id, status, created_by, clients(company, first_name, last_name, email)')
       .eq('id', body.tracking_id)
       .maybeSingle();
     if (trErr || !tracking) throw trErr || new Error('Tracking not found');
@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
     }
 
     const { data: notes } = await admin
-      .from('commercial_notes').select('content, created_at').eq('tracking_id', body.tracking_id)
+      .from('commercial_notes').select('content, created_at, created_by').eq('tracking_id', body.tracking_id)
       .order('created_at', { ascending: false }).limit(3);
     const { data: meetings } = await admin
       .from('commercial_meetings').select('label, meeting_type, meeting_date').eq('tracking_id', body.tracking_id)
@@ -134,6 +134,74 @@ Deno.serve(async (req) => {
       .order('meeting_date', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
       .limit(3);
+
+    // Projets liés
+    const { data: projects } = await admin
+      .from('projects')
+      .select('name, status, start_date, end_date, description')
+      .eq('client_id', tracking.client_id)
+      .order('updated_at', { ascending: false })
+      .limit(5);
+
+    // Cache Hub & Up (site)
+    const { data: hubCache } = await admin
+      .from('hubandup_context_cache')
+      .select('source_url, summary, last_scraped_at, last_scrape_status')
+      .eq('last_scrape_status', 'success');
+
+    // Détection feeds Google Alerts parmi les URLs du client (heuristique)
+    const isGoogleAlertsFeed = (u: string) =>
+      /google\.[a-z.]+\/alerts\/feeds?\//i.test(u) || /alerts\.google\.[a-z.]+/i.test(u);
+    const feedUrls = (urls || []).map(u => u.url).filter(isGoogleAlertsFeed);
+
+    let googleAlerts: any[] = [];
+    if (feedUrls.length > 0) {
+      const { data: gaRows } = await admin
+        .from('google_alerts_cache')
+        .select('feed_url, entries, fetched_at, fetch_status')
+        .in('feed_url', feedUrls);
+      googleAlerts = gaRows || [];
+    }
+
+    // Configuration Calendly (app_config)
+    const { data: cfgRows } = await admin
+      .from('app_config')
+      .select('key, value')
+      .in('key', ['calendly_charles_email', 'calendly_charles_url', 'calendly_amandine_email', 'calendly_amandine_url']);
+    const cfg: Record<string, string> = {};
+    for (const r of (cfgRows || [])) cfg[r.key] = r.value || '';
+
+    // Helper: choisit l'attribution Calendly (Charles vs Amandine)
+    // Stratégie : on cherche l'auteur principal (created_by du tracking, ou de la dernière note),
+    // puis on compare son email Auth aux emails Calendly configurés.
+    const pickCalendlyAttribution = async (): Promise<{ owner: 'charles'|'amandine'|null; email: string; url: string }> => {
+      const ownerId =
+        (tracking as any).created_by ||
+        (notes && notes[0]?.created_by) ||
+        null;
+      let ownerEmail = '';
+      if (ownerId) {
+        try {
+          const { data: u } = await admin.auth.admin.getUserById(ownerId);
+          ownerEmail = (u?.user?.email || '').toLowerCase();
+        } catch { /* noop */ }
+      }
+      const charlesEmail = (cfg.calendly_charles_email || '').toLowerCase();
+      const amandineEmail = (cfg.calendly_amandine_email || '').toLowerCase();
+      if (ownerEmail && ownerEmail === amandineEmail) {
+        return { owner: 'amandine', email: cfg.calendly_amandine_email, url: cfg.calendly_amandine_url };
+      }
+      if (ownerEmail && ownerEmail === charlesEmail) {
+        return { owner: 'charles', email: cfg.calendly_charles_email, url: cfg.calendly_charles_url };
+      }
+      // Fallback : Charles si configuré
+      if (cfg.calendly_charles_url) {
+        return { owner: 'charles', email: cfg.calendly_charles_email, url: cfg.calendly_charles_url };
+      }
+      return { owner: null, email: '', url: '' };
+    };
+    const calendly = await pickCalendlyAttribution();
+
 
     const tone = body.tone || 'friendly';
     const toneInstructions: Record<string, string> = {
