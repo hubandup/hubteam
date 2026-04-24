@@ -267,8 +267,14 @@ export default function ClientDetails() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="rounded-none">
+                <ProtectedAction module="crm" action="update">
+                  <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setEditDialogOpen(true); }}>
+                    <Pencil className="h-4 w-4 mr-2" /> Modifier
+                  </DropdownMenuItem>
+                </ProtectedAction>
                 {canDelete && (
                   <>
+                    <DropdownMenuSeparator />
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
@@ -292,11 +298,15 @@ export default function ClientDetails() {
                     </AlertDialog>
                   </>
                 )}
-                {!canDelete && (
-                  <DropdownMenuItem disabled>Aucune action disponible</DropdownMenuItem>
-                )}
               </DropdownMenuContent>
             </DropdownMenu>
+            <EditClientDialog
+              client={client}
+              onClientUpdated={fetchClientDetails}
+              open={editDialogOpen}
+              onOpenChange={setEditDialogOpen}
+              hideTrigger
+            />
           </div>
 
           {/* Tabs sous le header dans le même conteneur */}
