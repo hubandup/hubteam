@@ -40,9 +40,10 @@ interface ClientCardProps {
     kdrive_folder_id?: string;
   };
   onClick: () => void;
+  onMouseEnter?: () => void;
 }
 
-export function ClientCard({ client, onClick }: ClientCardProps) {
+export function ClientCard({ client, onClick, onMouseEnter }: ClientCardProps) {
   const { isAgency, loading: roleLoading } = useUserRole();
   const showRevenue = !roleLoading && !isAgency;
   const { data: targets } = useTargets();
@@ -67,7 +68,7 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
 
   return (
     <>
-    <Card className="cursor-pointer hover:shadow-lg transition-shadow relative" onClick={onClick}>
+    <Card className="cursor-pointer hover:shadow-lg transition-shadow relative" onClick={onClick} onMouseEnter={onMouseEnter}>
       <button
         type="button"
         onClick={handleStarClick}
