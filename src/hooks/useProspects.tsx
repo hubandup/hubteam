@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
 import { useAuth } from './useAuth';
+import { toast } from 'sonner';
 
 export type ProspectChannel = 'Email' | 'Téléphone' | 'LinkedIn' | 'Bouche-à-oreille';
 export type ProspectStatus = 'À contacter' | 'Contacté' | 'Relance 1' | 'Relance 2' | 'RDV planifié' | 'Besoin qualifié' | 'Proposition envoyée' | 'Négociation' | 'Gagné' | 'Perdu' | 'En veille';
