@@ -111,13 +111,8 @@ Deno.serve(async (req) => {
       .eq('tracking_id', body.tracking_id);
 
     const validScrapes = (urls || []).filter(u => u.last_scrape_status === 'success' && (u.last_scrape_summary || u.last_scrape_content));
-
-    if (validScrapes.length === 0) {
-      return new Response(JSON.stringify({
-        error: 'no_scraped_content',
-        message: "Aucun contenu scrapé disponible. Lancez d'abord le scraping des URLs.",
-      }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' } });
-    }
+    // Note: on n'exige plus de contenu scrapé. Si aucune URL n'a été scrapée,
+    // on génère quand même des suggestions à partir des CR, projets, fiche client, etc.
 
     const { data: notes } = await admin
       .from('commercial_notes').select('content, created_at, created_by').eq('tracking_id', body.tracking_id)
