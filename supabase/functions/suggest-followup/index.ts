@@ -332,11 +332,12 @@ Deno.serve(async (req) => {
 
 Hiérarchie des sources (du + important au - important pour construire l'angle de relance) :
 1. Comptes rendus client récents (suivi promis, point en suspens, prochaine étape) — accroche idéale.
-2. URLs scrapées récemment (actualité de l'entreprise, prises de parole, recrutements, levée).
-3. Google Alerts (actu externe sur l'entreprise / le secteur).
-4. Notes internes (suivi commercial) et derniers RDV planifiés.
-5. Projets liés (sujets sur lesquels HUB+UP a déjà travaillé pour ce client).
-6. Contexte HUB+UP (rappel discret de notre positionnement / actu récente, à n'utiliser QUE si pertinent pour ouvrir une porte — jamais de listing d'expertises).
+2. Qualification du besoin (réponses du client : taille, cibles, objectifs, agence habituelle, etc.) — utilise-les pour personnaliser l'angle, démontrer une compréhension fine du contexte client et calibrer la proposition de valeur. NE PAS recracher littéralement les réponses ; les exploiter de manière subtile.
+3. URLs scrapées récemment (actualité de l'entreprise, prises de parole, recrutements, levée).
+4. Google Alerts (actu externe sur l'entreprise / le secteur).
+5. Notes internes (suivi commercial) et derniers RDV planifiés.
+6. Projets liés (sujets sur lesquels HUB+UP a déjà travaillé pour ce client).
+7. Contexte HUB+UP (rappel discret de notre positionnement / actu récente, à n'utiliser QUE si pertinent pour ouvrir une porte — jamais de listing d'expertises).
 
 Règles:
 - Identifie 1 à 3 angles concrets en respectant la hiérarchie ci-dessus. Cite la source réelle dans le champ "source" des angles.
