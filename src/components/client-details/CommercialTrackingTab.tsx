@@ -464,34 +464,120 @@ function ContactsSection({ trackingId, client }: { trackingId: string; client: a
   }
 
   return (
-    <Card>
-      <CardContent className="pt-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-lg">Contacts additionnels</h3>
-          <Button size="sm" variant="outline" onClick={addContact}>
-            <Plus className="h-4 w-4 mr-1" /> Ajouter un contact
-          </Button>
+    <section className="bg-white border border-neutral-200">
+      <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between gap-2">
+        <div className="flex items-baseline gap-2 min-w-0">
+          <span className="uppercase tracking-wider font-semibold text-neutral-500" style={{ fontSize: 10 }}>
+            Contacts additionnels
+          </span>
+          <span className="text-neutral-400" style={{ fontSize: 11 }}>
+            {contacts.length}
+          </span>
         </div>
+        <Button size="sm" variant="outline" onClick={addContact} className="rounded-none h-7 text-xs">
+          <Plus className="h-3 w-3 mr-1" /> Ajouter
+        </Button>
+      </div>
 
+      <ul className="divide-y divide-neutral-100">
         {contacts.map((c: any) => (
-          <div key={c.id} className="border rounded-lg p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-xs uppercase text-muted-foreground font-semibold">Contact additionnel</p>
-              <Button size="icon" variant="ghost" onClick={() => deleteContact(c.id)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Input placeholder="Prénom" defaultValue={c.first_name} onBlur={(e) => updateContact(c.id, { first_name: e.target.value })} />
-              <Input placeholder="Nom" defaultValue={c.last_name} onBlur={(e) => updateContact(c.id, { last_name: e.target.value })} />
-              <Input placeholder="Poste" defaultValue={c.job_title || ''} onBlur={(e) => updateContact(c.id, { job_title: e.target.value })} />
-              <Input placeholder="Email" type="email" defaultValue={c.email || ''} onBlur={(e) => updateContact(c.id, { email: e.target.value })} />
-              <Input placeholder="Téléphone" defaultValue={c.phone || ''} onBlur={(e) => updateContact(c.id, { phone: e.target.value })} />
-            </div>
-          </div>
+          <CompactContactRow
+            key={c.id}
+            contact={c}
+            onUpdate={(patch) => updateContact(c.id, patch)}
+            onDelete={() => deleteContact(c.id)}
+          />
         ))}
-      </CardContent>
-    </Card>
+      </ul>
+    </section>
+  );
+}
+
+/* ---------- Compact contact row (collapsed by default, expands to edit) ---------- */
+function CompactContactRow({
+  contact: c,
+  onUpdate,
+  onDelete,
+}: {
+  contact: any;
+  onUpdate: (patch: any) => void;
+  onDelete: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const fullName = [c.first_name, c.last_name].filter(Boolean).join(' ').trim();
+  const displayName = fullName || 'Contact sans nom';
+  const initials = (
+    (c.first_name?.[0] || '') + (c.last_name?.[0] || '')
+  ).toUpperCase() || '?';
+
+  return (
+    <li className="px-4 py-2">
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex items-center gap-3 flex-1 min-w-0 text-left"
+          aria-expanded={open}
+        >
+          <span
+            className="inline-flex items-center justify-center flex-shrink-0 bg-neutral-100 text-neutral-600"
+            style={{ width: 28, height: 28, fontSize: 11, fontWeight: 600 }}
+          >
+            {initials}
+          </span>
+          <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+            <span className="font-medium text-neutral-900 truncate" style={{ fontSize: 13 }}>
+              {displayName}
+            </span>
+            {c.job_title && (
+              <span className="text-neutral-500 truncate" style={{ fontSize: 12 }}>
+                · {c.job_title}
+              </span>
+            )}
+          </div>
+          <div className="hidden sm:flex items-center gap-3 text-neutral-500 shrink-0" style={{ fontSize: 12 }}>
+            {c.email && (
+              <a
+                href={`mailto:${c.email}`}
+                onClick={(e) => e.stopPropagation()}
+                className="hover:text-neutral-900 truncate max-w-[200px]"
+                title={c.email}
+              >
+                {c.email}
+              </a>
+            )}
+            {c.phone && (
+              <a
+                href={`tel:${c.phone}`}
+                onClick={(e) => e.stopPropagation()}
+                className="hover:text-neutral-900"
+              >
+                {c.phone}
+              </a>
+            )}
+          </div>
+        </button>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7 shrink-0"
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          aria-label="Supprimer le contact"
+        >
+          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+        </Button>
+      </div>
+
+      {open && (
+        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2 pl-[40px]">
+          <Input placeholder="Prénom" defaultValue={c.first_name} onBlur={(e) => onUpdate({ first_name: e.target.value })} className="h-8 text-xs" />
+          <Input placeholder="Nom" defaultValue={c.last_name} onBlur={(e) => onUpdate({ last_name: e.target.value })} className="h-8 text-xs" />
+          <Input placeholder="Poste" defaultValue={c.job_title || ''} onBlur={(e) => onUpdate({ job_title: e.target.value })} className="h-8 text-xs" />
+          <Input placeholder="Email" type="email" defaultValue={c.email || ''} onBlur={(e) => onUpdate({ email: e.target.value })} className="h-8 text-xs" />
+          <Input placeholder="Téléphone" defaultValue={c.phone || ''} onBlur={(e) => onUpdate({ phone: e.target.value })} className="h-8 text-xs" />
+        </div>
+      )}
+    </li>
   );
 }
 
