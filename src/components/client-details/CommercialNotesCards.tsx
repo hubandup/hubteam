@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { ChevronDown, Plus, Loader2, Trash2 } from 'lucide-react';
+import { ChevronDown, Plus, Loader2, Trash2, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -94,6 +94,7 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
   const [openAdd, setOpenAdd] = useState(false);
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [privacyFilter, setPrivacyFilter] = useState<'all' | 'public' | 'private'>('all');
 
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['commercial-notes', trackingId],
@@ -117,9 +118,15 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
     },
   });
 
+  const filteredNotes = useMemo(() => {
+    if (privacyFilter === 'public') return notes.filter((n: any) => !n.is_private);
+    if (privacyFilter === 'private') return notes.filter((n: any) => n.is_private);
+    return notes;
+  }, [notes, privacyFilter]);
+
   const visible = useMemo(
-    () => (showAll ? notes : notes.slice(0, 3)),
-    [showAll, notes],
+    () => (showAll ? filteredNotes : filteredNotes.slice(0, 3)),
+    [showAll, filteredNotes],
   );
 
   const submit = async () => {
