@@ -258,6 +258,13 @@ Deno.serve(async (req) => {
         }).join('\n')}`
       : '';
 
+    const contextQualification = (qualification && qualification.length > 0)
+      ? `\n\nQualification du besoin (réponses du client recueillies en suivi commercial) :\n${qualification.map((q: any) => {
+          const ans = String(q.answer || '').replace(/\s+/g, ' ').slice(0, 300);
+          return `• ${q.question_label} → ${ans}`;
+        }).join('\n')}`
+      : '';
+
     const contextHubAndUp = (hubCache && hubCache.length > 0)
       ? `\n\nContexte HUB+UP (résumé du site, mis à jour le ${(hubCache[0] as any).last_scraped_at?.slice(0, 10) || 'N/A'}) :\n${hubCache.map((h: any) => {
           const sum = (h.summary || '').replace(/\s+/g, ' ').slice(0, 1500);
