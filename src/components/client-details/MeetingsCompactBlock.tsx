@@ -107,12 +107,12 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
     downloadICS(`rdv-${client.company}-${displayLabel}.ics`, ics);
   };
 
-  const editing = meetings.find((m: any) => m.id === editingId);
+  const editing: any = meetings.find((m: any) => m.id === editingId);
 
   // Build display labels (renumber RDVs sequentially)
   let rdvIdx = 0;
-  const items = meetings.map((m: any) => {
-    const isRdv = m.meeting_type === 'rdv' || m.meeting_type === 'custom' || m.meeting_type?.startsWith('rdv');
+  const items: any[] = (meetings as any[]).map((m: any) => {
+    const isRdv = m.meeting_type === 'rdv' || m.meeting_type === 'custom' || (typeof m.meeting_type === 'string' && m.meeting_type.startsWith('rdv'));
     if (isRdv) rdvIdx += 1;
     return {
       ...m,
