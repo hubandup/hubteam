@@ -1042,26 +1042,38 @@ export type Database = {
       }
       commercial_notes: {
         Row: {
+          attachment_url: string | null
           author_id: string
           content: string
           created_at: string
           id: string
+          is_private: boolean
+          meeting_date: string | null
+          title: string | null
           tracking_id: string
           updated_at: string
         }
         Insert: {
+          attachment_url?: string | null
           author_id: string
           content: string
           created_at?: string
           id?: string
+          is_private?: boolean
+          meeting_date?: string | null
+          title?: string | null
           tracking_id: string
           updated_at?: string
         }
         Update: {
+          attachment_url?: string | null
           author_id?: string
           content?: string
           created_at?: string
           id?: string
+          is_private?: boolean
+          meeting_date?: string | null
+          title?: string | null
           tracking_id?: string
           updated_at?: string
         }
