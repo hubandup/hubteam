@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckCircle2, Link2, Plus, Calendar, ChevronRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { MeetingsCompactBlock } from './MeetingsCompactBlock';
+import { ScrapeUrlsManagerModal } from './ScrapeUrlsManagerModal';
 
 interface Props {
   client: any;
@@ -31,23 +32,21 @@ function daysSince(iso?: string | null) {
   const ms = Date.now() - new Date(iso).getTime();
   return Math.floor(ms / (1000 * 60 * 60 * 24));
 }
-
 function ageLabel(days: number) {
   if (!isFinite(days)) return '—';
-  if (days === 0) return "auj.";
+  if (days === 0) return 'auj.';
   return `${days}j`;
 }
 
-function SectionShell({ icon, title, action, children }: { icon?: React.ReactNode; title: string; action?: React.ReactNode; children: React.ReactNode }) {
+function SectionShell({
+  icon, title, action, children,
+}: { icon?: React.ReactNode; title: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section className="bg-white border border-neutral-200">
       <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {icon}
-          <h3
-            className="uppercase tracking-wider font-bold display"
-            style={{ color: '#0f1422', fontSize: 10 }}
-          >
+          <h3 className="uppercase tracking-wider font-bold display" style={{ color: '#0f1422', fontSize: 10 }}>
             {title}
           </h3>
         </div>
@@ -60,8 +59,8 @@ function SectionShell({ icon, title, action, children }: { icon?: React.ReactNod
 
 export function ClientCommercialSidebar({ client }: Props) {
   const clientId = client?.id;
+  const [urlsModalOpen, setUrlsModalOpen] = useState(false);
 
-  // Tracking row → URLs
   const { data: tracking } = useQuery({
     queryKey: ['commercial-tracking-by-client', clientId],
     enabled: !!clientId,
@@ -88,48 +87,39 @@ export function ClientCommercialSidebar({ client }: Props) {
     },
   });
 
-  // Team: from project_team_members of projects linked to this client
+  // Team
   const { data: teamMembers = [] } = useQuery({
     queryKey: ['client-team', clientId],
     enabled: !!clientId,
     queryFn: async () => {
-      // 1. project ids linked to this client
-      const { data: links, error: linksErr } = await supabase
-        .from('project_clients')
-        .select('project_id')
-        .eq('client_id', clientId);
-      console.log('[ClientCommercialSidebar] project_clients →', { links, linksErr, clientId });
+      const { data: links } = await supabase
+        .from('project_clients').select('project_id').eq('client_id', clientId);
       const projectIds = (links || []).map((l: any) => l.project_id);
       if (projectIds.length === 0) return [];
-      // 2. profile-type team members on those projects
-      const { data: members, error: membersErr } = await supabase
+      const { data: members } = await supabase
         .from('project_team_members')
         .select('member_id, member_type')
         .in('project_id', projectIds)
         .eq('member_type', 'profile');
-      console.log('[ClientCommercialSidebar] project_team_members →', { members, membersErr });
       const memberIds = Array.from(new Set((members || []).map((m: any) => m.member_id))).filter(Boolean);
       if (memberIds.length === 0) return [];
-      const { data: profiles, error: profilesErr } = await supabase
+      const { data: profiles } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, role, avatar_url')
         .in('id', memberIds);
-      console.log('[ClientCommercialSidebar] profiles →', { profiles, profilesErr });
       return profiles || [];
     },
   });
 
-  // Fallback: client owner / main_contact_id profile
   const { data: ownerProfile } = useQuery({
     queryKey: ['client-owner', client?.main_contact_id],
     enabled: !!client?.main_contact_id && teamMembers.length === 0,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, role, avatar_url')
         .eq('id', client.main_contact_id)
         .maybeSingle();
-      console.log('[ClientCommercialSidebar] owner fallback →', { data, error, main_contact_id: client?.main_contact_id });
       return data;
     },
   });
@@ -138,7 +128,6 @@ export function ClientCommercialSidebar({ client }: Props) {
     ? teamMembers
     : (ownerProfile ? [{ ...(ownerProfile as any), _fallback: true }] : []);
 
-  // Pipeline progression
   const currentStage = client?.kanban_stage || 'prospect';
   const currentIdx = useMemo(
     () => Math.max(0, PIPELINE_STAGES.findIndex((s) => s.id === currentStage)),
@@ -147,11 +136,8 @@ export function ClientCommercialSidebar({ client }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* PIPELINE */}
-      <SectionShell
-        icon={<CheckCircle2 size={14} style={{ color: '#0f1422' }} />}
-        title="Pipeline"
-      >
+      {/* 1. PIPELINE */}
+      <SectionShell icon={<CheckCircle2 size={14} style={{ color: '#0f1422' }} />} title="Pipeline">
         <ul className="space-y-2.5">
           {PIPELINE_STAGES.map((s, i) => {
             const isDone = i < currentIdx;
@@ -163,9 +149,7 @@ export function ClientCommercialSidebar({ client }: Props) {
                 : { background: '#fff', borderColor: '#d4d4d4' };
             const labelClass = isCurrent
               ? 'font-semibold text-neutral-900'
-              : isDone
-                ? 'text-neutral-700'
-                : 'text-neutral-400';
+              : isDone ? 'text-neutral-700' : 'text-neutral-400';
             return (
               <li key={s.id} className="flex items-center gap-2.5 text-xs">
                 <span
@@ -181,7 +165,10 @@ export function ClientCommercialSidebar({ client }: Props) {
         </ul>
       </SectionShell>
 
-      {/* URLs VEILLE IA */}
+      {/* 2. ÉTAPES DE RENDEZ-VOUS */}
+      {tracking?.id && <MeetingsCompactBlock trackingId={tracking.id} client={client} />}
+
+      {/* 3. URLs VEILLE IA */}
       <SectionShell
         icon={<Link2 size={14} style={{ color: '#0f1422' }} />}
         title="URLs veille IA"
@@ -189,14 +176,9 @@ export function ClientCommercialSidebar({ client }: Props) {
           <button
             type="button"
             className="text-neutral-400 hover:text-neutral-900"
-            onClick={() => {
-              // Switch to Commercial tab (where the URL manager lives)
-              const params = new URLSearchParams(window.location.search);
-              params.set('tab', 'commercial');
-              window.history.pushState({}, '', `${window.location.pathname}?${params}`);
-              window.dispatchEvent(new PopStateEvent('popstate'));
-            }}
-            aria-label="Ajouter une URL"
+            onClick={() => setUrlsModalOpen(true)}
+            aria-label="Gérer les URLs"
+            disabled={!tracking?.id}
           >
             <Plus size={14} />
           </button>
@@ -227,11 +209,8 @@ export function ClientCommercialSidebar({ client }: Props) {
         )}
       </SectionShell>
 
-      {/* PRÉPARER UN RDV */}
-      <SectionShell
-        icon={<Calendar size={14} style={{ color: '#0f1422' }} />}
-        title="Préparer un RDV"
-      >
+      {/* 4. PRÉPARER UN RDV */}
+      <SectionShell icon={<Calendar size={14} style={{ color: '#0f1422' }} />} title="Préparer un RDV">
         <div className="space-y-2">
           {CALENDLY_LINKS.map((c) => (
             <a
@@ -259,7 +238,7 @@ export function ClientCommercialSidebar({ client }: Props) {
         </div>
       </SectionShell>
 
-      {/* ÉQUIPE SUR LE COMPTE */}
+      {/* 5. ÉQUIPE SUR LE COMPTE */}
       <SectionShell title="Équipe sur le compte">
         {team.length === 0 ? (
           <p className="text-xs text-neutral-400 italic">Aucun membre assigné</p>
@@ -294,6 +273,15 @@ export function ClientCommercialSidebar({ client }: Props) {
           </ul>
         )}
       </SectionShell>
+
+      {/* URLs management modal */}
+      {tracking?.id && (
+        <ScrapeUrlsManagerModal
+          open={urlsModalOpen}
+          onOpenChange={setUrlsModalOpen}
+          trackingId={tracking.id}
+        />
+      )}
     </div>
   );
 }
