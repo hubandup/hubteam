@@ -151,14 +151,6 @@ export default function ClientDetails() {
     ...(hasBoardTab ? [{ value: 'board', label: 'Board', icon: <BarChart3 className="h-4 w-4" />, content: <ClientBoardTab clientId={client.id} clientEmailDomain={clientEmailDomain} /> }] : []),
   ];
   const tabs = allTabs.filter(tab => role !== 'agency' || tab.value !== 'invoices');
-
-  // Ensure default tab exists
-  useEffect(() => {
-    if (tabs.length && !tabs.find(t => t.value === activeTab)) {
-      setActiveTab(tabs[0].value);
-    }
-  }, [tabs.length]);
-
   const currentTab = tabs.find(t => t.value === activeTab) ?? tabs[0];
 
   const handleDeleteClient = async () => {
