@@ -274,7 +274,25 @@ export function useUpdateProspect() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    // Mise à jour optimiste : on patch immédiatement le cache pour
+    // que le badge de statut (gagné/attente/perdu) s'affiche sans délai.
+    onMutate: async ({ id, ...updates }) => {
+      await queryClient.cancelQueries({ queryKey: ['prospects'] });
+      const previous = queryClient.getQueryData<Prospect[]>(['prospects']);
+      if (previous) {
+        queryClient.setQueryData<Prospect[]>(
+          ['prospects'],
+          previous.map((p) => (p.id === id ? { ...p, ...updates } as Prospect : p)),
+        );
+      }
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      // Rollback en cas d'échec API
+      if (ctx?.previous) queryClient.setQueryData(['prospects'], ctx.previous);
+      toast.error('Échec de la mise à jour, modification annulée');
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['prospects'] });
     },
   });
