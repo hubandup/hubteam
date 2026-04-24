@@ -355,15 +355,21 @@ export default function ClientDetails() {
             </div>
           )}
 
-          {/* Grid 2/3 + 1/3 (corps) */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 min-w-0">
+          {/* Grid 2/3 + 1/3 (corps) — sidebar Commercial uniquement sur l'onglet Commercial */}
+          {activeTab === 'commercial' ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2 min-w-0">
+                {currentTab?.content}
+              </div>
+              <aside className="lg:col-span-1 min-w-0" data-zone="commercial-sidebar">
+                <ClientCommercialSidebar client={client} />
+              </aside>
+            </div>
+          ) : (
+            <div className="min-w-0">
               {currentTab?.content}
             </div>
-            <aside className="lg:col-span-1 min-w-0" data-zone="commercial-sidebar">
-              <ClientCommercialSidebar client={client} />
-            </aside>
-          </div>
+          )}
         </div>
       </div>
     </div>
