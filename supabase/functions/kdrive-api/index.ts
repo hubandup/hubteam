@@ -1081,19 +1081,21 @@ serve(async (req) => {
           );
         }
         
-        // Convert to base64
-        const arrayBuffer = await response.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-        let binary = '';
-        for (let i = 0; i < uint8Array.byteLength; i++) {
-          binary += String.fromCharCode(uint8Array[i]);
+        // Stream the file back directly to avoid loading it fully in memory
+        // (previous base64 conversion exceeded the edge function memory limit on large files)
+        {
+          const passthroughHeaders: Record<string, string> = {
+            ...corsHeaders,
+            'Content-Type': response.headers.get('content-type') || 'application/octet-stream',
+            'Cache-Control': 'no-store',
+          };
+          const cl = response.headers.get('content-length');
+          if (cl) passthroughHeaders['Content-Length'] = cl;
+          return new Response(response.body, {
+            status: response.status,
+            headers: passthroughHeaders,
+          });
         }
-        const base64 = btoa(binary);
-        
-        return new Response(
-          JSON.stringify({ data: base64 }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
 
       case 'get-folder-info':
         // Get the actual drive ID from product if not provided
