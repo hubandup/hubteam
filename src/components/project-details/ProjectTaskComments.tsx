@@ -347,42 +347,71 @@ export function ProjectTaskComments({ projectId }: ProjectTaskCommentsProps) {
       return;
     }
 
-    try {
-      const { error } = await supabase
-        .from('task_comments')
-        .update({ content: editedContent.trim() })
-        .eq('id', commentId);
+    // Snapshot pour rollback
+    const previous = comments;
+    const newContent = editedContent.trim();
 
-      if (error) throw error;
+    // Patch optimiste : maj instantanée du contenu (commentaires + réponses)
+    setComments((current) =>
+      current.map((c) => {
+        if (c.id === commentId) return { ...c, content: newContent };
+        if (c.replies?.length) {
+          return {
+            ...c,
+            replies: c.replies.map((r) => (r.id === commentId ? { ...r, content: newContent } : r)),
+          };
+        }
+        return c;
+      }),
+    );
+    handleCancelEdit();
 
-      toast.success('Commentaire modifié avec succès');
-      handleCancelEdit();
-      fetchComments();
-    } catch (error) {
+    const { error } = await supabase
+      .from('task_comments')
+      .update({ content: newContent })
+      .eq('id', commentId);
+
+    if (error) {
       console.error('Error updating comment:', error);
+      setComments(previous); // Rollback
       toast.error('Erreur lors de la modification du commentaire');
+      return;
     }
+    toast.success('Commentaire modifié avec succès');
   };
 
   const handleDeleteComment = async () => {
     if (!commentToDelete) return;
 
-    try {
-      const { error } = await supabase
-        .from('task_comments')
-        .delete()
-        .eq('id', commentToDelete);
+    // Snapshot pour rollback
+    const previous = comments;
+    const idToDelete = commentToDelete;
 
-      if (error) throw error;
+    // Patch optimiste : disparition immédiate (commentaire ou réponse)
+    setComments((current) =>
+      current
+        .filter((c) => c.id !== idToDelete)
+        .map((c) =>
+          c.replies?.length
+            ? { ...c, replies: c.replies.filter((r) => r.id !== idToDelete) }
+            : c,
+        ),
+    );
+    setDeleteDialogOpen(false);
+    setCommentToDelete(null);
 
-      toast.success('Commentaire supprimé avec succès');
-      setDeleteDialogOpen(false);
-      setCommentToDelete(null);
-      fetchComments();
-    } catch (error) {
+    const { error } = await supabase
+      .from('task_comments')
+      .delete()
+      .eq('id', idToDelete);
+
+    if (error) {
       console.error('Error deleting comment:', error);
+      setComments(previous); // Rollback
       toast.error('Erreur lors de la suppression du commentaire');
+      return;
     }
+    toast.success('Commentaire supprimé avec succès');
   };
 
   const openDeleteDialog = (commentId: string) => {

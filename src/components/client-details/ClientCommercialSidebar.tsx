@@ -141,12 +141,29 @@ export function ClientCommercialSidebar({ client }: Props) {
   const updateStage = async (stageId: string) => {
     if (!client?.id || stageId === currentStage || updatingStage) return;
     setUpdatingStage(stageId);
+
+    // Snapshots pour rollback
+    const prevClient = qc.getQueryData<any>(['client', client.id]);
+    const prevList = qc.getQueryData<any[]>(['clients']);
+
+    // Patch optimiste : la pipeline se met à jour instantanément
+    qc.setQueryData(['client', client.id], (old: any) =>
+      old ? { ...old, kanban_stage: stageId } : old,
+    );
+    qc.setQueryData<any[]>(['clients'], (old) =>
+      (old || []).map((c) => (c.id === client.id ? { ...c, kanban_stage: stageId } : c)),
+    );
+
     const { error } = await supabase
       .from('clients')
       .update({ kanban_stage: stageId as any })
       .eq('id', client.id);
     setUpdatingStage(null);
+
     if (error) {
+      // Rollback
+      if (prevClient !== undefined) qc.setQueryData(['client', client.id], prevClient);
+      if (prevList !== undefined) qc.setQueryData(['clients'], prevList);
       toast.error('Impossible de mettre à jour l\'étape');
       return;
     }

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
 import { useAuth } from './useAuth';
+import { toast } from 'sonner';
 
 export type ProspectChannel = 'Email' | 'Téléphone' | 'LinkedIn' | 'Bouche-à-oreille';
 export type ProspectStatus = 'À contacter' | 'Contacté' | 'Relance 1' | 'Relance 2' | 'RDV planifié' | 'Besoin qualifié' | 'Proposition envoyée' | 'Négociation' | 'Gagné' | 'Perdu' | 'En veille';
@@ -274,7 +275,25 @@ export function useUpdateProspect() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    // Mise à jour optimiste : on patch immédiatement le cache pour
+    // que le badge de statut (gagné/attente/perdu) s'affiche sans délai.
+    onMutate: async ({ id, ...updates }) => {
+      await queryClient.cancelQueries({ queryKey: ['prospects'] });
+      const previous = queryClient.getQueryData<Prospect[]>(['prospects']);
+      if (previous) {
+        queryClient.setQueryData<Prospect[]>(
+          ['prospects'],
+          previous.map((p) => (p.id === id ? { ...p, ...updates } as Prospect : p)),
+        );
+      }
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      // Rollback en cas d'échec API
+      if (ctx?.previous) queryClient.setQueryData(['prospects'], ctx.previous);
+      toast.error('Échec de la mise à jour, modification annulée');
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['prospects'] });
     },
   });
