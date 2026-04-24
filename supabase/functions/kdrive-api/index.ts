@@ -1081,19 +1081,29 @@ serve(async (req) => {
           );
         }
         
-        // Convert to base64
-        const arrayBuffer = await response.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-        let binary = '';
-        for (let i = 0; i < uint8Array.byteLength; i++) {
-          binary += String.fromCharCode(uint8Array[i]);
+        // Stream + chunked base64 to avoid memory blowups on large files.
+        // The previous version built a JS string char-by-char from the full
+        // ArrayBuffer, which exceeded the edge function memory limit.
+        {
+          const reader = response.body!.getReader();
+          let binary = '';
+          const CHUNK = 0x8000; // 32KB sub-chunks for fromCharCode.apply
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            for (let i = 0; i < value.length; i += CHUNK) {
+              binary += String.fromCharCode.apply(
+                null,
+                value.subarray(i, i + CHUNK) as unknown as number[],
+              );
+            }
+          }
+          const base64 = btoa(binary);
+          return new Response(
+            JSON.stringify({ data: base64 }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
-        const base64 = btoa(binary);
-        
-        return new Response(
-          JSON.stringify({ data: base64 }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
 
       case 'get-folder-info':
         // Get the actual drive ID from product if not provided
