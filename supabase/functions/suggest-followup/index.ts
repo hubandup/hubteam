@@ -240,6 +240,38 @@ Deno.serve(async (req) => {
         }).join('\n')}`
       : '';
 
+    const contextProjects = (projects && projects.length > 0)
+      ? `\n\nProjets liés à ce client (5 plus récents) :\n${projects.map((p: any) => {
+          const desc = (p.description || '').replace(/\s+/g, ' ').slice(0, 200);
+          const dates = [p.start_date, p.end_date].filter(Boolean).join(' → ');
+          return `• ${p.name}${p.status ? ` [${p.status}]` : ''}${dates ? ` (${dates})` : ''}${desc ? `\n  ${desc}` : ''}`;
+        }).join('\n')}`
+      : '';
+
+    const contextHubAndUp = (hubCache && hubCache.length > 0)
+      ? `\n\nContexte HUB+UP (résumé du site, mis à jour le ${(hubCache[0] as any).last_scraped_at?.slice(0, 10) || 'N/A'}) :\n${hubCache.map((h: any) => {
+          const sum = (h.summary || '').replace(/\s+/g, ' ').slice(0, 1500);
+          return `### ${h.source_url}\n${sum}`;
+        }).join('\n\n')}`
+      : '';
+
+    const allAlertEntries: Array<{ title: string; link?: string; published?: string; summary?: string; feed_url: string }> = [];
+    for (const ga of googleAlerts) {
+      const entries = Array.isArray(ga.entries) ? ga.entries : [];
+      for (const e of entries.slice(0, 5)) {
+        allAlertEntries.push({
+          title: String(e.title || '').slice(0, 200),
+          link: e.link || e.url || '',
+          published: e.published || e.updated || '',
+          summary: String(e.summary || e.content || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').slice(0, 400),
+          feed_url: ga.feed_url,
+        });
+      }
+    }
+    const contextGoogleAlerts = allAlertEntries.length > 0
+      ? `\n\nDernières Google Alerts pour ce client (${allAlertEntries.length} entrées) :\n${allAlertEntries.map(e => `• ${e.published ? `[${String(e.published).slice(0, 10)}] ` : ''}${e.title}${e.summary ? `\n  ${e.summary}` : ''}${e.link ? `\n  ${e.link}` : ''}`).join('\n')}`
+      : '';
+
     const actionLabel = (body.action_label || '').trim() || 'Proposer un créneau de rendez-vous';
     const actionKey = (body.action_key || '').trim();
 
