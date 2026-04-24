@@ -117,8 +117,11 @@ Deno.serve(async (req) => {
     const { data: notes } = await admin
       .from('commercial_notes').select('content, created_at, created_by').eq('tracking_id', body.tracking_id)
       .order('created_at', { ascending: false }).limit(3);
+    // On ne récupère que les RDV qui ont une date renseignée :
+    // les étapes sans date ne doivent PAS influencer la génération de l'excuse.
     const { data: meetings } = await admin
       .from('commercial_meetings').select('label, meeting_type, meeting_date').eq('tracking_id', body.tracking_id)
+      .not('meeting_date', 'is', null)
       .order('meeting_date', { ascending: false }).limit(3);
 
     // Récupérer les 3 derniers comptes rendus client (meeting_notes)
@@ -233,8 +236,9 @@ Deno.serve(async (req) => {
     const contextNotes = (notes && notes.length > 0)
       ? `\n\nDernières notes internes (Suivi commercial):\n${notes.map(n => `- ${n.content?.slice(0, 200)}`).join('\n')}`
       : '';
-    const contextMeetings = (meetings && meetings.length > 0)
-      ? `\n\nDerniers RDV planifiés:\n${meetings.map(m => `- ${m.label || m.meeting_type}${m.meeting_date ? ` (${m.meeting_date})` : ''}`).join('\n')}`
+    const meetingsWithDate = (meetings || []).filter(m => !!m.meeting_date);
+    const contextMeetings = meetingsWithDate.length > 0
+      ? `\n\nDerniers RDV planifiés (avec date confirmée):\n${meetingsWithDate.map(m => `- ${m.label || m.meeting_type} (${m.meeting_date})`).join('\n')}`
       : '';
     const contextMeetingNotes = (meetingNotes && meetingNotes.length > 0)
       ? `\n\nDerniers comptes rendus client (3 plus récents) :\n${meetingNotes.map(m => {
