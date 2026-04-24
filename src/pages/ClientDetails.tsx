@@ -149,7 +149,7 @@ export default function ClientDetails() {
       content: <CommercialTrackingTab clientId={client.id} client={client} />,
     }] : []),
     { value: 'info', label: 'Infos', icon: <FileText className="h-4 w-4" />, content: <ClientInfoTab client={client} onUpdate={fetchClientDetails} /> },
-    { value: 'meeting-notes', label: 'Comptes rendus', icon: <Users className="h-4 w-4" />, badge: meetingNotesCount, content: <ClientMeetingNotesTab clientId={client.id} /> },
+    
     { value: 'projects', label: 'Projets', icon: <FolderKanban className="h-4 w-4" />, badge: projectsCount, content: <ClientProjectsTab clientId={client.id} /> },
     { value: 'kdrive', label: 'Documents', icon: <FolderKanban className="h-4 w-4" />, badge: kdriveFilesCount, content: <ClientKDriveTab clientId={client.id} /> },
     { value: 'invoices', label: 'Factures', icon: <Receipt className="h-4 w-4" />, badge: invoicesCount, content: <ClientInvoicesTab clientId={client.id} /> },
