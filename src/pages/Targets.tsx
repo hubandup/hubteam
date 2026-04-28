@@ -295,7 +295,7 @@ export default function Targets() {
       </div>
 
       {/* Contenu */}
-      <div className="flex-1 min-w-0 overflow-y-auto">
+      <div className="min-w-0">
         {clients.length === 0 ? (
           <div className="text-center py-12 px-4">
             <Star className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
