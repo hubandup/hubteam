@@ -320,6 +320,20 @@ export function AgencyTagsTab() {
                         >
                           {tag.name}
                         </Badge>
+                        <Select
+                          value={tag.categorie ?? NONE_VALUE}
+                          onValueChange={(value) => handleUpdateCategorie(tag, value)}
+                        >
+                          <SelectTrigger className="w-56">
+                            <SelectValue placeholder="Catégorie" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={NONE_VALUE}>— Aucune —</SelectItem>
+                            {CATEGORIES.map((cat) => (
+                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <Button
                           size="icon"
                           variant="ghost"
