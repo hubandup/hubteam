@@ -22,7 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+import { ExpertisesMultiSelect } from '@/components/common/ExpertisesMultiSelect';
 
 interface EditAgencyDialogProps {
   agency: {
@@ -43,8 +43,6 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [partnerSince, setPartnerSince] = useState<Date>(new Date(agency.created_at));
-  const [availableTags, setAvailableTags] = useState<any[]>([]);
-  const [newTag, setNewTag] = useState('');
   const [formData, setFormData] = useState({
     name: agency.name,
     active: agency.active,
@@ -57,24 +55,10 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
   const handleOpenChange = async (newOpen: boolean) => {
     setOpen(newOpen);
     if (newOpen) {
-      // Load available tags
-      try {
-        const { data, error } = await supabase
-          .from('agency_tags')
-          .select('*')
-          .order('name');
-        
-        if (error) throw error;
-        setAvailableTags(data || []);
-      } catch (error) {
-        console.error('Error loading tags:', error);
-      }
-
       // Reset all states
       setLogoFile(null);
       setLogoPreview(agency.logo_url || null);
       setPartnerSince(new Date(agency.created_at));
-      setNewTag('');
       setFormData({
         name: agency.name,
         active: agency.active,
