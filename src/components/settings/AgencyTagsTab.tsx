@@ -35,6 +35,7 @@ import {
   useExpertises,
   useUpdateExpertise,
 } from '@/hooks/useExpertises';
+import { ReconcileAgencyTagsButton } from './ReconcileAgencyTagsButton';
 
 const ALL = '__all__';
 
@@ -81,10 +82,13 @@ export function AgencyTagsTab() {
               Référentiel administrable des expertises agences ({expertises.length} au total)
             </CardDescription>
           </div>
-          <Button onClick={() => setAddOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Ajouter une expertise
-          </Button>
+          <div className="flex gap-2">
+            <ReconcileAgencyTagsButton />
+            <Button onClick={() => setAddOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Ajouter une expertise
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2 items-center">
