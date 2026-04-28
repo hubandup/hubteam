@@ -75,6 +75,8 @@ export default {
       fontFamily: {
         'heading': ['var(--font-heading)', 'sans-serif'],
         'body': ['var(--font-body)', 'sans-serif'],
+        'display': ["'Instrument Sans'", 'system-ui', 'sans-serif'],
+        'roboto': ["'Roboto'", 'system-ui', 'sans-serif'],
       },
       height: {
         '7': '2.6rem',
