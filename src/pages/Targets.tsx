@@ -172,7 +172,7 @@ export default function Targets() {
   return (
     <div
       className="flex flex-col min-h-full -mx-5 md:-mx-8 -mt-4 px-5 md:px-8 pt-4 pb-8"
-      style={{ backgroundColor: '#F5F5F2' }}
+      style={{ backgroundColor: '#FFFFFF' }}
     >
       {/* En-tête */}
       <div className="pb-4">
