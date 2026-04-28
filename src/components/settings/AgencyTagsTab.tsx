@@ -17,11 +17,32 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+const CATEGORIES = [
+  'Communication',
+  'Événementiel',
+  'Digital & Web',
+  'Création & Production',
+  'Data & Performance',
+  'Formations',
+  'Ressources déportées',
+  'Autre',
+] as const;
+
+const NONE_VALUE = '__none__';
 
 interface AgencyTag {
   id: string;
   name: string;
   color: string;
+  categorie: string | null;
   created_at: string;
   updated_at: string;
 }
