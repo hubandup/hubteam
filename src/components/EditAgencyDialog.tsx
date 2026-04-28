@@ -92,24 +92,8 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
     if (fileInput) fileInput.value = '';
   };
 
-  const handleAddTag = () => {
-    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
-      setFormData({ ...formData, tags: [...formData.tags, newTag.trim()] });
-      setNewTag('');
-    }
-  };
+  // tag editing handled by ExpertisesMultiSelect
 
-  const togglePredefinedTag = (tagName: string) => {
-    if (formData.tags.includes(tagName)) {
-      setFormData({ ...formData, tags: formData.tags.filter(t => t !== tagName) });
-    } else {
-      setFormData({ ...formData, tags: [...formData.tags, tagName] });
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setFormData({ ...formData, tags: formData.tags.filter(tag => tag !== tagToRemove) });
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
