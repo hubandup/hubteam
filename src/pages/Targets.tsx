@@ -171,11 +171,11 @@ export default function Targets() {
 
   return (
     <div
-      className="flex flex-col h-full min-h-0 overflow-hidden"
+      className="flex flex-col min-h-full -mx-5 md:-mx-8 -mt-4 px-5 md:px-8 pt-4 pb-8"
       style={{ backgroundColor: '#F5F5F2' }}
     >
       {/* En-tête */}
-      <div className="flex-shrink-0 pb-4">
+      <div className="pb-4">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <div
@@ -295,7 +295,7 @@ export default function Targets() {
       </div>
 
       {/* Contenu */}
-      <div className="flex-1 min-w-0 overflow-y-auto">
+      <div className="min-w-0">
         {clients.length === 0 ? (
           <div className="text-center py-12 px-4">
             <Star className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
