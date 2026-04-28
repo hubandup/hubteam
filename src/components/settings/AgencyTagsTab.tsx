@@ -93,6 +93,7 @@ export function AgencyTagsTab() {
         .insert({
           name: newTagName.trim(),
           color: newTagColor,
+          categorie: newTagCategorie === NONE_VALUE ? null : newTagCategorie,
         });
 
       if (error) throw error;
@@ -100,6 +101,7 @@ export function AgencyTagsTab() {
       toast.success('Tag ajouté avec succès');
       setNewTagName('');
       setNewTagColor('#6366f1');
+      setNewTagCategorie(NONE_VALUE);
       fetchTags();
     } catch (error: any) {
       console.error('Error adding tag:', error);
@@ -110,6 +112,26 @@ export function AgencyTagsTab() {
       }
     } finally {
       setAdding(false);
+    }
+  };
+
+  const handleUpdateCategorie = async (tag: AgencyTag, value: string) => {
+    const newCategorie = value === NONE_VALUE ? null : value;
+    // Optimistic update
+    setTags((prev) =>
+      prev.map((t) => (t.id === tag.id ? { ...t, categorie: newCategorie } : t))
+    );
+    try {
+      const { error } = await supabase
+        .from('agency_tags')
+        .update({ categorie: newCategorie })
+        .eq('id', tag.id);
+      if (error) throw error;
+      toast.success('Catégorie mise à jour');
+    } catch (error) {
+      console.error('Error updating categorie:', error);
+      toast.error('Erreur lors de la mise à jour');
+      fetchTags();
     }
   };
 
