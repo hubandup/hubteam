@@ -52,6 +52,7 @@ export function AgencyTagsTab() {
   const [loading, setLoading] = useState(true);
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState('#6366f1');
+  const [newTagCategorie, setNewTagCategorie] = useState<string>(NONE_VALUE);
   const [editingTag, setEditingTag] = useState<AgencyTag | null>(null);
   const [editName, setEditName] = useState('');
   const [editColor, setEditColor] = useState('');
