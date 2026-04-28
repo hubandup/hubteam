@@ -1,22 +1,17 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Edit2, X, Check } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   Select,
   SelectContent,
@@ -24,357 +19,232 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Plus, Trash2, RotateCcw, Search } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import {
+  EXPERTISE_CATEGORIES,
+  useCreateExpertise,
+  useExpertises,
+  useUpdateExpertise,
+} from '@/hooks/useExpertises';
 
-const CATEGORIES = [
-  'Communication',
-  'Événementiel',
-  'Digital & Web',
-  'Création & Production',
-  'Data & Performance',
-  'Formations',
-  'Ressources déportées',
-  'Autre',
-] as const;
-
-const NONE_VALUE = '__none__';
-
-interface AgencyTag {
-  id: string;
-  name: string;
-  color: string;
-  categorie: string | null;
-  created_at: string;
-  updated_at: string;
-}
+const ALL = '__all__';
 
 export function AgencyTagsTab() {
-  const [tags, setTags] = useState<AgencyTag[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [newTagName, setNewTagName] = useState('');
-  const [newTagColor, setNewTagColor] = useState('#6366f1');
-  const [newTagCategorie, setNewTagCategorie] = useState<string>(NONE_VALUE);
-  const [editingTag, setEditingTag] = useState<AgencyTag | null>(null);
-  const [editName, setEditName] = useState('');
-  const [editColor, setEditColor] = useState('');
-  const [deleteTag, setDeleteTag] = useState<AgencyTag | null>(null);
-  const [adding, setAdding] = useState(false);
+  const { data: expertises = [], isLoading } = useExpertises();
+  const updateMut = useUpdateExpertise();
+  const createMut = useCreateExpertise();
 
-  useEffect(() => {
-    fetchTags();
-  }, []);
+  const [filter, setFilter] = useState<string>(ALL);
+  const [search, setSearch] = useState('');
+  const [addOpen, setAddOpen] = useState(false);
+  const [newNom, setNewNom] = useState('');
+  const [newCategorie, setNewCategorie] = useState<string>('Autre');
 
-  const fetchTags = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('agency_tags')
-        .select('*')
-        .order('name');
+  const counts = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const e of expertises) c[e.categorie] = (c[e.categorie] || 0) + 1;
+    return c;
+  }, [expertises]);
 
-      if (error) throw error;
-      setTags(data || []);
-    } catch (error) {
-      console.error('Error fetching tags:', error);
-      toast.error('Erreur lors du chargement des tags');
-    } finally {
-      setLoading(false);
-    }
+  const filtered = useMemo(() => {
+    return expertises
+      .filter((e) => filter === ALL || e.categorie === filter)
+      .filter((e) =>
+        search.trim() ? e.nom.toLowerCase().includes(search.trim().toLowerCase()) : true
+      );
+  }, [expertises, filter, search]);
+
+  const handleAdd = async () => {
+    if (!newNom.trim()) return;
+    await createMut.mutateAsync({ nom: newNom, categorie: newCategorie });
+    setNewNom('');
+    setNewCategorie('Autre');
+    setAddOpen(false);
   };
-
-  const handleAddTag = async () => {
-    if (!newTagName.trim()) {
-      toast.error('Le nom du tag est requis');
-      return;
-    }
-
-    setAdding(true);
-    try {
-      const { error } = await supabase
-        .from('agency_tags')
-        .insert({
-          name: newTagName.trim(),
-          color: newTagColor,
-          categorie: newTagCategorie === NONE_VALUE ? null : newTagCategorie,
-        });
-
-      if (error) throw error;
-
-      toast.success('Tag ajouté avec succès');
-      setNewTagName('');
-      setNewTagColor('#6366f1');
-      setNewTagCategorie(NONE_VALUE);
-      fetchTags();
-    } catch (error: any) {
-      console.error('Error adding tag:', error);
-      if (error.code === '23505') {
-        toast.error('Ce tag existe déjà');
-      } else {
-        toast.error('Erreur lors de l\'ajout du tag');
-      }
-    } finally {
-      setAdding(false);
-    }
-  };
-
-  const handleUpdateCategorie = async (tag: AgencyTag, value: string) => {
-    const newCategorie = value === NONE_VALUE ? null : value;
-    // Optimistic update
-    setTags((prev) =>
-      prev.map((t) => (t.id === tag.id ? { ...t, categorie: newCategorie } : t))
-    );
-    try {
-      const { error } = await supabase
-        .from('agency_tags')
-        .update({ categorie: newCategorie })
-        .eq('id', tag.id);
-      if (error) throw error;
-      toast.success('Catégorie mise à jour');
-    } catch (error) {
-      console.error('Error updating categorie:', error);
-      toast.error('Erreur lors de la mise à jour');
-      fetchTags();
-    }
-  };
-
-  const handleUpdateTag = async () => {
-    if (!editingTag || !editName.trim()) return;
-
-    try {
-      const { error } = await supabase
-        .from('agency_tags')
-        .update({
-          name: editName.trim(),
-          color: editColor,
-        })
-        .eq('id', editingTag.id);
-
-      if (error) throw error;
-
-      toast.success('Tag modifié avec succès');
-      setEditingTag(null);
-      fetchTags();
-    } catch (error: any) {
-      console.error('Error updating tag:', error);
-      if (error.code === '23505') {
-        toast.error('Ce tag existe déjà');
-      } else {
-        toast.error('Erreur lors de la modification du tag');
-      }
-    }
-  };
-
-  const handleDeleteTag = async () => {
-    if (!deleteTag) return;
-
-    try {
-      const { error } = await supabase
-        .from('agency_tags')
-        .delete()
-        .eq('id', deleteTag.id);
-
-      if (error) throw error;
-
-      toast.success('Tag supprimé avec succès');
-      setDeleteTag(null);
-      fetchTags();
-    } catch (error) {
-      console.error('Error deleting tag:', error);
-      toast.error('Erreur lors de la suppression du tag');
-    }
-  };
-
-  const startEdit = (tag: AgencyTag) => {
-    setEditingTag(tag);
-    setEditName(tag.name);
-    setEditColor(tag.color);
-  };
-
-  const cancelEdit = () => {
-    setEditingTag(null);
-    setEditName('');
-    setEditColor('');
-  };
-
-  const getTagColor = (color: string): string => {
-    // Convert hex to HSL format for consistent display
-    const hex = color.replace('#', '');
-    const r = parseInt(hex.substr(0, 2), 16) / 255;
-    const g = parseInt(hex.substr(2, 2), 16) / 255;
-    const b = parseInt(hex.substr(4, 2), 16) / 255;
-
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    let h = 0, s = 0, l = (max + min) / 2;
-
-    if (max !== min) {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      switch (max) {
-        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-        case g: h = ((b - r) / d + 2) / 6; break;
-        case b: h = ((r - g) / d + 4) / 6; break;
-      }
-    }
-
-    return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
-  };
-
-  if (loading) {
-    return <div className="text-center py-8">Chargement...</div>;
-  }
 
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle>Tags d'agence</CardTitle>
-          <CardDescription>
-            Gérez les tags prédéfinis pour catégoriser vos agences partenaires
-          </CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between gap-4">
+          <div>
+            <CardTitle>Expertises</CardTitle>
+            <CardDescription>
+              Référentiel administrable des expertises agences ({expertises.length} au total)
+            </CardDescription>
+          </div>
+          <Button onClick={() => setAddOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Ajouter une expertise
+          </Button>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <Label>Ajouter un nouveau tag</Label>
-            <div className="flex gap-2">
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2 items-center">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Nom du tag (ex: Influence, Site vitrine...)"
-                value={newTagName}
-                onChange={(e) => setNewTagName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
-                className="flex-1"
+                placeholder="Rechercher…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8"
               />
-              <Input
-                type="color"
-                value={newTagColor}
-                onChange={(e) => setNewTagColor(e.target.value)}
-                className="w-20"
-              />
-              <Select value={newTagCategorie} onValueChange={setNewTagCategorie}>
-                <SelectTrigger className="w-56">
-                  <SelectValue placeholder="Catégorie" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE_VALUE}>— Aucune —</SelectItem>
-                  {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button onClick={handleAddTag} disabled={adding || !newTagName.trim()}>
-                <Plus className="h-4 w-4 mr-2" />
-                Ajouter
-              </Button>
             </div>
+            <Select value={filter} onValueChange={setFilter}>
+              <SelectTrigger className="w-64">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Toutes ({expertises.length})</SelectItem>
+                {EXPERTISE_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat} ({counts[cat] || 0})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <div className="space-y-3">
-            <Label>Tags existants ({tags.length})</Label>
-            {tags.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4">
-                Aucun tag défini. Ajoutez votre premier tag ci-dessus.
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {tags.map((tag) => (
-                  <div
-                    key={tag.id}
-                    className="flex items-center gap-2 p-3 rounded-lg border border-border bg-card"
-                  >
-                    {editingTag?.id === tag.id ? (
-                      <>
-                        <Input
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          className="flex-1"
-                        />
-                        <Input
-                          type="color"
-                          value={editColor}
-                          onChange={(e) => setEditColor(e.target.value)}
-                          className="w-20"
-                        />
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={handleUpdateTag}
-                          disabled={!editName.trim()}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={cancelEdit}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Badge
-                          style={{
-                            backgroundColor: `hsl(${getTagColor(tag.color)} / 0.15)`,
-                            color: `hsl(${getTagColor(tag.color)})`,
-                            borderColor: `hsl(${getTagColor(tag.color)} / 0.3)`,
-                          }}
-                          className="border flex-1"
-                        >
-                          {tag.name}
-                        </Badge>
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Chargement…</div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Aucune expertise trouvée.
+            </div>
+          ) : (
+            <div className="border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nom</TableHead>
+                    <TableHead className="w-64">Catégorie</TableHead>
+                    <TableHead className="w-24 text-center">Actif</TableHead>
+                    <TableHead className="w-20 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((e) => (
+                    <TableRow key={e.id} className={!e.actif ? 'opacity-50' : ''}>
+                      <TableCell className="font-medium">
+                        {e.nom}
+                        {!e.actif && (
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            inactif
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <Select
-                          value={tag.categorie ?? NONE_VALUE}
-                          onValueChange={(value) => handleUpdateCategorie(tag, value)}
+                          value={e.categorie}
+                          onValueChange={(v) =>
+                            updateMut.mutate({ id: e.id, patch: { categorie: v } })
+                          }
                         >
-                          <SelectTrigger className="w-56">
-                            <SelectValue placeholder="Catégorie" />
+                          <SelectTrigger className="h-8">
+                            <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value={NONE_VALUE}>— Aucune —</SelectItem>
-                            {CATEGORIES.map((cat) => (
-                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            {EXPERTISE_CATEGORIES.map((cat) => (
+                              <SelectItem key={cat} value={cat}>
+                                {cat}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => startEdit(tag)}
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => setDeleteTag(tag)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Switch
+                          checked={e.actif}
+                          onCheckedChange={(checked) =>
+                            updateMut.mutate({ id: e.id, patch: { actif: checked } })
+                          }
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {e.actif ? (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() =>
+                              updateMut.mutate({ id: e.id, patch: { actif: false } })
+                            }
+                            title="Désactiver"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        ) : (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() =>
+                              updateMut.mutate({ id: e.id, patch: { actif: true } })
+                            }
+                            title="Réactiver"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      <AlertDialog open={!!deleteTag} onOpenChange={() => setDeleteTag(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer ce tag ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer le tag "{deleteTag?.name}" ? 
-              Les agences utilisant ce tag le conserveront, mais il ne sera plus disponible pour de nouvelles agences.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteTag}>
-              Supprimer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ajouter une expertise</DialogTitle>
+            <DialogDescription>
+              Cette expertise sera proposée dans la sélection sur les fiches agences.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Nom *</Label>
+              <Input
+                value={newNom}
+                onChange={(e) => setNewNom(e.target.value)}
+                placeholder="Ex : Branding, SEO local…"
+                onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Catégorie</Label>
+              <Select value={newCategorie} onValueChange={setNewCategorie}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {EXPERTISE_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleAdd} disabled={!newNom.trim() || createMut.isPending}>
+              Ajouter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
