@@ -14,11 +14,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PageLoader } from '@/components/PageLoader';
+import { useSilentTagsReconciliation } from '@/hooks/useSilentTagsReconciliation';
 
 export default function Agencies() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { canRead, loading: permissionsLoading } = usePermissions();
+  useSilentTagsReconciliation();
   const [agencies, setAgencies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
