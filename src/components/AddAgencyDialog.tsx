@@ -84,24 +84,8 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
     setLogoPreview(null);
   };
 
-  const handleAddTag = () => {
-    if (newTag.trim() && !tags.includes(newTag.trim())) {
-      setTags([...tags, newTag.trim()]);
-      setNewTag('');
-    }
-  };
+  // tag editing handled by ExpertisesMultiSelect
 
-  const togglePredefinedTag = (tagName: string) => {
-    if (tags.includes(tagName)) {
-      setTags(tags.filter(t => t !== tagName));
-    } else {
-      setTags([...tags, tagName]);
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
-  };
 
   const onSubmit = async (data: AgencyFormData) => {
     setLoading(true);
@@ -151,7 +135,6 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
       setLogoFile(null);
       setLogoPreview(null);
       setTags([]);
-      setNewTag('');
       setPartnerSince(new Date());
       setDescription('');
       setOpen(false);
