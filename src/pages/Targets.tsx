@@ -33,7 +33,7 @@ export default function Targets() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { data: targetIds, isLoading: targetsLoading } = useTargets();
-  const toggleTarget = useToggleTarget();
+  
 
   const [viewMode, setViewMode] = useState<ViewMode>(
     () => (localStorage.getItem('targets-view-mode') as ViewMode) || 'grid'
