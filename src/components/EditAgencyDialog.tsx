@@ -22,7 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+import { ExpertisesMultiSelect } from '@/components/common/ExpertisesMultiSelect';
 
 interface EditAgencyDialogProps {
   agency: {
@@ -43,8 +43,6 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [partnerSince, setPartnerSince] = useState<Date>(new Date(agency.created_at));
-  const [availableTags, setAvailableTags] = useState<any[]>([]);
-  const [newTag, setNewTag] = useState('');
   const [formData, setFormData] = useState({
     name: agency.name,
     active: agency.active,
@@ -57,24 +55,10 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
   const handleOpenChange = async (newOpen: boolean) => {
     setOpen(newOpen);
     if (newOpen) {
-      // Load available tags
-      try {
-        const { data, error } = await supabase
-          .from('agency_tags')
-          .select('*')
-          .order('name');
-        
-        if (error) throw error;
-        setAvailableTags(data || []);
-      } catch (error) {
-        console.error('Error loading tags:', error);
-      }
-
       // Reset all states
       setLogoFile(null);
       setLogoPreview(agency.logo_url || null);
       setPartnerSince(new Date(agency.created_at));
-      setNewTag('');
       setFormData({
         name: agency.name,
         active: agency.active,
@@ -108,24 +92,8 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
     if (fileInput) fileInput.value = '';
   };
 
-  const handleAddTag = () => {
-    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
-      setFormData({ ...formData, tags: [...formData.tags, newTag.trim()] });
-      setNewTag('');
-    }
-  };
+  // tag editing handled by ExpertisesMultiSelect
 
-  const togglePredefinedTag = (tagName: string) => {
-    if (formData.tags.includes(tagName)) {
-      setFormData({ ...formData, tags: formData.tags.filter(t => t !== tagName) });
-    } else {
-      setFormData({ ...formData, tags: [...formData.tags, tagName] });
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setFormData({ ...formData, tags: formData.tags.filter(tag => tag !== tagToRemove) });
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -283,68 +251,10 @@ export function EditAgencyDialog({ agency, onAgencyUpdated }: EditAgencyDialogPr
 
             <div className="grid gap-2">
               <Label>Expertises</Label>
-              
-              {availableTags.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Expertises prédéfinies :</p>
-                  <div className="flex flex-wrap gap-2">
-                    {availableTags.map((tag) => (
-                      <Badge
-                        key={tag.id}
-                        variant={formData.tags.includes(tag.name) ? 'default' : 'outline'}
-                        className="cursor-pointer transition-all hover:scale-105"
-                        style={formData.tags.includes(tag.name) ? {
-                          backgroundColor: tag.color,
-                          borderColor: tag.color,
-                          color: 'white',
-                        } : {
-                          borderColor: `${tag.color}80`,
-                          color: tag.color,
-                        }}
-                        onClick={() => togglePredefinedTag(tag.name)}
-                      >
-                        {tag.name}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-2 pt-2">
-                <Input
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddTag();
-                    }
-                  }}
-                  placeholder="Ou ajouter une expertise personnalisée..."
-                />
-                <Button type="button" onClick={handleAddTag} variant="outline">
-                  Ajouter
-                </Button>
-              </div>
-              {formData.tags.length > 0 && (
-                <div className="space-y-1 pt-2">
-                  <p className="text-sm text-muted-foreground">Expertises sélectionnées :</p>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-                        {tag}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveTag(tag)}
-                          className="ml-1 hover:text-destructive"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <ExpertisesMultiSelect
+                value={formData.tags}
+                onChange={(tags) => setFormData({ ...formData, tags })}
+              />
             </div>
 
             <div className="flex items-center justify-between">

@@ -19,12 +19,12 @@ import { Switch } from '@/components/ui/switch';
 import { Plus, Loader2, X, CalendarIcon } from 'lucide-react';
 import { RichTextEditor } from '@/components/faq/RichTextEditor';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { ExpertisesMultiSelect } from '@/components/common/ExpertisesMultiSelect';
 
 const agencySchema = z.object({
   name: z.string().trim().min(1, "Le nom de l'agence est requis").max(200),
@@ -45,8 +45,6 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [partnerSince, setPartnerSince] = useState<Date>(new Date());
   const [tags, setTags] = useState<string[]>([]);
-  const [availableTags, setAvailableTags] = useState<any[]>([]);
-  const [newTag, setNewTag] = useState('');
   const [description, setDescription] = useState('');
 
   const {
@@ -65,27 +63,8 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
 
   const active = watch('active');
 
-  // Load available tags from database
-  const loadAvailableTags = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('agency_tags')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      setAvailableTags(data || []);
-    } catch (error) {
-      console.error('Error loading tags:', error);
-    }
-  };
-
-  // Load tags when dialog opens
   const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
-    if (isOpen) {
-      loadAvailableTags();
-    }
   };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,24 +84,8 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
     setLogoPreview(null);
   };
 
-  const handleAddTag = () => {
-    if (newTag.trim() && !tags.includes(newTag.trim())) {
-      setTags([...tags, newTag.trim()]);
-      setNewTag('');
-    }
-  };
+  // tag editing handled by ExpertisesMultiSelect
 
-  const togglePredefinedTag = (tagName: string) => {
-    if (tags.includes(tagName)) {
-      setTags(tags.filter(t => t !== tagName));
-    } else {
-      setTags([...tags, tagName]);
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
-  };
 
   const onSubmit = async (data: AgencyFormData) => {
     setLoading(true);
@@ -172,7 +135,6 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
       setLogoFile(null);
       setLogoPreview(null);
       setTags([]);
-      setNewTag('');
       setPartnerSince(new Date());
       setDescription('');
       setOpen(false);
@@ -287,70 +249,9 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
             />
           </div>
 
-            <div className="space-y-2">
+          <div className="space-y-2">
             <Label>Expertises</Label>
-            
-            {availableTags.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Expertises prédéfinies :</p>
-                <div className="flex flex-wrap gap-2">
-                  {availableTags.map((tag) => (
-                    <Badge
-                      key={tag.id}
-                      variant={tags.includes(tag.name) ? 'default' : 'outline'}
-                      className="cursor-pointer transition-all hover:scale-105"
-                      style={tags.includes(tag.name) ? {
-                        backgroundColor: tag.color,
-                        borderColor: tag.color,
-                        color: 'white',
-                      } : {
-                        borderColor: `${tag.color}80`,
-                        color: tag.color,
-                      }}
-                      onClick={() => togglePredefinedTag(tag.name)}
-                    >
-                      {tag.name}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-2 pt-2">
-              <Input
-                value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddTag();
-                  }
-                }}
-                placeholder="Ou ajouter une expertise personnalisée..."
-              />
-              <Button type="button" onClick={handleAddTag} variant="outline">
-                Ajouter
-              </Button>
-            </div>
-            {tags.length > 0 && (
-              <div className="space-y-1 pt-2">
-                <p className="text-sm text-muted-foreground">Expertises sélectionnées :</p>
-                <div className="flex flex-wrap gap-2">
-                  {tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTag(tag)}
-                        className="ml-1 hover:text-destructive"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
+            <ExpertisesMultiSelect value={tags} onChange={setTags} />
           </div>
 
           <div className="flex items-center justify-between">
