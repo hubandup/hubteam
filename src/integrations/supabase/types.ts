@@ -281,6 +281,7 @@ export type Database = {
       }
       agency_tags: {
         Row: {
+          categorie: string | null
           color: string
           created_at: string | null
           id: string
@@ -288,6 +289,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          categorie?: string | null
           color: string
           created_at?: string | null
           id?: string
@@ -295,6 +297,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          categorie?: string | null
           color?: string
           created_at?: string | null
           id?: string

@@ -1,0 +1,1 @@
+ALTER TABLE public.agency_tags ADD COLUMN IF NOT EXISTS categorie text NULL DEFAULT NULL;

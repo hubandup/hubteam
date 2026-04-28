@@ -17,11 +17,32 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+const CATEGORIES = [
+  'Communication',
+  'Événementiel',
+  'Digital & Web',
+  'Création & Production',
+  'Data & Performance',
+  'Formations',
+  'Ressources déportées',
+  'Autre',
+] as const;
+
+const NONE_VALUE = '__none__';
 
 interface AgencyTag {
   id: string;
   name: string;
   color: string;
+  categorie: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -31,6 +52,7 @@ export function AgencyTagsTab() {
   const [loading, setLoading] = useState(true);
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState('#6366f1');
+  const [newTagCategorie, setNewTagCategorie] = useState<string>(NONE_VALUE);
   const [editingTag, setEditingTag] = useState<AgencyTag | null>(null);
   const [editName, setEditName] = useState('');
   const [editColor, setEditColor] = useState('');
@@ -71,6 +93,7 @@ export function AgencyTagsTab() {
         .insert({
           name: newTagName.trim(),
           color: newTagColor,
+          categorie: newTagCategorie === NONE_VALUE ? null : newTagCategorie,
         });
 
       if (error) throw error;
@@ -78,6 +101,7 @@ export function AgencyTagsTab() {
       toast.success('Tag ajouté avec succès');
       setNewTagName('');
       setNewTagColor('#6366f1');
+      setNewTagCategorie(NONE_VALUE);
       fetchTags();
     } catch (error: any) {
       console.error('Error adding tag:', error);
@@ -88,6 +112,26 @@ export function AgencyTagsTab() {
       }
     } finally {
       setAdding(false);
+    }
+  };
+
+  const handleUpdateCategorie = async (tag: AgencyTag, value: string) => {
+    const newCategorie = value === NONE_VALUE ? null : value;
+    // Optimistic update
+    setTags((prev) =>
+      prev.map((t) => (t.id === tag.id ? { ...t, categorie: newCategorie } : t))
+    );
+    try {
+      const { error } = await supabase
+        .from('agency_tags')
+        .update({ categorie: newCategorie })
+        .eq('id', tag.id);
+      if (error) throw error;
+      toast.success('Catégorie mise à jour');
+    } catch (error) {
+      console.error('Error updating categorie:', error);
+      toast.error('Erreur lors de la mise à jour');
+      fetchTags();
     }
   };
 
@@ -204,6 +248,17 @@ export function AgencyTagsTab() {
                 onChange={(e) => setNewTagColor(e.target.value)}
                 className="w-20"
               />
+              <Select value={newTagCategorie} onValueChange={setNewTagCategorie}>
+                <SelectTrigger className="w-56">
+                  <SelectValue placeholder="Catégorie" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE_VALUE}>— Aucune —</SelectItem>
+                  {CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button onClick={handleAddTag} disabled={adding || !newTagName.trim()}>
                 <Plus className="h-4 w-4 mr-2" />
                 Ajouter
@@ -265,6 +320,20 @@ export function AgencyTagsTab() {
                         >
                           {tag.name}
                         </Badge>
+                        <Select
+                          value={tag.categorie ?? NONE_VALUE}
+                          onValueChange={(value) => handleUpdateCategorie(tag, value)}
+                        >
+                          <SelectTrigger className="w-56">
+                            <SelectValue placeholder="Catégorie" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={NONE_VALUE}>— Aucune —</SelectItem>
+                            {CATEGORIES.map((cat) => (
+                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <Button
                           size="icon"
                           variant="ghost"
