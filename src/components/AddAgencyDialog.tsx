@@ -19,12 +19,12 @@ import { Switch } from '@/components/ui/switch';
 import { Plus, Loader2, X, CalendarIcon } from 'lucide-react';
 import { RichTextEditor } from '@/components/faq/RichTextEditor';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { ExpertisesMultiSelect } from '@/components/common/ExpertisesMultiSelect';
 
 const agencySchema = z.object({
   name: z.string().trim().min(1, "Le nom de l'agence est requis").max(200),
@@ -45,8 +45,6 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [partnerSince, setPartnerSince] = useState<Date>(new Date());
   const [tags, setTags] = useState<string[]>([]);
-  const [availableTags, setAvailableTags] = useState<any[]>([]);
-  const [newTag, setNewTag] = useState('');
   const [description, setDescription] = useState('');
 
   const {
@@ -65,27 +63,8 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
 
   const active = watch('active');
 
-  // Load available tags from database
-  const loadAvailableTags = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('agency_tags')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      setAvailableTags(data || []);
-    } catch (error) {
-      console.error('Error loading tags:', error);
-    }
-  };
-
-  // Load tags when dialog opens
   const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
-    if (isOpen) {
-      loadAvailableTags();
-    }
   };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
