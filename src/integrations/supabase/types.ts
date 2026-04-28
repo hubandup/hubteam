@@ -1374,6 +1374,33 @@ export type Database = {
           },
         ]
       }
+      expertises: {
+        Row: {
+          actif: boolean
+          categorie: string
+          created_at: string
+          id: string
+          nom: string
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          categorie?: string
+          created_at?: string
+          id?: string
+          nom: string
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          categorie?: string
+          created_at?: string
+          id?: string
+          nom?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       external_messages: {
         Row: {
           author_identifier: string
