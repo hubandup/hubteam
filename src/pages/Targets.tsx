@@ -6,7 +6,7 @@ import { ClientKanbanView } from '@/components/ClientKanbanView';
 import { ClientListView } from '@/components/ClientListView';
 import { Input } from '@/components/ui/input';
 import { LayoutGrid, Columns3, List, Search, Star, Plus } from 'lucide-react';
-import { useTargets, useToggleTarget } from '@/hooks/useTargets';
+import { useTargets } from '@/hooks/useTargets';
 import { PageLoader } from '@/components/PageLoader';
 import { toast } from 'sonner';
 import { TargetCard } from '@/components/targets/TargetCard';
