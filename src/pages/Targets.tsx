@@ -171,11 +171,11 @@ export default function Targets() {
 
   return (
     <div
-      className="flex flex-col h-full min-h-0 overflow-hidden"
+      className="flex flex-col min-h-full -mx-5 md:-mx-8 -mt-4 px-5 md:px-8 pt-4 pb-8"
       style={{ backgroundColor: '#F5F5F2' }}
     >
       {/* En-tête */}
-      <div className="flex-shrink-0 pb-4">
+      <div className="pb-4">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <div
