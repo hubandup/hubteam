@@ -248,6 +248,17 @@ export function AgencyTagsTab() {
                 onChange={(e) => setNewTagColor(e.target.value)}
                 className="w-20"
               />
+              <Select value={newTagCategorie} onValueChange={setNewTagCategorie}>
+                <SelectTrigger className="w-56">
+                  <SelectValue placeholder="Catégorie" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE_VALUE}>— Aucune —</SelectItem>
+                  {CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button onClick={handleAddTag} disabled={adding || !newTagName.trim()}>
                 <Plus className="h-4 w-4 mr-2" />
                 Ajouter
