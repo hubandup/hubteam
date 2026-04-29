@@ -154,18 +154,19 @@ export function ClientCard({ client, onClick, onMouseEnter }: ClientCardProps) {
       
       <div className="absolute bottom-2 md:bottom-3 left-3 md:left-6 right-3 md:right-6 space-y-1">
         {client.last_contact && (
-          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Calendar className="h-3 w-3 flex-shrink-0" />
             <span className="font-medium">Dernier contact:</span>
             <span className="truncate">{format(new Date(client.last_contact), 'dd/MM/yyyy')}</span>
           </div>
         )}
         {client.follow_up_date && (
-          <div className={`flex items-center gap-1.5 text-xs ${
-            isPast(new Date(client.follow_up_date)) 
-              ? 'text-red-600 dark:text-red-500' 
-              : 'text-gray-500 dark:text-gray-400'
-          }`}>
+          <div className={cn(
+            'flex items-center gap-1.5 text-xs',
+            isPast(new Date(client.follow_up_date))
+              ? 'text-destructive'
+              : 'text-muted-foreground'
+          )}>
             <BellRing className={`h-3 w-3 flex-shrink-0 ${isPast(new Date(client.follow_up_date)) ? 'animate-pulse' : ''}`} />
             <span className="font-medium">Prochaine échéance:</span>
             <span className="truncate">{format(new Date(client.follow_up_date), 'dd/MM/yyyy')}</span>
