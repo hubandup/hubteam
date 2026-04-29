@@ -45,25 +45,13 @@ function applyDesignSettings(data: any) {
   root.style.setProperty('--font-body-weight', data.body_font_weight || '400');
   root.style.setProperty('--font-body-size', data.body_font_size || '1rem');
 
-  // Apply colors while preserving black primary
-  root.style.setProperty('--primary', '0 0% 9%');
-  root.style.setProperty('--primary-light', '0 0% 96%');
-  root.style.setProperty('--ring', '0 0% 9%');
-  root.style.setProperty('--secondary', data.light_secondary);
-  root.style.setProperty('--background', '0 0% 100%');
-
-  // Dark mode + radius overrides
+  // NOTE: Color tokens (--primary, --background, --secondary, --ring) are
+  // intentionally NOT overridden here — index.css owns the light/dark palette
+  // so dark mode works consistently across the app. Only radius is enforced.
   const style = document.getElementById('dynamic-theme-style') || document.createElement('style');
   style.id = 'dynamic-theme-style';
   style.innerHTML = `
-    .dark {
-      --primary: 0 0% 9% !important;
-      --primary-light: 0 0% 96% !important;
-      --ring: 0 0% 9% !important;
-      --secondary: ${data.dark_secondary} !important;
-      --background: ${data.dark_background} !important;
-    }
-    button, [role="tab"], .btn, 
+    button, [role="tab"], .btn,
     [data-radix-collection-item],
     [class*="rounded"] {
       border-radius: 0 !important;

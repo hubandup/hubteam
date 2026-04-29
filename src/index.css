@@ -92,6 +92,29 @@
     --sidebar-border: 224 40% 16%;
     --sidebar-ring: 68 100% 64%;
     --sidebar-muted: 224 40% 14%;
+
+    /* Brand & semantic tokens (used by business components) */
+    --brand-yellow: 68 100% 64%;            /* #E8FF4C accent — same in dark */
+    --brand-yellow-foreground: 224 71% 4%;  /* dark text on yellow */
+    --brand-ink: 224 71% 4%;                /* deep ink (#0f1422-ish) */
+    --brand-ink-foreground: 0 0% 100%;
+
+    /* Neutral surfaces */
+    --surface: 0 0% 100%;
+    --surface-muted: 220 14% 96%;
+    --surface-strong: 0 0% 100%;
+    --surface-foreground: 224 71% 4%;
+    --surface-muted-foreground: 220 9% 46%;
+    --hairline: 220 13% 91%;
+    --hairline-strong: 220 13% 80%;
+
+    /* Urgency / alert hues */
+    --urgency-late: 0 73% 51%;              /* #DC2626 */
+    --urgency-late-foreground: 0 0% 100%;
+    --urgency-week: 25 95% 53%;             /* #EA580C */
+    --urgency-week-foreground: 0 0% 100%;
+    --urgency-soon: 215 16% 47%;            /* slate */
+    --urgency-soon-foreground: 0 0% 100%;
   }
   
   .dark {
@@ -157,6 +180,27 @@
     --sidebar-accent-foreground: 220 20% 95%;
     --sidebar-border: 224 40% 10%;
     --sidebar-ring: 68 100% 64%;
+
+    /* Brand & semantic tokens — dark variants */
+    --brand-yellow: 68 100% 64%;
+    --brand-yellow-foreground: 224 71% 4%;
+    --brand-ink: 220 20% 95%;
+    --brand-ink-foreground: 224 71% 4%;
+
+    --surface: 224 50% 7%;
+    --surface-muted: 224 40% 12%;
+    --surface-strong: 224 50% 9%;
+    --surface-foreground: 220 20% 95%;
+    --surface-muted-foreground: 220 20% 65%;
+    --hairline: 224 40% 14%;
+    --hairline-strong: 224 40% 22%;
+
+    --urgency-late: 0 75% 60%;
+    --urgency-late-foreground: 0 0% 100%;
+    --urgency-week: 25 90% 60%;
+    --urgency-week-foreground: 0 0% 100%;
+    --urgency-soon: 215 15% 60%;
+    --urgency-soon-foreground: 0 0% 100%;
   }
 }
 
@@ -186,7 +230,7 @@
     font-family: 'Instrument Sans', sans-serif;
     font-weight: 700;
     font-size: 28px;
-    color: rgb(0, 0, 0);
+    color: hsl(var(--foreground));
     letter-spacing: -0.03em;
     line-height: 1;
     margin-bottom: 4px;
