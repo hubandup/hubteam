@@ -14,9 +14,11 @@ export function useCapacitor() {
         const { Keyboard } = await import('@capacitor/keyboard');
         const { App } = await import('@capacitor/app');
 
-        // Configure status bar
-        await StatusBar.setStyle({ style: Style.Light });
-        await StatusBar.setBackgroundColor({ color: 'hsl(var(--card))' });
+        // Configure status bar — match sidebar (Layout uses bg-sidebar in mobile)
+        // Capacitor StatusBar API requires a hex color, not a CSS variable
+        const isDark = document.documentElement.classList.contains('dark');
+        await StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light });
+        await StatusBar.setBackgroundColor({ color: isDark ? '#0a0e1a' : '#0f1422' });
 
         // Configure keyboard
         Keyboard.setAccessoryBarVisible({ isVisible: true });
