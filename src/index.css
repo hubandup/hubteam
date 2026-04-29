@@ -92,6 +92,29 @@
     --sidebar-border: 224 40% 16%;
     --sidebar-ring: 68 100% 64%;
     --sidebar-muted: 224 40% 14%;
+
+    /* Brand & semantic tokens (used by business components) */
+    --brand-yellow: 68 100% 64%;            /* #E8FF4C accent — same in dark */
+    --brand-yellow-foreground: 224 71% 4%;  /* dark text on yellow */
+    --brand-ink: 224 71% 4%;                /* deep ink (#0f1422-ish) */
+    --brand-ink-foreground: 0 0% 100%;
+
+    /* Neutral surfaces */
+    --surface: 0 0% 100%;
+    --surface-muted: 220 14% 96%;
+    --surface-strong: 0 0% 100%;
+    --surface-foreground: 224 71% 4%;
+    --surface-muted-foreground: 220 9% 46%;
+    --hairline: 220 13% 91%;
+    --hairline-strong: 220 13% 80%;
+
+    /* Urgency / alert hues */
+    --urgency-late: 0 73% 51%;              /* #DC2626 */
+    --urgency-late-foreground: 0 0% 100%;
+    --urgency-week: 25 95% 53%;             /* #EA580C */
+    --urgency-week-foreground: 0 0% 100%;
+    --urgency-soon: 215 16% 47%;            /* slate */
+    --urgency-soon-foreground: 0 0% 100%;
   }
   
   .dark {
