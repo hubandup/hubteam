@@ -1,101 +1,33 @@
-## Objectif
+## Fix point 5 — Planification CRON `weekly-slack-excuses`
 
-Créer une table de référence `expertises` administrable, seedée avec les 115 expertises réelles déjà présentes dans `agencies.tags`, exposer une vraie UI de gestion dans **Réglages → Expertises**, et brancher `EditAgencyDialog` (+ `AddAgencyDialog`) sur cette table via un multi-select groupé par catégorie. Rétrocompatibilité totale : `agencies.tags` reste une `text[]`, aucune FK.
+### Constat
 
-Note : la table `agency_tags` (ajoutée la semaine dernière, vide) sera **abandonnée** au profit de `expertises`. Je la laisse en place pour ne rien casser, mais l'onglet Réglages pointera désormais sur `expertises`.
+- L'edge function `weekly-slack-excuses` existe déjà et fait correctement le travail (3 idées par client Target, basées sur URLs surveillées + 3 derniers CR + fiche client + projets associés, post Slack sur `#hubteam_sales`, exclusion des clients sans CR ni URL).
+- Le déclenchement manuel depuis Réglages est déjà en place via `TestSlackExcuses.tsx`.
+- **Problème** : le cron actuel est planifié à `0 9 * * 3` (mercredi 9h UTC = 10h ou 11h Paris), au lieu de la fenêtre demandée **entre 3h00 et 5h00**.
 
----
+### Correction
 
-## Étape 1 — Migration SQL
+Reprogrammer le cron `weekly-slack-excuses-wednesday` pour qu'il s'exécute le **mercredi entre 3h00 et 5h00 (heure de Paris)**.
 
-Création de la table `expertises` + RLS.
+Choix d'horaire : **mercredi 4h00 Paris** = `0 3 * * 3` en UTC en heure d'hiver (CET, UTC+1) et `0 2 * * 3` en heure d'été (CEST, UTC+2). pg_cron ne supporte pas les fuseaux horaires : on choisit un créneau qui reste **toujours dans la fenêtre 3h–5h Paris** quelle que soit la saison.
 
-```sql
-CREATE TABLE IF NOT EXISTS public.expertises (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  nom text NOT NULL UNIQUE,
-  categorie text NOT NULL DEFAULT 'Autre',
-  actif boolean NOT NULL DEFAULT true,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
+→ On planifie à `0 3 * * 3` UTC, ce qui donne :
+- Heure d'hiver : 4h00 Paris ✅
+- Heure d'été : 5h00 Paris ✅ (limite haute, dans la fenêtre)
 
-CREATE TRIGGER update_expertises_updated_at
-  BEFORE UPDATE ON public.expertises
-  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+### Implémentation
 
-ALTER TABLE public.expertises ENABLE ROW LEVEL SECURITY;
+1. Supprimer l'ancien cron via `cron.unschedule('weekly-slack-excuses-wednesday')`.
+2. Recréer le cron avec la nouvelle expression `0 3 * * 3` (en gardant le header `x-cron-secret` et l'appel POST vers la fonction edge).
+3. Ne pas modifier l'edge function ni `TestSlackExcuses.tsx` — leur logique correspond déjà à ce qui est demandé.
 
--- Lecture : tous les utilisateurs authentifiés (la liste alimente AddAgencyDialog côté équipe + agences)
-CREATE POLICY "Lecture expertises authentifiés"
-  ON public.expertises FOR SELECT TO authenticated USING (true);
+### Détails techniques
 
--- Écriture : admin uniquement (cohérent avec les autres tables Réglages)
-CREATE POLICY "Admin gère expertises"
-  ON public.expertises FOR ALL TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'))
-  WITH CHECK (public.has_role(auth.uid(), 'admin'));
-```
+- Mise à jour via `supabase--insert` (le cron contient des données spécifiques au projet, pas une migration).
+- Vérifier après coup avec `SELECT jobname, schedule FROM cron.job` que le job est bien `0 3 * * 3`.
 
-> Note : j'utilise `has_role(..., 'admin')` au lieu de `auth.role() = 'authenticated'` proposé dans le brief — sinon n'importe quel client/agence pourrait modifier la liste, ce qui violerait les contraintes de rôles du projet.
+### Hors périmètre
 
-## Étape 2 — Seed des 115 expertises
-
-Migration séparée `INSERT ... ON CONFLICT (nom) DO NOTHING` avec les 115 entrées + catégorie pré-assignée fournies dans le brief (catégories étendues à 11 valeurs : Communication, Relations Presse & Influence, Création & Production, Digital & Web, Data & Performance, IA & Innovation, Événementiel, Production & Fabrication, Formations, Ressources déportées, Autre).
-
-## Étape 3 — Refonte `Réglages → Expertises`
-
-Remplacement complet du contenu de `src/components/settings/AgencyTagsTab.tsx` (le wiring `Settings.tsx` reste — l'onglet garde sa valeur `agency-tags` pour ne pas casser l'URL `/settings?tab=agency-tags`, mais le composant renommé en interne `ExpertisesTab` lit/écrit sur `expertises`).
-
-Fonctionnalités :
-1. **Tableau** colonnes : Nom · Catégorie · Actif · Actions
-2. **Filtre catégorie** en haut : dropdown `Toutes` + 11 catégories, avec compteur dynamique `Événementiel (20)`
-3. **Catégorie inline** : `<Select>` éditable, `UPDATE` Supabase optimiste + toast
-4. **Toggle Actif** : `<Switch>` inline, optimiste + toast
-5. **Ajouter** : bouton `+ Ajouter une expertise` → `<Dialog>` avec champs Nom (text) + Catégorie (select)
-6. **Soft delete** : icône corbeille → `UPDATE actif=false` (pas de `DELETE`) ; les inactives restent visibles avec un style atténué et toggle pour réactiver
-7. **Recherche** texte (bonus, peu coûteux) pour retrouver rapidement parmi 115+ entrées
-8. Tri par catégorie puis nom alphabétique
-
-Pas de couleur, pas de badge coloré (l'ancien `agency_tags.color` n'est pas repris — design `rounded-none`, no-shadow, accent jaune `#E8FF4C` sur les éléments actifs).
-
-## Étape 4 — Multi-select dans EditAgencyDialog + AddAgencyDialog
-
-Remplacer le champ tags actuel (saisie libre + lecture de `agency_tags`) par un composant `ExpertisesMultiSelect` :
-
-- Charge `expertises` où `actif = true`
-- Tri : catégorie alpha → nom alpha
-- UI : `Popover` + `Command` (cmdk shadcn) avec `CommandGroup` par catégorie, checkbox par item
-- Affichage des sélectionnés : badges supprimables au-dessus du trigger
-- **Rétrocompat** : si une valeur de `agency.tags` n'existe pas dans `expertises` (ou est inactive), elle s'affiche quand même comme badge (style "legacy" gris) et reste sauvegardée
-- Sauvegarde : `agencies.tags` reste un `text[]` de `expertises.nom` — **aucun breaking change** sur les autres composants qui lisent `agency.tags` (AgencyCard, ProspectDetailDialog, Webflow sync, etc.)
-
-Même composant réutilisé dans `AddAgencyDialog`.
-
-## Détails techniques
-
-**Fichiers créés**
-- `supabase/migrations/<ts>_create_expertises.sql` (table + RLS + trigger)
-- `supabase/migrations/<ts>_seed_expertises.sql` (115 INSERTs)
-- `src/hooks/useExpertises.tsx` (React Query : `useExpertises`, `useActiveExpertises`, mutations create/update/softDelete avec optimistic update)
-- `src/components/common/ExpertisesMultiSelect.tsx` (multi-select groupé)
-
-**Fichiers modifiés**
-- `src/components/settings/AgencyTagsTab.tsx` → refonte complète sur `expertises`
-- `src/components/EditAgencyDialog.tsx` → remplacement du bloc tags par `<ExpertisesMultiSelect>`
-- `src/components/AddAgencyDialog.tsx` → idem
-- `src/integrations/supabase/types.ts` → régénéré automatiquement
-
-**Inchangé**
-- `agencies.tags` (colonne `text[]`) — conservée telle quelle
-- `agency_tags` (table actuelle, vide) — conservée pour ne rien casser, plus utilisée par l'UI
-- Toute lecture aval de `agency.tags` (cards, Webflow, prospection) — format identique
-
-**Sécurité / RLS**
-- Lecture : `authenticated` (nécessaire pour que les agences voient la liste lors de l'édition de leur fiche)
-- Écriture : `admin` uniquement via `has_role()`
-- Pas de FK → flexibilité conservée comme demandé
-
-**Performance**
-- React Query cache `expertises` (staleTime 5 min) — partagé entre Settings et tous les dialogs agences
-- Optimistic updates pour toutes les mutations (toggle actif, changement catégorie, ajout, soft-delete)
+- Aucune modification sur la logique de génération (URLs + 3 derniers CR + fiche client + projets associés est déjà implémenté dans `loadTargets` et `generateRelanceIdeas`).
+- Aucune modification sur le bouton manuel `TestSlackExcuses` — déjà fonctionnel.
