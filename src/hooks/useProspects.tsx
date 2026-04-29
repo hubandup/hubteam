@@ -67,7 +67,7 @@ export const PROSPECT_STATUSES: { value: ProspectStatus; label: string; color: s
   { value: 'Négociation', label: 'Négociation', color: 'bg-pink-100 dark:bg-pink-900' },
   { value: 'Gagné', label: 'Gagné', color: 'bg-green-100 dark:bg-green-900' },
   { value: 'Perdu', label: 'Perdu', color: 'bg-red-100 dark:bg-red-900' },
-  { value: 'En veille', label: 'En veille', color: 'bg-gray-100 dark:bg-gray-800' },
+  { value: 'En veille', label: 'En veille', color: 'bg-muted' },
 ];
 
 export const PROSPECT_CHANNELS: ProspectChannel[] = ['Email', 'Téléphone', 'LinkedIn', 'Bouche-à-oreille'];
