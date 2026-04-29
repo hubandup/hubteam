@@ -84,7 +84,7 @@ export function TargetCard({ client, onClick, onEdited }: TargetCardProps) {
   return (
     <>
       <div
-        className="group relative bg-white border border-neutral-200 hover:border-neutral-400 transition-colors cursor-pointer"
+        className="group relative bg-card border border-border hover:border-foreground/40 transition-colors cursor-pointer"
         onClick={onClick}
       >
         {/* Badge urgence */}
@@ -104,7 +104,7 @@ export function TargetCard({ client, onClick, onEdited }: TargetCardProps) {
             <div className="flex items-center gap-3 min-w-0 flex-1">
               {/* Logo */}
               <div
-                className="w-14 h-14 shrink-0 border border-neutral-200 bg-white p-1.5 flex items-center justify-center overflow-hidden"
+                className="w-14 h-14 shrink-0 border border-border bg-card p-1.5 flex items-center justify-center overflow-hidden"
                 style={
                   !client.logo_url || logoError
                     ? { background: fallback.bg, borderColor: 'rgba(0,0,0,0.06)' }
@@ -131,14 +131,13 @@ export function TargetCard({ client, onClick, onEdited }: TargetCardProps) {
 
               <div className="min-w-0 flex-1">
                 <div
-                  className="font-display font-bold text-sm leading-tight truncate"
-                  style={{ color: '#0f1422' }}
+                  className="font-display font-bold text-sm leading-tight truncate text-foreground"
                   title={client.company}
                 >
                   {client.company}
                 </div>
                 {contactName && (
-                  <div className="text-xs text-neutral-600 truncate mt-0.5 font-roboto">
+                  <div className="text-xs text-muted-foreground truncate mt-0.5 font-roboto">
                     {contactName}
                   </div>
                 )}
@@ -151,10 +150,10 @@ export function TargetCard({ client, onClick, onEdited }: TargetCardProps) {
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-1 hover:bg-neutral-100"
+                    className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-1 hover:bg-muted"
                     aria-label="Actions"
                   >
-                    <MoreHorizontal size={14} className="text-neutral-600" />
+                    <MoreHorizontal size={14} className="text-muted-foreground" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="rounded-none">
@@ -187,40 +186,40 @@ export function TargetCard({ client, onClick, onEdited }: TargetCardProps) {
           </div>
 
           {/* Infos contact */}
-          <div className="space-y-1 text-xs text-neutral-600 mb-3 font-roboto">
+          <div className="space-y-1 text-xs text-muted-foreground mb-3 font-roboto">
             {client.email && (
               <div className="flex items-center gap-2">
-                <Mail size={11} className="text-neutral-400 shrink-0" />
+                <Mail size={11} className="text-muted-foreground shrink-0 opacity-70" />
                 <span className="truncate">{client.email}</span>
               </div>
             )}
             {client.phone && (
               <div className="flex items-center gap-2">
-                <Phone size={11} className="text-neutral-400 shrink-0" />
+                <Phone size={11} className="text-muted-foreground shrink-0 opacity-70" />
                 <span className="truncate">{client.phone}</span>
               </div>
             )}
           </div>
 
           {/* Footer */}
-          <div className="pt-3 border-t border-neutral-100 flex items-center justify-between text-[11px] font-roboto">
+          <div className="pt-3 border-t border-border flex items-center justify-between text-[11px] font-roboto">
             <div className="flex items-center gap-1.5 min-w-0">
               {client.last_contact ? (
                 <>
-                  <Clock size={10} className="text-neutral-400 shrink-0" />
-                  <span className="text-neutral-400">Contact</span>
-                  <span className="font-semibold text-neutral-600 truncate">
+                  <Clock size={10} className="text-muted-foreground shrink-0 opacity-70" />
+                  <span className="text-muted-foreground">Contact</span>
+                  <span className="font-semibold text-foreground truncate">
                     {formatShortFrDate(client.last_contact)}
                   </span>
                 </>
               ) : (
-                <span className="italic text-neutral-400">Jamais contacté</span>
+                <span className="italic text-muted-foreground">Jamais contacté</span>
               )}
             </div>
             {showCa && (
               <div className="flex items-center gap-1 shrink-0">
-                <span className="font-semibold text-neutral-700">{formatCa(Number(ca))}</span>
-                <span className="text-neutral-400 font-normal">CA</span>
+                <span className="font-semibold text-foreground">{formatCa(Number(ca))}</span>
+                <span className="text-muted-foreground font-normal">CA</span>
               </div>
             )}
           </div>
