@@ -170,10 +170,7 @@ export default function Targets() {
   const goClient = (id: string) => navigate(`/client/${id}?tab=info`);
 
   return (
-    <div
-      className="flex flex-col min-h-full -mx-5 md:-mx-8 -mt-4 px-5 md:px-8 pt-4 pb-8"
-      style={{ backgroundColor: '#FFFFFF' }}
-    >
+    <div className="flex flex-col min-h-full -mx-5 md:-mx-8 -mt-4 px-5 md:px-8 pt-4 pb-8 bg-background">
       {/* En-tête */}
       <div className="pb-4">
         <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -186,12 +183,12 @@ export default function Targets() {
             </div>
             <div>
               <h1
-                className="font-display font-bold leading-tight"
-                style={{ fontSize: '30px', color: '#0f1422' }}
+                className="font-display font-bold leading-tight text-foreground"
+                style={{ fontSize: '30px' }}
               >
                 Targets
               </h1>
-              <p className="text-sm text-neutral-600 font-roboto">
+              <p className="text-sm text-muted-foreground font-roboto">
                 Vos prospects et clients prioritaires ({totalAfterFilters})
               </p>
             </div>
@@ -199,7 +196,7 @@ export default function Targets() {
 
           <div className="flex items-center gap-2">
             {/* Toggle vue */}
-            <div className="flex border border-neutral-200 bg-white">
+            <div className="flex border border-border bg-card">
               {([
                 { v: 'list' as const, Icon: List },
                 { v: 'kanban' as const, Icon: Columns3 },
@@ -212,10 +209,9 @@ export default function Targets() {
                   className={cn(
                     'p-2 transition-colors',
                     viewMode === v
-                      ? 'text-white'
-                      : 'text-neutral-600 hover:bg-neutral-100',
+                      ? 'bg-foreground text-background'
+                      : 'text-muted-foreground hover:bg-muted',
                   )}
-                  style={viewMode === v ? { backgroundColor: '#0f1422' } : undefined}
                   aria-label={`Vue ${v}`}
                 >
                   <Icon size={16} />
@@ -227,8 +223,7 @@ export default function Targets() {
             <button
               type="button"
               onClick={() => setAddOpen(true)}
-              className="px-3 py-2 text-xs font-semibold text-white flex items-center gap-1.5 hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: '#0f1422' }}
+              className="px-3 py-2 text-xs font-semibold bg-foreground text-background flex items-center gap-1.5 hover:opacity-90 transition-opacity"
             >
               <Plus size={14} />
               Ajouter un target
@@ -238,9 +233,9 @@ export default function Targets() {
 
         {/* Recherche + filtres */}
         {clients.length > 0 && (
-          <div className="mt-4 bg-white border border-neutral-200 p-3 flex items-center gap-4 flex-wrap">
+          <div className="mt-4 bg-card border border-border p-3 flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-              <Search size={14} className="text-neutral-400 shrink-0" />
+              <Search size={14} className="text-muted-foreground shrink-0" />
               <input
                 type="text"
                 value={search}
@@ -249,7 +244,7 @@ export default function Targets() {
                   setVisibleCount(PAGE_SIZE);
                 }}
                 placeholder="Rechercher une entreprise ou un contact..."
-                className="flex-1 text-sm outline-none bg-transparent font-roboto placeholder:text-neutral-400"
+                className="flex-1 text-sm outline-none bg-transparent font-roboto text-foreground placeholder:text-muted-foreground"
               />
             </div>
 
@@ -272,16 +267,15 @@ export default function Targets() {
                     className={cn(
                       'px-3 py-1.5 text-xs font-semibold transition-colors flex items-center gap-1.5',
                       active
-                        ? 'text-white'
-                        : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200',
+                        ? 'bg-foreground text-background'
+                        : 'bg-muted text-foreground hover:bg-muted/70',
                     )}
-                    style={active ? { backgroundColor: '#0f1422' } : undefined}
                   >
                     {label}
                     <span
                       className={cn(
                         'text-[10px] px-1 py-0.5 leading-none',
-                        active ? 'bg-white/20 text-white' : 'bg-white text-neutral-700',
+                        active ? 'bg-background/20 text-background' : 'bg-card text-foreground',
                       )}
                     >
                       {n}
