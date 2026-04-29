@@ -313,8 +313,8 @@ export default function Targets() {
             </div>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white border border-neutral-200 p-12 text-center">
-            <p className="text-sm text-neutral-600 font-roboto">
+          <div className="bg-card border border-border p-12 text-center">
+            <p className="text-sm text-muted-foreground font-roboto">
               Aucun target ne correspond à ces filtres.
             </p>
           </div>
@@ -353,7 +353,7 @@ export default function Targets() {
                 <button
                   type="button"
                   onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                  className="px-4 py-2 text-xs font-semibold bg-white border border-neutral-200 hover:border-neutral-400 transition-colors"
+                  className="px-4 py-2 text-xs font-semibold bg-card text-foreground border border-border hover:border-foreground/40 transition-colors"
                 >
                   Charger plus ({totalAfterFilters - paginatedFlat.length} restants)
                 </button>
