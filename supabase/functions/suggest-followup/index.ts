@@ -98,12 +98,46 @@ Deno.serve(async (req) => {
 
     const { data: tracking, error: trErr } = await admin
       .from('commercial_tracking')
-      .select('id, client_id, status, created_by, clients(company, first_name, last_name, email)')
+      .select('id, client_id, status, created_by, clients(id, company, first_name, last_name, email, phone, address, action, kanban_stage, follow_up_date, last_contact, main_contact_id, activity_sector_id, status_id, source_id, revenue, revenue_current_year)')
       .eq('id', body.tracking_id)
       .maybeSingle();
     if (trErr || !tracking) throw trErr || new Error('Tracking not found');
 
     const clientRow: any = (tracking as any).clients || {};
+
+    // Interlocuteur Hub & Up : profil interne owner (main_contact_id pointe sur profiles)
+    let hubAndUpOwner: any = null;
+    if (clientRow.main_contact_id) {
+      const { data: ownerProfile } = await admin
+        .from('profiles')
+        .select('first_name, last_name, role')
+        .eq('id', clientRow.main_contact_id)
+        .maybeSingle();
+      hubAndUpOwner = ownerProfile || null;
+    }
+
+    // Libellés "humains" : secteur, statut, source
+    const [sectorRes, statusRes, sourceRes] = await Promise.all([
+      clientRow.activity_sector_id
+        ? admin.from('activity_sectors').select('name').eq('id', clientRow.activity_sector_id).maybeSingle()
+        : Promise.resolve({ data: null } as any),
+      clientRow.status_id
+        ? admin.from('client_statuses').select('name').eq('id', clientRow.status_id).maybeSingle()
+        : Promise.resolve({ data: null } as any),
+      clientRow.source_id
+        ? admin.from('client_sources').select('name').eq('id', clientRow.source_id).maybeSingle()
+        : Promise.resolve({ data: null } as any),
+    ]);
+    const sectorName = (sectorRes as any)?.data?.name || null;
+    const statusName = (statusRes as any)?.data?.name || null;
+    const sourceName = (sourceRes as any)?.data?.name || null;
+
+    // Interlocuteurs (commercial_contacts) — tous les contacts liés au tracking
+    const { data: interlocuteurs } = await admin
+      .from('commercial_contacts')
+      .select('first_name, last_name, email, job_title, phone')
+      .eq('tracking_id', body.tracking_id)
+      .order('display_order');
 
     const { data: urls } = await admin
       .from('commercial_scrape_urls')
@@ -111,27 +145,26 @@ Deno.serve(async (req) => {
       .eq('tracking_id', body.tracking_id);
 
     const validScrapes = (urls || []).filter(u => u.last_scrape_status === 'success' && (u.last_scrape_summary || u.last_scrape_content));
-    // Note: on n'exige plus de contenu scrapé. Si aucune URL n'a été scrapée,
-    // on génère quand même des suggestions à partir des CR, projets, fiche client, etc.
 
     const { data: notes } = await admin
       .from('commercial_notes').select('content, created_at, created_by').eq('tracking_id', body.tracking_id)
-      .order('created_at', { ascending: false }).limit(3);
-    // On ne récupère que les RDV qui ont une date renseignée :
-    // les étapes sans date ne doivent PAS influencer la génération de l'excuse.
-    const { data: meetings } = await admin
-      .from('commercial_meetings').select('label, meeting_type, meeting_date').eq('tracking_id', body.tracking_id)
-      .not('meeting_date', 'is', null)
-      .order('meeting_date', { ascending: false }).limit(3);
+      .order('created_at', { ascending: false }).limit(5);
 
-    // Récupérer les 3 derniers comptes rendus client (meeting_notes)
+    // TOUTES les étapes de rendez-vous (avec ET sans date) pour donner le contexte complet
+    const { data: meetings } = await admin
+      .from('commercial_meetings').select('label, meeting_type, meeting_date, notes, created_at').eq('tracking_id', body.tracking_id)
+      .order('meeting_date', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    // TOUS les comptes rendus client (cap à 10 plus récents pour rester dans le contexte LLM)
     const { data: meetingNotes } = await admin
       .from('meeting_notes')
       .select('title, content, meeting_date, created_at')
       .eq('client_id', tracking.client_id)
       .order('meeting_date', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
-      .limit(3);
+      .limit(10);
 
     // Projets liés
     const { data: projects } = await admin
@@ -139,6 +172,14 @@ Deno.serve(async (req) => {
       .select('name, status, start_date, end_date, description')
       .eq('client_id', tracking.client_id)
       .order('updated_at', { ascending: false })
+      .limit(10);
+
+    // Historique des excuses déjà générées — pour ÉVITER les répétitions et varier les angles
+    const { data: priorSuggestions } = await admin
+      .from('commercial_followup_suggestions')
+      .select('subject, angles, action_label, created_at')
+      .eq('tracking_id', body.tracking_id)
+      .order('created_at', { ascending: false })
       .limit(5);
 
     // Qualification du besoin (commercial_questionnaire)
