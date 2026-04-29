@@ -135,7 +135,7 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
 
       // Detect theme
       const isDark = document.documentElement.classList.contains('dark');
-      const bgColor = isDark ? '#0a0e1a' : 'hsl(var(--card))';
+      const bgColor = isDark ? '#0a0e1a' : '#ffffff';
 
       // Load logos
       const [logoHeader, logoFooter] = await Promise.all([
