@@ -194,7 +194,7 @@ export default function ClientDetails() {
     .filter(Boolean) as string[];
 
   return (
-    <div className="min-h-screen bg-[#F5F5F2]">
+    <div className="min-h-screen bg-background">
       <div className="p-6 space-y-4 max-w-[1400px] mx-auto">
         {/* Back button */}
         <div className="flex items-center gap-2">
@@ -212,8 +212,8 @@ export default function ClientDetails() {
               <img src={client.logo_url} alt={`${client.company} logo`} className="w-14 h-14 object-cover flex-shrink-0" />
             ) : (
               <div
-                className="w-14 h-14 flex items-center justify-center flex-shrink-0 display"
-                style={{ background: 'hsl(var(--brand-ink))', color: 'hsl(var(--card))', fontWeight: 700, fontSize: 20 }}
+                className="w-14 h-14 flex items-center justify-center flex-shrink-0 display bg-foreground text-background"
+                style={{ fontWeight: 700, fontSize: 20 }}
               >
                 {initial}
               </div>
@@ -223,7 +223,7 @@ export default function ClientDetails() {
             <div className="flex-1 min-w-0 space-y-2">
               {/* Ligne 1 : nom + badge */}
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="display" style={{ fontSize: 30, fontWeight: 700, color: 'hsl(var(--brand-ink))', lineHeight: 1.1 }}>
+                <h1 className="display text-foreground" style={{ fontSize: 30, fontWeight: 700, lineHeight: 1.1 }}>
                   {client.company}
                 </h1>
                 {statusName && (
@@ -259,13 +259,12 @@ export default function ClientDetails() {
                       <img
                         src={hubOwner.avatar_url}
                         alt={[hubOwner.first_name, hubOwner.last_name].filter(Boolean).join(' ')}
-                        className="w-6 h-6 object-cover flex-shrink-0"
-                        style={{ border: '1px solid hsl(var(--brand-ink))' }}
+                        className="w-6 h-6 object-cover flex-shrink-0 border border-foreground"
                       />
                     ) : (
                       <span
-                        className="w-6 h-6 inline-flex items-center justify-center flex-shrink-0 display"
-                        style={{ background: 'hsl(var(--brand-ink))', color: 'hsl(var(--card))', fontWeight: 700, fontSize: 10 }}
+                        className="w-6 h-6 inline-flex items-center justify-center flex-shrink-0 display bg-foreground text-background"
+                        style={{ fontWeight: 700, fontSize: 10 }}
                       >
                         {(hubOwner.first_name?.[0] || '?').toUpperCase()}
                       </span>
