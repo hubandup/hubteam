@@ -237,7 +237,7 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
                 title={hasDate ? 'Date renseignée' : 'Date à définir'}
               >
                 <span
-                  className={`inline-block w-1.5 h-1.5 rounded-full ${hasDate ? 'bg-emerald-500' : 'bg-neutral-400'}`}
+                  className={`inline-block w-1.5 h-1.5 rounded-full ${hasDate ? 'bg-emerald-500' : 'bg-muted-foreground'}`}
                 />
                 {hasDate ? 'renseignée' : 'à définir'}
               </span>
