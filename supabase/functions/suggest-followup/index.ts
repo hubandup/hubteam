@@ -460,7 +460,7 @@ Destinataire choisi pour ce message :
 
 ACTION À PROPOSER (call-to-action obligatoire de l'email) : ${actionLabel}
 ${wantsBookingLink && calendly.url ? `LIEN CALENDLY À INTÉGRER : ${calendly.url} (attribué à ${calendly.owner === 'amandine' ? 'Amandine' : 'Charles'})` : ''}
-${contextNotes}${contextMeetings}${contextMeetingNotes}${contextQualification}${contextProjects}${contextGoogleAlerts}${contextHubAndUp}
+${contextFiche}${contextHubOwner}${contextInterlocuteurs}${contextNotes}${contextMeetings}${contextMeetingNotes}${contextQualification}${contextProjects}${contextGoogleAlerts}${contextHubAndUp}${contextPriorSuggestions}
 
 Contenus scrappés récemment (URLs veille du client) :
 
