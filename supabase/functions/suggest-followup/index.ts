@@ -624,6 +624,26 @@ Génère le JSON.`;
         url: calendly.url,
         used: ['propose_slot', 'schedule_call'].includes(actionKey),
       } : null,
+      client_fiche: {
+        company: clientRow.company || null,
+        kanban_stage: clientRow.kanban_stage || null,
+        status: statusName,
+        sector: sectorName,
+        source: sourceName,
+        action: clientRow.action || null,
+        follow_up_date: clientRow.follow_up_date || null,
+        last_contact: clientRow.last_contact || null,
+      },
+      hub_owner: hubAndUpOwner ? {
+        name: `${hubAndUpOwner.first_name || ''} ${hubAndUpOwner.last_name || ''}`.trim(),
+        role: hubAndUpOwner.role || null,
+      } : null,
+      interlocuteurs: (interlocuteurs || []).map((c: any) => ({
+        name: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+        email: c.email || null,
+        job_title: c.job_title || null,
+      })),
+      prior_suggestions_count: (priorSuggestions || []).length,
     };
 
     // Persist to history (unless explicitly disabled)
