@@ -253,6 +253,28 @@ export default function ClientDetails() {
                     <Phone size={14} /> {client.phone}
                   </a>
                 )}
+                {hubOwner && (
+                  <span className="inline-flex items-center gap-2" title="Interlocuteur Hub & Up">
+                    {hubOwner.avatar_url ? (
+                      <img
+                        src={hubOwner.avatar_url}
+                        alt={[hubOwner.first_name, hubOwner.last_name].filter(Boolean).join(' ')}
+                        className="w-6 h-6 object-cover flex-shrink-0"
+                        style={{ border: '1px solid #0f1422' }}
+                      />
+                    ) : (
+                      <span
+                        className="w-6 h-6 inline-flex items-center justify-center flex-shrink-0 display"
+                        style={{ background: '#0f1422', color: '#fff', fontWeight: 700, fontSize: 10 }}
+                      >
+                        {(hubOwner.first_name?.[0] || '?').toUpperCase()}
+                      </span>
+                    )}
+                    <span className="text-neutral-700">
+                      {[hubOwner.first_name, hubOwner.last_name].filter(Boolean).join(' ')}
+                    </span>
+                  </span>
+                )}
               </div>
 
               {/* Ligne 3 : tags meta */}
