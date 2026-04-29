@@ -157,7 +157,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
               className="inline-flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition-colors"
             >
               <RefreshCw size={12} />
-              Régénérer
+              Générer
             </button>
             <button
               type="button"
@@ -218,7 +218,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
               </div>
             ) : !latest ? (
               <p className="text-sm text-white/70 mb-4 leading-relaxed">
-                Aucune excuse générée pour ce client. Cliquez sur <strong className="text-white">Régénérer</strong> pour en créer une.
+                Aucune excuse générée pour ce client. Cliquez sur <strong className="text-white">Générer</strong> pour en créer une.
               </p>
             ) : (
               <p className="text-sm text-white/90 mb-4 leading-relaxed whitespace-pre-wrap">

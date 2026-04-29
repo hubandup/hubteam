@@ -1756,7 +1756,7 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
                     ) : null;
                   })()}
                   <Button size="sm" variant="ghost" onClick={generateSuggestion} disabled={suggesting}>
-                    <RefreshCw className="h-4 w-4 mr-1" /> Régénérer
+                    <RefreshCw className="h-4 w-4 mr-1" /> Générer
                   </Button>
                 </div>
               </div>

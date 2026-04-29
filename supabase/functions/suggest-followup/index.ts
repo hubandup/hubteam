@@ -98,12 +98,46 @@ Deno.serve(async (req) => {
 
     const { data: tracking, error: trErr } = await admin
       .from('commercial_tracking')
-      .select('id, client_id, status, created_by, clients(company, first_name, last_name, email)')
+      .select('id, client_id, status, created_by, clients(id, company, first_name, last_name, email, phone, address, action, kanban_stage, follow_up_date, last_contact, main_contact_id, activity_sector_id, status_id, source_id, revenue, revenue_current_year)')
       .eq('id', body.tracking_id)
       .maybeSingle();
     if (trErr || !tracking) throw trErr || new Error('Tracking not found');
 
     const clientRow: any = (tracking as any).clients || {};
+
+    // Interlocuteur Hub & Up : profil interne owner (main_contact_id pointe sur profiles)
+    let hubAndUpOwner: any = null;
+    if (clientRow.main_contact_id) {
+      const { data: ownerProfile } = await admin
+        .from('profiles')
+        .select('first_name, last_name, role')
+        .eq('id', clientRow.main_contact_id)
+        .maybeSingle();
+      hubAndUpOwner = ownerProfile || null;
+    }
+
+    // Libellés "humains" : secteur, statut, source
+    const [sectorRes, statusRes, sourceRes] = await Promise.all([
+      clientRow.activity_sector_id
+        ? admin.from('activity_sectors').select('name').eq('id', clientRow.activity_sector_id).maybeSingle()
+        : Promise.resolve({ data: null } as any),
+      clientRow.status_id
+        ? admin.from('client_statuses').select('name').eq('id', clientRow.status_id).maybeSingle()
+        : Promise.resolve({ data: null } as any),
+      clientRow.source_id
+        ? admin.from('client_sources').select('name').eq('id', clientRow.source_id).maybeSingle()
+        : Promise.resolve({ data: null } as any),
+    ]);
+    const sectorName = (sectorRes as any)?.data?.name || null;
+    const statusName = (statusRes as any)?.data?.name || null;
+    const sourceName = (sourceRes as any)?.data?.name || null;
+
+    // Interlocuteurs (commercial_contacts) — tous les contacts liés au tracking
+    const { data: interlocuteurs } = await admin
+      .from('commercial_contacts')
+      .select('first_name, last_name, email, job_title, phone')
+      .eq('tracking_id', body.tracking_id)
+      .order('display_order');
 
     const { data: urls } = await admin
       .from('commercial_scrape_urls')
@@ -111,27 +145,26 @@ Deno.serve(async (req) => {
       .eq('tracking_id', body.tracking_id);
 
     const validScrapes = (urls || []).filter(u => u.last_scrape_status === 'success' && (u.last_scrape_summary || u.last_scrape_content));
-    // Note: on n'exige plus de contenu scrapé. Si aucune URL n'a été scrapée,
-    // on génère quand même des suggestions à partir des CR, projets, fiche client, etc.
 
     const { data: notes } = await admin
       .from('commercial_notes').select('content, created_at, created_by').eq('tracking_id', body.tracking_id)
-      .order('created_at', { ascending: false }).limit(3);
-    // On ne récupère que les RDV qui ont une date renseignée :
-    // les étapes sans date ne doivent PAS influencer la génération de l'excuse.
-    const { data: meetings } = await admin
-      .from('commercial_meetings').select('label, meeting_type, meeting_date').eq('tracking_id', body.tracking_id)
-      .not('meeting_date', 'is', null)
-      .order('meeting_date', { ascending: false }).limit(3);
+      .order('created_at', { ascending: false }).limit(5);
 
-    // Récupérer les 3 derniers comptes rendus client (meeting_notes)
+    // TOUTES les étapes de rendez-vous (avec ET sans date) pour donner le contexte complet
+    const { data: meetings } = await admin
+      .from('commercial_meetings').select('label, meeting_type, meeting_date, notes, created_at').eq('tracking_id', body.tracking_id)
+      .order('meeting_date', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    // TOUS les comptes rendus client (cap à 10 plus récents pour rester dans le contexte LLM)
     const { data: meetingNotes } = await admin
       .from('meeting_notes')
       .select('title, content, meeting_date, created_at')
       .eq('client_id', tracking.client_id)
       .order('meeting_date', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
-      .limit(3);
+      .limit(10);
 
     // Projets liés
     const { data: projects } = await admin
@@ -139,6 +172,14 @@ Deno.serve(async (req) => {
       .select('name, status, start_date, end_date, description')
       .eq('client_id', tracking.client_id)
       .order('updated_at', { ascending: false })
+      .limit(10);
+
+    // Historique des excuses déjà générées — pour ÉVITER les répétitions et varier les angles
+    const { data: priorSuggestions } = await admin
+      .from('commercial_followup_suggestions')
+      .select('subject, angles, action_label, created_at')
+      .eq('tracking_id', body.tracking_id)
+      .order('created_at', { ascending: false })
       .limit(5);
 
     // Qualification du besoin (commercial_questionnaire)
@@ -234,28 +275,75 @@ Deno.serve(async (req) => {
     }).join('\n\n---\n\n');
 
     const contextNotes = (notes && notes.length > 0)
-      ? `\n\nDernières notes internes (Suivi commercial):\n${notes.map(n => `- ${n.content?.slice(0, 200)}`).join('\n')}`
+      ? `\n\nDernières notes internes (Suivi commercial):\n${notes.map(n => `- ${n.content?.slice(0, 300)}`).join('\n')}`
       : '';
-    const meetingsWithDate = (meetings || []).filter(m => !!m.meeting_date);
-    const contextMeetings = meetingsWithDate.length > 0
-      ? `\n\nDerniers RDV planifiés (avec date confirmée):\n${meetingsWithDate.map(m => `- ${m.label || m.meeting_type} (${m.meeting_date})`).join('\n')}`
+
+    // Toutes les étapes de RDV (avec ou sans date) — utiles pour cerner où en est la relation
+    const contextMeetings = (meetings && meetings.length > 0)
+      ? `\n\nÉtapes de rendez-vous (suivi commercial) :\n${(meetings as any[]).map(m => {
+          const date = m.meeting_date ? ` — ${m.meeting_date}` : ' — date non fixée';
+          const note = m.notes ? `\n  ${String(m.notes).replace(/\s+/g, ' ').slice(0, 200)}` : '';
+          return `• ${m.label || m.meeting_type}${date}${note}`;
+        }).join('\n')}`
       : '';
+
     const contextMeetingNotes = (meetingNotes && meetingNotes.length > 0)
-      ? `\n\nDerniers comptes rendus client (3 plus récents) :\n${meetingNotes.map(m => {
+      ? `\n\nComptes rendus client (${meetingNotes.length} plus récents, du + récent au + ancien) :\n${meetingNotes.map(m => {
           const date = m.meeting_date || m.created_at?.slice(0, 10) || '';
           const title = m.title ? ` — ${m.title}` : '';
-          const content = (m.content || '').replace(/\s+/g, ' ').slice(0, 600);
+          const content = (m.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 800);
           return `• [${date}]${title}\n  ${content}`;
         }).join('\n')}`
       : '';
 
     const contextProjects = (projects && projects.length > 0)
-      ? `\n\nProjets liés à ce client (5 plus récents) :\n${projects.map((p: any) => {
-          const desc = (p.description || '').replace(/\s+/g, ' ').slice(0, 200);
+      ? `\n\nProjets liés à ce client :\n${projects.map((p: any) => {
+          const desc = (p.description || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 250);
           const dates = [p.start_date, p.end_date].filter(Boolean).join(' → ');
           return `• ${p.name}${p.status ? ` [${p.status}]` : ''}${dates ? ` (${dates})` : ''}${desc ? `\n  ${desc}` : ''}`;
         }).join('\n')}`
       : '';
+
+    // Fiche client (Informations générales)
+    const ficheLines: string[] = [];
+    if (clientRow.company) ficheLines.push(`Société : ${clientRow.company}`);
+    if (clientRow.kanban_stage) ficheLines.push(`Étape pipeline : ${clientRow.kanban_stage}`);
+    if (statusName) ficheLines.push(`Statut : ${statusName}`);
+    if (sectorName) ficheLines.push(`Secteur d'activité : ${sectorName}`);
+    if (sourceName) ficheLines.push(`Source : ${sourceName}`);
+    if (clientRow.address) ficheLines.push(`Adresse : ${clientRow.address}`);
+    if (clientRow.phone) ficheLines.push(`Téléphone : ${clientRow.phone}`);
+    if (clientRow.action) ficheLines.push(`Prochaine action interne : ${clientRow.action}`);
+    if (clientRow.follow_up_date) ficheLines.push(`Date de relance prévue : ${clientRow.follow_up_date}`);
+    if (clientRow.last_contact) ficheLines.push(`Dernier contact : ${clientRow.last_contact}`);
+    const contextFiche = ficheLines.length > 0
+      ? `\n\nFiche client (Informations générales) :\n${ficheLines.map(l => `• ${l}`).join('\n')}`
+      : '';
+
+    // Interlocuteur Hub & Up (référent interne côté agence)
+    const contextHubOwner = hubAndUpOwner
+      ? `\n\nInterlocuteur Hub & Up (référent interne) : ${[hubAndUpOwner.first_name, hubAndUpOwner.last_name].filter(Boolean).join(' ')}${hubAndUpOwner.role ? ` (${hubAndUpOwner.role})` : ''}`
+      : '';
+
+    // Interlocuteurs côté client (additionnels)
+    const contextInterlocuteurs = (interlocuteurs && interlocuteurs.length > 0)
+      ? `\n\nInterlocuteurs côté client :\n${(interlocuteurs as any[]).map(c => {
+          const fn = `${c.first_name || ''} ${c.last_name || ''}`.trim();
+          return `• ${fn || c.email || 'Contact'}${c.job_title ? ` — ${c.job_title}` : ''}${c.email ? ` <${c.email}>` : ''}`;
+        }).join('\n')}`
+      : '';
+
+    // Historique des excuses déjà envoyées — pour ne pas se répéter
+    const contextPriorSuggestions = (priorSuggestions && priorSuggestions.length > 0)
+      ? `\n\nHistorique des excuses déjà générées (NE PAS REDIRE LA MÊME CHOSE — varier l'angle) :\n${(priorSuggestions as any[]).map(s => {
+          const date = s.created_at?.slice(0, 10) || '';
+          const angles = Array.isArray(s.angles)
+            ? s.angles.map((a: any) => a.title).filter(Boolean).slice(0, 3).join(' / ')
+            : '';
+          return `• [${date}] "${s.subject || ''}"${s.action_label ? ` — action : ${s.action_label}` : ''}${angles ? ` — angles déjà utilisés : ${angles}` : ''}`;
+        }).join('\n')}`
+      : '';
+
 
     const contextQualification = (qualification && qualification.length > 0)
       ? `\n\nQualification du besoin (réponses du client recueillies en suivi commercial) :\n${qualification.map((q: any) => {
@@ -372,7 +460,7 @@ Destinataire choisi pour ce message :
 
 ACTION À PROPOSER (call-to-action obligatoire de l'email) : ${actionLabel}
 ${wantsBookingLink && calendly.url ? `LIEN CALENDLY À INTÉGRER : ${calendly.url} (attribué à ${calendly.owner === 'amandine' ? 'Amandine' : 'Charles'})` : ''}
-${contextNotes}${contextMeetings}${contextMeetingNotes}${contextQualification}${contextProjects}${contextGoogleAlerts}${contextHubAndUp}
+${contextFiche}${contextHubOwner}${contextInterlocuteurs}${contextNotes}${contextMeetings}${contextMeetingNotes}${contextQualification}${contextProjects}${contextGoogleAlerts}${contextHubAndUp}${contextPriorSuggestions}
 
 Contenus scrappés récemment (URLs veille du client) :
 
@@ -536,6 +624,26 @@ Génère le JSON.`;
         url: calendly.url,
         used: ['propose_slot', 'schedule_call'].includes(actionKey),
       } : null,
+      client_fiche: {
+        company: clientRow.company || null,
+        kanban_stage: clientRow.kanban_stage || null,
+        status: statusName,
+        sector: sectorName,
+        source: sourceName,
+        action: clientRow.action || null,
+        follow_up_date: clientRow.follow_up_date || null,
+        last_contact: clientRow.last_contact || null,
+      },
+      hub_owner: hubAndUpOwner ? {
+        name: `${hubAndUpOwner.first_name || ''} ${hubAndUpOwner.last_name || ''}`.trim(),
+        role: hubAndUpOwner.role || null,
+      } : null,
+      interlocuteurs: (interlocuteurs || []).map((c: any) => ({
+        name: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+        email: c.email || null,
+        job_title: c.job_title || null,
+      })),
+      prior_suggestions_count: (priorSuggestions || []).length,
     };
 
     // Persist to history (unless explicitly disabled)

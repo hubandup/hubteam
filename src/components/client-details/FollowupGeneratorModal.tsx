@@ -195,7 +195,7 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 display">
             <Sparkles className="h-5 w-5" style={{ color: '#0f1422' }} />
-            Régénérer une excuse de relance
+            Générer une excuse de relance
           </DialogTitle>
           <DialogDescription>
             Configure le destinataire, le ton et l'action à proposer. La génération s'appuie sur les URLs scrappées, les comptes rendus et le site Hub & Up.
@@ -316,7 +316,7 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
             style={{ background: '#0f1422', color: '#fff' }}
           >
             {busy ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1" />}
-            Régénérer
+            Générer
           </Button>
         </DialogFooter>
 
