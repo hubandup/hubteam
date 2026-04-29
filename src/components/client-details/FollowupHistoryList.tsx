@@ -144,13 +144,13 @@ export function FollowupHistoryList({ trackingId }: Props) {
           <div key={h.id} className="flex items-start gap-2 border border-border p-2.5">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-sm font-medium truncate" style={{ color: '#0f1422' }}>
+                <p className="text-sm font-medium truncate" style={{ color: 'hsl(var(--brand-ink))' }}>
                   {h.subject || '(sans objet)'}
                 </p>
                 {h.action_key && (
                   <span
                     className="inline-flex items-center font-semibold uppercase tracking-wider"
-                    style={{ background: '#0f1422', color: '#E8FF4C', padding: '1px 6px', fontSize: 9 }}
+                    style={{ background: 'hsl(var(--brand-ink))', color: 'hsl(var(--brand-yellow))', padding: '1px 6px', fontSize: 9 }}
                   >
                     {ACTION_BADGES[h.action_key] || h.action_key}
                   </span>
@@ -200,7 +200,7 @@ export function FollowupHistoryList({ trackingId }: Props) {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 display">
-              <Sparkles className="h-5 w-5" style={{ color: '#0f1422' }} />
+              <Sparkles className="h-5 w-5" style={{ color: 'hsl(var(--brand-ink))' }} />
               {opened?.subject || 'Excuse de relance'}
             </DialogTitle>
             <DialogDescription>
@@ -232,7 +232,7 @@ export function FollowupHistoryList({ trackingId }: Props) {
                     size="sm"
                     onClick={() => sendMail(opened.recipient_email, opened.subject, opened.body_html)}
                     className="rounded-none"
-                    style={{ background: '#0f1422', color: '#fff' }}
+                    style={{ background: 'hsl(var(--brand-ink))', color: 'hsl(var(--card))' }}
                   >
                     <Mail className="h-4 w-4 mr-1" /> Envoyer par email
                   </Button>

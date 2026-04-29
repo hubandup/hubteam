@@ -47,7 +47,7 @@ function SectionShell({
       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2 leading-none">
           {icon && <span className="flex items-center justify-center shrink-0">{icon}</span>}
-          <h3 className="uppercase tracking-wider font-bold display leading-none" style={{ color: '#0f1422', fontSize: 10 }}>
+          <h3 className="uppercase tracking-wider font-bold display leading-none" style={{ color: 'hsl(var(--brand-ink))', fontSize: 10 }}>
             {title}
           </h3>
         </div>
@@ -175,16 +175,16 @@ export function ClientCommercialSidebar({ client }: Props) {
   return (
     <div className="space-y-4">
       {/* 1. PIPELINE */}
-      <SectionShell icon={<CheckCircle2 size={14} style={{ color: '#0f1422' }} />} title="Pipeline">
+      <SectionShell icon={<CheckCircle2 size={14} style={{ color: 'hsl(var(--brand-ink))' }} />} title="Pipeline">
         <ul className="space-y-2.5">
           {PIPELINE_STAGES.map((s, i) => {
             const isDone = i < currentIdx;
             const isCurrent = i === currentIdx;
             const stepStyle = isDone
-              ? { background: '#0f1422', borderColor: '#0f1422' }
+              ? { background: 'hsl(var(--brand-ink))', borderColor: 'hsl(var(--brand-ink))' }
               : isCurrent
-                ? { background: '#E8FF4C', borderColor: '#0f1422' }
-                : { background: '#fff', borderColor: '#d4d4d4' };
+                ? { background: 'hsl(var(--brand-yellow))', borderColor: 'hsl(var(--brand-ink))' }
+                : { background: 'hsl(var(--card))', borderColor: 'hsl(var(--border))' };
             const labelClass = isCurrent
               ? 'font-semibold text-foreground'
               : isDone ? 'text-foreground' : 'text-muted-foreground';
@@ -218,7 +218,7 @@ export function ClientCommercialSidebar({ client }: Props) {
 
       {/* 3. URLs VEILLE IA */}
       <SectionShell
-        icon={<Link2 size={14} style={{ color: '#0f1422' }} />}
+        icon={<Link2 size={14} style={{ color: 'hsl(var(--brand-ink))' }} />}
         title="URLs veille IA"
         action={
           <button

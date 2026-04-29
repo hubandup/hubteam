@@ -201,11 +201,11 @@ export function PendingQuoteActionsBanner() {
     return null;
   }
   return <>
-      <div className="mb-6 overflow-hidden rounded-2xl border border-border/50 border-l-4 border-l-[#E8FF4C] shadow-md shadow-black/10 dark:shadow-black/30 bg-card dark:bg-card">
-        <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-[#E8FF4C]/5 transition-colors" onClick={() => setIsExpanded(!isExpanded)}>
+      <div className="mb-6 overflow-hidden rounded-2xl border border-border/50 border-l-4 border-l-[hsl(var(--brand-yellow))] shadow-md shadow-black/10 dark:shadow-black/30 bg-card dark:bg-card">
+        <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-[hsl(var(--brand-yellow))]/5 transition-colors" onClick={() => setIsExpanded(!isExpanded)}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-card border-0 border-white rounded-none shadow-none opacity-100 my-0 mt-0 pt-0 flex-row flex items-start justify-center gap-0">
-              <FileText className="h-5 w-5 text-[#014a94] dark:text-[#E8FF4C]" />
+              <FileText className="h-5 w-5 text-[#014a94] dark:text-[hsl(var(--brand-yellow))]" />
             </div>
             <div>
               <span className="font-semibold text-foreground">
@@ -216,7 +216,7 @@ export function PendingQuoteActionsBanner() {
               </p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-[#E8FF4C]/20">
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-[hsl(var(--brand-yellow))]/20">
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </div>

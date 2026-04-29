@@ -8,10 +8,10 @@ import {
 import { LagostinaSubTabs } from './LagostinaSubTabs';
 import { NoteableCell, useCellNotes } from './CellNotePopover';
 
-// Theme-aware chart accent: dark=#E8FF4C, light=#0f1422
+// Theme-aware chart accent: dark=hsl(var(--brand-yellow)), light=hsl(var(--brand-ink))
 function getChartAccent(): string {
-  if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) return '#E8FF4C';
-  return '#0f1422';
+  if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) return 'hsl(var(--brand-yellow))';
+  return 'hsl(var(--brand-ink))';
 }
 
 const SUB_TABS = ['SEA', 'META', 'TikTok'] as const;
@@ -71,8 +71,8 @@ function sortWeeksNumerically(weeks: { week: string; actual: number | null; obje
 }
 
 const chartTooltipStyle = {
-  contentStyle: { background: '#0f1422', border: '1px solid currentColor', borderRadius: 0, fontSize: 12, fontFamily: 'Roboto' },
-  labelStyle: { color: '#9ca3af' },
+  contentStyle: { background: 'hsl(var(--brand-ink))', border: '1px solid currentColor', borderRadius: 0, fontSize: 12, fontFamily: 'Roboto' },
+  labelStyle: { color: 'hsl(var(--muted-foreground))' },
 };
 
 interface KpiData {
@@ -127,7 +127,7 @@ function KpiCard({ data }: { data: KpiData }) {
     : (v: number | null | undefined) => formatVal(v, data.kpi_name);
 
   return (
-    <div className={`bg-card dark:bg-[#0f1422] border border-border/30 border-l-[3px] ${cond || 'border-foreground'} p-4 flex flex-col gap-1`}>
+    <div className={`bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border-l-[3px] ${cond || 'border-foreground'} p-4 flex flex-col gap-1`}>
       <div className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">{KPI_LABELS[data.kpi_name] || data.kpi_name}</div>
       <div className="text-foreground text-xl font-bold font-['Instrument_Sans']">{formatFn(data.latestActual)}</div>
       {data.latestObjective != null && (
@@ -174,21 +174,21 @@ function SEATab({ rows }: { rows: any[] }) {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {roasData && roasData.weeks.length > 1 && (
-          <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-4">
+          <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4">
             <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Évolution ROAS</h3>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={roasData.weeks}>
                 <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
-                <XAxis dataKey="week" tick={{ fill: '#9ca3af', fontSize: 10, fontFamily: 'Roboto' }} />
-                <YAxis tick={{ fill: '#9ca3af', fontSize: 10, fontFamily: 'Roboto' }} />
+                <XAxis dataKey="week" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontFamily: 'Roboto' }} />
+                <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontFamily: 'Roboto' }} />
                 <Tooltip {...chartTooltipStyle} />
                 <Line type="monotone" dataKey="actual" stroke={getChartAccent()} strokeWidth={2} dot={false} name="Actuals" />
-                <Line type="monotone" dataKey="objective" stroke="#6b7280" strokeWidth={1.5} strokeDasharray="5 5" dot={false} name="Objectifs" />
+                <Line type="monotone" dataKey="objective" stroke="hsl(var(--muted-foreground))" strokeWidth={1.5} strokeDasharray="5 5" dot={false} name="Objectifs" />
               </LineChart>
             </ResponsiveContainer>
           </div>
         )}
-        <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-4">
+        <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4">
           <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Top Keywords SEA</h3>
           {!hasKeywords ? (
             <div className="flex items-center justify-center py-8">
@@ -197,7 +197,7 @@ function SEATab({ rows }: { rows: any[] }) {
           ) : (
             <div className="overflow-x-auto max-h-[260px] overflow-y-auto">
               <table className="w-full text-[12px] font-['Roboto']">
-                <thead className="sticky top-0 bg-card dark:bg-[#0f1422]">
+                <thead className="sticky top-0 bg-card dark:bg-[hsl(var(--brand-ink))]">
                   <tr className="border-b border-border/40">
                     <th className="text-left py-1.5 px-2 text-muted-foreground uppercase">Keyword</th>
                     <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">Clics</th>
@@ -259,7 +259,7 @@ function SMATab({ rows }: { rows: any[] }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {kpis.map((k) => <KpiCard key={k.kpi_name} data={k} />)}
       </div>
-      <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-6">
+      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-6">
         <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Funnel SMA</h3>
         <div className="flex items-end justify-center gap-0">
           <FunnelStep label="Awareness" value={formatVal(reach, 'reach_3s_views')} color={getChartAccent()} ratio={awarenessToConsid} widthPercent={100} />
@@ -268,10 +268,10 @@ function SMATab({ rows }: { rows: any[] }) {
         </div>
       </div>
       {kpis[0]?.weeks.length > 1 && (
-        <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-4 overflow-x-auto">
+        <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4 overflow-x-auto">
           <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Détail par semaine</h3>
           <table className="w-full text-[12px] font-['Roboto'] border-collapse">
-            <thead className="sticky top-0 bg-card dark:bg-[#0f1422] z-10">
+            <thead className="sticky top-0 bg-card dark:bg-[hsl(var(--brand-ink))] z-10">
               <tr>
                 <th className="text-left py-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 border-b border-border/40">KPI</th>
                 {kpis[0].weeks.map((w) => (
@@ -337,7 +337,7 @@ export function LagostinaMediatisation({ learningsButton, learningsPanel }: { le
     return (
       <div className="space-y-4">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-20 bg-card dark:bg-[#0f1422] border border-border/30 animate-pulse" />
+          <div key={i} className="h-20 bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 animate-pulse" />
         ))}
       </div>
     );

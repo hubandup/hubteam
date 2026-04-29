@@ -186,11 +186,11 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2 leading-none">
           <span className="flex items-center justify-center shrink-0">
-            <Calendar size={14} style={{ color: '#0f1422' }} />
+            <Calendar size={14} style={{ color: 'hsl(var(--brand-ink))' }} />
           </span>
           <h3
             className="uppercase tracking-wider font-bold display leading-none"
-            style={{ color: '#0f1422', fontSize: 10 }}
+            style={{ color: 'hsl(var(--brand-ink))', fontSize: 10 }}
           >
             Étapes de rendez-vous
           </h3>
@@ -325,7 +325,7 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
           )}
 
           <DialogFooter>
-            <Button onClick={() => setEditingId(null)} className="rounded-none" style={{ background: '#0f1422', color: '#fff' }}>
+            <Button onClick={() => setEditingId(null)} className="rounded-none" style={{ background: 'hsl(var(--brand-ink))', color: 'hsl(var(--card))' }}>
               Fermer
             </Button>
           </DialogFooter>

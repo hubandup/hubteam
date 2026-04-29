@@ -135,7 +135,7 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
 
       // Detect theme
       const isDark = document.documentElement.classList.contains('dark');
-      const bgColor = isDark ? '#0a0e1a' : '#ffffff';
+      const bgColor = isDark ? '#0a0e1a' : 'hsl(var(--card))';
 
       // Load logos
       const [logoHeader, logoFooter] = await Promise.all([
@@ -240,14 +240,14 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
     }
   };
 
-  const btnClass = "flex items-center justify-center h-8 w-8 text-foreground dark:text-[#E8FF4C] border border-black dark:border-[#E8FF4C] bg-transparent hover:bg-foreground hover:text-background dark:hover:bg-[#E8FF4C] dark:hover:text-foreground transition-colors disabled:opacity-50";
+  const btnClass = "flex items-center justify-center h-8 w-8 text-foreground dark:text-[hsl(var(--brand-yellow))] border border-black dark:border-[hsl(var(--brand-yellow))] bg-transparent hover:bg-foreground hover:text-background dark:hover:bg-[hsl(var(--brand-yellow))] dark:hover:text-foreground transition-colors disabled:opacity-50";
 
   return (
     <div className="flex items-center gap-2">
       <button
         onClick={() => syncFromKDrive()}
         disabled={syncing}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-['Roboto'] font-medium text-foreground dark:text-[#E8FF4C] border border-black dark:border-[#E8FF4C] bg-transparent hover:bg-foreground hover:text-background dark:hover:bg-[#E8FF4C] dark:hover:text-foreground transition-colors disabled:opacity-50"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-['Roboto'] font-medium text-foreground dark:text-[hsl(var(--brand-yellow))] border border-black dark:border-[hsl(var(--brand-yellow))] bg-transparent hover:bg-foreground hover:text-background dark:hover:bg-[hsl(var(--brand-yellow))] dark:hover:text-foreground transition-colors disabled:opacity-50"
       >
         <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
         {syncing ? 'Synchronisation…' : 'Mettre à jour les données'}

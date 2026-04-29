@@ -134,7 +134,7 @@ export function QualificationCollapsible({ trackingId }: Props) {
         className="w-full px-5 py-4 flex items-center justify-between hover:bg-muted transition-colors text-left"
       >
         <div className="flex items-baseline gap-3 min-w-0">
-          <h3 className="display leading-none" style={{ fontSize: 18, fontWeight: 700, color: '#0f1422' }}>
+          <h3 className="display leading-none" style={{ fontSize: 18, fontWeight: 700, color: 'hsl(var(--brand-ink))' }}>
             Qualification du besoin
           </h3>
           <span className="text-muted-foreground whitespace-nowrap leading-none" style={{ fontSize: 12 }}>

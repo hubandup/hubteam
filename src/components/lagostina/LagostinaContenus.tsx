@@ -58,7 +58,7 @@ export function LagostinaContenus() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-32 bg-card dark:bg-[#0f1422] border border-border/30 animate-pulse" />)}
+        {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-32 bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 animate-pulse" />)}
       </div>
     );
   }
@@ -72,7 +72,7 @@ export function LagostinaContenus() {
       {(activeTab) => (
         <>
           {activeTab === 'scorecard' && (
-            <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-5">
+            <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-5">
               <div className="flex items-center gap-2 mb-4">
                 <FileText className="h-4 w-4 text-foreground font-semibold" />
                 <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Scorecard contenus</h3>
@@ -122,7 +122,7 @@ export function LagostinaContenus() {
 
           {activeTab === 'mix_social' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-5">
+              <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <LayoutGrid className="h-4 w-4 text-foreground font-semibold" />
                   <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Mix social</h3>
@@ -132,7 +132,7 @@ export function LagostinaContenus() {
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     {(socialMix || []).map((s) => (
-                      <div key={s.id} className="bg-card dark:bg-[#0f1422] p-4 flex flex-col items-center gap-1">
+                      <div key={s.id} className="bg-card dark:bg-[hsl(var(--brand-ink))] p-4 flex flex-col items-center gap-1">
                         <span className="text-foreground text-2xl font-bold font-['Instrument_Sans']">{s.count}</span>
                         <span className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">
                           {SOCIAL_CATEGORY_LABELS[s.category] || s.category}
@@ -143,7 +143,7 @@ export function LagostinaContenus() {
                 )}
               </div>
 
-              <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-5">
+              <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-5">
                 <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Top performers social</h3>
                 <div className="grid grid-cols-3 gap-3">
                   {[1, 2, 3].map((i) => (
@@ -162,7 +162,7 @@ export function LagostinaContenus() {
           )}
 
           {activeTab === 'learnings' && (
-            <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-5">
+            <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Lightbulb className="h-4 w-4 text-foreground font-semibold" />
                 <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Learnings contenus</h3>

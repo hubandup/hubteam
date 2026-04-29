@@ -127,7 +127,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
     <>
       <div
         className="relative"
-        style={{ background: '#0f1422', border: '2px solid #0f1422', marginBottom: 20 }}
+        style={{ background: 'hsl(var(--brand-ink))', border: '2px solid hsl(var(--brand-ink))', marginBottom: 20 }}
       >
         {/* Header */}
         <div
@@ -137,9 +137,9 @@ export function ClientFollowupBanner({ clientId }: Props) {
           <div className="flex items-center gap-3 min-w-0">
             <div
               className="flex items-center justify-center flex-shrink-0"
-              style={{ width: 28, height: 28, background: '#E8FF4C' }}
+              style={{ width: 28, height: 28, background: 'hsl(var(--brand-yellow))' }}
             >
-              <Sparkles size={14} style={{ color: '#0f1422' }} />
+              <Sparkles size={14} style={{ color: 'hsl(var(--brand-ink))' }} />
             </div>
             <div className="min-w-0">
               <p className="display text-background font-bold truncate" style={{ fontSize: 14 }}>
@@ -194,7 +194,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
                   onClick={copy}
                   disabled={!plainBody}
                   className="inline-flex items-center gap-1 font-semibold text-xs disabled:opacity-50"
-                  style={{ background: '#E8FF4C', color: '#0f1422', padding: '6px 12px' }}
+                  style={{ background: 'hsl(var(--brand-yellow))', color: 'hsl(var(--brand-ink))', padding: '6px 12px' }}
                 >
                   <Copy size={12} /> Copier
                 </button>
@@ -232,7 +232,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
                 onClick={copy}
                 disabled={!plainBody}
                 className="inline-flex items-center gap-1.5 font-semibold text-sm disabled:opacity-50"
-                style={{ background: '#E8FF4C', color: '#0f1422', padding: '8px 16px' }}
+                style={{ background: 'hsl(var(--brand-yellow))', color: 'hsl(var(--brand-ink))', padding: '8px 16px' }}
               >
                 <Copy size={14} /> Copier
               </button>
@@ -279,7 +279,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
                     <li key={i} className="text-xs text-background/70 flex items-center gap-2">
                       <span
                         className="uppercase font-semibold tracking-wider"
-                        style={{ background: 'rgba(232,255,76,0.15)', color: '#E8FF4C', padding: '1px 6px', fontSize: 9 }}
+                        style={{ background: 'rgba(232,255,76,0.15)', color: 'hsl(var(--brand-yellow))', padding: '1px 6px', fontSize: 9 }}
                       >
                         {s.kind}
                       </span>

@@ -121,7 +121,7 @@ export function ScrapeUrlsManagerModal({ open, onOpenChange, trackingId }: Props
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 display">
-            <Link2 className="h-5 w-5" style={{ color: '#0f1422' }} />
+            <Link2 className="h-5 w-5" style={{ color: 'hsl(var(--brand-ink))' }} />
             URLs veille IA
           </DialogTitle>
           <DialogDescription>
@@ -154,7 +154,7 @@ export function ScrapeUrlsManagerModal({ open, onOpenChange, trackingId }: Props
               onChange={(e) => setLabel(e.target.value)}
               className="md:w-[200px] rounded-none"
             />
-            <Button onClick={add} className="rounded-none" style={{ background: '#0f1422', color: '#fff' }}>
+            <Button onClick={add} className="rounded-none" style={{ background: 'hsl(var(--brand-ink))', color: 'hsl(var(--card))' }}>
               <Plus className="h-4 w-4 mr-1" /> Ajouter
             </Button>
           </div>
@@ -190,7 +190,7 @@ export function ScrapeUrlsManagerModal({ open, onOpenChange, trackingId }: Props
               {urls.map((u: any) => (
                 <li key={u.id} className="border border-border p-3 flex items-start gap-2">
                   <div className="flex-1 min-w-0">
-                    {u.label && <p className="text-sm font-medium" style={{ color: '#0f1422' }}>{u.label}</p>}
+                    {u.label && <p className="text-sm font-medium" style={{ color: 'hsl(var(--brand-ink))' }}>{u.label}</p>}
                     <a
                       href={u.url}
                       target="_blank"

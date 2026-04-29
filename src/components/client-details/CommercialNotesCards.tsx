@@ -208,7 +208,7 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
       {/* Header */}
       <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-baseline gap-3 min-w-0">
-          <h3 className="display leading-none" style={{ fontSize: 18, fontWeight: 700, color: '#0f1422' }}>
+          <h3 className="display leading-none" style={{ fontSize: 18, fontWeight: 700, color: 'hsl(var(--brand-ink))' }}>
             Comptes rendus
           </h3>
           <span className="text-muted-foreground whitespace-nowrap leading-none" style={{ fontSize: 12 }}>
@@ -231,7 +231,7 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                   onClick={() => { setPrivacyFilter(opt.value); setShowAll(false); }}
                   className={`leading-none transition-colors ${active ? 'text-background' : 'text-foreground hover:bg-muted'}`}
                   style={{
-                    background: active ? '#0f1422' : 'transparent',
+                    background: active ? 'hsl(var(--brand-ink))' : 'transparent',
                     padding: '6px 10px',
                     fontSize: 11,
                     fontWeight: 600,
@@ -247,7 +247,7 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
             type="button"
             onClick={() => setOpenAdd(true)}
             className="inline-flex items-center gap-1 font-semibold text-background shrink-0"
-            style={{ background: '#0f1422', padding: '6px 12px', fontSize: 12 }}
+            style={{ background: 'hsl(var(--brand-ink))', padding: '6px 12px', fontSize: 12 }}
           >
             <Plus size={12} /> Ajouter un CR
           </button>
@@ -285,7 +285,7 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold" style={{ fontSize: 14, color: '#0f1422' }}>
+                      <p className="font-semibold" style={{ fontSize: 14, color: 'hsl(var(--brand-ink))' }}>
                         {format(extractMeetingDate(n.content || '', n.created_at), 'd MMMM yyyy', { locale: fr })}
                       </p>
                       {n.is_private && (
@@ -391,7 +391,7 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                     onClick={() => setNewIsPrivate(opt.value)}
                     className={`leading-none transition-colors ${active ? 'text-background' : 'text-foreground hover:bg-muted'}`}
                     style={{
-                      background: active ? '#0f1422' : 'transparent',
+                      background: active ? 'hsl(var(--brand-ink))' : 'transparent',
                       padding: '6px 12px',
                       fontSize: 11,
                       fontWeight: 600,
@@ -449,7 +449,7 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                     onClick={() => setEditIsPrivate(opt.value)}
                     className={`leading-none transition-colors ${active ? 'text-background' : 'text-foreground hover:bg-muted'}`}
                     style={{
-                      background: active ? '#0f1422' : 'transparent',
+                      background: active ? 'hsl(var(--brand-ink))' : 'transparent',
                       padding: '6px 12px',
                       fontSize: 11,
                       fontWeight: 600,

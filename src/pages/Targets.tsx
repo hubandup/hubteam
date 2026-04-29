@@ -25,8 +25,8 @@ const SECTION_META: Record<Exclude<UrgencyBucket, 'none'> | 'noneOrFuture', {
 }> = {
   late: { title: 'En retard', color: '#DC2626' },
   week: { title: 'Cette semaine', color: '#EA580C' },
-  month: { title: 'À venir / Sans échéance', color: '#94A3B8' },
-  noneOrFuture: { title: 'À venir / Sans échéance', color: '#94A3B8' },
+  month: { title: 'À venir / Sans échéance', color: 'hsl(var(--muted-foreground))' },
+  noneOrFuture: { title: 'À venir / Sans échéance', color: 'hsl(var(--muted-foreground))' },
 };
 
 export default function Targets() {
@@ -177,9 +177,9 @@ export default function Targets() {
           <div className="flex items-center gap-3">
             <div
               className="w-10 h-10 flex items-center justify-center shrink-0"
-              style={{ backgroundColor: '#E8FF4C' }}
+              style={{ backgroundColor: 'hsl(var(--brand-yellow))' }}
             >
-              <Star size={18} fill="#0f1422" stroke="#0f1422" />
+              <Star size={18} fill="hsl(var(--brand-ink))" stroke="hsl(var(--brand-ink))" />
             </div>
             <div>
               <h1
@@ -341,7 +341,7 @@ export default function Targets() {
             {visibleSections.rest.length > 0 && (
               <SectionBlock
                 title="À venir / Sans échéance"
-                color="#94A3B8"
+                color="hsl(var(--muted-foreground))"
                 count={sections.rest.length}
                 items={visibleSections.rest}
                 onClick={goClient}

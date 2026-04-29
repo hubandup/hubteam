@@ -59,7 +59,7 @@ export function getStatusStyle(bucket: StatusBucket): {
     case 'client':
       return { bg: '#ECFDF5', text: '#047857', dot: '#059669', label: 'Client actif' };
     case 'relancer':
-      return { bg: '#FFF7ED', text: '#C2410C', dot: '#EA580C', label: 'À relancer' };
+      return { bg: 'hsl(var(--card))7ED', text: '#C2410C', dot: '#EA580C', label: 'À relancer' };
   }
 }
 

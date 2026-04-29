@@ -18,9 +18,9 @@ const MEDIA_ICONS: Record<string, { icon: string; color: string }> = {
   'instagram': { icon: '📸', color: '#E1306C' },
   'ytb': { icon: '▶️', color: '#FF0000' },
   'youtube': { icon: '▶️', color: '#FF0000' },
-  'tiktok': { icon: '🎵', color: '#000000' },
+  'tiktok': { icon: '🎵', color: 'hsl(var(--foreground))' },
   'pinterest': { icon: '📌', color: '#E60023' },
-  'blogs cuisine': { icon: '📝', color: '#6b7280' },
+  'blogs cuisine': { icon: '📝', color: 'hsl(var(--muted-foreground))' },
   'ytb shorts': { icon: '▶️', color: '#FF0000' },
 };
 
@@ -29,7 +29,7 @@ function MediaBadges({ mediaStr }: { mediaStr: string }) {
   return (
     <div className="flex gap-1.5 flex-wrap">
       {parts.map((m) => {
-        const info = MEDIA_ICONS[m] || { icon: '📡', color: '#6b7280' };
+        const info = MEDIA_ICONS[m] || { icon: '📡', color: 'hsl(var(--muted-foreground))' };
         return (
           <span key={m} className="inline-flex items-center gap-1 px-2 py-0.5 bg-foreground/5/10 text-xs font-['Roboto']">
             <span>{info.icon}</span>
@@ -177,8 +177,8 @@ export function ActivationPersonas() {
             onClick={() => setSelectedPriority(p)}
             className={`px-4 py-2 text-sm font-['Roboto'] transition-colors ${
               selectedPriority === p
-                ? 'bg-foreground text-background dark:bg-[#E8FF4C] font-medium'
-                : 'bg-card dark:bg-[#0f1422] border border-border/30 text-muted-foreground hover:text-foreground'
+                ? 'bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] font-medium'
+                : 'bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 text-muted-foreground hover:text-foreground'
             }`}
           >
             {p.replace('_', ' ').toUpperCase()}
@@ -191,8 +191,8 @@ export function ActivationPersonas() {
                 onClick={() => setSelectedPriority(p)}
                 className={`px-4 py-2 text-sm font-['Roboto'] transition-colors ${
                   selectedPriority === p
-                    ? 'bg-foreground text-background dark:bg-[#E8FF4C] font-medium'
-                    : 'bg-card dark:bg-[#0f1422] border border-border/30 text-muted-foreground hover:text-foreground'
+                    ? 'bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] font-medium'
+                    : 'bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {p.replace('_', ' ').toUpperCase()}
@@ -204,7 +204,7 @@ export function ActivationPersonas() {
 
       {/* Status bar */}
       {filteredStatus.length > 0 && (
-        <div className="bg-card dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
+        <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
           <table className="w-full text-xs font-['Roboto']">
             <thead>
               <tr className="border-b border-border/40">
@@ -244,7 +244,7 @@ export function ActivationPersonas() {
                   <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">Personas</h3>
                 </div>
                 {filteredPersonas.length === 0 ? (
-                  <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-6 text-center text-muted-foreground font-['Roboto'] text-sm">
+                  <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-6 text-center text-muted-foreground font-['Roboto'] text-sm">
                     Aucun persona défini pour cette priorité
                   </div>
                 ) : (
@@ -270,7 +270,7 @@ export function ActivationPersonas() {
                               </div>
                             </div>
                             {persona.market_weight && (
-                              <span className="bg-foreground text-background dark:bg-[#E8FF4C] px-2 py-0.5 text-xs font-['Roboto'] font-bold flex-shrink-0">
+                              <span className="bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] px-2 py-0.5 text-xs font-['Roboto'] font-bold flex-shrink-0">
                                 {persona.market_weight}
                               </span>
                             )}
@@ -329,7 +329,7 @@ export function ActivationPersonas() {
                         <Package className="h-4 w-4 text-foreground font-semibold" />
                         <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">Produit</h3>
                       </div>
-                      <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-4">
+                      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4">
                         <div className="grid grid-cols-2 gap-4">
                           {d.flagship && (
                             <div className="col-span-2">
@@ -393,7 +393,7 @@ export function ActivationPersonas() {
                         <Store className="h-4 w-4 text-foreground font-semibold" />
                         <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">Distribution</h3>
                       </div>
-                      <div className="bg-card dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
+                      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
                         {channels && channels.length > 0 ? (
                           <table className="w-full text-xs font-['Roboto']">
                             <thead>
@@ -447,7 +447,7 @@ export function ActivationPersonas() {
                           {section === 'sell_in' ? 'Sell-in' : 'Sell-out'}
                         </h3>
                       </div>
-                      <div className="bg-card dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
+                      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
                         {rows && rows.length > 0 ? (
                           <table className="w-full text-xs font-['Roboto']">
                             <thead>

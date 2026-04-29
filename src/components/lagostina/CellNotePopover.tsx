@@ -126,7 +126,7 @@ export function NoteableCell({
   const tooltipTimeout = useRef<ReturnType<typeof setTimeout>>(null);
 
   const hasNote = !!note;
-  const noteColor = levierColor || '#E8FF4C';
+  const noteColor = levierColor || 'hsl(var(--brand-yellow))';
 
   const handleClick = () => {
     if (!showEditor) setShowEditor(true);
@@ -314,7 +314,7 @@ function NoteEditor({
         <button
           onClick={handleSave}
           disabled={saveMutation.isPending}
-          className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-foreground text-background dark:bg-[#E8FF4C] font-['Roboto'] font-medium hover:opacity-80 transition-opacity disabled:opacity-50"
+          className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] font-['Roboto'] font-medium hover:opacity-80 transition-opacity disabled:opacity-50"
         >
           <Check className="h-3 w-3" />
           {saveMutation.isPending ? '...' : 'Valider'}

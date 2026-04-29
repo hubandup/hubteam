@@ -16,7 +16,7 @@ export function useCapacitor() {
 
         // Configure status bar
         await StatusBar.setStyle({ style: Style.Light });
-        await StatusBar.setBackgroundColor({ color: '#ffffff' });
+        await StatusBar.setBackgroundColor({ color: 'hsl(var(--card))' });
 
         // Configure keyboard
         Keyboard.setAccessoryBarVisible({ isVisible: true });

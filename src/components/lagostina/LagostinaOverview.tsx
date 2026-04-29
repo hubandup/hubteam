@@ -6,13 +6,13 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { LagostinaSubTabs } from './LagostinaSubTabs';
 
 function getChartAccent(): string {
-  if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) return '#E8FF4C';
-  return '#0f1422';
+  if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) return 'hsl(var(--brand-yellow))';
+  return 'hsl(var(--brand-ink))';
 }
 
 function KpiCardSkeleton() {
   return (
-    <div className="bg-card dark:bg-[#0f1422] border border-border/30 border-l-[3px] border-black dark:border-white p-5 animate-pulse">
+    <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border-l-[3px] border-black dark:border-white p-5 animate-pulse">
       <div className="h-3 w-20 bg-muted mb-3" />
       <div className="h-8 w-32 bg-muted mb-2" />
       <div className="h-3 w-16 bg-muted" />
@@ -29,7 +29,7 @@ interface KpiCardProps {
 
 function KpiCard({ label, value, icon, trend }: KpiCardProps) {
   return (
-    <div className="bg-card dark:bg-[#0f1422] border border-border/30 border-l-[3px] border-black dark:border-white p-5 flex flex-col gap-1">
+    <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border-l-[3px] border-black dark:border-white p-5 flex flex-col gap-1">
       <div className="flex items-center gap-2 text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">
         {icon}
         {label}
@@ -150,7 +150,7 @@ export function LagostinaOverview() {
         {(role === 'admin' || role === 'team') && (
           <button
             onClick={() => navigate('/admin/lagostina')}
-            className="mt-2 px-4 py-2 bg-foreground text-[#0f1422] font-['Roboto'] font-medium text-sm hover:bg-[#d4eb3d] transition-colors"
+            className="mt-2 px-4 py-2 bg-foreground text-[hsl(var(--brand-ink))] font-['Roboto'] font-medium text-sm hover:bg-[#d4eb3d] transition-colors"
           >
             Aller à l'admin
           </button>
@@ -194,7 +194,7 @@ export function LagostinaOverview() {
                     value={roasMoyen.toFixed(2)}
                     icon={<DollarSign className="h-3.5 w-3.5" />}
                   />
-                  <div className="bg-card dark:bg-[#0f1422] border border-border/30 border-l-[3px] border-black dark:border-white p-5 flex flex-col gap-1">
+                  <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border-l-[3px] border-black dark:border-white p-5 flex flex-col gap-1">
                     <div className="flex items-center gap-2 text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">
                       <PieChart className="h-3.5 w-3.5" />
                       Budget engagé
@@ -227,11 +227,11 @@ export function LagostinaOverview() {
           {activeTab === 'status' && (
             <div className="space-y-6">
               {loadingCategory ? (
-                <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-4 animate-pulse">
+                <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4 animate-pulse">
                   {Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-10 bg-muted mb-2" />)}
                 </div>
               ) : Object.keys(priorityGroups).length > 0 ? (
-                <div className="bg-card dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
+                <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border/40">

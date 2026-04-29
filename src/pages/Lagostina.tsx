@@ -43,15 +43,15 @@ function TabSkeleton() {
 function EmptyState({ section, role }: { section: string; role: string | null }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 gap-4">
-      <Database className="h-12 w-12 text-[#9ca3af]" />
+      <Database className="h-12 w-12 text-[hsl(var(--muted-foreground))]" />
       <p className="text-foreground font-['Roboto'] text-sm">Données {section} non disponibles</p>
-      <p className="text-[#9ca3af] font-['Roboto'] text-xs">En attente de synchronisation</p>
+      <p className="text-[hsl(var(--muted-foreground))] font-['Roboto'] text-xs">En attente de synchronisation</p>
       {(role === 'admin' || role === 'team') ? (
-        <a href="/admin/lagostina" className="px-4 py-2 border border-black dark:border-[#E8FF4C] text-foreground dark:text-[#E8FF4C] font-['Roboto'] text-sm hover:bg-foreground hover:text-background dark:hover:bg-[#E8FF4C] dark:hover:text-foreground transition-colors">
+        <a href="/admin/lagostina" className="px-4 py-2 border border-black dark:border-[hsl(var(--brand-yellow))] text-foreground dark:text-[hsl(var(--brand-yellow))] font-['Roboto'] text-sm hover:bg-foreground hover:text-background dark:hover:bg-[hsl(var(--brand-yellow))] dark:hover:text-foreground transition-colors">
           Synchroniser
         </a>
       ) : (
-        <p className="text-[#6b7280] font-['Roboto'] text-xs">Contactez l'équipe Hub & Up</p>
+        <p className="text-[hsl(var(--muted-foreground))] font-['Roboto'] text-xs">Contactez l'équipe Hub & Up</p>
       )}
     </div>
   );
@@ -75,8 +75,8 @@ export default function Lagostina() {
       onClick={() => setShowLearnings(!showLearnings)}
       className={`flex items-center gap-2 px-5 py-2.5 text-sm font-['Roboto'] font-medium transition-colors border ${
         showLearnings
-          ? 'bg-foreground text-background dark:bg-[#E8FF4C] border-black dark:border-[#E8FF4C]'
-          : 'bg-card dark:bg-[#0f1422] text-foreground border-border/50 hover:bg-muted/50'
+          ? 'bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] border-black dark:border-[hsl(var(--brand-yellow))]'
+          : 'bg-card dark:bg-[hsl(var(--brand-ink))] text-foreground border-border/50 hover:bg-muted/50'
       }`}
     >
       <SquarePen className="h-4 w-4" />
@@ -92,7 +92,7 @@ export default function Lagostina() {
           <h1 className="text-2xl font-bold text-foreground font-['Instrument_Sans'] tracking-tight">
             Lagostina
           </h1>
-          <p className="text-[#6b7280] font-['Roboto'] text-sm mt-1">
+          <p className="text-[hsl(var(--muted-foreground))] font-['Roboto'] text-sm mt-1">
             Dashboard de pilotage — Groupe SEB
           </p>
         </div>
@@ -117,8 +117,8 @@ export default function Lagostina() {
               className={`
                 px-4 py-3 text-sm font-['Roboto'] whitespace-nowrap transition-all duration-150 border-b-2
                 ${activeTab === tab.id
-                  ? 'text-foreground dark:text-[#E8FF4C] border-black dark:border-[#E8FF4C] font-medium'
-                  : 'text-[#9ca3af] border-transparent hover:text-[#6b7280]'}
+                  ? 'text-foreground dark:text-[hsl(var(--brand-yellow))] border-black dark:border-[hsl(var(--brand-yellow))] font-medium'
+                  : 'text-[hsl(var(--muted-foreground))] border-transparent hover:text-[hsl(var(--muted-foreground))]'}
               `}
             >
               {tab.label}

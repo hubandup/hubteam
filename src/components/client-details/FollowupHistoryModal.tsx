@@ -16,7 +16,7 @@ export function FollowupHistoryModal({ open, onOpenChange, trackingId }: Props) 
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 display">
-            <History className="h-5 w-5" style={{ color: '#0f1422' }} />
+            <History className="h-5 w-5" style={{ color: 'hsl(var(--brand-ink))' }} />
             Historique des excuses générées
           </DialogTitle>
           <DialogDescription>
