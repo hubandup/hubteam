@@ -84,7 +84,7 @@ export function TargetCard({ client, onClick, onEdited }: TargetCardProps) {
   return (
     <>
       <div
-        className="group relative bg-white border border-neutral-200 hover:border-neutral-400 transition-colors cursor-pointer"
+        className="group relative bg-card border border-border hover:border-foreground/40 transition-colors cursor-pointer"
         onClick={onClick}
       >
         {/* Badge urgence */}
