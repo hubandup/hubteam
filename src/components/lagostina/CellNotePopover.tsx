@@ -189,7 +189,7 @@ function NoteTooltip({ note, noteColor, onEdit }: { note: CellNote; noteColor: s
 
   return (
     <div
-      className="absolute z-[100] top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-white dark:bg-[#1a1f2e] shadow-lg p-3 text-left"
+      className="absolute z-[100] top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-card dark:bg-[#1a1f2e] shadow-lg p-3 text-left"
       style={{ borderWidth: 1, borderStyle: 'solid', borderColor: noteColor }}
       onClick={(e) => e.stopPropagation()}
     >
@@ -291,7 +291,7 @@ function NoteEditor({
 
   return (
     <div
-      className="absolute z-[100] top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-white dark:bg-[#1a1f2e] border border-border/40 shadow-lg p-3"
+      className="absolute z-[100] top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-card dark:bg-[#1a1f2e] border border-border/40 shadow-lg p-3"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between mb-2">
@@ -314,7 +314,7 @@ function NoteEditor({
         <button
           onClick={handleSave}
           disabled={saveMutation.isPending}
-          className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-black text-white dark:bg-[#E8FF4C] dark:text-black font-['Roboto'] font-medium hover:opacity-80 transition-opacity disabled:opacity-50"
+          className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-foreground text-background dark:bg-[#E8FF4C] font-['Roboto'] font-medium hover:opacity-80 transition-opacity disabled:opacity-50"
         >
           <Check className="h-3 w-3" />
           {saveMutation.isPending ? '...' : 'Valider'}

@@ -6,7 +6,7 @@ import { LagostinaSubTabs } from './LagostinaSubTabs';
 
 function SectionCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-5">
+    <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-5">
       <div className="flex items-center gap-2 mb-4">
         {icon}
         <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">{title}</h3>
@@ -32,7 +32,7 @@ function Stars({ score }: { score: number }) {
   return (
     <span className="inline-flex gap-0.5">
       {[1, 2, 3, 4, 5].map((s) => (
-        <Star key={s} className={`h-3 w-3 ${s <= Math.round(score) ? 'text-black dark:text-white font-semibold fill-black dark:fill-[#E8FF4C]' : 'text-muted-foreground'}`} />
+        <Star key={s} className={`h-3 w-3 ${s <= Math.round(score) ? 'text-foreground font-semibold fill-black dark:fill-[#E8FF4C]' : 'text-muted-foreground'}`} />
       ))}
     </span>
   );
@@ -72,7 +72,7 @@ export function LagostinaConsumer() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-32 bg-white dark:bg-[#0f1422] border border-border/30 animate-pulse" />)}
+        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-32 bg-card dark:bg-[#0f1422] border border-border/30 animate-pulse" />)}
       </div>
     );
   }
@@ -95,7 +95,7 @@ export function LagostinaConsumer() {
         <>
           {activeTab === 'demographics' && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <SectionCard title="Échantillon & Démographie" icon={<Users className="h-4 w-4 text-black dark:text-white font-semibold" />}>
+              <SectionCard title="Échantillon & Démographie" icon={<Users className="h-4 w-4 text-foreground font-semibold" />}>
                 {sampleMetrics.length > 0 ? (
                   sampleMetrics.map((m) => (
                     <MetricRow key={m.id} label={m.metric_name} value={m.value_current || '—'} sub={m.vs_reference || undefined} />
@@ -105,7 +105,7 @@ export function LagostinaConsumer() {
                 )}
               </SectionCard>
 
-              <SectionCard title="Valeur" icon={<ShoppingCart className="h-4 w-4 text-black dark:text-white font-semibold" />}>
+              <SectionCard title="Valeur" icon={<ShoppingCart className="h-4 w-4 text-foreground font-semibold" />}>
                 {valueMetrics.length > 0 ? (
                   valueMetrics.map((m) => (
                     <MetricRow key={m.id} label={m.metric_name} value={m.value_current || '—'} sub={m.vs_reference || undefined} />
@@ -115,14 +115,14 @@ export function LagostinaConsumer() {
                 )}
               </SectionCard>
 
-              <SectionCard title="Rapport à la cuisine" icon={<ChefHat className="h-4 w-4 text-black dark:text-white font-semibold" />}>
+              <SectionCard title="Rapport à la cuisine" icon={<ChefHat className="h-4 w-4 text-foreground font-semibold" />}>
                 {cuisineMetrics.length > 0 ? (
                   <>
                     {cuisineMetrics.map((m) => (
                       <MetricRow key={m.id} label={m.metric_name} value={m.value_current || '—'} />
                     ))}
                     {cuisineMetrics.filter((m) => m.comment).length > 0 && (
-                      <div className="mt-3 bg-white dark:bg-[#0f1422] p-3 max-h-24 overflow-y-auto">
+                      <div className="mt-3 bg-card dark:bg-[#0f1422] p-3 max-h-24 overflow-y-auto">
                         <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-1">Verbatims</p>
                         {cuisineMetrics.filter((m) => m.comment).map((m) => (
                           <p key={m.id} className="text-foreground text-xs font-['Roboto'] italic">"{m.comment}"</p>
@@ -138,15 +138,15 @@ export function LagostinaConsumer() {
           )}
 
           {activeTab === 'brand' && (
-            <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-5">
+            <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-5">
               <div className="flex items-center gap-2 mb-4">
-                <Eye className="h-4 w-4 text-black dark:text-white font-semibold" />
+                <Eye className="h-4 w-4 text-foreground font-semibold" />
                 <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Brand Monitoring</h3>
               </div>
               {brandMetrics.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {brandMetrics.map((m) => (
-                    <div key={m.id} className="bg-white dark:bg-[#0f1422] p-3 border-l-[3px] border-black dark:border-white">
+                    <div key={m.id} className="bg-card dark:bg-[#0f1422] p-3 border-l-[3px] border-black dark:border-white">
                       <div className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">{m.metric_name}</div>
                       <div className="text-foreground text-lg font-bold font-['Instrument_Sans'] mt-1">{m.value_current || '—'}</div>
                       {m.vs_brand && <div className="text-muted-foreground text-xs font-['Roboto']">vs. {m.vs_brand}</div>}
@@ -163,17 +163,17 @@ export function LagostinaConsumer() {
           )}
 
           {activeTab === 'rnr' && (
-            <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-5">
+            <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-black dark:text-white font-semibold" />
+                  <MessageSquare className="h-4 w-4 text-foreground font-semibold" />
                   <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Ratings & Reviews</h3>
                 </div>
                 {platforms.length > 0 && (
                   <div className="flex gap-1">
                     <button
                       onClick={() => { setPlatformFilter('all'); setRnrPage(0); }}
-                      className={`px-3 py-1 text-xs font-['Roboto'] ${platformFilter === 'all' ? 'bg-black text-white' : 'bg-gray-100 text-muted-foreground hover:text-foreground'}`}
+                      className={`px-3 py-1 text-xs font-['Roboto'] ${platformFilter === 'all' ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
                     >
                       Tout
                     </button>
@@ -181,7 +181,7 @@ export function LagostinaConsumer() {
                       <button
                         key={p}
                         onClick={() => { setPlatformFilter(p); setRnrPage(0); }}
-                        className={`px-3 py-1 text-xs font-['Roboto'] capitalize ${platformFilter === p ? 'bg-black text-white' : 'bg-gray-100 text-muted-foreground hover:text-foreground'}`}
+                        className={`px-3 py-1 text-xs font-['Roboto'] capitalize ${platformFilter === p ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
                       >
                         {p}
                       </button>
@@ -210,7 +210,7 @@ export function LagostinaConsumer() {
                       </thead>
                       <tbody>
                         {pagedRnr.map((r) => (
-                          <tr key={r.id} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
+                          <tr key={r.id} className="border-b border-border/20 hover:bg-muted dark:bg-[#141928]">
                             <td className="py-2 px-2 text-foreground capitalize">{r.platform}</td>
                             <td className="py-2 px-2 text-foreground">{r.product_name}</td>
                             <td className="py-2 px-2 text-muted-foreground">{r.week}</td>
@@ -230,7 +230,7 @@ export function LagostinaConsumer() {
                         <button
                           key={i}
                           onClick={() => setRnrPage(i)}
-                          className={`w-7 h-7 text-xs font-['Roboto'] ${rnrPage === i ? 'bg-black text-white' : 'bg-gray-100 text-muted-foreground hover:text-foreground'}`}
+                          className={`w-7 h-7 text-xs font-['Roboto'] ${rnrPage === i ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
                         >
                           {i + 1}
                         </button>

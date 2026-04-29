@@ -290,7 +290,7 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
                     <p className="font-semibold" style={{ color: '#0f1422' }}>
                       Lien Calendly attribué : {resolvedCalendly.owner === 'amandine' ? 'Amandine' : 'Charles'}
                     </p>
-                    <p className="text-[11px] text-neutral-700 truncate">{resolvedCalendly.url}</p>
+                    <p className="text-[11px] text-foreground truncate">{resolvedCalendly.url}</p>
                   </div>
                 </div>
               ) : (
@@ -299,7 +299,7 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
                   style={{ background: 'rgba(255,200,0,0.12)', border: '1px solid rgba(255,160,0,0.35)' }}
                 >
                   <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: '#a15c00' }} />
-                  <p className="text-neutral-800">
+                  <p className="text-foreground">
                     Aucun lien Calendly configuré pour cette action. Le message sera généré sans lien de réservation.
                   </p>
                 </div>
@@ -321,7 +321,7 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
         </DialogFooter>
 
         {/* Historique des excuses générées */}
-        <div className="mt-2 pt-4 border-t border-neutral-200">
+        <div className="mt-2 pt-4 border-t border-border">
           <div className="flex items-center gap-2 mb-3">
             <History className="h-4 w-4" style={{ color: '#0f1422' }} />
             <h4 className="display font-bold" style={{ fontSize: 14, color: '#0f1422' }}>

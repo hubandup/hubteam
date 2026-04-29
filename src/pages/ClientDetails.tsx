@@ -140,7 +140,7 @@ export default function ClientDetails() {
       <div className="flex items-center justify-center h-screen px-4">
         <div className="max-w-md w-full text-center space-y-4">
           <div className="text-2xl font-semibold display">Fiche client introuvable</div>
-          <p className="text-neutral-600">Vous n'avez pas accès à cette fiche client ou elle n'existe pas.</p>
+          <p className="text-foreground">Vous n'avez pas accès à cette fiche client ou elle n'existe pas.</p>
           <div className="flex items-center justify-center gap-2">
             <Button variant="outline" onClick={() => navigate(-1)}>Retour</Button>
             <Button onClick={() => navigate('/')}>Aller à l'accueil</Button>
@@ -204,7 +204,7 @@ export default function ClientDetails() {
         </div>
 
         {/* HEADER + TABS dans le même conteneur blanc */}
-        <div className="bg-white border border-neutral-200">
+        <div className="bg-card border border-border">
           {/* Header */}
           <div className="p-6 flex items-start gap-4">
             {/* Logo carré */}
@@ -237,19 +237,19 @@ export default function ClientDetails() {
               </div>
 
               {/* Ligne 2 : contact / email / phone */}
-              <div className="flex items-center flex-wrap text-[14px] text-neutral-600" style={{ gap: 20 }}>
+              <div className="flex items-center flex-wrap text-[14px] text-foreground" style={{ gap: 20 }}>
                 {mainContactName && (
                   <span className="inline-flex items-center gap-1.5">
                     <UserIcon size={14} /> {mainContactName}
                   </span>
                 )}
                 {client.email && (
-                  <a href={`mailto:${client.email}`} className="inline-flex items-center gap-1.5 hover:text-neutral-900">
+                  <a href={`mailto:${client.email}`} className="inline-flex items-center gap-1.5 hover:text-foreground">
                     <Mail size={14} /> {client.email}
                   </a>
                 )}
                 {client.phone && (
-                  <a href={`tel:${client.phone}`} className="inline-flex items-center gap-1.5 hover:text-neutral-900">
+                  <a href={`tel:${client.phone}`} className="inline-flex items-center gap-1.5 hover:text-foreground">
                     <Phone size={14} /> {client.phone}
                   </a>
                 )}
@@ -270,7 +270,7 @@ export default function ClientDetails() {
                         {(hubOwner.first_name?.[0] || '?').toUpperCase()}
                       </span>
                     )}
-                    <span className="text-neutral-700">
+                    <span className="text-foreground">
                       {[hubOwner.first_name, hubOwner.last_name].filter(Boolean).join(' ')}
                     </span>
                   </span>
@@ -283,7 +283,7 @@ export default function ClientDetails() {
                   {metaTags.map((t, i) => (
                     <span
                       key={i}
-                      className="inline-flex items-center gap-1 bg-neutral-100 text-neutral-700"
+                      className="inline-flex items-center gap-1 bg-muted text-foreground"
                       style={{ padding: '4px 8px', fontSize: 12 }}
                     >
                       {t.startsWith('Dernière interaction') && <Clock size={12} />}
@@ -345,7 +345,7 @@ export default function ClientDetails() {
           </div>
 
           {/* Tabs sous le header dans le même conteneur */}
-          <div className="border-t border-neutral-200 px-6">
+          <div className="border-t border-border px-6">
             <div className="flex items-center overflow-x-auto" style={{ gap: 24 }}>
               {tabs.map((tab) => {
                 const isActive = currentTab?.value === tab.value;
@@ -357,7 +357,7 @@ export default function ClientDetails() {
                       'py-3 text-sm whitespace-nowrap transition-colors border-b-2 -mb-px inline-flex items-center gap-2',
                       isActive
                         ? 'font-semibold'
-                        : 'text-neutral-500 hover:text-neutral-800 border-transparent',
+                        : 'text-muted-foreground hover:text-foreground border-transparent',
                     )}
                     style={isActive ? { color: '#0f1422', borderColor: '#0f1422' } : undefined}
                   >

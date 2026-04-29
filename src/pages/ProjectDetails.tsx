@@ -164,8 +164,8 @@ export default function ProjectDetails() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        <Loader2 className="h-6 w-6 animate-spin text-black" />
+      <div className="flex items-center justify-center h-screen bg-card">
+        <Loader2 className="h-6 w-6 animate-spin text-foreground" />
       </div>
     );
   }
@@ -212,7 +212,7 @@ export default function ProjectDetails() {
             <ChevronDown size={11} />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="bg-white border border-[#E8E8E8] shadow-sm rounded-none p-1 min-w-[160px]">
+        <DropdownMenuContent align="start" className="bg-card border border-[#E8E8E8] shadow-sm rounded-none p-1 min-w-[160px]">
           {Object.entries(statusConfig).map(([key, cfg]) => (
             <DropdownMenuItem
               key={key}
@@ -240,7 +240,7 @@ export default function ProjectDetails() {
   );
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-card min-h-screen">
       <div className="max-w-[960px] px-7 py-7 space-y-6">
 
         {/* ── Header ───────────────────────────────────────────────────── */}
@@ -249,7 +249,7 @@ export default function ProjectDetails() {
           {/* Back */}
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 text-[#9A9A9A] hover:text-black transition-colors"
+            className="flex items-center gap-1.5 text-[#9A9A9A] hover:text-foreground transition-colors"
             style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 600, fontSize: 12, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           >
             <ArrowLeft size={14} />

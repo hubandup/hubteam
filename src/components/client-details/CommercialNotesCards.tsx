@@ -204,20 +204,20 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
   };
 
   return (
-    <section className="bg-white border border-neutral-200">
+    <section className="bg-card border border-border">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-neutral-200 flex items-center justify-between gap-3 flex-wrap">
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-baseline gap-3 min-w-0">
           <h3 className="display leading-none" style={{ fontSize: 18, fontWeight: 700, color: '#0f1422' }}>
             Comptes rendus
           </h3>
-          <span className="text-neutral-500 whitespace-nowrap leading-none" style={{ fontSize: 12 }}>
+          <span className="text-muted-foreground whitespace-nowrap leading-none" style={{ fontSize: 12 }}>
             {visible.length} affiché{visible.length > 1 ? 's' : ''} · {filteredNotes.length}{filteredNotes.length !== notes.length ? ` / ${notes.length}` : ''} au total
           </span>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {/* Filter */}
-          <div className="inline-flex border border-neutral-200" role="group" aria-label="Filtrer par confidentialité">
+          <div className="inline-flex border border-border" role="group" aria-label="Filtrer par confidentialité">
             {([
               { value: 'all', label: 'Tous' },
               { value: 'public', label: 'Publics' },
@@ -229,7 +229,7 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                   key={opt.value}
                   type="button"
                   onClick={() => { setPrivacyFilter(opt.value); setShowAll(false); }}
-                  className={`leading-none transition-colors ${active ? 'text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}
+                  className={`leading-none transition-colors ${active ? 'text-background' : 'text-foreground hover:bg-muted'}`}
                   style={{
                     background: active ? '#0f1422' : 'transparent',
                     padding: '6px 10px',
@@ -246,7 +246,7 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
           <button
             type="button"
             onClick={() => setOpenAdd(true)}
-            className="inline-flex items-center gap-1 font-semibold text-white shrink-0"
+            className="inline-flex items-center gap-1 font-semibold text-background shrink-0"
             style={{ background: '#0f1422', padding: '6px 12px', fontSize: 12 }}
           >
             <Plus size={12} /> Ajouter un CR
@@ -256,11 +256,11 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
 
       {/* List */}
       {isLoading ? (
-        <div className="px-5 py-8 flex items-center justify-center text-neutral-500 text-sm">
+        <div className="px-5 py-8 flex items-center justify-center text-muted-foreground text-sm">
           <Loader2 className="h-4 w-4 animate-spin mr-2" /> Chargement…
         </div>
       ) : filteredNotes.length === 0 ? (
-        <div className="px-5 py-8 text-center text-sm text-neutral-500">
+        <div className="px-5 py-8 text-center text-sm text-muted-foreground">
           {notes.length === 0
             ? 'Aucun compte rendu pour ce client.'
             : `Aucun compte rendu ${privacyFilter === 'private' ? 'privé' : 'public'} pour ce client.`}
@@ -290,46 +290,46 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                       </p>
                       {n.is_private && (
                         <span
-                          className="inline-flex items-center gap-1 text-neutral-600"
+                          className="inline-flex items-center gap-1 text-foreground"
                           style={{ background: '#f3f4f6', padding: '2px 6px', fontSize: 10, fontWeight: 600 }}
                         >
                           <Lock size={10} /> Privé
                         </span>
                       )}
                     </div>
-                    <p className="text-neutral-500" style={{ fontSize: 12 }}>{authorName}</p>
+                    <p className="text-muted-foreground" style={{ fontSize: 12 }}>{authorName}</p>
                   </div>
                   <ChevronDown
                     size={16}
-                    className={`text-neutral-400 mt-1 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                    className={`text-muted-foreground mt-1 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
                   />
                 </button>
 
                 <div className="mt-3 pl-[44px]">
                   {isOpen ? (
                     <div className="space-y-2">
-                      <p className="text-sm text-neutral-700 leading-relaxed whitespace-pre-wrap">
+                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
                         {n.content}
                       </p>
                       <div className="flex items-center gap-3">
                         <button
                           type="button"
                           onClick={() => openEdit(n)}
-                          className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-900"
+                          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                         >
                           <Pencil size={12} /> Modifier
                         </button>
                         <button
                           type="button"
                           onClick={() => remove(n.id)}
-                          className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-red-600"
+                          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-red-600"
                         >
                           <Trash2 size={12} /> Supprimer
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-sm text-neutral-700 leading-relaxed">
+                    <p className="text-sm text-foreground leading-relaxed">
                       {preview(n.content || '', 180)}
                     </p>
                   )}
@@ -345,7 +345,7 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
         <button
           type="button"
           onClick={() => setShowAll(true)}
-          className="w-full uppercase tracking-wider font-semibold text-neutral-600 hover:bg-neutral-50 border-t border-neutral-200 transition-colors"
+          className="w-full uppercase tracking-wider font-semibold text-foreground hover:bg-muted border-t border-border transition-colors"
           style={{ fontSize: 12, padding: '12px 0' }}
         >
           Voir les {filteredNotes.length - 3} autre{filteredNotes.length - 3 > 1 ? 's' : ''} compte{filteredNotes.length - 3 > 1 ? 's' : ''} rendu{filteredNotes.length - 3 > 1 ? 's' : ''}
@@ -355,7 +355,7 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
         <button
           type="button"
           onClick={() => setShowAll(false)}
-          className="w-full uppercase tracking-wider font-semibold text-neutral-600 hover:bg-neutral-50 border-t border-neutral-200 transition-colors"
+          className="w-full uppercase tracking-wider font-semibold text-foreground hover:bg-muted border-t border-border transition-colors"
           style={{ fontSize: 12, padding: '12px 0' }}
         >
           Réduire
@@ -377,8 +377,8 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
           />
           {/* Visibility selector */}
           <div className="flex items-center gap-2 pt-1">
-            <span className="text-xs text-neutral-500 mr-1">Visibilité :</span>
-            <div className="inline-flex border border-neutral-200" role="group" aria-label="Visibilité du compte rendu">
+            <span className="text-xs text-muted-foreground mr-1">Visibilité :</span>
+            <div className="inline-flex border border-border" role="group" aria-label="Visibilité du compte rendu">
               {([
                 { value: false, label: 'Public' },
                 { value: true, label: 'Privé' },
@@ -389,7 +389,7 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                     key={String(opt.value)}
                     type="button"
                     onClick={() => setNewIsPrivate(opt.value)}
-                    className={`leading-none transition-colors ${active ? 'text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}
+                    className={`leading-none transition-colors ${active ? 'text-background' : 'text-foreground hover:bg-muted'}`}
                     style={{
                       background: active ? '#0f1422' : 'transparent',
                       padding: '6px 12px',
@@ -404,7 +404,7 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
               })}
             </div>
             {newIsPrivate && (
-              <span className="text-xs text-neutral-500">
+              <span className="text-xs text-muted-foreground">
                 Visible uniquement par l'équipe interne.
               </span>
             )}
@@ -435,8 +435,8 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
             autoFocus
           />
           <div className="flex items-center gap-2 pt-1">
-            <span className="text-xs text-neutral-500 mr-1">Visibilité :</span>
-            <div className="inline-flex border border-neutral-200" role="group" aria-label="Visibilité du compte rendu">
+            <span className="text-xs text-muted-foreground mr-1">Visibilité :</span>
+            <div className="inline-flex border border-border" role="group" aria-label="Visibilité du compte rendu">
               {([
                 { value: false, label: 'Public' },
                 { value: true, label: 'Privé' },
@@ -447,7 +447,7 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                     key={String(opt.value)}
                     type="button"
                     onClick={() => setEditIsPrivate(opt.value)}
-                    className={`leading-none transition-colors ${active ? 'text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}
+                    className={`leading-none transition-colors ${active ? 'text-background' : 'text-foreground hover:bg-muted'}`}
                     style={{
                       background: active ? '#0f1422' : 'transparent',
                       padding: '6px 12px',

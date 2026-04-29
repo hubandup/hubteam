@@ -172,7 +172,7 @@ export function ProspectionDashboard({ prospects, interactions }: ProspectionDas
                             minWidth: '32px',
                           }}
                         >
-                          <span className="text-xs font-bold text-white">{stage.value}</span>
+                          <span className="text-xs font-bold text-background">{stage.value}</span>
                         </div>
                       </div>
                     </div>

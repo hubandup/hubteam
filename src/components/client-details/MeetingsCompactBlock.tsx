@@ -182,8 +182,8 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
   const toDelete: any = items.find((m: any) => m.id === confirmDeleteId);
 
   return (
-    <section className="bg-white border border-neutral-200">
-      <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
+    <section className="bg-card border border-border">
+      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2 leading-none">
           <span className="flex items-center justify-center shrink-0">
             <Calendar size={14} style={{ color: '#0f1422' }} />
@@ -198,7 +198,7 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
         <button
           type="button"
           onClick={addCustom}
-          className="text-neutral-400 hover:text-neutral-900"
+          className="text-muted-foreground hover:text-foreground"
           aria-label="Ajouter un RDV"
           title="Ajouter un RDV"
         >
@@ -208,20 +208,20 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
 
       <div className="px-4 py-3 space-y-1">
         {isLoading ? (
-          <div className="flex items-center gap-2 text-xs text-neutral-500">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Loader2 className="h-3 w-3 animate-spin" /> Chargement…
           </div>
         ) : items.length === 0 ? (
-          <p className="text-xs text-neutral-400 italic">Initialisation…</p>
+          <p className="text-xs text-muted-foreground italic">Initialisation…</p>
         ) : items.map((m: any) => {
           const hasDate = !!m.meeting_date;
           return (
             <div key={m.id} className="flex items-center gap-2 text-xs py-1">
-              <span className="font-semibold text-neutral-900 shrink-0">
+              <span className="font-semibold text-foreground shrink-0">
                 {m._displayLabel}
               </span>
               <span
-                className={`truncate flex-1 ${hasDate ? 'text-neutral-600' : 'text-neutral-400 italic'}`}
+                className={`truncate flex-1 ${hasDate ? 'text-foreground' : 'text-muted-foreground italic'}`}
               >
                 {hasDate
                   ? format(new Date(m.meeting_date), 'd MMM yyyy', { locale: fr })
@@ -231,7 +231,7 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
                 className={`shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 border ${
                   hasDate
                     ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                    : 'border-neutral-200 bg-neutral-50 text-neutral-500'
+                    : 'border-border bg-muted text-muted-foreground'
                 }`}
                 style={{ fontSize: 9, lineHeight: 1, letterSpacing: '0.02em' }}
                 title={hasDate ? 'Date renseignée' : 'Date à définir'}
@@ -244,7 +244,7 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
               <button
                 type="button"
                 onClick={() => setEditingId(m.id)}
-                className="shrink-0 text-neutral-400 hover:text-neutral-900"
+                className="shrink-0 text-muted-foreground hover:text-foreground"
                 title="Modifier"
                 aria-label="Modifier"
               >
@@ -254,7 +254,7 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
                 <button
                   type="button"
                   onClick={() => exportICS(m, m._displayLabel)}
-                  className="shrink-0 text-neutral-400 hover:text-neutral-900"
+                  className="shrink-0 text-muted-foreground hover:text-foreground"
                   title="Télécharger .ics"
                   aria-label="Télécharger .ics"
                 >
@@ -265,7 +265,7 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
                 <button
                   type="button"
                   onClick={() => setConfirmDeleteId(m.id)}
-                  className="shrink-0 text-neutral-400 hover:text-red-500"
+                  className="shrink-0 text-muted-foreground hover:text-red-500"
                   title="Supprimer"
                   aria-label="Supprimer"
                 >

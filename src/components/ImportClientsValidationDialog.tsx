@@ -656,7 +656,7 @@ export function ImportClientsValidationDialog({ onClientsImported }: ImportClien
                     </div>
                     <div>
                       <div className="text-muted-foreground">À ignorer</div>
-                      <div className="text-2xl font-bold text-gray-600">{stats.toSkip}</div>
+                      <div className="text-2xl font-bold text-foreground">{stats.toSkip}</div>
                     </div>
                   </div>
                 </CardContent>

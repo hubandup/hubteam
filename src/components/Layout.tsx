@@ -40,7 +40,7 @@ export function Layout({ children }: LayoutProps) {
         {/* Header mobile simplifié - fond continu avec la status bar */}
         <header className="sticky top-0 z-50 bg-sidebar px-4 pt-[env(safe-area-inset-top)] pb-3 flex items-center justify-between">
           <img src={logo} alt="Hub & Up" className="h-8 [filter:brightness(0)_invert(1)]" />
-          <div className="flex items-center gap-1 [&_button]:text-white [&_svg]:text-white">
+          <div className="flex items-center gap-1 [&_button]:text-background [&_svg]:text-background">
             <Button
               variant="ghost"
               size="icon"

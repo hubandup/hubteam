@@ -64,7 +64,7 @@ function getCondColor(actual: number | null, obj: number | null): string {
   if (actual == null || obj == null || obj === 0) return '';
   const ratio = actual / obj;
   if (ratio >= 1) return 'text-[#22c55e]';
-  if (ratio >= 0.8) return 'text-black dark:text-white font-semibold';
+  if (ratio >= 0.8) return 'text-foreground font-semibold';
   return 'text-[#ef4444]';
 }
 
@@ -92,7 +92,7 @@ function Sparkline({ data }: { data: number[] }) {
 
 const TONALITY_STYLES: Record<string, { bg: string; text: string; label: string }> = {
   positive: { bg: 'bg-[#22c55e]/20', text: 'text-[#22c55e]', label: 'Positif' },
-  neutral: { bg: 'bg-gray-200', text: 'text-muted-foreground', label: 'Neutre' },
+  neutral: { bg: 'bg-muted', text: 'text-muted-foreground', label: 'Neutre' },
   negative: { bg: 'bg-[#ef4444]/20', text: 'text-[#ef4444]', label: 'Négatif' },
 };
 
@@ -241,7 +241,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
   if (isLoading) {
     return (
       <div className="space-y-4">
-        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-16 bg-gray-100 dark:bg-[#1a1f2e] animate-pulse" />)}
+        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-16 bg-muted dark:bg-[#1a1f2e] animate-pulse" />)}
       </div>
     );
   }
@@ -323,7 +323,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
           {/* KPI cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {kpis.map((kpi) => (
-              <div key={kpi.label} className={`bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
+              <div key={kpi.label} className={`bg-card dark:bg-[#0f1422] border border-border/30 border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
                 <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-1">{kpi.label}</p>
                 <div className="flex items-end gap-2">
                   <span className={`text-xl font-bold font-['Instrument_Sans'] ${getCondColor(kpi.actual, kpi.obj) || 'text-foreground'}`}>
@@ -340,7 +340,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
 
           {/* Evolution charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
+            <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-4">
               <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Reach & Engagement</h3>
               <div className="h-52">
                 <ResponsiveContainer width="100%" height="100%">
@@ -358,7 +358,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
               </div>
             </div>
 
-            <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
+            <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-4">
               <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Budget & CPM</h3>
               <div className="h-52">
                 <ResponsiveContainer width="100%" height="100%">
@@ -378,14 +378,14 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
           </div>
 
           {/* Detailed monthly table */}
-          <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
+          <div className="bg-card dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
             <div className="px-4 py-3 border-b border-border/40">
               <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Détail mensuel</h3>
             </div>
             <table className="w-full text-sm font-['Roboto']">
               <thead>
                 <tr className="border-b border-border/40">
-                  <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white dark:bg-[#0f1422] z-10 min-w-[140px]">KPI</th>
+                  <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-card dark:bg-[#0f1422] z-10 min-w-[140px]">KPI</th>
                   {months.map((m) => (
                     <th key={m} className="text-center px-3 py-2 text-foreground font-semibold uppercase tracking-wider min-w-[90px]">{m}</th>
                   ))}
@@ -393,8 +393,8 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
               </thead>
               <tbody>
                 {KPI_KEYS.map((kpi) => (
-                  <tr key={kpi.key} className="border-b border-border/20 hover:bg-gray-50 dark:hover:bg-[#141928]">
-                    <td className="px-3 py-2 text-foreground text-xs font-medium sticky left-0 bg-white dark:bg-[#0f1422] z-10">{kpi.label}</td>
+                  <tr key={kpi.key} className="border-b border-border/20 hover:bg-muted dark:hover:bg-[#141928]">
+                    <td className="px-3 py-2 text-foreground text-xs font-medium sticky left-0 bg-card dark:bg-[#0f1422] z-10">{kpi.label}</td>
                     {months.map((m) => {
                       const entries = monthlyGroups.get(m) || [];
                       const vals = entries.map((e) => e[kpi.key] as number | null).filter((v): v is number => v != null);
@@ -498,7 +498,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
             {/* KPI cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {affKpis.map((kpi) => (
-                <div key={kpi.label} className={`bg-white dark:bg-[#0f1422] border border-border/30 border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
+                <div key={kpi.label} className={`bg-card dark:bg-[#0f1422] border border-border/30 border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
                   <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-1">{kpi.label}</p>
                   <div className="flex items-end gap-2">
                     <span className={`text-xl font-bold font-['Instrument_Sans'] ${getCondColor(kpi.actual, kpi.obj) || 'text-foreground'}`}>
@@ -512,7 +512,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
 
             {/* Evolution charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
+              <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-4">
                 <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Reach & Engagement</h3>
                 <div className="h-52">
                   <ResponsiveContainer width="100%" height="100%">
@@ -530,7 +530,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
+              <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-4">
                 <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Budget & CPM</h3>
                 <div className="h-52">
                   <ResponsiveContainer width="100%" height="100%">
@@ -550,14 +550,14 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
             </div>
 
             {/* Detailed monthly table */}
-            <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
+            <div className="bg-card dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
               <div className="px-4 py-3 border-b border-border/40">
                 <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Détail mensuel</h3>
               </div>
               <table className="w-full text-sm font-['Roboto']">
                 <thead>
                   <tr className="border-b border-border/40">
-                    <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white dark:bg-[#0f1422] z-10 min-w-[140px]">KPI</th>
+                    <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-card dark:bg-[#0f1422] z-10 min-w-[140px]">KPI</th>
                     {months.map((m) => (
                       <th key={m} className="text-center px-3 py-2 text-foreground font-semibold uppercase tracking-wider min-w-[90px]">{m}</th>
                     ))}
@@ -565,8 +565,8 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
                 </thead>
                 <tbody>
                   {KPI_KEYS.map((kpi) => (
-                    <tr key={String(kpi.key)} className="border-b border-border/20 hover:bg-gray-50 dark:hover:bg-[#141928]">
-                      <td className="px-3 py-2 text-foreground text-xs font-medium sticky left-0 bg-white dark:bg-[#0f1422] z-10">{kpi.label}</td>
+                    <tr key={String(kpi.key)} className="border-b border-border/20 hover:bg-muted dark:hover:bg-[#141928]">
+                      <td className="px-3 py-2 text-foreground text-xs font-medium sticky left-0 bg-card dark:bg-[#0f1422] z-10">{kpi.label}</td>
                       {months.map((m) => {
                         const entries = monthlyGroups.get(m) || [];
                         const vals = entries.map((e) => e[kpi.key] as number | null).filter((v): v is number => v != null);
@@ -594,7 +594,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
             {/* Pie charts side by side */}
             <div className="flex flex-col gap-4 shrink-0 w-full md:w-60">
               {/* Pie chart - count */}
-              <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-5 flex flex-col items-center w-full">
+              <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-5 flex flex-col items-center w-full">
                 <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-3">Retombées par tonalité</p>
                 <div className="w-40 h-40">
                   <ResponsiveContainer width="100%" height="100%">
@@ -618,7 +618,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
               </div>
 
               {/* Pie chart - reach */}
-              <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-5 flex flex-col items-center w-full">
+              <div className="bg-card dark:bg-[#0f1422] border border-border/30 p-5 flex flex-col items-center w-full">
                 <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-3">Reach par tonalité</p>
                 <div className="w-40 h-40">
                   <ResponsiveContainer width="100%" height="100%">
@@ -653,7 +653,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
                       key={t}
                       onClick={() => { setTonalityFilter(t); setPage(0); }}
                       className={`px-3 py-1.5 text-xs font-['Roboto'] transition-colors ${
-                        tonalityFilter === t ? 'bg-black dark:bg-[#E8FF4C] text-white dark:text-black font-medium' : 'bg-gray-100 dark:bg-[#1a1f2e] text-muted-foreground hover:text-foreground'
+                        tonalityFilter === t ? 'bg-foreground dark:bg-[#E8FF4C] text-background font-medium' : 'bg-muted dark:bg-[#1a1f2e] text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       {label}
@@ -676,7 +676,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
               </div>
 
               {/* Table */}
-              <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
+              <div className="bg-card dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
                 <table className="w-full text-sm font-['Roboto']">
                   <thead>
                     <tr className="border-b border-border/40">
@@ -692,14 +692,14 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
                       const tonality = normalizeTonalityKey(p.tonality);
                       const style = TONALITY_STYLES[tonality] || TONALITY_STYLES.neutral;
                       return (
-                        <tr key={p.id} className="border-b border-border/20 hover:bg-gray-50 dark:hover:bg-[#141928]">
+                        <tr key={p.id} className="border-b border-border/20 hover:bg-muted dark:hover:bg-[#141928]">
                           <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
                             {new Date(p.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                           </td>
                           <td className="px-3 py-2 text-foreground font-medium">{p.media_name}</td>
                           <td className="px-3 py-2 text-foreground max-w-xs truncate">
                             {p.url ? (
-                              <a href={p.url} target="_blank" rel="noopener noreferrer" className="hover:text-black dark:hover:text-white font-semibold flex items-center gap-1">
+                              <a href={p.url} target="_blank" rel="noopener noreferrer" className="hover:text-foreground dark:hover:text-background font-semibold flex items-center gap-1">
                                 {p.title}
                                 <ExternalLink className="h-3 w-3 flex-shrink-0" />
                               </a>
