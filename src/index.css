@@ -180,6 +180,27 @@
     --sidebar-accent-foreground: 220 20% 95%;
     --sidebar-border: 224 40% 10%;
     --sidebar-ring: 68 100% 64%;
+
+    /* Brand & semantic tokens — dark variants */
+    --brand-yellow: 68 100% 64%;
+    --brand-yellow-foreground: 224 71% 4%;
+    --brand-ink: 220 20% 95%;
+    --brand-ink-foreground: 224 71% 4%;
+
+    --surface: 224 50% 7%;
+    --surface-muted: 224 40% 12%;
+    --surface-strong: 224 50% 9%;
+    --surface-foreground: 220 20% 95%;
+    --surface-muted-foreground: 220 20% 65%;
+    --hairline: 224 40% 14%;
+    --hairline-strong: 224 40% 22%;
+
+    --urgency-late: 0 75% 60%;
+    --urgency-late-foreground: 0 0% 100%;
+    --urgency-week: 25 90% 60%;
+    --urgency-week-foreground: 0 0% 100%;
+    --urgency-soon: 215 15% 60%;
+    --urgency-soon-foreground: 0 0% 100%;
   }
 }
 
