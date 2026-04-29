@@ -438,7 +438,7 @@ export default function Finances() {
       if (revenueChartRef.current) {
         try {
           const canvas = await html2canvas(revenueChartRef.current, {
-            backgroundColor: 'hsl(var(--card))',
+            backgroundColor: '#ffffff',
             scale: 3,
             logging: false,
           });
@@ -460,7 +460,7 @@ export default function Finances() {
         
         try {
           const canvas = await html2canvas(treasuryChartRef.current, {
-            backgroundColor: 'hsl(var(--card))',
+            backgroundColor: '#ffffff',
             scale: 3,
             logging: false,
           });

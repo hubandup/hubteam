@@ -199,7 +199,7 @@ export default function Brisach() {
       y = 84;
       const chartEl = document.getElementById('brisach-chart');
       if (chartEl) {
-        const canvas = await html2canvas(chartEl, { scale: 2, backgroundColor: 'hsl(var(--card))' });
+        const canvas = await html2canvas(chartEl, { scale: 2, backgroundColor: '#ffffff' });
         const imgData = canvas.toDataURL('image/png');
         const rawH = (contentW * canvas.height) / canvas.width;
         const maxChartH = 60; // cap chart height to leave room for table
