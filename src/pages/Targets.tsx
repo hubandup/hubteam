@@ -179,7 +179,7 @@ export default function Targets() {
               className="w-10 h-10 flex items-center justify-center shrink-0"
               style={{ backgroundColor: 'hsl(var(--brand-yellow))' }}
             >
-              <Star size={18} fill="hsl(var(--brand-ink))" stroke="hsl(var(--brand-ink))" />
+              <Star size={18} fill="hsl(var(--brand-yellow-foreground))" stroke="hsl(var(--brand-yellow-foreground))" />
             </div>
             <div>
               <h1
