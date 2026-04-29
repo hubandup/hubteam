@@ -386,16 +386,10 @@ function SectionBlock({
     <section>
       <header className="flex items-center gap-3 mb-3">
         <span className="block" style={{ width: 4, height: 20, background: color }} />
-        <h2
-          className="font-display font-bold uppercase tracking-wider text-sm"
-          style={{ color: '#0f1422' }}
-        >
+        <h2 className="font-display font-bold uppercase tracking-wider text-sm text-foreground">
           {title}
         </h2>
-        <span
-          className="text-xs font-semibold px-1.5 py-0.5 text-white"
-          style={{ background: '#0f1422' }}
-        >
+        <span className="text-xs font-semibold px-1.5 py-0.5 bg-foreground text-background">
           {count}
         </span>
       </header>
