@@ -36,7 +36,7 @@ const FILE_TYPES = [
 const STATUS_ICONS: Record<string, React.ReactNode> = {
   synced: <CheckCircle2 className="h-3.5 w-3.5 text-[#22c55e]" />,
   error: <AlertCircle className="h-3.5 w-3.5 text-[#ef4444]" />,
-  pending: <Clock className="h-3.5 w-3.5 text-black font-semibold" />,
+  pending: <Clock className="h-3.5 w-3.5 text-foreground font-semibold" />,
 };
 
 export default function LagostinaAdmin() {
@@ -188,7 +188,7 @@ export default function LagostinaAdmin() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0a0e1a] p-6">
+    <div className="min-h-screen bg-card dark:bg-[#0a0e1a] p-6">
       <div className="max-w-5xl mx-auto space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground font-['Instrument_Sans'] tracking-tight">
@@ -199,13 +199,13 @@ export default function LagostinaAdmin() {
           </p>
         </div>
 
-        <div className="bg-white border border-border/30 p-6 space-y-4">
+        <div className="bg-card border border-border/30 p-6 space-y-4">
           <div className="flex items-center gap-4 flex-wrap">
             <label className="text-muted-foreground text-sm font-['Roboto']">Type de fichier :</label>
             <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              className="bg-white text-foreground border border-border/40 px-3 py-1.5 text-sm font-['Roboto'] focus:outline-none focus:border-black"
+              className="bg-card text-foreground border border-border/40 px-3 py-1.5 text-sm font-['Roboto'] focus:outline-none focus:border-black"
             >
               {FILE_TYPES.map((ft) => (
                 <option key={ft.value} value={ft.value}>{ft.label}</option>
@@ -219,7 +219,7 @@ export default function LagostinaAdmin() {
             onDrop={handleDrop}
             className={`
               relative border-2 border-dashed p-12 text-center transition-colors cursor-pointer
-              ${isDragging ? 'border-black bg-black/5' : 'border-white/20 hover:border-white/40'}
+              ${isDragging ? 'border-black bg-foreground/5' : 'border-white/20 hover:border-white/40'}
               ${uploading ? 'opacity-50 pointer-events-none' : ''}
             `}
             onClick={() => document.getElementById('file-input-lago')?.click()}
@@ -233,14 +233,14 @@ export default function LagostinaAdmin() {
             />
             {uploading ? (
               <div className="flex flex-col items-center gap-3">
-                <RefreshCw className="h-8 w-8 text-black font-semibold animate-spin" />
+                <RefreshCw className="h-8 w-8 text-foreground font-semibold animate-spin" />
                 <p className="text-foreground font-['Roboto'] text-sm">Traitement en cours…</p>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3">
                 <Upload className="h-8 w-8 text-muted-foreground" />
                 <p className="text-foreground font-['Roboto'] text-sm">
-                  Glissez un fichier {selectedType === 'meta_csv' ? '.csv' : '.xlsx'} ici ou <span className="text-black font-semibold underline">parcourir</span>
+                  Glissez un fichier {selectedType === 'meta_csv' ? '.csv' : '.xlsx'} ici ou <span className="text-foreground font-semibold underline">parcourir</span>
                 </p>
                 <p className="text-muted-foreground font-['Roboto'] text-xs">
                   Format attendu : {selectedType === 'meta_csv' ? 'export CSV Meta Ads Manager' : `fichier Excel Lagostina (${FILE_TYPES.find(f => f.value === selectedType)?.label})`}
@@ -250,7 +250,7 @@ export default function LagostinaAdmin() {
           </div>
 
           <button
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-foreground border border-border/40 font-['Roboto'] text-sm hover:bg-gray-200 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-muted text-foreground border border-border/40 font-['Roboto'] text-sm hover:bg-muted transition-colors disabled:opacity-50"
             onClick={syncFromKDrive}
             disabled={syncing || uploading}
           >
@@ -259,14 +259,14 @@ export default function LagostinaAdmin() {
           </button>
         </div>
 
-        <div className="bg-white border border-border/30 overflow-x-auto">
+        <div className="bg-card border border-border/30 overflow-x-auto">
           <div className="px-4 py-3 border-b border-border/40">
             <h2 className="text-foreground font-['Instrument_Sans'] font-bold text-sm">Fichiers synchronisés</h2>
           </div>
           {loadingFiles ? (
             <div className="p-4 space-y-2">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-10 bg-gray-100 animate-pulse" />
+                <div key={i} className="h-10 bg-muted animate-pulse" />
               ))}
             </div>
           ) : !files?.length ? (
@@ -285,7 +285,7 @@ export default function LagostinaAdmin() {
               </thead>
               <tbody>
                 {files.map((f) => (
-                  <tr key={f.id} className="border-b border-border/20 hover:bg-gray-50">
+                  <tr key={f.id} className="border-b border-border/20 hover:bg-muted">
                     <td className="px-4 py-3 text-foreground font-['Roboto'] flex items-center gap-2">
                       <FileSpreadsheet className="h-4 w-4 text-[#22c55e]" />
                       {f.filename}
@@ -300,7 +300,7 @@ export default function LagostinaAdmin() {
                       <span className="inline-flex items-center gap-1.5">
                         {STATUS_ICONS[f.status] || STATUS_ICONS.pending}
                         <span className={`font-['Roboto'] text-xs capitalize ${
-                          f.status === 'synced' ? 'text-[#22c55e]' : f.status === 'error' ? 'text-[#ef4444]' : 'text-black font-semibold'
+                          f.status === 'synced' ? 'text-[#22c55e]' : f.status === 'error' ? 'text-[#ef4444]' : 'text-foreground font-semibold'
                         }`}>
                           {f.status}
                         </span>

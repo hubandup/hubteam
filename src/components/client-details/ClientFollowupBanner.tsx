@@ -127,7 +127,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
     <>
       <div
         className="relative"
-        style={{ background: '#0f1422', border: '2px solid #0f1422', marginBottom: 20 }}
+        style={{ background: 'hsl(var(--brand-ink))', border: '2px solid hsl(var(--brand-ink))', marginBottom: 20 }}
       >
         {/* Header */}
         <div
@@ -137,15 +137,15 @@ export function ClientFollowupBanner({ clientId }: Props) {
           <div className="flex items-center gap-3 min-w-0">
             <div
               className="flex items-center justify-center flex-shrink-0"
-              style={{ width: 28, height: 28, background: '#E8FF4C' }}
+              style={{ width: 28, height: 28, background: 'hsl(var(--brand-yellow))' }}
             >
-              <Sparkles size={14} style={{ color: '#0f1422' }} />
+              <Sparkles size={14} style={{ color: 'hsl(var(--brand-ink))' }} />
             </div>
             <div className="min-w-0">
-              <p className="display text-white font-bold truncate" style={{ fontSize: 14 }}>
+              <p className="display text-background font-bold truncate" style={{ fontSize: 14 }}>
                 Excuse de relance
               </p>
-              <p className="uppercase tracking-wider text-white/50" style={{ fontSize: 10 }}>
+              <p className="uppercase tracking-wider text-background/50" style={{ fontSize: 10 }}>
                 Générée par l'IA · {dateLabel}
               </p>
             </div>
@@ -154,7 +154,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
             <button
               type="button"
               onClick={() => setOpenModal(true)}
-              className="inline-flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs text-background/60 hover:text-background transition-colors"
             >
               <RefreshCw size={12} />
               Générer
@@ -162,7 +162,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
             <button
               type="button"
               onClick={() => setIsCollapsed((s) => !s)}
-              className="text-white/60 hover:text-white transition-colors"
+              className="text-background/60 hover:text-background transition-colors"
               aria-label={isCollapsed ? 'Déplier' : 'Replier'}
             >
               <ChevronDown
@@ -178,10 +178,10 @@ export function ClientFollowupBanner({ clientId }: Props) {
           <button
             type="button"
             onClick={() => setIsCollapsed(false)}
-            className="w-full flex items-center gap-3 hover:bg-white/5 transition-colors text-left"
+            className="w-full flex items-center gap-3 hover:bg-card/5 transition-colors text-left"
             style={{ padding: '12px 20px' }}
           >
-            <span className="flex-1 truncate text-white/70 text-xs">
+            <span className="flex-1 truncate text-background/70 text-xs">
               {collapsedPreview || 'Aucune excuse générée.'}
             </span>
             {latest && (
@@ -194,14 +194,14 @@ export function ClientFollowupBanner({ clientId }: Props) {
                   onClick={copy}
                   disabled={!plainBody}
                   className="inline-flex items-center gap-1 font-semibold text-xs disabled:opacity-50"
-                  style={{ background: '#E8FF4C', color: '#0f1422', padding: '6px 12px' }}
+                  style={{ background: 'hsl(var(--brand-yellow))', color: 'hsl(var(--brand-ink))', padding: '6px 12px' }}
                 >
                   <Copy size={12} /> Copier
                 </button>
                 <button
                   type="button"
                   onClick={sendMail}
-                  className="inline-flex items-center gap-1 text-xs text-white hover:bg-white/10"
+                  className="inline-flex items-center gap-1 text-xs text-background hover:bg-card/10"
                   style={{ border: '1px solid rgba(255,255,255,0.2)', padding: '6px 12px' }}
                 >
                   <Send size={12} /> Envoyer par email
@@ -213,15 +213,15 @@ export function ClientFollowupBanner({ clientId }: Props) {
           /* Body — expanded mode */
           <div className="relative px-5 py-4">
             {isLoading ? (
-              <div className="flex items-center gap-2 text-white/60 text-sm py-2">
+              <div className="flex items-center gap-2 text-background/60 text-sm py-2">
                 <Loader2 className="h-4 w-4 animate-spin" /> Chargement…
               </div>
             ) : !latest ? (
-              <p className="text-sm text-white/70 mb-4 leading-relaxed">
-                Aucune excuse générée pour ce client. Cliquez sur <strong className="text-white">Générer</strong> pour en créer une.
+              <p className="text-sm text-background/70 mb-4 leading-relaxed">
+                Aucune excuse générée pour ce client. Cliquez sur <strong className="text-background">Générer</strong> pour en créer une.
               </p>
             ) : (
-              <p className="text-sm text-white/90 mb-4 leading-relaxed whitespace-pre-wrap">
+              <p className="text-sm text-background/90 mb-4 leading-relaxed whitespace-pre-wrap">
                 {plainBody}
               </p>
             )}
@@ -232,7 +232,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
                 onClick={copy}
                 disabled={!plainBody}
                 className="inline-flex items-center gap-1.5 font-semibold text-sm disabled:opacity-50"
-                style={{ background: '#E8FF4C', color: '#0f1422', padding: '8px 16px' }}
+                style={{ background: 'hsl(var(--brand-yellow))', color: 'hsl(var(--brand-ink))', padding: '8px 16px' }}
               >
                 <Copy size={14} /> Copier
               </button>
@@ -240,7 +240,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
                 type="button"
                 onClick={sendMail}
                 disabled={!latest}
-                className="inline-flex items-center gap-1.5 text-sm text-white hover:bg-white/10 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 text-sm text-background hover:bg-card/10 disabled:opacity-50"
                 style={{ border: '1px solid rgba(255,255,255,0.2)', padding: '8px 16px' }}
               >
                 <Send size={14} /> Envoyer par email
@@ -251,7 +251,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
                   <button
                     type="button"
                     onClick={() => setOpenHistory(true)}
-                    className="inline-flex items-center gap-1 text-xs text-white/70 hover:text-white"
+                    className="inline-flex items-center gap-1 text-xs text-background/70 hover:text-background"
                   >
                     <Clock size={12} /> Historique ({historyCount})
                   </button>
@@ -260,7 +260,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
                   <button
                     type="button"
                     onClick={() => setShowSources((s) => !s)}
-                    className="inline-flex items-center gap-1 text-sm text-white/70 hover:text-white"
+                    className="inline-flex items-center gap-1 text-sm text-background/70 hover:text-background"
                   >
                     {showSources ? 'Masquer les sources' : 'Voir les sources utilisées'}
                     <ChevronRight
@@ -276,10 +276,10 @@ export function ClientFollowupBanner({ clientId }: Props) {
               <div className="mt-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
                 <ul className="space-y-1">
                   {sourcesList.map((s, i) => (
-                    <li key={i} className="text-xs text-white/70 flex items-center gap-2">
+                    <li key={i} className="text-xs text-background/70 flex items-center gap-2">
                       <span
                         className="uppercase font-semibold tracking-wider"
-                        style={{ background: 'rgba(232,255,76,0.15)', color: '#E8FF4C', padding: '1px 6px', fontSize: 9 }}
+                        style={{ background: 'rgba(232,255,76,0.15)', color: 'hsl(var(--brand-yellow))', padding: '1px 6px', fontSize: 9 }}
                       >
                         {s.kind}
                       </span>

@@ -1231,7 +1231,7 @@ export default function Prospection() {
                 placeholder="Rechercher..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="pl-8 bg-white dark:bg-background h-10 text-sm"
+                className="pl-8 bg-card dark:bg-background h-10 text-sm"
               />
             </div>
             {!isMobile && (

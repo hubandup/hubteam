@@ -43,11 +43,11 @@ function SectionShell({
   icon, title, action, children,
 }: { icon?: React.ReactNode; title: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className="bg-white border border-neutral-200">
-      <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
+    <section className="bg-card border border-border">
+      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2 leading-none">
           {icon && <span className="flex items-center justify-center shrink-0">{icon}</span>}
-          <h3 className="uppercase tracking-wider font-bold display leading-none" style={{ color: '#0f1422', fontSize: 10 }}>
+          <h3 className="uppercase tracking-wider font-bold display leading-none" style={{ color: 'hsl(var(--brand-ink))', fontSize: 10 }}>
             {title}
           </h3>
         </div>
@@ -175,19 +175,19 @@ export function ClientCommercialSidebar({ client }: Props) {
   return (
     <div className="space-y-4">
       {/* 1. PIPELINE */}
-      <SectionShell icon={<CheckCircle2 size={14} style={{ color: '#0f1422' }} />} title="Pipeline">
+      <SectionShell icon={<CheckCircle2 size={14} style={{ color: 'hsl(var(--brand-ink))' }} />} title="Pipeline">
         <ul className="space-y-2.5">
           {PIPELINE_STAGES.map((s, i) => {
             const isDone = i < currentIdx;
             const isCurrent = i === currentIdx;
             const stepStyle = isDone
-              ? { background: '#0f1422', borderColor: '#0f1422' }
+              ? { background: 'hsl(var(--brand-ink))', borderColor: 'hsl(var(--brand-ink))' }
               : isCurrent
-                ? { background: '#E8FF4C', borderColor: '#0f1422' }
-                : { background: '#fff', borderColor: '#d4d4d4' };
+                ? { background: 'hsl(var(--brand-yellow))', borderColor: 'hsl(var(--brand-ink))' }
+                : { background: 'hsl(var(--card))', borderColor: 'hsl(var(--border))' };
             const labelClass = isCurrent
-              ? 'font-semibold text-neutral-900'
-              : isDone ? 'text-neutral-700' : 'text-neutral-400';
+              ? 'font-semibold text-foreground'
+              : isDone ? 'text-foreground' : 'text-muted-foreground';
             const isUpdating = updatingStage === s.id;
             return (
               <li key={s.id}>
@@ -195,7 +195,7 @@ export function ClientCommercialSidebar({ client }: Props) {
                   type="button"
                   onClick={() => updateStage(s.id)}
                   disabled={!!updatingStage || isCurrent}
-                  className="w-full flex items-center gap-2.5 text-xs text-left hover:bg-neutral-50 -mx-1 px-1 py-0.5 transition-colors disabled:cursor-default disabled:hover:bg-transparent"
+                  className="w-full flex items-center gap-2.5 text-xs text-left hover:bg-muted -mx-1 px-1 py-0.5 transition-colors disabled:cursor-default disabled:hover:bg-transparent"
                   aria-label={`Passer à l'étape ${s.label}`}
                   aria-current={isCurrent ? 'step' : undefined}
                 >
@@ -203,7 +203,7 @@ export function ClientCommercialSidebar({ client }: Props) {
                     className="inline-flex items-center justify-center flex-shrink-0"
                     style={{ width: 16, height: 16, border: '1px solid', ...stepStyle, opacity: isUpdating ? 0.5 : 1 }}
                   >
-                    {isDone && <CheckCircle2 size={10} className="text-white" />}
+                    {isDone && <CheckCircle2 size={10} className="text-background" />}
                   </span>
                   <span className={labelClass}>{s.label}</span>
                 </button>
@@ -218,12 +218,12 @@ export function ClientCommercialSidebar({ client }: Props) {
 
       {/* 3. URLs VEILLE IA */}
       <SectionShell
-        icon={<Link2 size={14} style={{ color: '#0f1422' }} />}
+        icon={<Link2 size={14} style={{ color: 'hsl(var(--brand-ink))' }} />}
         title="URLs veille IA"
         action={
           <button
             type="button"
-            className="text-neutral-400 hover:text-neutral-900"
+            className="text-muted-foreground hover:text-foreground"
             onClick={() => setUrlsModalOpen(true)}
             aria-label="Gérer les URLs"
             disabled={!tracking?.id}
@@ -233,7 +233,7 @@ export function ClientCommercialSidebar({ client }: Props) {
         }
       >
         {urls.length === 0 ? (
-          <p className="text-xs text-neutral-400 italic">Aucune URL configurée.</p>
+          <p className="text-xs text-muted-foreground italic">Aucune URL configurée.</p>
         ) : (
           <ul className="space-y-2">
             {urls.slice(0, 6).map((u: any) => {
@@ -244,12 +244,12 @@ export function ClientCommercialSidebar({ client }: Props) {
                     href={u.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-neutral-700 hover:text-neutral-900 truncate flex-1"
+                    className="text-xs text-foreground hover:text-foreground truncate flex-1"
                     title={u.url}
                   >
                     {u.label || u.url}
                   </a>
-                  <span className="text-neutral-400" style={{ fontSize: 10 }}>{ageLabel(d)}</span>
+                  <span className="text-muted-foreground" style={{ fontSize: 10 }}>{ageLabel(d)}</span>
                 </li>
               );
             })}

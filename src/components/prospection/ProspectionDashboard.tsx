@@ -26,7 +26,7 @@ const FUNNEL_STAGES = [
 ];
 
 const FUNNEL_COLORS = [
-  '#94a3b8', '#60a5fa', '#fbbf24', '#f97316', '#a78bfa',
+  'hsl(var(--muted-foreground))', '#60a5fa', '#fbbf24', '#f97316', '#a78bfa',
   '#22d3ee', '#818cf8', '#ec4899', '#22c55e',
 ];
 
@@ -172,7 +172,7 @@ export function ProspectionDashboard({ prospects, interactions }: ProspectionDas
                             minWidth: '32px',
                           }}
                         >
-                          <span className="text-xs font-bold text-white">{stage.value}</span>
+                          <span className="text-xs font-bold text-background">{stage.value}</span>
                         </div>
                       </div>
                     </div>

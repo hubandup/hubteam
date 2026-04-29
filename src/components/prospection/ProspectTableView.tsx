@@ -20,9 +20,9 @@ export function ProspectTableView({ prospects, onProspectClick, onQuickAction }:
   const isMobile = useIsMobile();
 
   const priorityColors = {
-    A: 'bg-red-500 text-white',
-    B: 'bg-yellow-500 text-white',
-    C: 'bg-green-500 text-white',
+    A: 'bg-red-500 text-background',
+    B: 'bg-yellow-500 text-background',
+    C: 'bg-green-500 text-background',
   };
 
   if (isMobile) {

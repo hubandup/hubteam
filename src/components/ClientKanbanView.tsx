@@ -32,7 +32,7 @@ const stageColumns = [
   { id: 'reco_en_cours', label: 'Reco en cours', color: 'bg-orange-50 dark:bg-orange-950' },
   { id: 'projet_valide', label: 'Projet Validé', color: 'bg-green-50 dark:bg-green-950' },
   { id: 'a_fideliser', label: 'À fidéliser', color: 'bg-teal-50 dark:bg-teal-950' },
-  { id: 'sans_suite', label: 'Sans suite', color: 'bg-gray-50 dark:bg-gray-900' },
+  { id: 'sans_suite', label: 'Sans suite', color: 'bg-muted' },
 ];
 
 function DraggableClientCard({ client, onClick, onMouseEnter }: { client: any; onClick: () => void; onMouseEnter?: () => void }) {

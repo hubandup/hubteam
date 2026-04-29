@@ -194,7 +194,7 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 display">
-            <Sparkles className="h-5 w-5" style={{ color: '#0f1422' }} />
+            <Sparkles className="h-5 w-5" style={{ color: 'hsl(var(--brand-ink))' }} />
             Générer une excuse de relance
           </DialogTitle>
           <DialogDescription>
@@ -285,12 +285,12 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
                   className="flex items-start gap-2 px-3 py-2 text-xs"
                   style={{ background: 'rgba(232,255,76,0.15)', border: '1px solid rgba(15,20,34,0.15)' }}
                 >
-                  <CalendarClock className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: '#0f1422' }} />
+                  <CalendarClock className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: 'hsl(var(--brand-ink))' }} />
                   <div className="min-w-0">
-                    <p className="font-semibold" style={{ color: '#0f1422' }}>
+                    <p className="font-semibold" style={{ color: 'hsl(var(--brand-ink))' }}>
                       Lien Calendly attribué : {resolvedCalendly.owner === 'amandine' ? 'Amandine' : 'Charles'}
                     </p>
-                    <p className="text-[11px] text-neutral-700 truncate">{resolvedCalendly.url}</p>
+                    <p className="text-[11px] text-foreground truncate">{resolvedCalendly.url}</p>
                   </div>
                 </div>
               ) : (
@@ -299,7 +299,7 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
                   style={{ background: 'rgba(255,200,0,0.12)', border: '1px solid rgba(255,160,0,0.35)' }}
                 >
                   <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: '#a15c00' }} />
-                  <p className="text-neutral-800">
+                  <p className="text-foreground">
                     Aucun lien Calendly configuré pour cette action. Le message sera généré sans lien de réservation.
                   </p>
                 </div>
@@ -313,7 +313,7 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
           <Button
             onClick={generate}
             disabled={busy}
-            style={{ background: '#0f1422', color: '#fff' }}
+            style={{ background: 'hsl(var(--brand-ink))', color: 'hsl(var(--card))' }}
           >
             {busy ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1" />}
             Générer
@@ -321,10 +321,10 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
         </DialogFooter>
 
         {/* Historique des excuses générées */}
-        <div className="mt-2 pt-4 border-t border-neutral-200">
+        <div className="mt-2 pt-4 border-t border-border">
           <div className="flex items-center gap-2 mb-3">
-            <History className="h-4 w-4" style={{ color: '#0f1422' }} />
-            <h4 className="display font-bold" style={{ fontSize: 14, color: '#0f1422' }}>
+            <History className="h-4 w-4" style={{ color: 'hsl(var(--brand-ink))' }} />
+            <h4 className="display font-bold" style={{ fontSize: 14, color: 'hsl(var(--brand-ink))' }}>
               Historique des excuses générées
             </h4>
           </div>

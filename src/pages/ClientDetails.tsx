@@ -140,7 +140,7 @@ export default function ClientDetails() {
       <div className="flex items-center justify-center h-screen px-4">
         <div className="max-w-md w-full text-center space-y-4">
           <div className="text-2xl font-semibold display">Fiche client introuvable</div>
-          <p className="text-neutral-600">Vous n'avez pas accès à cette fiche client ou elle n'existe pas.</p>
+          <p className="text-foreground">Vous n'avez pas accès à cette fiche client ou elle n'existe pas.</p>
           <div className="flex items-center justify-center gap-2">
             <Button variant="outline" onClick={() => navigate(-1)}>Retour</Button>
             <Button onClick={() => navigate('/')}>Aller à l'accueil</Button>
@@ -204,7 +204,7 @@ export default function ClientDetails() {
         </div>
 
         {/* HEADER + TABS dans le même conteneur blanc */}
-        <div className="bg-white border border-neutral-200">
+        <div className="bg-card border border-border">
           {/* Header */}
           <div className="p-6 flex items-start gap-4">
             {/* Logo carré */}
@@ -213,7 +213,7 @@ export default function ClientDetails() {
             ) : (
               <div
                 className="w-14 h-14 flex items-center justify-center flex-shrink-0 display"
-                style={{ background: '#0f1422', color: '#ffffff', fontWeight: 700, fontSize: 20 }}
+                style={{ background: 'hsl(var(--brand-ink))', color: 'hsl(var(--card))', fontWeight: 700, fontSize: 20 }}
               >
                 {initial}
               </div>
@@ -223,13 +223,13 @@ export default function ClientDetails() {
             <div className="flex-1 min-w-0 space-y-2">
               {/* Ligne 1 : nom + badge */}
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="display" style={{ fontSize: 30, fontWeight: 700, color: '#0f1422', lineHeight: 1.1 }}>
+                <h1 className="display" style={{ fontSize: 30, fontWeight: 700, color: 'hsl(var(--brand-ink))', lineHeight: 1.1 }}>
                   {client.company}
                 </h1>
                 {statusName && (
                   <span
                     className="font-semibold tracking-wider uppercase"
-                    style={{ background: '#E8FF4C', color: '#0f1422', padding: '2px 8px', fontSize: 10 }}
+                    style={{ background: 'hsl(var(--brand-yellow))', color: 'hsl(var(--brand-ink))', padding: '2px 8px', fontSize: 10 }}
                   >
                     {statusName}
                   </span>
@@ -237,19 +237,19 @@ export default function ClientDetails() {
               </div>
 
               {/* Ligne 2 : contact / email / phone */}
-              <div className="flex items-center flex-wrap text-[14px] text-neutral-600" style={{ gap: 20 }}>
+              <div className="flex items-center flex-wrap text-[14px] text-foreground" style={{ gap: 20 }}>
                 {mainContactName && (
                   <span className="inline-flex items-center gap-1.5">
                     <UserIcon size={14} /> {mainContactName}
                   </span>
                 )}
                 {client.email && (
-                  <a href={`mailto:${client.email}`} className="inline-flex items-center gap-1.5 hover:text-neutral-900">
+                  <a href={`mailto:${client.email}`} className="inline-flex items-center gap-1.5 hover:text-foreground">
                     <Mail size={14} /> {client.email}
                   </a>
                 )}
                 {client.phone && (
-                  <a href={`tel:${client.phone}`} className="inline-flex items-center gap-1.5 hover:text-neutral-900">
+                  <a href={`tel:${client.phone}`} className="inline-flex items-center gap-1.5 hover:text-foreground">
                     <Phone size={14} /> {client.phone}
                   </a>
                 )}
@@ -260,17 +260,17 @@ export default function ClientDetails() {
                         src={hubOwner.avatar_url}
                         alt={[hubOwner.first_name, hubOwner.last_name].filter(Boolean).join(' ')}
                         className="w-6 h-6 object-cover flex-shrink-0"
-                        style={{ border: '1px solid #0f1422' }}
+                        style={{ border: '1px solid hsl(var(--brand-ink))' }}
                       />
                     ) : (
                       <span
                         className="w-6 h-6 inline-flex items-center justify-center flex-shrink-0 display"
-                        style={{ background: '#0f1422', color: '#fff', fontWeight: 700, fontSize: 10 }}
+                        style={{ background: 'hsl(var(--brand-ink))', color: 'hsl(var(--card))', fontWeight: 700, fontSize: 10 }}
                       >
                         {(hubOwner.first_name?.[0] || '?').toUpperCase()}
                       </span>
                     )}
-                    <span className="text-neutral-700">
+                    <span className="text-foreground">
                       {[hubOwner.first_name, hubOwner.last_name].filter(Boolean).join(' ')}
                     </span>
                   </span>
@@ -283,7 +283,7 @@ export default function ClientDetails() {
                   {metaTags.map((t, i) => (
                     <span
                       key={i}
-                      className="inline-flex items-center gap-1 bg-neutral-100 text-neutral-700"
+                      className="inline-flex items-center gap-1 bg-muted text-foreground"
                       style={{ padding: '4px 8px', fontSize: 12 }}
                     >
                       {t.startsWith('Dernière interaction') && <Clock size={12} />}
@@ -345,7 +345,7 @@ export default function ClientDetails() {
           </div>
 
           {/* Tabs sous le header dans le même conteneur */}
-          <div className="border-t border-neutral-200 px-6">
+          <div className="border-t border-border px-6">
             <div className="flex items-center overflow-x-auto" style={{ gap: 24 }}>
               {tabs.map((tab) => {
                 const isActive = currentTab?.value === tab.value;
@@ -357,9 +357,9 @@ export default function ClientDetails() {
                       'py-3 text-sm whitespace-nowrap transition-colors border-b-2 -mb-px inline-flex items-center gap-2',
                       isActive
                         ? 'font-semibold'
-                        : 'text-neutral-500 hover:text-neutral-800 border-transparent',
+                        : 'text-muted-foreground hover:text-foreground border-transparent',
                     )}
-                    style={isActive ? { color: '#0f1422', borderColor: '#0f1422' } : undefined}
+                    style={isActive ? { color: 'hsl(var(--brand-ink))', borderColor: 'hsl(var(--brand-ink))' } : undefined}
                   >
                     {tab.label}
                     {tab.badge !== undefined && tab.badge > 0 && (
@@ -367,8 +367,8 @@ export default function ClientDetails() {
                         className="inline-flex items-center justify-center text-[11px] font-semibold"
                         style={{
                           minWidth: 18, height: 18, padding: '0 5px',
-                          background: isActive ? '#0f1422' : '#e5e5e5',
-                          color: isActive ? '#fff' : '#525252',
+                          background: isActive ? 'hsl(var(--brand-ink))' : '#e5e5e5',
+                          color: isActive ? 'hsl(var(--card))' : '#525252',
                         }}
                       >
                         {tab.badge}

@@ -98,7 +98,7 @@ export function FollowupHistoryList({ trackingId }: Props) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 text-sm text-neutral-500 py-4">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
         <Loader2 className="h-4 w-4 animate-spin" /> Chargement…
       </div>
     );
@@ -106,7 +106,7 @@ export function FollowupHistoryList({ trackingId }: Props) {
 
   if (history.length === 0) {
     return (
-      <p className="text-sm text-neutral-500 italic py-4">
+      <p className="text-sm text-muted-foreground italic py-4">
         Aucune excuse générée pour ce client.
       </p>
     );
@@ -116,12 +116,12 @@ export function FollowupHistoryList({ trackingId }: Props) {
     <div className="space-y-3">
       {availableKeys.length > 0 && (
         <div className="flex items-center justify-between gap-2">
-          <p className="text-xs text-neutral-500">
+          <p className="text-xs text-muted-foreground">
             {filtered.length} excuse{filtered.length > 1 ? 's' : ''}
             {filtered.length !== history.length && ` / ${history.length}`}
           </p>
           <div className="flex items-center gap-2">
-            <Label className="text-xs text-neutral-500">Filtrer :</Label>
+            <Label className="text-xs text-muted-foreground">Filtrer :</Label>
             <Select value={filter} onValueChange={setFilter}>
               <SelectTrigger className="h-8 w-[180px] text-xs rounded-none">
                 <SelectValue placeholder="Toutes les actions" />
@@ -139,24 +139,24 @@ export function FollowupHistoryList({ trackingId }: Props) {
 
       <div className="space-y-2">
         {filtered.length === 0 ? (
-          <p className="text-xs text-neutral-500 italic py-2">Aucune excuse pour ce filtre.</p>
+          <p className="text-xs text-muted-foreground italic py-2">Aucune excuse pour ce filtre.</p>
         ) : filtered.map((h: any) => (
-          <div key={h.id} className="flex items-start gap-2 border border-neutral-200 p-2.5">
+          <div key={h.id} className="flex items-start gap-2 border border-border p-2.5">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-sm font-medium truncate" style={{ color: '#0f1422' }}>
+                <p className="text-sm font-medium truncate" style={{ color: 'hsl(var(--brand-ink))' }}>
                   {h.subject || '(sans objet)'}
                 </p>
                 {h.action_key && (
                   <span
                     className="inline-flex items-center font-semibold uppercase tracking-wider"
-                    style={{ background: '#0f1422', color: '#E8FF4C', padding: '1px 6px', fontSize: 9 }}
+                    style={{ background: 'hsl(var(--brand-ink))', color: 'hsl(var(--brand-yellow))', padding: '1px 6px', fontSize: 9 }}
                   >
                     {ACTION_BADGES[h.action_key] || h.action_key}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-neutral-500">
+              <p className="text-xs text-muted-foreground">
                 {format(new Date(h.created_at), 'd MMM yyyy à HH:mm', { locale: fr })}
                 {' · '}{toneLabel(h.tone)}
                 {h.recipient_email && (<> · <span className="font-mono">{h.recipient_email}</span></>)}
@@ -165,7 +165,7 @@ export function FollowupHistoryList({ trackingId }: Props) {
             <button
               type="button"
               onClick={() => setOpenId(h.id)}
-              className="p-1.5 text-neutral-400 hover:text-neutral-900"
+              className="p-1.5 text-muted-foreground hover:text-foreground"
               title="Consulter"
               aria-label="Consulter"
             >
@@ -175,7 +175,7 @@ export function FollowupHistoryList({ trackingId }: Props) {
               <button
                 type="button"
                 onClick={() => sendMail(h.recipient_email, h.subject, h.body_html)}
-                className="p-1.5 text-neutral-400 hover:text-neutral-900"
+                className="p-1.5 text-muted-foreground hover:text-foreground"
                 title="Renvoyer par email"
                 aria-label="Renvoyer par email"
               >
@@ -185,7 +185,7 @@ export function FollowupHistoryList({ trackingId }: Props) {
             <button
               type="button"
               onClick={() => remove(h.id)}
-              className="p-1.5 text-neutral-400 hover:text-red-600"
+              className="p-1.5 text-muted-foreground hover:text-red-600"
               title="Supprimer"
               aria-label="Supprimer"
             >
@@ -200,7 +200,7 @@ export function FollowupHistoryList({ trackingId }: Props) {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 display">
-              <Sparkles className="h-5 w-5" style={{ color: '#0f1422' }} />
+              <Sparkles className="h-5 w-5" style={{ color: 'hsl(var(--brand-ink))' }} />
               {opened?.subject || 'Excuse de relance'}
             </DialogTitle>
             <DialogDescription>
@@ -216,14 +216,14 @@ export function FollowupHistoryList({ trackingId }: Props) {
 
           {opened && (
             <div className="space-y-4 max-h-[65vh] overflow-y-auto">
-              <div className="border border-neutral-200 p-4 bg-white">
+              <div className="border border-border p-4 bg-card">
                 <div
                   className="prose prose-sm max-w-none"
                   dangerouslySetInnerHTML={{ __html: opened.body_html || '' }}
                 />
               </div>
 
-              <div className="flex flex-wrap gap-2 pt-2 border-t border-neutral-100">
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
                 <Button size="sm" variant="outline" onClick={() => copyHtml(opened.body_html || '')} className="rounded-none">
                   <Copy className="h-4 w-4 mr-1" /> Copier le HTML
                 </Button>
@@ -232,7 +232,7 @@ export function FollowupHistoryList({ trackingId }: Props) {
                     size="sm"
                     onClick={() => sendMail(opened.recipient_email, opened.subject, opened.body_html)}
                     className="rounded-none"
-                    style={{ background: '#0f1422', color: '#fff' }}
+                    style={{ background: 'hsl(var(--brand-ink))', color: 'hsl(var(--card))' }}
                   >
                     <Mail className="h-4 w-4 mr-1" /> Envoyer par email
                   </Button>

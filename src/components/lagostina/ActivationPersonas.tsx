@@ -18,9 +18,9 @@ const MEDIA_ICONS: Record<string, { icon: string; color: string }> = {
   'instagram': { icon: '📸', color: '#E1306C' },
   'ytb': { icon: '▶️', color: '#FF0000' },
   'youtube': { icon: '▶️', color: '#FF0000' },
-  'tiktok': { icon: '🎵', color: '#000000' },
+  'tiktok': { icon: '🎵', color: 'hsl(var(--foreground))' },
   'pinterest': { icon: '📌', color: '#E60023' },
-  'blogs cuisine': { icon: '📝', color: '#6b7280' },
+  'blogs cuisine': { icon: '📝', color: 'hsl(var(--muted-foreground))' },
   'ytb shorts': { icon: '▶️', color: '#FF0000' },
 };
 
@@ -29,9 +29,9 @@ function MediaBadges({ mediaStr }: { mediaStr: string }) {
   return (
     <div className="flex gap-1.5 flex-wrap">
       {parts.map((m) => {
-        const info = MEDIA_ICONS[m] || { icon: '📡', color: '#6b7280' };
+        const info = MEDIA_ICONS[m] || { icon: '📡', color: 'hsl(var(--muted-foreground))' };
         return (
-          <span key={m} className="inline-flex items-center gap-1 px-2 py-0.5 bg-black/5 dark:bg-white/10 text-xs font-['Roboto']">
+          <span key={m} className="inline-flex items-center gap-1 px-2 py-0.5 bg-foreground/5/10 text-xs font-['Roboto']">
             <span>{info.icon}</span>
             <span className="text-foreground capitalize">{m}</span>
           </span>
@@ -80,7 +80,7 @@ const AXES = [
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   ok: { bg: 'bg-[#22c55e]/20', text: 'text-[#22c55e]' },
-  alert: { bg: 'bg-black/20 dark:bg-white/20', text: 'text-black dark:text-white font-semibold' },
+  alert: { bg: 'bg-foreground/20/20', text: 'text-foreground font-semibold' },
   blocked: { bg: 'bg-[#ef4444]/20', text: 'text-[#ef4444]' },
 };
 
@@ -161,7 +161,7 @@ export function ActivationPersonas() {
     return (
       <div className="space-y-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-32 bg-gray-100 animate-pulse" />
+          <div key={i} className="h-32 bg-muted animate-pulse" />
         ))}
       </div>
     );
@@ -177,8 +177,8 @@ export function ActivationPersonas() {
             onClick={() => setSelectedPriority(p)}
             className={`px-4 py-2 text-sm font-['Roboto'] transition-colors ${
               selectedPriority === p
-                ? 'bg-black text-white dark:bg-[#E8FF4C] dark:text-black font-medium'
-                : 'bg-white dark:bg-[#0f1422] border border-border/30 text-muted-foreground hover:text-foreground'
+                ? 'bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] font-medium'
+                : 'bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 text-muted-foreground hover:text-foreground'
             }`}
           >
             {p.replace('_', ' ').toUpperCase()}
@@ -191,8 +191,8 @@ export function ActivationPersonas() {
                 onClick={() => setSelectedPriority(p)}
                 className={`px-4 py-2 text-sm font-['Roboto'] transition-colors ${
                   selectedPriority === p
-                    ? 'bg-black text-white dark:bg-[#E8FF4C] dark:text-black font-medium'
-                    : 'bg-white dark:bg-[#0f1422] border border-border/30 text-muted-foreground hover:text-foreground'
+                    ? 'bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] font-medium'
+                    : 'bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {p.replace('_', ' ').toUpperCase()}
@@ -204,7 +204,7 @@ export function ActivationPersonas() {
 
       {/* Status bar */}
       {filteredStatus.length > 0 && (
-        <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
+        <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
           <table className="w-full text-xs font-['Roboto']">
             <thead>
               <tr className="border-b border-border/40">
@@ -220,7 +220,7 @@ export function ActivationPersonas() {
                 {AXES.map((axis) => {
                   const item = filteredStatus.find((s) => s.axis === axis.key);
                   if (!item) return <td key={axis.key} className="text-center px-3 py-2 text-muted-foreground/40">—</td>;
-                  const style = STATUS_STYLES[item.status] || { bg: 'bg-gray-200', text: 'text-muted-foreground' };
+                  const style = STATUS_STYLES[item.status] || { bg: 'bg-muted', text: 'text-muted-foreground' };
                   const label = item.status === 'ok' ? 'OK' : item.status === 'alert' ? 'Alerte' : item.status === 'blocked' ? 'Bloqué' : item.status;
                   return (
                     <td key={axis.key} className="text-center px-3 py-2">
@@ -240,17 +240,17 @@ export function ActivationPersonas() {
             {activeTab === 'personas' && (
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <Users className="h-4 w-4 text-black dark:text-white font-semibold" />
+                  <Users className="h-4 w-4 text-foreground font-semibold" />
                   <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">Personas</h3>
                 </div>
                 {filteredPersonas.length === 0 ? (
-                  <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-6 text-center text-muted-foreground font-['Roboto'] text-sm">
+                  <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-6 text-center text-muted-foreground font-['Roboto'] text-sm">
                     Aucun persona défini pour cette priorité
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredPersonas.map((persona) => (
-                      <div key={persona.id} className="bg-gray-50 dark:bg-[#141928] border-t-[3px] border-black dark:border-white">
+                      <div key={persona.id} className="bg-muted dark:bg-[#141928] border-t-[3px] border-black dark:border-white">
                          <div className="p-4 space-y-3">
                           <div className="flex items-start justify-between">
                             <div className="flex items-center gap-3">
@@ -270,7 +270,7 @@ export function ActivationPersonas() {
                               </div>
                             </div>
                             {persona.market_weight && (
-                              <span className="bg-black text-white dark:bg-[#E8FF4C] dark:text-black px-2 py-0.5 text-xs font-['Roboto'] font-bold flex-shrink-0">
+                              <span className="bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] px-2 py-0.5 text-xs font-['Roboto'] font-bold flex-shrink-0">
                                 {persona.market_weight}
                               </span>
                             )}
@@ -282,7 +282,7 @@ export function ActivationPersonas() {
                               <ol className="space-y-0.5">
                                 {jsonToArray(persona.motivators).map((m, i) => (
                                   <li key={i} className="text-foreground text-xs font-['Roboto'] flex gap-1.5">
-                                    <span className="text-black dark:text-white font-semibold font-bold">{i + 1}.</span> {m}
+                                    <span className="text-foreground font-semibold font-bold">{i + 1}.</span> {m}
                                   </li>
                                 ))}
                               </ol>
@@ -326,10 +326,10 @@ export function ActivationPersonas() {
                   return (
                     <div>
                       <div className="flex items-center gap-2 mb-3">
-                        <Package className="h-4 w-4 text-black dark:text-white font-semibold" />
+                        <Package className="h-4 w-4 text-foreground font-semibold" />
                         <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">Produit</h3>
                       </div>
-                      <div className="bg-white dark:bg-[#0f1422] border border-border/30 p-4">
+                      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4">
                         <div className="grid grid-cols-2 gap-4">
                           {d.flagship && (
                             <div className="col-span-2">
@@ -365,12 +365,12 @@ export function ActivationPersonas() {
                         {(d.marge_std || d.prix_conso) && (
                           <div className="flex gap-3 mt-4 pt-3 border-t border-border/40">
                             {d.marge_std && (
-                              <span className="bg-black/20 dark:bg-white/20 text-black dark:text-white font-semibold px-3 py-1 text-xs font-['Roboto'] font-medium">
+                              <span className="bg-foreground/20/20 text-foreground font-semibold px-3 py-1 text-xs font-['Roboto'] font-medium">
                                 Marge std: {String(d.marge_std)}
                               </span>
                             )}
                             {d.prix_conso && (
-                              <span className="bg-black/20 dark:bg-white/20 text-black dark:text-white font-semibold px-3 py-1 text-xs font-['Roboto'] font-medium">
+                              <span className="bg-foreground/20/20 text-foreground font-semibold px-3 py-1 text-xs font-['Roboto'] font-medium">
                                 Prix conso: {String(d.prix_conso)}
                               </span>
                             )}
@@ -390,10 +390,10 @@ export function ActivationPersonas() {
                   return (
                     <div>
                       <div className="flex items-center gap-2 mb-3">
-                        <Store className="h-4 w-4 text-black dark:text-white font-semibold" />
+                        <Store className="h-4 w-4 text-foreground font-semibold" />
                         <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">Distribution</h3>
                       </div>
-                      <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
+                      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
                         {channels && channels.length > 0 ? (
                           <table className="w-full text-xs font-['Roboto']">
                             <thead>
@@ -442,12 +442,12 @@ export function ActivationPersonas() {
                   return (
                     <div key={section}>
                       <div className="flex items-center gap-2 mb-3">
-                        {section === 'sell_in' ? <TrendingUp className="h-4 w-4 text-black dark:text-white font-semibold" /> : <TrendingDown className="h-4 w-4 text-black dark:text-white font-semibold" />}
+                        {section === 'sell_in' ? <TrendingUp className="h-4 w-4 text-foreground font-semibold" /> : <TrendingDown className="h-4 w-4 text-foreground font-semibold" />}
                         <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">
                           {section === 'sell_in' ? 'Sell-in' : 'Sell-out'}
                         </h3>
                       </div>
-                      <div className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
+                      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
                         {rows && rows.length > 0 ? (
                           <table className="w-full text-xs font-['Roboto']">
                             <thead>
@@ -457,7 +457,7 @@ export function ActivationPersonas() {
                                   <th key={m} className="text-center px-2 py-2 text-muted-foreground font-medium">{m}</th>
                                 ))}
                                 {quarters.map((q) => (
-                                  <th key={q} className="text-center px-2 py-2 text-black dark:text-white font-semibold font-bold border-l border-border/40">{q}</th>
+                                  <th key={q} className="text-center px-2 py-2 text-foreground font-semibold font-bold border-l border-border/40">{q}</th>
                                 ))}
                               </tr>
                             </thead>
@@ -465,7 +465,7 @@ export function ActivationPersonas() {
                               {rows.map((row: any, ri: number) => {
                                 const isEvol = String(row.label || '').toLowerCase().includes('évol') || String(row.label || '').toLowerCase().includes('evol');
                                 return (
-                                  <tr key={ri} className="border-b border-border/20 hover:bg-gray-50 dark:bg-[#141928]">
+                                  <tr key={ri} className="border-b border-border/20 hover:bg-muted dark:bg-[#141928]">
                                     <td className="px-3 py-2 text-foreground font-medium">{row.label || '—'}</td>
                                     {months.map((m) => {
                                       const val = row[m.toLowerCase()] ?? row[m] ?? null;
@@ -484,7 +484,7 @@ export function ActivationPersonas() {
                                       const val = row[q.toLowerCase()] ?? row[q] ?? null;
                                       const numVal = val != null ? Number(val) : null;
                                       return (
-                                        <td key={q} className="px-2 py-2 text-center text-black dark:text-white font-semibold font-medium border-l border-border/40">
+                                        <td key={q} className="px-2 py-2 text-center text-foreground font-semibold font-medium border-l border-border/40">
                                           {numVal != null ? formatNum(numVal) : '—'}
                                         </td>
                                       );

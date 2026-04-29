@@ -12,7 +12,7 @@ export const SectionTitle = ({
       fontFamily: "'Instrument Sans', sans-serif",
       fontWeight: 700,
       fontSize: 14,
-      color: "#000",
+      color: "hsl(var(--foreground))",
       letterSpacing: "-0.01em",
       marginBottom: 12,
       ...style,
@@ -31,9 +31,9 @@ export const Widget = ({
 }) => (
   <div
     style={{
-      border: "1px solid #E8E8E8",
+      border: "1px solid hsl(var(--border))",
       boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03)",
-      background: "#ffffff",
+      background: "hsl(var(--card))",
       padding: "20px",
       display: "flex",
       flexDirection: "column",
@@ -61,7 +61,7 @@ export const SeeMore = ({
       fontFamily: "'Instrument Sans', sans-serif",
       fontWeight: 600,
       fontSize: 11,
-      color: "#9A9A9A",
+      color: "hsl(var(--muted-foreground))",
       letterSpacing: "0.04em",
       textAlign: "left",
       padding: 0,

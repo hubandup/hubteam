@@ -26,7 +26,7 @@ export function ClientListView({ clients, onClientClick, onClientHover }: Client
           prospect: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
           negotiation: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
           active: 'bg-green-500/10 text-green-600 border-green-500/20',
-          inactive: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
+          inactive: 'bg-muted text-foreground border-border',
         };
 
         const stageLabel = stageLabelMap[client.kanban_stage] || client.kanban_stage;

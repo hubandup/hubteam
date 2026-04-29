@@ -121,7 +121,7 @@ export function ScrapeUrlsManagerModal({ open, onOpenChange, trackingId }: Props
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 display">
-            <Link2 className="h-5 w-5" style={{ color: '#0f1422' }} />
+            <Link2 className="h-5 w-5" style={{ color: 'hsl(var(--brand-ink))' }} />
             URLs veille IA
           </DialogTitle>
           <DialogDescription>
@@ -131,10 +131,10 @@ export function ScrapeUrlsManagerModal({ open, onOpenChange, trackingId }: Props
 
         {/* Bandeau fraîcheur des caches globaux (debug) */}
         <div className="flex flex-wrap gap-2 -mt-2">
-          <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-2 py-1 bg-neutral-100 text-neutral-700">
+          <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-2 py-1 bg-muted text-foreground">
             Cache HUB+UP : {lastHubScrape ? format(new Date(lastHubScrape), 'd MMM yyyy HH:mm', { locale: fr }) : 'jamais'}
           </span>
-          <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-2 py-1 bg-neutral-100 text-neutral-700">
+          <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-2 py-1 bg-muted text-foreground">
             Google Alerts : {lastAlertsFetch ? format(new Date(lastAlertsFetch), 'd MMM yyyy HH:mm', { locale: fr }) : 'jamais'}
           </span>
         </div>
@@ -154,7 +154,7 @@ export function ScrapeUrlsManagerModal({ open, onOpenChange, trackingId }: Props
               onChange={(e) => setLabel(e.target.value)}
               className="md:w-[200px] rounded-none"
             />
-            <Button onClick={add} className="rounded-none" style={{ background: '#0f1422', color: '#fff' }}>
+            <Button onClick={add} className="rounded-none" style={{ background: 'hsl(var(--brand-ink))', color: 'hsl(var(--card))' }}>
               <Plus className="h-4 w-4 mr-1" /> Ajouter
             </Button>
           </div>
@@ -178,29 +178,29 @@ export function ScrapeUrlsManagerModal({ open, onOpenChange, trackingId }: Props
         {/* List */}
         <div className="max-h-[50vh] overflow-y-auto -mx-6 px-6">
           {isLoading ? (
-            <div className="flex items-center justify-center py-6 text-neutral-500 text-sm">
+            <div className="flex items-center justify-center py-6 text-muted-foreground text-sm">
               <Loader2 className="h-4 w-4 animate-spin mr-2" /> Chargement…
             </div>
           ) : urls.length === 0 ? (
-            <p className="text-sm text-neutral-500 italic py-4 text-center">
+            <p className="text-sm text-muted-foreground italic py-4 text-center">
               Aucune URL configurée pour ce client.
             </p>
           ) : (
             <ul className="space-y-2">
               {urls.map((u: any) => (
-                <li key={u.id} className="border border-neutral-200 p-3 flex items-start gap-2">
+                <li key={u.id} className="border border-border p-3 flex items-start gap-2">
                   <div className="flex-1 min-w-0">
-                    {u.label && <p className="text-sm font-medium" style={{ color: '#0f1422' }}>{u.label}</p>}
+                    {u.label && <p className="text-sm font-medium" style={{ color: 'hsl(var(--brand-ink))' }}>{u.label}</p>}
                     <a
                       href={u.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-neutral-700 hover:underline truncate block"
+                      className="text-xs text-foreground hover:underline truncate block"
                     >
                       {u.url}
                     </a>
                     {u.last_scraped_at && (
-                      <p className="text-[10px] text-neutral-500 mt-0.5">
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
                         Dernier scrape : {format(new Date(u.last_scraped_at), 'd MMM yyyy HH:mm', { locale: fr })}
                         {u.last_scrape_status === 'failed' && (
                           <span className="text-red-600 ml-1">· échec</span>
@@ -212,7 +212,7 @@ export function ScrapeUrlsManagerModal({ open, onOpenChange, trackingId }: Props
                     type="button"
                     onClick={() => scrapeOne(u.id)}
                     disabled={scrapingId === u.id}
-                    className="p-1.5 text-neutral-400 hover:text-neutral-900 disabled:opacity-50"
+                    className="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-50"
                     title="Rescraper"
                     aria-label="Rescraper"
                   >
@@ -221,7 +221,7 @@ export function ScrapeUrlsManagerModal({ open, onOpenChange, trackingId }: Props
                   <button
                     type="button"
                     onClick={() => remove(u.id)}
-                    className="p-1.5 text-neutral-400 hover:text-red-600"
+                    className="p-1.5 text-muted-foreground hover:text-red-600"
                     title="Supprimer"
                     aria-label="Supprimer"
                   >

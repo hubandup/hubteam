@@ -127,30 +127,30 @@ export function QualificationCollapsible({ trackingId }: Props) {
   };
 
   return (
-    <section className="bg-white border border-neutral-200">
+    <section className="bg-card border border-border">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full px-5 py-4 flex items-center justify-between hover:bg-neutral-50 transition-colors text-left"
+        className="w-full px-5 py-4 flex items-center justify-between hover:bg-muted transition-colors text-left"
       >
         <div className="flex items-baseline gap-3 min-w-0">
-          <h3 className="display leading-none" style={{ fontSize: 18, fontWeight: 700, color: '#0f1422' }}>
+          <h3 className="display leading-none" style={{ fontSize: 18, fontWeight: 700, color: 'hsl(var(--brand-ink))' }}>
             Qualification du besoin
           </h3>
-          <span className="text-neutral-500 whitespace-nowrap leading-none" style={{ fontSize: 12 }}>
+          <span className="text-muted-foreground whitespace-nowrap leading-none" style={{ fontSize: 12 }}>
             {filledCount}/{questions.length} renseigné{filledCount > 1 ? 's' : ''}
           </span>
         </div>
         <ChevronDown
           size={18}
-          className={`text-neutral-400 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
+          className={`text-muted-foreground flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>
 
       {open && (
-        <div className="border-t border-neutral-200 px-5 py-5">
+        <div className="border-t border-border px-5 py-5">
           {isLoading ? (
-            <div className="flex items-center justify-center py-6 text-neutral-500 text-sm">
+            <div className="flex items-center justify-center py-6 text-muted-foreground text-sm">
               <Loader2 className="h-4 w-4 animate-spin mr-2" /> Chargement…
             </div>
           ) : (
@@ -160,7 +160,7 @@ export function QualificationCollapsible({ trackingId }: Props) {
                   <div key={q.id} className="space-y-1.5 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <label
-                        className="uppercase tracking-wider font-semibold text-neutral-500"
+                        className="uppercase tracking-wider font-semibold text-muted-foreground"
                         style={{ fontSize: 12 }}
                       >
                         {q.question_label}
@@ -169,7 +169,7 @@ export function QualificationCollapsible({ trackingId }: Props) {
                         <button
                           type="button"
                           onClick={() => remove(q.id)}
-                          className="text-neutral-400 hover:text-red-600"
+                          className="text-muted-foreground hover:text-red-600"
                           aria-label="Supprimer la question"
                         >
                           <Trash2 size={12} />
@@ -181,7 +181,7 @@ export function QualificationCollapsible({ trackingId }: Props) {
                 ))}
               </div>
 
-              <div className="mt-5 pt-4 border-t border-neutral-100 flex justify-end">
+              <div className="mt-5 pt-4 border-t border-border flex justify-end">
                 <Button size="sm" variant="outline" onClick={addCustom}>
                   <Plus className="h-4 w-4 mr-1" /> Ajouter une question
                 </Button>

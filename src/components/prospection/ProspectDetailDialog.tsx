@@ -122,9 +122,9 @@ export function ProspectDetailDialog({
   const statusConfig = PROSPECT_STATUSES.find(s => s.value === prospect.status);
   const weightedRevenue = prospect.estimated_amount * prospect.probability;
   const priorityColors = {
-    A: 'bg-red-500 text-white',
-    B: 'bg-yellow-500 text-white',
-    C: 'bg-green-500 text-white'
+    A: 'bg-red-500 text-background',
+    B: 'bg-yellow-500 text-background',
+    C: 'bg-green-500 text-background'
   };
   return <>
       <Sheet open={open} onOpenChange={onOpenChange}>

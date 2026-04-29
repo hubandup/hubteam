@@ -468,7 +468,7 @@ export function ScorecardRECC({
     return (
       <div className="space-y-2">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-10 bg-black/5 dark:bg-white/5 animate-pulse" />
+          <div key={i} className="h-10 bg-foreground/5/5 animate-pulse" />
         ))}
       </div>
     );
@@ -491,7 +491,7 @@ export function ScorecardRECC({
     <div className="space-y-4">
       {/* Header: current week badge + learnings */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white dark:bg-[#E8FF4C] dark:text-black font-['Roboto'] text-sm font-medium">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] font-['Roboto'] text-sm font-medium">
           <CalendarClock className="h-4 w-4" />
           <span>Semaine en cours&nbsp;: <strong>S{currentWeek}</strong></span>
           <span className="opacity-60">·</span>
@@ -503,11 +503,11 @@ export function ScorecardRECC({
       {learningsPanel}
 
       {/* Scorecard table */}
-      <div ref={tableRef} className="bg-white dark:bg-[#0f1422] border border-border/30 overflow-x-auto">
+      <div ref={tableRef} className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
         <table className="w-full text-sm font-['Roboto'] border-collapse">
           <thead>
-            <tr className="border-b border-border/40 bg-black/[0.02] dark:bg-white/[0.02]">
-              <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-white dark:bg-[#0f1422] z-20 min-w-[220px] border-r border-border/30 text-[11px]">
+            <tr className="border-b border-border/40 bg-foreground/[0.02]/[0.02]">
+              <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-card dark:bg-[hsl(var(--brand-ink))] z-20 min-w-[220px] border-r border-border/30 text-[11px]">
                 Levier / KPI
               </th>
               {visibleMonths.map((mo) => {
@@ -518,7 +518,7 @@ export function ScorecardRECC({
                     data-month={mo.idx}
                     className={`text-center px-2 py-2 uppercase tracking-wider text-[11px] min-w-[90px] border-l border-border/30 ${
                       isCurrent
-                        ? 'bg-[#E8FF4C]/30 dark:bg-[#E8FF4C]/20 text-black dark:text-[#E8FF4C] font-bold'
+                        ? 'bg-[hsl(var(--brand-yellow))]/30 dark:bg-[hsl(var(--brand-yellow))]/20 text-foreground dark:text-[hsl(var(--brand-yellow))] font-bold'
                         : 'text-muted-foreground font-medium'
                     }`}
                   >
@@ -539,11 +539,11 @@ export function ScorecardRECC({
                   {/* Levier header row (clickable) */}
                   <tr
                     key={`hdr-${lev.id}`}
-                    className="border-b border-border/30 cursor-pointer select-none hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                    className="border-b border-border/30 cursor-pointer select-none hover:bg-foreground/[0.03] dark:hover:bg-card/[0.04]"
                     onClick={() => toggleLevier(lev.id)}
                   >
                     <td
-                      className="px-3 py-2 text-foreground font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-white dark:bg-[#0f1422] z-10 border-r border-border/30"
+                      className="px-3 py-2 text-foreground font-['Instrument_Sans'] font-bold text-xs sticky left-0 bg-card dark:bg-[hsl(var(--brand-ink))] z-10 border-r border-border/30"
                       style={{ borderLeft: `3px solid ${lev.color}` }}
                     >
                       <div className="inline-flex items-center gap-1.5">
@@ -556,7 +556,7 @@ export function ScorecardRECC({
                       <td
                         key={mo.idx}
                         className={`border-l border-border/20 ${
-                          mo.idx === currentMonthIdx ? 'bg-[#E8FF4C]/10 dark:bg-[#E8FF4C]/5' : ''
+                          mo.idx === currentMonthIdx ? 'bg-[hsl(var(--brand-yellow))]/10 dark:bg-[hsl(var(--brand-yellow))]/5' : ''
                         }`}
                       />
                     ))}
@@ -565,10 +565,10 @@ export function ScorecardRECC({
                   {isOpen && lev.kpis.map((kpi) => (
                     <tr
                       key={`${lev.id}-${kpi.key}`}
-                      className="border-b border-border/20 hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
+                      className="border-b border-border/20 hover:bg-foreground/[0.02] dark:hover:bg-card/[0.03]"
                     >
                       <td
-                        className="pl-9 pr-2 py-1.5 text-foreground text-[12px] sticky left-0 bg-white dark:bg-[#0f1422] z-10 border-r border-border/30"
+                        className="pl-9 pr-2 py-1.5 text-foreground text-[12px] sticky left-0 bg-card dark:bg-[hsl(var(--brand-ink))] z-10 border-r border-border/30"
                         style={{ borderLeft: `3px solid ${lev.color}` }}
                       >
                         {kpi.label}
@@ -585,7 +585,7 @@ export function ScorecardRECC({
                             notesMap={cellNotesMap}
                             levierColor={lev.color}
                             className={`px-2 py-1.5 text-center text-[12px] tabular-nums border-l border-border/10 ${
-                              isCurrent ? 'bg-[#E8FF4C]/10 dark:bg-[#E8FF4C]/5 font-medium' : ''
+                              isCurrent ? 'bg-[hsl(var(--brand-yellow))]/10 dark:bg-[hsl(var(--brand-yellow))]/5 font-medium' : ''
                             } ${val == null ? 'text-muted-foreground/40' : 'text-foreground'}`}
                           >
                             {fmt(val, kpi.format)}
@@ -610,7 +610,7 @@ export function ScorecardRECC({
           </div>
         ))}
         <div className="ml-auto inline-flex items-center gap-1.5">
-          <span className="inline-block w-3 h-3 bg-[#E8FF4C]/40" />
+          <span className="inline-block w-3 h-3 bg-[hsl(var(--brand-yellow))]/40" />
           <span>Mois en cours</span>
         </div>
       </div>

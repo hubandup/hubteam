@@ -164,8 +164,8 @@ export default function ProjectDetails() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        <Loader2 className="h-6 w-6 animate-spin text-black" />
+      <div className="flex items-center justify-center h-screen bg-card">
+        <Loader2 className="h-6 w-6 animate-spin text-foreground" />
       </div>
     );
   }
@@ -174,11 +174,11 @@ export default function ProjectDetails() {
 
   // ── Status config ─────────────────────────────────────────────────────────
   const statusConfig = {
-    'planning':         { label: 'À faire',       bg: '#F5F5F5', color: '#6B6B6B', border: '1px solid #D4D4D4' },
-    'reco_in_progress': { label: 'Reco en cours',  bg: '#000000', color: '#E8FF4C', border: 'none' },
-    'active':           { label: 'En cours',       bg: '#E8FF4C', color: '#000000', border: 'none' },
-    'urgent':           { label: 'Urgent',         bg: '#000000', color: '#E8FF4C', border: 'none' },
-    'completed':        { label: 'Terminé',        bg: '#E8E8E8', color: '#6B6B6B', border: 'none' },
+    'planning':         { label: 'À faire',       bg: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))', border: '1px solid hsl(var(--border))' },
+    'reco_in_progress': { label: 'Reco en cours',  bg: 'hsl(var(--foreground))', color: 'hsl(var(--brand-yellow))', border: 'none' },
+    'active':           { label: 'En cours',       bg: 'hsl(var(--brand-yellow))', color: 'hsl(var(--foreground))', border: 'none' },
+    'urgent':           { label: 'Urgent',         bg: 'hsl(var(--foreground))', color: 'hsl(var(--brand-yellow))', border: 'none' },
+    'completed':        { label: 'Terminé',        bg: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))', border: 'none' },
     'lost':             { label: 'Perdu',          bg: '#FEE2E2', color: '#991B1B', border: 'none' },
   };
 
@@ -212,12 +212,12 @@ export default function ProjectDetails() {
             <ChevronDown size={11} />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="bg-white border border-[#E8E8E8] shadow-sm rounded-none p-1 min-w-[160px]">
+        <DropdownMenuContent align="start" className="bg-card border border-[hsl(var(--border))] shadow-sm rounded-none p-1 min-w-[160px]">
           {Object.entries(statusConfig).map(([key, cfg]) => (
             <DropdownMenuItem
               key={key}
               onClick={() => handleStatusChange(key)}
-              className="cursor-pointer rounded-none focus:bg-[#F5F5F5] px-3 py-2"
+              className="cursor-pointer rounded-none focus:bg-[hsl(var(--muted))] px-3 py-2"
             >
               <span style={{
                 fontFamily: "'Instrument Sans', sans-serif",
@@ -240,7 +240,7 @@ export default function ProjectDetails() {
   );
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-card min-h-screen">
       <div className="max-w-[960px] px-7 py-7 space-y-6">
 
         {/* ── Header ───────────────────────────────────────────────────── */}
@@ -249,7 +249,7 @@ export default function ProjectDetails() {
           {/* Back */}
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 text-[#9A9A9A] hover:text-black transition-colors"
+            className="flex items-center gap-1.5 text-[hsl(var(--muted-foreground))] hover:text-foreground transition-colors"
             style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 600, fontSize: 12, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           >
             <ArrowLeft size={14} />
@@ -264,7 +264,7 @@ export default function ProjectDetails() {
               fontSize: 26,
               letterSpacing: '-0.03em',
               lineHeight: 1,
-              color: '#000',
+              color: 'hsl(var(--foreground))',
               margin: 0,
             }}>
               {project.name}
@@ -277,13 +277,13 @@ export default function ProjectDetails() {
                 <ProtectedAction module="projects" action="update">
                   <button
                     onClick={() => setShowEditDialog(true)}
-                    className="flex items-center gap-1.5 hover:bg-[#F5F5F5] transition-colors"
+                    className="flex items-center gap-1.5 hover:bg-[hsl(var(--muted))] transition-colors"
                     style={{
                       fontFamily: "'Instrument Sans', sans-serif",
                       fontWeight: 600, fontSize: 12,
-                      color: '#000',
+                      color: 'hsl(var(--foreground))',
                       padding: '7px 14px',
-                      border: '1px solid #D4D4D4',
+                      border: '1px solid hsl(var(--border))',
                       background: 'transparent',
                       cursor: 'pointer',
                     }}
@@ -298,7 +298,7 @@ export default function ProjectDetails() {
                     style={{
                       fontFamily: "'Instrument Sans', sans-serif",
                       fontWeight: 700, fontSize: 12,
-                      color: '#fff',
+                      color: 'hsl(var(--card))',
                       padding: '7px 14px',
                       border: 'none',
                       background: '#DC2626',
@@ -314,7 +314,7 @@ export default function ProjectDetails() {
 
           {/* Client */}
           {client ? (
-            <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#9A9A9A', margin: 0 }}>
+            <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, color: 'hsl(var(--muted-foreground))', margin: 0 }}>
               <span className="uppercase">{client.company}</span> – {client.first_name} {client.last_name}
             </p>
           ) : (
@@ -325,7 +325,7 @@ export default function ProjectDetails() {
                 style={{
                   fontFamily: "'Instrument Sans', sans-serif",
                   fontWeight: 600, fontSize: 12,
-                  color: '#9A9A9A',
+                  color: 'hsl(var(--muted-foreground))',
                   background: 'none', border: 'none', cursor: 'pointer', padding: 0,
                 }}
               >
@@ -351,7 +351,7 @@ export default function ProjectDetails() {
           />
         ) : (
           <div style={{
-            background: '#000',
+            background: 'hsl(var(--foreground))',
             padding: '20px 24px',
             display: 'flex',
             alignItems: 'center',
@@ -363,14 +363,14 @@ export default function ProjectDetails() {
               fontWeight: 700,
               fontSize: 36,
               letterSpacing: '-0.04em',
-              color: '#E8FF4C',
+              color: 'hsl(var(--brand-yellow))',
               lineHeight: 1,
               flexShrink: 0,
             }}>
               {projectProgress.percentage}%
             </span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 13, color: '#fff', marginBottom: 10 }}>
+              <div style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 13, color: 'hsl(var(--card))', marginBottom: 10 }}>
                 Progression du projet
               </div>
               {/* Barre jaune sur fond sombre */}
@@ -378,7 +378,7 @@ export default function ProjectDetails() {
                 <div style={{
                   height: '100%',
                   width: `${projectProgress.percentage}%`,
-                  background: '#E8FF4C',
+                  background: 'hsl(var(--brand-yellow))',
                   borderRadius: 99,
                   transition: 'width 0.4s ease',
                 }} />
@@ -438,28 +438,28 @@ export default function ProjectDetails() {
               content: (
                 <div className="grid gap-4 md:grid-cols-2">
                   {/* Infos générales */}
-                  <div style={{ background: '#fff', border: '1px solid #E8E8E8', padding: '20px' }}>
-                    <div style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: '#000', marginBottom: 16 }}>
+                  <div style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', padding: '20px' }}>
+                    <div style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: 'hsl(var(--foreground))', marginBottom: 16 }}>
                       Informations générales
                     </div>
                     <div className="space-y-4">
                       {client ? (
                         <div>
-                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#9A9A9A', marginBottom: 4 }}>Client</p>
-                          <p style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: '#000' }}>
+                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 4 }}>Client</p>
+                          <p style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: 'hsl(var(--foreground))' }}>
                             <span className="uppercase">{client.company}</span> – {client.first_name} {client.last_name}
                           </p>
                         </div>
                       ) : (
                         <div>
-                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#9A9A9A', marginBottom: 8 }}>Client</p>
+                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 8 }}>Client</p>
                           <button
                             onClick={() => setShowSelectClientDialog(true)}
                             style={{
                               display: 'flex', alignItems: 'center', gap: 6,
                               fontFamily: "'Instrument Sans', sans-serif", fontWeight: 600, fontSize: 12,
-                              color: '#000', padding: '7px 14px',
-                              border: '1px solid #D4D4D4', background: 'transparent', cursor: 'pointer',
+                              color: 'hsl(var(--foreground))', padding: '7px 14px',
+                              border: '1px solid hsl(var(--border))', background: 'transparent', cursor: 'pointer',
                             }}
                           >
                             <Plus size={12} /> Sélectionner un client
@@ -468,16 +468,16 @@ export default function ProjectDetails() {
                       )}
 
                       <div>
-                        <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#9A9A9A', marginBottom: 4 }}>Nom du projet</p>
-                        <p style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: '#000' }}>
+                        <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 4 }}>Nom du projet</p>
+                        <p style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: 'hsl(var(--foreground))' }}>
                           {project.name}
                         </p>
                       </div>
 
                       {project.description && (
                         <div>
-                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#9A9A9A', marginBottom: 4 }}>Description</p>
-                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#000', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 4 }}>Description</p>
+                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, color: 'hsl(var(--foreground))', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
                             {project.description}
                           </p>
                         </div>
@@ -486,29 +486,29 @@ export default function ProjectDetails() {
                   </div>
 
                   {/* Dates & Statut */}
-                  <div style={{ background: '#fff', border: '1px solid #E8E8E8', padding: '20px' }}>
-                    <div style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: '#000', marginBottom: 16 }}>
+                  <div style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', padding: '20px' }}>
+                    <div style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: 'hsl(var(--foreground))', marginBottom: 16 }}>
                       Dates & Statut
                     </div>
                     <div className="space-y-4">
                       {project.start_date && (
                         <div>
-                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#9A9A9A', marginBottom: 4 }}>Date de début</p>
-                          <p style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: '#000' }}>
+                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 4 }}>Date de début</p>
+                          <p style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: 'hsl(var(--foreground))' }}>
                             {format(new Date(project.start_date), 'dd MMMM yyyy', { locale: fr })}
                           </p>
                         </div>
                       )}
                       {project.end_date && (
                         <div>
-                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#9A9A9A', marginBottom: 4 }}>Date de fin</p>
-                          <p style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: '#000' }}>
+                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 4 }}>Date de fin</p>
+                          <p style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: 'hsl(var(--foreground))' }}>
                             {format(new Date(project.end_date), 'dd MMMM yyyy', { locale: fr })}
                           </p>
                         </div>
                       )}
                       <div>
-                        <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#9A9A9A', marginBottom: 8 }}>Statut</p>
+                        <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 8 }}>Statut</p>
                         <StatusBadge />
                       </div>
                     </div>
@@ -537,12 +537,12 @@ export default function ProjectDetails() {
             />
 
             <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-              <AlertDialogContent className="rounded-none border-[#E8E8E8]">
+              <AlertDialogContent className="rounded-none border-[hsl(var(--border))]">
                 <AlertDialogHeader>
-                  <AlertDialogTitle style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 16, color: '#000' }}>
+                  <AlertDialogTitle style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 16, color: 'hsl(var(--foreground))' }}>
                     Confirmer la suppression
                   </AlertDialogTitle>
-                  <AlertDialogDescription style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#6B6B6B' }}>
+                  <AlertDialogDescription style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, color: 'hsl(var(--muted-foreground))' }}>
                     Êtes-vous sûr de vouloir supprimer le projet "{project.name}" ?
                     Cette action est irréversible et supprimera également toutes les tâches,
                     membres d'équipe et pièces jointes associés.
@@ -551,7 +551,7 @@ export default function ProjectDetails() {
                 <AlertDialogFooter>
                   <AlertDialogCancel
                     disabled={deleting}
-                    className="rounded-none border-[#D4D4D4] font-['Instrument_Sans'] font-semibold text-sm"
+                    className="rounded-none border-[hsl(var(--border))] font-['Instrument_Sans'] font-semibold text-sm"
                   >
                     Annuler
                   </AlertDialogCancel>

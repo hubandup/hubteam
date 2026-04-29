@@ -170,8 +170,8 @@ function MainContactSection({ client }: { client: any }) {
   };
 
   return (
-    <div className="bg-white border border-neutral-200 px-4 py-3 flex items-center gap-3 flex-wrap">
-      <span className="uppercase tracking-wider font-semibold text-neutral-500" style={{ fontSize: 10 }}>
+    <div className="bg-card border border-border px-4 py-3 flex items-center gap-3 flex-wrap">
+      <span className="uppercase tracking-wider font-semibold text-muted-foreground" style={{ fontSize: 10 }}>
         Interlocuteur Hub & Up
       </span>
       <Select value={client.main_contact_id || 'none'} onValueChange={handleChange}>
@@ -232,8 +232,8 @@ function StatusActionsBar({ tracking, client }: { tracking: any; client: any }) 
   };
 
   return (
-    <div className="bg-white border border-neutral-200 px-4 py-3 flex items-center gap-3 flex-wrap">
-      <span className="uppercase tracking-wider font-semibold text-neutral-500" style={{ fontSize: 10 }}>
+    <div className="bg-card border border-border px-4 py-3 flex items-center gap-3 flex-wrap">
+      <span className="uppercase tracking-wider font-semibold text-muted-foreground" style={{ fontSize: 10 }}>
         Statut commercial
       </span>
       <Select value={tracking.status} onValueChange={updateStatus}>
@@ -483,8 +483,8 @@ function ContactsSection({ trackingId, client }: { trackingId: string; client: a
   // Hide the section entirely if there are no additional contacts (main contact already shown in page header)
   if (contacts.length === 0) {
     return (
-      <div className="bg-white border border-neutral-200 px-4 py-3 flex items-center justify-between">
-        <span className="uppercase tracking-wider font-semibold text-neutral-500" style={{ fontSize: 10 }}>
+      <div className="bg-card border border-border px-4 py-3 flex items-center justify-between">
+        <span className="uppercase tracking-wider font-semibold text-muted-foreground" style={{ fontSize: 10 }}>
           Contacts additionnels
         </span>
         <Button size="sm" variant="outline" onClick={addContact} className="rounded-none h-7 text-xs">
@@ -495,13 +495,13 @@ function ContactsSection({ trackingId, client }: { trackingId: string; client: a
   }
 
   return (
-    <section className="bg-white border border-neutral-200">
-      <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between gap-2">
+    <section className="bg-card border border-border">
+      <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2">
         <div className="flex items-baseline gap-2 min-w-0">
-          <span className="uppercase tracking-wider font-semibold text-neutral-500" style={{ fontSize: 10 }}>
+          <span className="uppercase tracking-wider font-semibold text-muted-foreground" style={{ fontSize: 10 }}>
             Contacts additionnels
           </span>
-          <span className="text-neutral-400" style={{ fontSize: 11 }}>
+          <span className="text-muted-foreground" style={{ fontSize: 11 }}>
             {contacts.length}
           </span>
         </div>
@@ -551,27 +551,27 @@ function CompactContactRow({
           aria-expanded={open}
         >
           <span
-            className="inline-flex items-center justify-center flex-shrink-0 bg-neutral-100 text-neutral-600"
+            className="inline-flex items-center justify-center flex-shrink-0 bg-muted text-foreground"
             style={{ width: 28, height: 28, fontSize: 11, fontWeight: 600 }}
           >
             {initials}
           </span>
           <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
-            <span className="font-medium text-neutral-900 truncate" style={{ fontSize: 13 }}>
+            <span className="font-medium text-foreground truncate" style={{ fontSize: 13 }}>
               {displayName}
             </span>
             {c.job_title && (
-              <span className="text-neutral-500 truncate" style={{ fontSize: 12 }}>
+              <span className="text-muted-foreground truncate" style={{ fontSize: 12 }}>
                 · {c.job_title}
               </span>
             )}
           </div>
-          <div className="hidden sm:flex items-center gap-3 text-neutral-500 shrink-0" style={{ fontSize: 12 }}>
+          <div className="hidden sm:flex items-center gap-3 text-muted-foreground shrink-0" style={{ fontSize: 12 }}>
             {c.email && (
               <a
                 href={`mailto:${c.email}`}
                 onClick={(e) => e.stopPropagation()}
-                className="hover:text-neutral-900 truncate max-w-[200px]"
+                className="hover:text-foreground truncate max-w-[200px]"
                 title={c.email}
               >
                 {c.email}
@@ -581,7 +581,7 @@ function CompactContactRow({
               <a
                 href={`tel:${c.phone}`}
                 onClick={(e) => e.stopPropagation()}
-                className="hover:text-neutral-900"
+                className="hover:text-foreground"
               >
                 {c.phone}
               </a>

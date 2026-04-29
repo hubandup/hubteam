@@ -374,14 +374,14 @@ export default function Announcements() {
                 <button
                   type="button"
                   onClick={() => setBannerStyle('dark')}
-                  className={`flex-1 px-4 py-3 text-sm font-medium rounded-md border-2 transition-all bg-black text-white ${bannerStyle === 'dark' ? 'border-primary ring-2 ring-primary/30' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                  className={`flex-1 px-4 py-3 text-sm font-medium rounded-md border-2 transition-all bg-foreground text-background ${bannerStyle === 'dark' ? 'border-primary ring-2 ring-primary/30' : 'border-transparent opacity-70 hover:opacity-100'}`}
                 >
                   Sombre
                 </button>
                 <button
                   type="button"
                   onClick={() => setBannerStyle('yellow')}
-                  className={`flex-1 px-4 py-3 text-sm font-medium rounded-md border-2 transition-all bg-[#DFFF00] text-black ${bannerStyle === 'yellow' ? 'border-primary ring-2 ring-primary/30' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                  className={`flex-1 px-4 py-3 text-sm font-medium rounded-md border-2 transition-all bg-[#DFFF00] text-foreground ${bannerStyle === 'yellow' ? 'border-primary ring-2 ring-primary/30' : 'border-transparent opacity-70 hover:opacity-100'}`}
                 >
                   Jaune fluo
                 </button>
