@@ -275,28 +275,75 @@ Deno.serve(async (req) => {
     }).join('\n\n---\n\n');
 
     const contextNotes = (notes && notes.length > 0)
-      ? `\n\nDernières notes internes (Suivi commercial):\n${notes.map(n => `- ${n.content?.slice(0, 200)}`).join('\n')}`
+      ? `\n\nDernières notes internes (Suivi commercial):\n${notes.map(n => `- ${n.content?.slice(0, 300)}`).join('\n')}`
       : '';
-    const meetingsWithDate = (meetings || []).filter(m => !!m.meeting_date);
-    const contextMeetings = meetingsWithDate.length > 0
-      ? `\n\nDerniers RDV planifiés (avec date confirmée):\n${meetingsWithDate.map(m => `- ${m.label || m.meeting_type} (${m.meeting_date})`).join('\n')}`
+
+    // Toutes les étapes de RDV (avec ou sans date) — utiles pour cerner où en est la relation
+    const contextMeetings = (meetings && meetings.length > 0)
+      ? `\n\nÉtapes de rendez-vous (suivi commercial) :\n${(meetings as any[]).map(m => {
+          const date = m.meeting_date ? ` — ${m.meeting_date}` : ' — date non fixée';
+          const note = m.notes ? `\n  ${String(m.notes).replace(/\s+/g, ' ').slice(0, 200)}` : '';
+          return `• ${m.label || m.meeting_type}${date}${note}`;
+        }).join('\n')}`
       : '';
+
     const contextMeetingNotes = (meetingNotes && meetingNotes.length > 0)
-      ? `\n\nDerniers comptes rendus client (3 plus récents) :\n${meetingNotes.map(m => {
+      ? `\n\nComptes rendus client (${meetingNotes.length} plus récents, du + récent au + ancien) :\n${meetingNotes.map(m => {
           const date = m.meeting_date || m.created_at?.slice(0, 10) || '';
           const title = m.title ? ` — ${m.title}` : '';
-          const content = (m.content || '').replace(/\s+/g, ' ').slice(0, 600);
+          const content = (m.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 800);
           return `• [${date}]${title}\n  ${content}`;
         }).join('\n')}`
       : '';
 
     const contextProjects = (projects && projects.length > 0)
-      ? `\n\nProjets liés à ce client (5 plus récents) :\n${projects.map((p: any) => {
-          const desc = (p.description || '').replace(/\s+/g, ' ').slice(0, 200);
+      ? `\n\nProjets liés à ce client :\n${projects.map((p: any) => {
+          const desc = (p.description || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 250);
           const dates = [p.start_date, p.end_date].filter(Boolean).join(' → ');
           return `• ${p.name}${p.status ? ` [${p.status}]` : ''}${dates ? ` (${dates})` : ''}${desc ? `\n  ${desc}` : ''}`;
         }).join('\n')}`
       : '';
+
+    // Fiche client (Informations générales)
+    const ficheLines: string[] = [];
+    if (clientRow.company) ficheLines.push(`Société : ${clientRow.company}`);
+    if (clientRow.kanban_stage) ficheLines.push(`Étape pipeline : ${clientRow.kanban_stage}`);
+    if (statusName) ficheLines.push(`Statut : ${statusName}`);
+    if (sectorName) ficheLines.push(`Secteur d'activité : ${sectorName}`);
+    if (sourceName) ficheLines.push(`Source : ${sourceName}`);
+    if (clientRow.address) ficheLines.push(`Adresse : ${clientRow.address}`);
+    if (clientRow.phone) ficheLines.push(`Téléphone : ${clientRow.phone}`);
+    if (clientRow.action) ficheLines.push(`Prochaine action interne : ${clientRow.action}`);
+    if (clientRow.follow_up_date) ficheLines.push(`Date de relance prévue : ${clientRow.follow_up_date}`);
+    if (clientRow.last_contact) ficheLines.push(`Dernier contact : ${clientRow.last_contact}`);
+    const contextFiche = ficheLines.length > 0
+      ? `\n\nFiche client (Informations générales) :\n${ficheLines.map(l => `• ${l}`).join('\n')}`
+      : '';
+
+    // Interlocuteur Hub & Up (référent interne côté agence)
+    const contextHubOwner = hubAndUpOwner
+      ? `\n\nInterlocuteur Hub & Up (référent interne) : ${[hubAndUpOwner.first_name, hubAndUpOwner.last_name].filter(Boolean).join(' ')}${hubAndUpOwner.role ? ` (${hubAndUpOwner.role})` : ''}`
+      : '';
+
+    // Interlocuteurs côté client (additionnels)
+    const contextInterlocuteurs = (interlocuteurs && interlocuteurs.length > 0)
+      ? `\n\nInterlocuteurs côté client :\n${(interlocuteurs as any[]).map(c => {
+          const fn = `${c.first_name || ''} ${c.last_name || ''}`.trim();
+          return `• ${fn || c.email || 'Contact'}${c.job_title ? ` — ${c.job_title}` : ''}${c.email ? ` <${c.email}>` : ''}`;
+        }).join('\n')}`
+      : '';
+
+    // Historique des excuses déjà envoyées — pour ne pas se répéter
+    const contextPriorSuggestions = (priorSuggestions && priorSuggestions.length > 0)
+      ? `\n\nHistorique des excuses déjà générées (NE PAS REDIRE LA MÊME CHOSE — varier l'angle) :\n${(priorSuggestions as any[]).map(s => {
+          const date = s.created_at?.slice(0, 10) || '';
+          const angles = Array.isArray(s.angles)
+            ? s.angles.map((a: any) => a.title).filter(Boolean).slice(0, 3).join(' / ')
+            : '';
+          return `• [${date}] "${s.subject || ''}"${s.action_label ? ` — action : ${s.action_label}` : ''}${angles ? ` — angles déjà utilisés : ${angles}` : ''}`;
+        }).join('\n')}`
+      : '';
+
 
     const contextQualification = (qualification && qualification.length > 0)
       ? `\n\nQualification du besoin (réponses du client recueillies en suivi commercial) :\n${qualification.map((q: any) => {
