@@ -53,6 +53,7 @@ export default function ClientDetails() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [sourceName, setSourceName] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('commercial');
+  const [hubOwner, setHubOwner] = useState<{ first_name: string | null; last_name: string | null; avatar_url: string | null } | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -64,6 +65,18 @@ export default function ClientDetails() {
   useEffect(() => {
     if (client) fetchTagsMeta();
   }, [client?.activity_sector_id, client?.status_id, client?.source_id]);
+
+  useEffect(() => {
+    (async () => {
+      if (!client?.main_contact_id) { setHubOwner(null); return; }
+      const { data } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, avatar_url')
+        .eq('id', client.main_contact_id)
+        .maybeSingle();
+      setHubOwner(data || null);
+    })();
+  }, [client?.main_contact_id]);
 
   const fetchTagsMeta = async () => {
     if (client?.activity_sector_id) {
