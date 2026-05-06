@@ -71,3 +71,7 @@ verify_jwt = false
 
 [functions.linkedin-oauth-callback]
 verify_jwt = false
+
+# Weekly Slack relances - cron only (uses x-cron-secret)
+[functions.weekly-slack-excuses]
+verify_jwt = false
