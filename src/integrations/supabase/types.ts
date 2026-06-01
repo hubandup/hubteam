@@ -2447,6 +2447,48 @@ export type Database = {
         }
         Relationships: []
       }
+      lagostina_sea_campaigns: {
+        Row: {
+          budget_allocated: number | null
+          budget_spent: number | null
+          campaign: string
+          conversions: number | null
+          cpc: number | null
+          ctr: number | null
+          date: string
+          id: string
+          impressions: number | null
+          roas: number | null
+          updated_at: string
+        }
+        Insert: {
+          budget_allocated?: number | null
+          budget_spent?: number | null
+          campaign: string
+          conversions?: number | null
+          cpc?: number | null
+          ctr?: number | null
+          date: string
+          id?: string
+          impressions?: number | null
+          roas?: number | null
+          updated_at?: string
+        }
+        Update: {
+          budget_allocated?: number | null
+          budget_spent?: number | null
+          campaign?: string
+          conversions?: number | null
+          cpc?: number | null
+          ctr?: number | null
+          date?: string
+          id?: string
+          impressions?: number | null
+          roas?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lagostina_social_mix: {
         Row: {
           category: string

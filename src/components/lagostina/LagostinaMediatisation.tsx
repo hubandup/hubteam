@@ -204,6 +204,19 @@ function KpiCard({ data }: { data: KpiData }) {
   );
 }
 
+type CampaignRow = {
+  id: string;
+  date: string;
+  campaign: string;
+  roas: number | null;
+  cpc: number | null;
+  ctr: number | null;
+  impressions: number | null;
+  conversions: number | null;
+  budget_spent: number | null;
+  budget_allocated: number | null;
+};
+
 function SEATab({ rows }: { rows: MediaKpiRow[] }) {
   const kpis = buildKpiData(rows, SEA_KPIS);
   const roasData = kpis.find((k) => k.kpi_name === 'roas');
@@ -217,7 +230,30 @@ function SEATab({ rows }: { rows: MediaKpiRow[] }) {
     },
   });
 
+  const { data: campaigns } = useQuery({
+    queryKey: ['lagostina-sea-campaigns'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lagostina_sea_campaigns')
+        .select('*')
+        .order('date', { ascending: false })
+        .order('budget_spent', { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return (data || []) as CampaignRow[];
+    },
+  });
+
+  // Aggregate "Campagnes en cours" = latest date row per campaign
+  const currentCampaigns = useMemo(() => {
+    const list = campaigns || [];
+    if (list.length === 0) return [];
+    const latestDate = list.reduce((m, r) => (r.date > m ? r.date : m), list[0].date);
+    return list.filter((r) => r.date === latestDate).sort((a, b) => (b.budget_spent ?? 0) - (a.budget_spent ?? 0));
+  }, [campaigns]);
+
   const hasKeywords = (topKeywords || []).length > 0;
+  const hasCampaigns = currentCampaigns.length > 0;
 
   return (
     <div className="space-y-6">
@@ -277,6 +313,53 @@ function SEATab({ rows }: { rows: MediaKpiRow[] }) {
             </div>
           )}
         </div>
+      </div>
+
+      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4">
+        <div className="flex items-baseline justify-between mb-3">
+          <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Campagnes en cours</h3>
+          {hasCampaigns && (
+            <span className="text-muted-foreground text-xs font-['Roboto']">
+              {new Date(currentCampaigns[0].date).toLocaleDateString('fr-FR')}
+            </span>
+          )}
+        </div>
+        {!hasCampaigns ? (
+          <div className="flex items-center justify-center py-8">
+            <span className="text-muted-foreground text-sm font-['Roboto']">Données non disponibles</span>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-[12px] font-['Roboto']">
+              <thead>
+                <tr className="border-b border-border/40">
+                  <th className="text-left py-1.5 px-2 text-muted-foreground uppercase">Campagne</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">Impr.</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">CTR</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">CPC</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">Conv.</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">ROAS</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">Dépensé</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">Alloué/j</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentCampaigns.map((c) => (
+                  <tr key={c.id} className="border-b border-border/20 hover:bg-muted dark:hover:bg-[#141928]">
+                    <td className="py-1.5 px-2 text-foreground truncate max-w-[260px]" title={c.campaign}>{c.campaign}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground">{c.impressions != null ? c.impressions.toLocaleString('fr-FR') : '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground">{c.ctr != null ? `${Number(c.ctr).toFixed(1)}%` : '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground">{c.cpc != null ? `€${Number(c.cpc).toFixed(2)}` : '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground">{c.conversions != null ? Number(c.conversions).toFixed(1) : '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground font-bold">{c.roas != null ? Number(c.roas).toFixed(2) : '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground">{c.budget_spent != null ? `€${Number(c.budget_spent).toFixed(2)}` : '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-muted-foreground">{c.budget_allocated != null ? `€${Number(c.budget_allocated).toFixed(0)}` : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
