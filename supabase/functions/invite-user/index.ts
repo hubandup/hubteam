@@ -266,6 +266,36 @@ const handler = async (req: Request): Promise<Response> => {
       console.log("✓ Email is available, proceeding with invitation");
     }
 
+    // ===== Mode: password (create user directly with provisional password) =====
+    if (mode === 'password') {
+      console.log("Creating user with provisional password...");
+      const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          role,
+          first_name: firstName || '',
+          last_name: lastName || '',
+          must_change_password: true,
+        },
+      });
+
+      if (createError) {
+        console.error("ERROR: Failed to create user:", createError);
+        return new Response(
+          JSON.stringify({ error: "Échec de la création de l'utilisateur", details: createError.message }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      console.log("✓ User created with provisional password:", createData.user?.email);
+      return new Response(
+        JSON.stringify({ success: true, mode: 'password', user: createData.user }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     // Generate invite link - redirects to set-password page
     // Use production URL for invitations to ensure consistency
     const productionUrl = 'https://hubandup.org';
