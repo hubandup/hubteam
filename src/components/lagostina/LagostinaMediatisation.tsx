@@ -77,7 +77,7 @@ const chartTooltipStyle = {
 
 interface KpiData {
   kpi_name: string;
-  weeks: { week: string; actual: number | null; objective: number | null }[];
+  weeks: { week: string; actual: number | null; objective: number | null; budget_spent?: number | null; budget_allocated?: number | null }[];
   latestActual: number | null;
   latestObjective: number | null;
   trend: 'up' | 'down' | null;
@@ -85,9 +85,32 @@ interface KpiData {
 
 function buildKpiData(rows: any[], kpis: string[]): KpiData[] {
   return kpis.map((kpi) => {
-    // Special case: budget_ratio is computed from budget_dépensé / budget_alloué
-    // Handle both accented and unaccented kpi_name variants
+    // Special case: budget_ratio can arrive as a dedicated row with budget_spent/budget_allocated,
+    // or be computed from legacy separate budget rows.
     if (kpi === 'budget_ratio') {
+      const ratioRows = rows.filter((r: any) => r.kpi_name === 'budget_ratio');
+      if (ratioRows.length > 0) {
+        const weeks = sortWeeksNumerically(ratioRows.map((r: any) => {
+          const rawRatio = r.actual != null ? Number(r.actual) : null;
+          const actual = rawRatio == null ? null : Math.round(rawRatio <= 1 ? rawRatio * 100 : rawRatio);
+          return {
+            week: r.week,
+            actual,
+            objective: 100,
+            budget_spent: r.budget_spent,
+            budget_allocated: r.budget_allocated,
+          };
+        }));
+        const actuals = weeks.filter((w) => w.actual != null);
+        const latest = actuals.length ? actuals[actuals.length - 1] : null;
+        const prev = actuals.length > 1 ? actuals[actuals.length - 2] : null;
+        let trend: 'up' | 'down' | null = null;
+        if (latest && prev && latest.actual != null && prev.actual != null) {
+          trend = latest.actual >= prev.actual ? 'up' : 'down';
+        }
+        return { kpi_name: kpi, weeks, latestActual: latest?.actual ?? null, latestObjective: 100, trend };
+      }
+
       const spentRows = rows.filter((r: any) => r.kpi_name === 'budget_dépensé' || r.kpi_name === 'budget_depense');
       const allocRows = rows.filter((r: any) => r.kpi_name === 'budget_alloué' || r.kpi_name === 'budget_alloue');
       const allWeeks = [...new Set(spentRows.map((r: any) => r.week))];
@@ -122,6 +145,7 @@ function buildKpiData(rows: any[], kpis: string[]): KpiData[] {
 
 function KpiCard({ data }: { data: KpiData }) {
   const cond = getCondColor(data.latestActual, data.latestObjective);
+  const latestWeek = data.weeks.filter((w) => w.actual != null).at(-1);
   const formatFn = data.kpi_name === 'budget_ratio'
     ? (v: number | null | undefined) => v != null ? `${v}%` : '—'
     : (v: number | null | undefined) => formatVal(v, data.kpi_name);
@@ -132,6 +156,11 @@ function KpiCard({ data }: { data: KpiData }) {
       <div className="text-foreground text-xl font-bold font-['Instrument_Sans']">{formatFn(data.latestActual)}</div>
       {data.latestObjective != null && (
         <div className="text-muted-foreground text-xs font-['Roboto']">Obj: {formatFn(data.latestObjective)}</div>
+      )}
+      {data.kpi_name === 'budget_ratio' && latestWeek?.budget_spent != null && latestWeek?.budget_allocated != null && (
+        <div className="text-muted-foreground text-xs font-['Roboto']">
+          €{Number(latestWeek.budget_spent).toLocaleString('fr-FR')} / €{Number(latestWeek.budget_allocated).toLocaleString('fr-FR')}
+        </div>
       )}
       {data.trend && (
         <div className={`flex items-center gap-1 text-xs ${data.trend === 'up' ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
