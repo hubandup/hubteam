@@ -204,7 +204,7 @@ function KpiCard({ data }: { data: KpiData }) {
   );
 }
 
-function SEATab({ rows }: { rows: any[] }) {
+function SEATab({ rows }: { rows: MediaKpiRow[] }) {
   const kpis = buildKpiData(rows, SEA_KPIS);
   const roasData = kpis.find((k) => k.kpi_name === 'roas');
 
@@ -213,7 +213,7 @@ function SEATab({ rows }: { rows: any[] }) {
     queryFn: async () => {
       const { data, error } = await supabase.from('lagostina_top_keywords').select('*').order('clicks', { ascending: false }).limit(20);
       if (error) throw error;
-      return data;
+      return data as TopKeywordRow[];
     },
   });
 
@@ -261,7 +261,7 @@ function SEATab({ rows }: { rows: any[] }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {(topKeywords || []).map((kw: any) => (
+                  {(topKeywords || []).map((kw) => (
                     <tr key={kw.id} className="border-b border-border/20 hover:bg-muted dark:hover:bg-[#141928]">
                       <td className="py-1.5 px-2 text-foreground truncate max-w-[160px]" title={kw.keyword}>{kw.keyword}</td>
                       <td className="py-1.5 px-2 text-right text-foreground">{kw.clicks != null ? kw.clicks.toLocaleString('fr-FR') : '—'}</td>
@@ -295,10 +295,10 @@ function FunnelStep({ label, value, color, ratio, widthPercent }: { label: strin
   );
 }
 
-function SMATab({ rows }: { rows: any[] }) {
+function SMATab({ rows }: { rows: MediaKpiRow[] }) {
   const kpis = buildKpiData(rows, SMA_KPIS);
   const { data: cellNotesData } = useCellNotes();
-  const notesMap = cellNotesData as Map<string, any> | undefined;
+  const notesMap = cellNotesData as CellNotesMap;
   const reach = kpis.find((k) => k.kpi_name === 'reach_3s_views')?.latestActual;
   const traffic = kpis.find((k) => k.kpi_name === 'traffic_qualifie_visites_site')?.latestActual;
   const conversions = kpis.find((k) => k.kpi_name === 'conversion_rate')?.latestActual;
@@ -363,7 +363,7 @@ function SMATab({ rows }: { rows: any[] }) {
   );
 }
 
-function TikTokTab({ rows }: { rows: any[] }) {
+function TikTokTab({ rows }: { rows: MediaKpiRow[] }) {
   const kpis = buildKpiData(rows, TIKTOK_KPIS);
 
   return (
