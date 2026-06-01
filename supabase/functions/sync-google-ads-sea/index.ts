@@ -157,6 +157,16 @@ Deno.serve(async (req) => {
     const headers = values[0].map((h) => String(h ?? ''));
     const idx = mapHeaders(headers);
 
+    // Debug mode: return raw sheet structure
+    const url2 = new URL(req.url);
+    if (url2.searchParams.get('debug') === '1') {
+      const metricLabels = values.slice(1).map((r) => String(r?.[0] ?? ''));
+      return new Response(JSON.stringify({ headers, metricLabels, sampleRows: values.slice(0, 8) }, null, 2), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+
     // Detect pivoted layout: metrics in rows, periods in columns.
     const periodCols: { col: number; week: string }[] = [];
     if (idx.period == null) {
