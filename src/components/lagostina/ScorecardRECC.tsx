@@ -602,7 +602,7 @@ export function ScorecardRECC({
                               isCurrent ? 'bg-[hsl(var(--brand-yellow))]/10 dark:bg-[hsl(var(--brand-yellow))]/5 font-medium' : ''
                             } ${val == null ? 'text-muted-foreground/40' : 'text-foreground'}`}
                           >
-                            {fmt(val, kpi.format)}
+                            {fmt(val, kpi.format, kpi.key)}
                           </NoteableCell>
                         );
                       })}
