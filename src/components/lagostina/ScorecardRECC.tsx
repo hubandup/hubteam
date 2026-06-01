@@ -471,7 +471,9 @@ export function ScorecardRECC({
     if (el && 'scrollIntoView' in el) {
       try {
         (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-      } catch {}
+      } catch {
+        return;
+      }
     }
   }, [currentMonthIdx, visibleMonths.length]);
 
