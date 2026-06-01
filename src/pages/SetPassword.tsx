@@ -47,6 +47,20 @@ export default function SetPassword() {
       setIsRecovery(true);
     }
 
+    // Mode "forceChange" : utilisateur créé avec mot de passe provisoire et déjà connecté
+    const queryParams = new URLSearchParams(window.location.search);
+    const forceChange = queryParams.get('forceChange') === '1';
+    if (forceChange) {
+      // L'utilisateur est déjà connecté via le mot de passe provisoire
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          setIsValidToken(true);
+          setIsLoading(false);
+        }
+      });
+    }
+
+
     // Écouter les changements d'état d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
