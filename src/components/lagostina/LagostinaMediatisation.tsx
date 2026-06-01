@@ -204,6 +204,19 @@ function KpiCard({ data }: { data: KpiData }) {
   );
 }
 
+type CampaignRow = {
+  id: string;
+  date: string;
+  campaign: string;
+  roas: number | null;
+  cpc: number | null;
+  ctr: number | null;
+  impressions: number | null;
+  conversions: number | null;
+  budget_spent: number | null;
+  budget_allocated: number | null;
+};
+
 function SEATab({ rows }: { rows: MediaKpiRow[] }) {
   const kpis = buildKpiData(rows, SEA_KPIS);
   const roasData = kpis.find((k) => k.kpi_name === 'roas');
@@ -217,7 +230,30 @@ function SEATab({ rows }: { rows: MediaKpiRow[] }) {
     },
   });
 
+  const { data: campaigns } = useQuery({
+    queryKey: ['lagostina-sea-campaigns'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lagostina_sea_campaigns')
+        .select('*')
+        .order('date', { ascending: false })
+        .order('budget_spent', { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return (data || []) as CampaignRow[];
+    },
+  });
+
+  // Aggregate "Campagnes en cours" = latest date row per campaign
+  const currentCampaigns = useMemo(() => {
+    const list = campaigns || [];
+    if (list.length === 0) return [];
+    const latestDate = list.reduce((m, r) => (r.date > m ? r.date : m), list[0].date);
+    return list.filter((r) => r.date === latestDate).sort((a, b) => (b.budget_spent ?? 0) - (a.budget_spent ?? 0));
+  }, [campaigns]);
+
   const hasKeywords = (topKeywords || []).length > 0;
+  const hasCampaigns = currentCampaigns.length > 0;
 
   return (
     <div className="space-y-6">
