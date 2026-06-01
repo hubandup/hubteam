@@ -21,6 +21,7 @@ import {
   detectFileType,
 } from '@/lib/lagostina-parsers';
 import { useLagostinaSync } from '@/hooks/useLagostinaSync';
+import { GoogleAdsSeaConfig } from '@/components/lagostina/GoogleAdsSeaConfig';
 
 const FILE_TYPES = [
   { value: 'scorecard', label: 'Scorecard' },
