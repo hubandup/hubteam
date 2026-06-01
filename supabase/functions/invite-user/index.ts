@@ -47,6 +47,10 @@ const corsHeaders = {
 interface InviteUserRequest {
   email: string;
   role: 'admin' | 'team' | 'client' | 'agency';
+  mode?: 'invite' | 'password';
+  password?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -175,38 +179,34 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Parse request body
-    const { email, role }: InviteUserRequest = await req.json();
-    console.log("Invitation request for:", email, "with role:", role);
+    const { email, role, mode = 'invite', password, firstName, lastName }: InviteUserRequest = await req.json();
+    console.log("Request for:", email, "role:", role, "mode:", mode);
 
     // Validate input
     if (!email || !role) {
-      console.error("ERROR: Missing email or role");
       return new Response(
-        JSON.stringify({ 
-          error: "Email et rôle requis",
-          details: "Les champs email et rôle sont obligatoires"
-        }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
+        JSON.stringify({ error: "Email et rôle requis", details: "Les champs email et rôle sont obligatoires" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
     const validRoles = ['admin', 'team', 'client', 'agency'];
     if (!validRoles.includes(role)) {
-      console.error("ERROR: Invalid role:", role);
       return new Response(
-        JSON.stringify({ 
-          error: "Rôle invalide",
-          details: "Le rôle doit être l'un des suivants: " + validRoles.join(", ")
-        }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
+        JSON.stringify({ error: "Rôle invalide", details: "Le rôle doit être l'un des suivants: " + validRoles.join(", ") }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
+
+    if (mode === 'password') {
+      if (!password || password.length < 8) {
+        return new Response(
+          JSON.stringify({ error: "Mot de passe invalide", details: "Le mot de passe doit contenir au moins 8 caractères" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    }
+
 
     // Check if user already exists
     console.log("Checking if user already exists with email:", email);
@@ -264,6 +264,36 @@ const handler = async (req: Request): Promise<Response> => {
       console.log("✓ Old unconfirmed user deleted, proceeding with new invitation");
     } else {
       console.log("✓ Email is available, proceeding with invitation");
+    }
+
+    // ===== Mode: password (create user directly with provisional password) =====
+    if (mode === 'password') {
+      console.log("Creating user with provisional password...");
+      const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          role,
+          first_name: firstName || '',
+          last_name: lastName || '',
+          must_change_password: true,
+        },
+      });
+
+      if (createError) {
+        console.error("ERROR: Failed to create user:", createError);
+        return new Response(
+          JSON.stringify({ error: "Échec de la création de l'utilisateur", details: createError.message }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      console.log("✓ User created with provisional password:", createData.user?.email);
+      return new Response(
+        JSON.stringify({ success: true, mode: 'password', user: createData.user }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     // Generate invite link - redirects to set-password page

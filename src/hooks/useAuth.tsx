@@ -27,6 +27,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Force password change for users created with provisional password
+        if (event === 'SIGNED_IN' && session?.user?.user_metadata?.must_change_password === true) {
+          if (!window.location.pathname.startsWith('/auth/set-password')) {
+            navigate('/auth/set-password?forceChange=1');
+          }
+        }
       }
     );
 

@@ -47,6 +47,21 @@ export default function SetPassword() {
       setIsRecovery(true);
     }
 
+    // Mode "forceChange" : utilisateur créé avec mot de passe provisoire et déjà connecté
+    const queryParams = new URLSearchParams(window.location.search);
+    const forceChange = queryParams.get('forceChange') === '1';
+    if (forceChange) {
+      setIsRecovery(true); // Reuse recovery UI (password-only form)
+      // L'utilisateur est déjà connecté via le mot de passe provisoire
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          setIsValidToken(true);
+          setIsLoading(false);
+        }
+      });
+    }
+
+
     // Écouter les changements d'état d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -128,11 +143,16 @@ export default function SetPassword() {
 
   const handleSetPassword = async (data: PasswordFormData) => {
     try {
+      const queryParams = new URLSearchParams(window.location.search);
+      const forceChange = queryParams.get('forceChange') === '1';
+
       const { data: { user }, error: updateError } = await supabase.auth.updateUser({
         password: data.password,
         data: {
           first_name: data.firstName,
           last_name: data.lastName,
+          // Clear the provisional-password flag if applicable
+          ...(forceChange ? { must_change_password: false } : {}),
         }
       });
 
@@ -141,7 +161,7 @@ export default function SetPassword() {
         return;
       }
 
-      if (user) {
+      if (user && (data.firstName || data.lastName)) {
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
@@ -155,11 +175,14 @@ export default function SetPassword() {
         }
       }
 
-      toast.success('Compte configuré avec succès ! Vous allez être redirigé...');
-      
-      setTimeout(() => {
-        navigate('/auth');
-      }, 1500);
+      if (forceChange) {
+        toast.success('Mot de passe mis à jour ! Redirection...');
+        setTimeout(() => navigate('/'), 1200);
+      } else {
+        toast.success('Compte configuré avec succès ! Vous allez être redirigé...');
+        setTimeout(() => navigate('/auth'), 1500);
+      }
+
     } catch (error) {
       console.error('Error setting password:', error);
       toast.error('Une erreur est survenue');
