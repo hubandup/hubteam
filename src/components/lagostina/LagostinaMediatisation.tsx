@@ -448,13 +448,95 @@ function SMATab({ rows }: { rows: MediaKpiRow[] }) {
   );
 }
 
+type TikTokTopAd = {
+  id: string;
+  ad_id: string;
+  ad_name: string;
+  content_url: string | null;
+  impressions: number | null;
+  clicks: number | null;
+  ctr: number | null;
+  conversions: number | null;
+  cvr: number | null;
+  spend_usd: number | null;
+  cpc_usd: number | null;
+  cpa_usd: number | null;
+  roas_finalisation: number | null;
+};
+
 function TikTokTab({ rows }: { rows: MediaKpiRow[] }) {
   const kpis = buildKpiData(rows, TIKTOK_KPIS);
 
+  const { data: topAds } = useQuery({
+    queryKey: ['lagostina-tiktok-top-ads'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lagostina_tiktok_top_ads')
+        .select('*')
+        .order('impressions', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data || []) as TikTokTopAd[];
+    },
+  });
+
+  const hasAds = (topAds || []).length > 0;
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {kpis.map((k) => <KpiCard key={k.kpi_name} data={k} />)}
+      </div>
+
+      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4">
+        <div className="flex items-baseline justify-between mb-3">
+          <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Top contenus publicitaires</h3>
+          <span className="text-muted-foreground text-xs font-['Roboto']">Trié par impressions · valeurs en $</span>
+        </div>
+        {!hasAds ? (
+          <div className="flex items-center justify-center py-8">
+            <span className="text-muted-foreground text-sm font-['Roboto']">Données non disponibles</span>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-[12px] font-['Roboto']">
+              <thead>
+                <tr className="border-b border-border/40">
+                  <th className="text-left py-1.5 px-2 text-muted-foreground uppercase">Contenu</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">Impr.</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">Clics</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">CTR</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">Conv.</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">CPC</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">CPA</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">Dépense</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">ROAS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(topAds || []).map((ad) => (
+                  <tr key={ad.id} className="border-b border-border/20 hover:bg-muted dark:hover:bg-[#141928]">
+                    <td className="py-1.5 px-2 text-foreground truncate max-w-[280px]" title={ad.ad_name}>
+                      {ad.content_url ? (
+                        <a href={ad.content_url} target="_blank" rel="noreferrer noopener" className="underline-offset-2 hover:underline">
+                          {ad.ad_name}
+                        </a>
+                      ) : ad.ad_name}
+                    </td>
+                    <td className="py-1.5 px-2 text-right text-foreground">{ad.impressions != null ? Number(ad.impressions).toLocaleString('fr-FR') : '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground">{ad.clicks != null ? Number(ad.clicks).toLocaleString('fr-FR') : '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground">{ad.ctr != null ? `${Number(ad.ctr).toFixed(2)}%` : '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground">{ad.conversions ?? '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground">{ad.cpc_usd != null ? `$${Number(ad.cpc_usd).toFixed(2)}` : '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground">{ad.cpa_usd != null ? `$${Number(ad.cpa_usd).toFixed(2)}` : '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground">{ad.spend_usd != null ? `$${Number(ad.spend_usd).toFixed(2)}` : '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground font-bold">{ad.roas_finalisation != null ? Number(ad.roas_finalisation).toFixed(2) : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
