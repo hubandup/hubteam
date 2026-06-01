@@ -21,6 +21,7 @@ import {
   detectFileType,
 } from '@/lib/lagostina-parsers';
 import { useLagostinaSync } from '@/hooks/useLagostinaSync';
+import { GoogleAdsSeaConfig } from '@/components/lagostina/GoogleAdsSeaConfig';
 
 const FILE_TYPES = [
   { value: 'scorecard', label: 'Scorecard' },
@@ -258,6 +259,8 @@ export default function LagostinaAdmin() {
             {syncing ? 'Synchronisation en cours…' : 'Synchroniser depuis kDrive'}
           </button>
         </div>
+
+        <GoogleAdsSeaConfig />
 
         <div className="bg-card border border-border/30 overflow-x-auto">
           <div className="px-4 py-3 border-b border-border/40">
