@@ -156,55 +156,112 @@ Deno.serve(async (req) => {
 
     const headers = values[0].map((h) => String(h ?? ''));
     const idx = mapHeaders(headers);
+
+    // Detect pivoted layout: metrics in rows, periods in columns.
+    const periodCols: { col: number; week: string }[] = [];
     if (idx.period == null) {
-      return new Response(JSON.stringify({ error: 'Period column not found', headers }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      for (let c = 1; c < headers.length; c++) {
+        const w = periodToWeek(headers[c]);
+        if (w && (w === 'TOTAL' || /^\d{4}-\d{2}$/.test(w))) {
+          periodCols.push({ col: c, week: w });
+        }
+      }
     }
+
+    const METRIC_ROW_KEY: Record<string, string> = {
+      impressions: 'impressions', 'impr.': 'impressions', impr: 'impressions',
+      clics: 'clicks', clicks: 'clicks', clic: 'clicks',
+      ctr: 'ctr', 'taux de clics': 'ctr',
+      cpc: 'cpc', 'cpc moy.': 'cpc', 'cpc moyen': 'cpc', 'coût par clic': 'cpc', 'cout par clic': 'cpc',
+      cout: 'cost', 'coût': 'cost', cost: 'cost', depense: 'cost', 'dépense': 'cost',
+      'budget dépensé': 'cost', 'budget depense': 'cost',
+      budget: 'budget', 'budget alloué': 'budget', 'budget alloue': 'budget',
+      conversions: 'conversions', 'conv.': 'conversions', conv: 'conversions',
+      'valeur conv.': 'conv_value', 'valeur des conv.': 'conv_value',
+      'conversion value': 'conv_value', 'valeur de conversion': 'conv_value',
+      roas: 'roas',
+    };
 
     const rowsToInsert: any[] = [];
     let parsed = 0;
 
-    for (let r = 1; r < values.length; r++) {
-      const row = values[r];
-      if (!row || row.length === 0) continue;
-      const week = periodToWeek(row[idx.period]);
-      if (!week) continue;
-
-      const impressions = idx.impressions != null ? parseNum(row[idx.impressions]) : null;
-      const clicks = idx.clicks != null ? parseNum(row[idx.clicks]) : null;
-      let ctr = idx.ctr != null ? parseNum(row[idx.ctr]) : null;
-      let cpc = idx.cpc != null ? parseNum(row[idx.cpc]) : null;
-      const cost = idx.cost != null ? parseNum(row[idx.cost]) : null;
-      const budget = idx.budget != null ? parseNum(row[idx.budget]) : null;
-      const conversions = idx.conversions != null ? parseNum(row[idx.conversions]) : null;
-      const convValue = idx.conv_value != null ? parseNum(row[idx.conv_value]) : null;
-      let roas = idx.roas != null ? parseNum(row[idx.roas]) : null;
-
+    const buildRows = (week: string, m: Record<string, number | null>) => {
+      const impressions = m.impressions ?? null;
+      const clicks = m.clicks ?? null;
+      let ctr = m.ctr ?? null;
+      let cpc = m.cpc ?? null;
+      const cost = m.cost ?? null;
+      const budget = m.budget ?? null;
+      const conversions = m.conversions ?? null;
+      const convValue = m.conv_value ?? null;
+      let roas = m.roas ?? null;
       if (ctr == null && impressions && clicks) ctr = (clicks / impressions) * 100;
       if (cpc == null && clicks && cost) cpc = cost / clicks;
       if (roas == null && cost && convValue) roas = convValue / cost;
 
       const channel = 'sea';
-      const push = (kpi_name: string, actual: number | null, extra: Record<string, unknown> = {}) => {
-        if (actual == null && !Object.keys(extra).length) return;
-        rowsToInsert.push({ channel, kpi_name, week, actual, ...extra });
+      const push = (kpi_name: string, actual: number | null) => {
+        if (actual == null) return;
+        rowsToInsert.push({ channel, kpi_name, week, actual });
       };
-
       push('impressions', impressions);
       push('conversions', conversions);
       push('ctr', ctr);
       push('cpc_moyen', cpc);
       push('roas', roas);
-      // budget_ratio carries spent + allocated; actual = ratio for legacy display
-      const ratio = budget && cost ? cost / budget : null;
       if (cost != null || budget != null) {
+        const ratio = budget && cost ? cost / budget : null;
         rowsToInsert.push({
           channel, kpi_name: 'budget_ratio', week,
           actual: ratio, budget_spent: cost, budget_allocated: budget,
         });
       }
-      parsed++;
+    };
+
+    if (idx.period == null && periodCols.length > 0) {
+      // PIVOTED layout: rows = metrics, cols = periods
+      const perPeriod: Record<string, Record<string, number | null>> = {};
+      for (const { week } of periodCols) perPeriod[week] = {};
+      for (let r = 1; r < values.length; r++) {
+        const row = values[r];
+        if (!row || row.length === 0) continue;
+        const metricRaw = norm(String(row[0] ?? ''));
+        const key = METRIC_ROW_KEY[metricRaw];
+        if (!key) continue;
+        for (const { col, week } of periodCols) {
+          const v = parseNum(row[col]);
+          if (v != null) perPeriod[week][key] = v;
+        }
+      }
+      for (const week of Object.keys(perPeriod)) {
+        buildRows(week, perPeriod[week]);
+        parsed++;
+      }
+    } else {
+      if (idx.period == null) {
+        return new Response(JSON.stringify({ error: 'Period column not found', headers }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      for (let r = 1; r < values.length; r++) {
+        const row = values[r];
+        if (!row || row.length === 0) continue;
+        const week = periodToWeek(row[idx.period]);
+        if (!week) continue;
+        const m: Record<string, number | null> = {
+          impressions: idx.impressions != null ? parseNum(row[idx.impressions]) : null,
+          clicks: idx.clicks != null ? parseNum(row[idx.clicks]) : null,
+          ctr: idx.ctr != null ? parseNum(row[idx.ctr]) : null,
+          cpc: idx.cpc != null ? parseNum(row[idx.cpc]) : null,
+          cost: idx.cost != null ? parseNum(row[idx.cost]) : null,
+          budget: idx.budget != null ? parseNum(row[idx.budget]) : null,
+          conversions: idx.conversions != null ? parseNum(row[idx.conversions]) : null,
+          conv_value: idx.conv_value != null ? parseNum(row[idx.conv_value]) : null,
+          roas: idx.roas != null ? parseNum(row[idx.roas]) : null,
+        };
+        buildRows(week, m);
+        parsed++;
+      }
     }
 
     // Wipe previous SEA rows (channel='sea') and re-insert, but preserve objectives
