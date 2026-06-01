@@ -1,84 +1,70 @@
+# Plan : Création d'utilisateur avec mot de passe provisoire
 
-## Contexte
+## Objectif
+Permettre à l'admin, lors de la création d'un nouvel utilisateur, de **choisir entre** :
+1. **Envoyer une invitation par email** (comportement actuel)
+2. **Créer le compte avec un mot de passe provisoire** défini par l'admin, à communiquer manuellement à l'utilisateur
 
-Looker Studio **n'a pas d'API de lecture publique** — impossible d'aspirer un rapport Looker. La bonne approche, que tu as choisie, est de se brancher **directement sur les sources** qui alimentent ton rapport Looker, puis de réagréger côté Scorecard.
+L'utilisateur devra changer ce mot de passe à sa première connexion.
 
-Cibles retenues :
-- **Google Sheets** (déjà tiré aujourd'hui via fichiers _DATA kDrive)
-- **Google Ads** (régie SEA)
-- **Meta Ads** (Facebook + Instagram)
-- **TikTok Ads**
+## UX — `InviteUserDialog.tsx`
 
-Fréquence : **hebdo + mensuel** via cron Edge Function.
+Ajouter dans le dialog :
+- Un **toggle / radio** : « Envoyer une invitation par email » | « Définir un mot de passe provisoire »
+- Si "mot de passe provisoire" sélectionné :
+  - Champ **Mot de passe provisoire** (avec bouton 👁 afficher/masquer)
+  - Bouton **Générer** (génère 12 caractères aléatoires sûrs)
+  - Champ **Prénom** et **Nom** (optionnels — utiles puisqu'il n'y aura pas d'étape SetPassword côté utilisateur)
+  - Validation : min 8 caractères
+- Après création : afficher un **écran de confirmation** dans le dialog avec :
+  - Email + mot de passe en clair
+  - Bouton **Copier les identifiants**
+  - Mention : « Communiquez ces identifiants à l'utilisateur de manière sécurisée. L'utilisateur devra changer son mot de passe à la première connexion. »
 
-## Ce qu'on va construire
+## Backend — Edge Function
 
-### 1. Connexions aux 4 sources (via Lovable Connectors)
+Étendre `supabase/functions/invite-user/index.ts` pour accepter un nouveau mode :
 
-| Source | Connecteur Lovable | Auth | État |
-|---|---|---|---|
-| Google Sheets | `google_sheets` (gateway) | OAuth Google compte régie/HubAndUp | à connecter |
-| Google Ads | pas de connecteur Lovable | **OAuth maison + Google Ads API** (developer token requis) | à mettre en place |
-| Meta Ads | pas de connecteur Lovable | **Meta Marketing API** (Access Token long-lived sur l'app Meta) | à mettre en place |
-| TikTok Ads | `tiktok` (gateway, business) | OAuth TikTok Business | à connecter, scopes Ads |
-
-Pour Google Ads et Meta Ads il faudra des secrets dédiés (developer token, app ID/secret, access token long-lived). Je te guiderai pas-à-pas pour chacun au moment de l'implémentation.
-
-### 2. Table de cache Scorecard normalisée
-
-Nouvelle table `lagostina_scorecard_metrics` (clef = `source` + `mois` + `metric`), pour stocker les valeurs déjà agrégées et alimenter directement la Scorecard sans recalculer à chaque affichage.
-
-```text
-source   ∈ {google_sheets, google_ads, meta_ads, tiktok_ads}
-period   = 'YYYY-MM' (mois fiscal Avr–Mar respecté)
-metric   = impressions | clicks | spend | ctr | cpm | reach | views | …
-value    = numeric
-synced_at= timestamptz
+```ts
+{ email, role, mode: 'invite' | 'password', password?, firstName?, lastName? }
 ```
 
-### 3. Edge Function `sync-lagostina-scorecard`
+Si `mode === 'password'` :
+- Valider le password (≥ 8 caractères)
+- Appeler `supabaseAdmin.auth.admin.createUser({
+    email, password,
+    email_confirm: true,            // pas de vérification email
+    user_metadata: { role, first_name, last_name, must_change_password: true }
+  })`
+- Le trigger `handle_new_user()` existant assignera le rôle automatiquement
+- **Ne pas** envoyer d'email Brevo
+- Retourner `{ success: true, mode: 'password' }`
 
-Une seule fonction orchestratrice, qui :
-- pour chaque source connectée, appelle l'API via la gateway (Sheets, TikTok) ou directement (Google Ads, Meta Ads)
-- agrège par mois fiscal (Avr–Mar, conforme à la règle projet)
-- upsert dans `lagostina_scorecard_metrics`
-- log dans `lagostina_files_sync` (status `synced`/`error`)
+Le mode `invite` (par défaut) reste inchangé.
 
-### 4. Planification
+## Forcer le changement de mot de passe à la 1re connexion
 
-- **Cron pg_cron** : tous les lundis 6h (hebdo) + 1er du mois 6h (mensuel)
-- Header `x-cron-secret` (conforme au standard projet)
-- Bouton manuel "Synchroniser Scorecard" sur `/lagostina-admin` à côté du bouton kDrive existant
+- Le flag `must_change_password: true` est stocké dans `user_metadata` à la création
+- Dans `useAuth.tsx` (listener `onAuthStateChange`, événement `SIGNED_IN`) :
+  - Si `session.user.user_metadata.must_change_password === true` → `navigate('/auth/set-password?forceChange=1')`
+- Dans `SetPassword.tsx` :
+  - Détecter le mode `forceChange` (via query param ou metadata)
+  - Adapter le titre : « Vous devez définir un nouveau mot de passe »
+  - Empêcher la sortie tant que le mot de passe n'est pas changé
+  - À la soumission : `updateUser({ password, data: { must_change_password: false } })`
 
-### 5. Branchement UI
+## Sécurité
+- Garde admin existante (vérif role) déjà en place — réutilisée
+- Rate limit existant (10/h par admin) — appliqué aux deux modes
+- Mot de passe jamais loggé côté serveur
+- Mot de passe affiché côté client uniquement après création réussie, dans le dialog
 
-Dans `LagostinaOverview.tsx` (Scorecard), remplacer la lecture des fichiers Excel statiques par une lecture React Query sur `lagostina_scorecard_metrics`. Conserver le fallback Excel pour les colonnes non encore couvertes (ex : Influence/RP qui restent en kDrive).
+## Fichiers modifiés
+- `src/components/settings/InviteUserDialog.tsx` — UI à 2 modes + écran de confirmation
+- `supabase/functions/invite-user/index.ts` — branche `mode === 'password'`
+- `src/hooks/useAuth.tsx` — redirection si `must_change_password`
+- `src/pages/SetPassword.tsx` — gestion du mode "force change"
 
-## Détails techniques
-
-- **Pas de Looker** : aucune API publique de lecture côté Looker Studio → on ignore cette voie.
-- **Google Sheets** : connecteur `google_sheets` Lovable existant — gateway `https://connector-gateway.lovable.dev/google_sheets/v4`. Tu me fourniras l'URL du Sheet et le nom de l'onglet.
-- **Google Ads** : pas de connecteur Lovable → app OAuth Google Cloud + **developer token Google Ads** (validation Google ~1 semaine). Secrets requis : `GOOGLE_ADS_DEVELOPER_TOKEN`, `GOOGLE_ADS_CLIENT_ID`, `GOOGLE_ADS_CLIENT_SECRET`, `GOOGLE_ADS_REFRESH_TOKEN`, `GOOGLE_ADS_CUSTOMER_ID`.
-- **Meta Ads** : Graph API v20 `/act_{ad_account_id}/insights`. Secrets : `META_ACCESS_TOKEN` (long-lived), `META_AD_ACCOUNT_ID`.
-- **TikTok Ads** : connecteur `tiktok` Lovable (gateway), à reconnecter avec scopes `ads.read`/`reports`. Endpoint `/report/integrated/get/`.
-- **Cron** : `pg_cron` + `pg_net` (déjà utilisés dans le projet) avec `x-cron-secret`.
-- **Année fiscale** : agrégation Avr→Mars respectée pour rester cohérent avec la mémoire projet.
-
-## Découpage de livraison
-
-1. **Phase 1 — Google Sheets** (rapide, sans validation externe)
-   - connexion `google_sheets`, table cache, edge function pour Sheets uniquement, branchement Scorecard, cron hebdo.
-2. **Phase 2 — TikTok Ads** (connecteur déjà disponible)
-   - reconnexion avec scopes Ads, extension de la fonction.
-3. **Phase 3 — Meta Ads** (tu fournis Access Token + Ad Account ID)
-   - extension fonction + secrets.
-4. **Phase 4 — Google Ads** (le plus long, dépend du developer token Google)
-   - extension fonction + OAuth refresh token, après obtention du developer token.
-
-## Ce dont j'aurai besoin de toi pour démarrer la Phase 1
-
-- L'**URL du Google Sheet** alimentant le Scorecard
-- Le **nom de l'onglet** et la **plage** à lire (ex. `Scorecard!A1:Z100`)
-- Confirmation que le compte Google qui sera connecté a bien accès à ce Sheet
-
-Souhaites-tu démarrer directement par la **Phase 1 (Google Sheets)** pendant qu'on prépare en parallèle les accès Meta / TikTok / Google Ads ?
+## Hors scope
+- Pas d'envoi automatique du mot de passe par email (volontairement — l'admin le communique de manière sécurisée hors-canal)
+- Pas de modification du schéma DB (le flag vit dans `user_metadata`)
