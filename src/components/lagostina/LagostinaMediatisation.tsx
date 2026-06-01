@@ -22,11 +22,11 @@ const CHANNEL_MAP: Record<SubTab, string> = { SEA: 'sea', META: 'sma', TikTok: '
 // Map DB kpi_names to display keys
 const SEA_KPIS = ['roas', 'cpc_moyen', 'ctr', 'impressions', 'conversions', 'budget_ratio'];
 const SMA_KPIS = ['reach_3s_views', 'completion_video', 'traffic_qualifie_visites_site', 'cpm_reach_attentif', 'cpvisite', 'cpc', 'conversion_rate', 'roas'];
-const TIKTOK_KPIS = ['reach', 'completion', 'engagement_rate', 'cpv', 'cpc', 'roas'];
+const TIKTOK_KPIS = ['impressions', 'spend', 'cpm', 'ctr', 'cpc', 'conversions', 'cpa', 'cvr', 'completion', 'roas'];
 
 const KPI_LABELS: Record<string, string> = {
   roas: 'ROAS', cpc_moyen: 'CPC', cpc: 'CPC', ctr: 'CTR', impressions: 'Impressions', conversions: 'Conversions',
-  budget_ratio: 'Budget dépensé / alloué', reach_3s_views: 'Reach 3s', 'reach_(3s_views)': 'Reach 3s', reach: 'Reach 3s',
+  budget_ratio: 'Budget dépensé / alloué', reach_3s_views: 'Reach 3s', 'reach_(3s_views)': 'Reach 3s', reach: 'Reach',
   completion_video: 'Complétion vidéo', 'complétion_vidéo': 'Complétion vidéo', completion: 'Complétion vidéo',
   traffic_qualifie_visites_site: 'Traffic qualifié', 'traffic_qualifié_(visites_site)': 'Traffic qualifié', traffic: 'Traffic qualifié',
   cpm_reach_attentif: 'CPM', cpm: 'CPM', cpvisite: 'CPVisite', cpv: 'CPV',
@@ -34,11 +34,12 @@ const KPI_LABELS: Record<string, string> = {
   followers_evol: 'Évol. followers', taux_de_conversion: 'Taux conversion',
   'coût_/_conversion': 'Coût / conversion', cout_conversion: 'Coût / conversion',
   'budget_dépensé': 'Budget dépensé', budget_depense: 'Budget dépensé',
-  'budget_alloué': 'Budget alloué', budget_alloue: 'Budget alloué',
+  'budget_alloué': 'Budget alloué', budget_alloue: 'Budget alloue',
+  spend: 'Dépense', cpa: 'CPA', cvr: 'CVR', clicks: 'Clics',
 };
 
 // KPIs where values are already in percentage (don't multiply by 100)
-const ALREADY_PERCENT_KPIS = ['ctr', 'engagement_rate', 'conversion_rate', 'completion', 'completion_video', 'complétion_vidéo', 'taux_de_conversion'];
+const ALREADY_PERCENT_KPIS = ['ctr', 'cvr', 'engagement_rate', 'conversion_rate', 'completion', 'completion_video', 'complétion_vidéo', 'taux_de_conversion'];
 
 function getCondColor(actual: number | null, objective: number | null) {
   if (!actual || !objective) return '';
@@ -53,8 +54,9 @@ function formatVal(val: number | null | undefined, kpi: string): string {
   // Bug 1 fix: values are already in percentage, just append %
   if (ALREADY_PERCENT_KPIS.includes(kpi)) return `${val.toFixed(1)}%`;
   if (['roas'].includes(kpi)) return val.toFixed(2);
+  if (['cpa', 'spend'].includes(kpi)) return `$${val.toFixed(2)}`;
   if (['cpc_moyen', 'cpc', 'cpm', 'cpm_reach_attentif', 'cpv', 'cpvisite', 'coût_/_conversion'].includes(kpi)) return `€${val.toFixed(2)}`;
-  if (['impressions', 'reach', 'reach_3s_views', 'reach_(3s_views)', 'conversions', 'traffic', 'traffic_qualifie_visites_site', 'traffic_qualifié_(visites_site)', 'clics'].includes(kpi)) {
+  if (['impressions', 'reach', 'reach_3s_views', 'reach_(3s_views)', 'conversions', 'clicks', 'traffic', 'traffic_qualifie_visites_site', 'traffic_qualifié_(visites_site)', 'clics'].includes(kpi)) {
     if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
     if (val >= 1_000) return `${(val / 1_000).toFixed(0)}K`;
     return val.toFixed(0);
@@ -446,13 +448,95 @@ function SMATab({ rows }: { rows: MediaKpiRow[] }) {
   );
 }
 
+type TikTokTopAd = {
+  id: string;
+  ad_id: string;
+  ad_name: string;
+  content_url: string | null;
+  impressions: number | null;
+  clicks: number | null;
+  ctr: number | null;
+  conversions: number | null;
+  cvr: number | null;
+  spend_usd: number | null;
+  cpc_usd: number | null;
+  cpa_usd: number | null;
+  roas_finalisation: number | null;
+};
+
 function TikTokTab({ rows }: { rows: MediaKpiRow[] }) {
   const kpis = buildKpiData(rows, TIKTOK_KPIS);
 
+  const { data: topAds } = useQuery({
+    queryKey: ['lagostina-tiktok-top-ads'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lagostina_tiktok_top_ads')
+        .select('*')
+        .order('impressions', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data || []) as TikTokTopAd[];
+    },
+  });
+
+  const hasAds = (topAds || []).length > 0;
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {kpis.map((k) => <KpiCard key={k.kpi_name} data={k} />)}
+      </div>
+
+      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4">
+        <div className="flex items-baseline justify-between mb-3">
+          <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Top contenus publicitaires</h3>
+          <span className="text-muted-foreground text-xs font-['Roboto']">Trié par impressions · valeurs en $</span>
+        </div>
+        {!hasAds ? (
+          <div className="flex items-center justify-center py-8">
+            <span className="text-muted-foreground text-sm font-['Roboto']">Données non disponibles</span>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-[12px] font-['Roboto']">
+              <thead>
+                <tr className="border-b border-border/40">
+                  <th className="text-left py-1.5 px-2 text-muted-foreground uppercase">Contenu</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">Impr.</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">Clics</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">CTR</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">Conv.</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">CPC</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">CPA</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">Dépense</th>
+                  <th className="text-right py-1.5 px-2 text-muted-foreground uppercase">ROAS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(topAds || []).map((ad) => (
+                  <tr key={ad.id} className="border-b border-border/20 hover:bg-muted dark:hover:bg-[#141928]">
+                    <td className="py-1.5 px-2 text-foreground truncate max-w-[280px]" title={ad.ad_name}>
+                      {ad.content_url ? (
+                        <a href={ad.content_url} target="_blank" rel="noreferrer noopener" className="underline-offset-2 hover:underline">
+                          {ad.ad_name}
+                        </a>
+                      ) : ad.ad_name}
+                    </td>
+                    <td className="py-1.5 px-2 text-right text-foreground">{ad.impressions != null ? Number(ad.impressions).toLocaleString('fr-FR') : '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground">{ad.clicks != null ? Number(ad.clicks).toLocaleString('fr-FR') : '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground">{ad.ctr != null ? `${Number(ad.ctr).toFixed(2)}%` : '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground">{ad.conversions ?? '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground">{ad.cpc_usd != null ? `$${Number(ad.cpc_usd).toFixed(2)}` : '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground">{ad.cpa_usd != null ? `$${Number(ad.cpa_usd).toFixed(2)}` : '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground">{ad.spend_usd != null ? `$${Number(ad.spend_usd).toFixed(2)}` : '—'}</td>
+                    <td className="py-1.5 px-2 text-right text-foreground font-bold">{ad.roas_finalisation != null ? Number(ad.roas_finalisation).toFixed(2) : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
