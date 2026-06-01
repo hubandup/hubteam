@@ -165,13 +165,14 @@ function weekToMonthIdx(week: string | null | undefined): number | null {
   return target.getMonth() + 1;
 }
 
-function fmt(n: number | null | undefined, format?: KpiDef['format']): string {
+function fmt(n: number | null | undefined, format?: KpiDef['format'], key?: string): string {
   if (n == null || isNaN(Number(n))) return '—';
   const v = Number(n);
   switch (format) {
     case 'percent':
       return `${v.toFixed(v < 10 ? 2 : 1)}%`;
     case 'currency':
+      if (key?.endsWith('_cpc')) return `${v.toFixed(2)}€`;
       if (Math.abs(v) >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}M€`;
       if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(1)}K€`;
       return `${v.toFixed(0)}€`;
@@ -601,7 +602,7 @@ export function ScorecardRECC({
                               isCurrent ? 'bg-[hsl(var(--brand-yellow))]/10 dark:bg-[hsl(var(--brand-yellow))]/5 font-medium' : ''
                             } ${val == null ? 'text-muted-foreground/40' : 'text-foreground'}`}
                           >
-                            {fmt(val, kpi.format)}
+                            {fmt(val, kpi.format, kpi.key)}
                           </NoteableCell>
                         );
                       })}
