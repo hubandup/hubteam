@@ -2126,6 +2126,39 @@ export type Database = {
         }
         Relationships: []
       }
+      lagostina_google_ads_config: {
+        Row: {
+          cell_range: string
+          id: string
+          last_sync_error: string | null
+          last_sync_status: string | null
+          last_synced_at: string | null
+          sheet_name: string
+          spreadsheet_id: string
+          updated_at: string
+        }
+        Insert: {
+          cell_range?: string
+          id?: string
+          last_sync_error?: string | null
+          last_sync_status?: string | null
+          last_synced_at?: string | null
+          sheet_name?: string
+          spreadsheet_id: string
+          updated_at?: string
+        }
+        Update: {
+          cell_range?: string
+          id?: string
+          last_sync_error?: string | null
+          last_sync_status?: string | null
+          last_synced_at?: string | null
+          sheet_name?: string
+          spreadsheet_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lagostina_influence: {
         Row: {
           budget_mois: number | null
