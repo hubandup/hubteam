@@ -47,6 +47,10 @@ const corsHeaders = {
 interface InviteUserRequest {
   email: string;
   role: 'admin' | 'team' | 'client' | 'agency';
+  mode?: 'invite' | 'password';
+  password?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
