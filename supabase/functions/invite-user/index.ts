@@ -179,38 +179,34 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Parse request body
-    const { email, role }: InviteUserRequest = await req.json();
-    console.log("Invitation request for:", email, "with role:", role);
+    const { email, role, mode = 'invite', password, firstName, lastName }: InviteUserRequest = await req.json();
+    console.log("Request for:", email, "role:", role, "mode:", mode);
 
     // Validate input
     if (!email || !role) {
-      console.error("ERROR: Missing email or role");
       return new Response(
-        JSON.stringify({ 
-          error: "Email et rôle requis",
-          details: "Les champs email et rôle sont obligatoires"
-        }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
+        JSON.stringify({ error: "Email et rôle requis", details: "Les champs email et rôle sont obligatoires" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
     const validRoles = ['admin', 'team', 'client', 'agency'];
     if (!validRoles.includes(role)) {
-      console.error("ERROR: Invalid role:", role);
       return new Response(
-        JSON.stringify({ 
-          error: "Rôle invalide",
-          details: "Le rôle doit être l'un des suivants: " + validRoles.join(", ")
-        }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
+        JSON.stringify({ error: "Rôle invalide", details: "Le rôle doit être l'un des suivants: " + validRoles.join(", ") }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
+
+    if (mode === 'password') {
+      if (!password || password.length < 8) {
+        return new Response(
+          JSON.stringify({ error: "Mot de passe invalide", details: "Le mot de passe doit contenir au moins 8 caractères" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    }
+
 
     // Check if user already exists
     console.log("Checking if user already exists with email:", email);
