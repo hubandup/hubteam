@@ -152,6 +152,11 @@ function monthIdxFromName(name: string | null | undefined): number | null {
 
 function weekToMonthIdx(week: string | null | undefined): number | null {
   if (!week) return null;
+  const monthPeriod = String(week).trim().match(/^(\d{4})-(\d{1,2})$/);
+  if (monthPeriod) {
+    const month = Number(monthPeriod[2]);
+    return month >= 1 && month <= 12 ? month : null;
+  }
   const num = parseInt(String(week).replace(/\D/g, ''));
   if (!num || isNaN(num)) return null;
   // ISO week to month: approximate via week × 7 days from Jan 1
@@ -276,6 +281,7 @@ export function ScorecardRECC({
 
     const parseWeek = (week: string | null | undefined): number | null => {
       if (!week) return null;
+      if (/^\d{4}-\d{1,2}$/.test(String(week).trim())) return null;
       const num = parseInt(String(week).replace(/\D/g, ''));
       return num && !isNaN(num) ? num : null;
     };
@@ -370,23 +376,28 @@ export function ScorecardRECC({
     });
 
     // ── MEDIA KPIs (SEA / SMA=Meta / TikTok) ──
-    const mediaAgg: Record<string, Record<string, Record<number, Array<{ wk: number; v: number }>>>> = {};
+    const mediaAgg: Record<string, Record<string, Record<number, Array<{ wk: number | null; v: number }>>>> = {};
+    const addMediaValue = (channel: string, kpiName: string, mi: number, wk: number | null, value: unknown) => {
+      if (value == null) return;
+      const v = Number(value);
+      if (isNaN(v)) return;
+      mediaAgg[channel] = mediaAgg[channel] || {};
+      mediaAgg[channel][kpiName] = mediaAgg[channel][kpiName] || {};
+      mediaAgg[channel][kpiName][mi] = mediaAgg[channel][kpiName][mi] || [];
+      mediaAgg[channel][kpiName][mi].push({ wk, v });
+      if (wk) trackWeek(mi, wk);
+    };
+
     (media || []).forEach((row: any) => {
       const wk = parseWeek(row.week);
       const mi = weekToMonthIdx(row.week);
-      if (!mi || !wk) return;
+      if (!mi) return;
       const ch = row.channel;
       const kn = row.kpi_name;
-      mediaAgg[ch] = mediaAgg[ch] || {};
-      mediaAgg[ch][kn] = mediaAgg[ch][kn] || {};
-      mediaAgg[ch][kn][mi] = mediaAgg[ch][kn][mi] || [];
-      let v: number | null = null;
-      if (row.actual != null) v = Number(row.actual);
-      else if (kn === 'budget_depense' && row.budget_spent != null) v = Number(row.budget_spent);
-      else if (kn === 'budget_alloue' && row.budget_allocated != null) v = Number(row.budget_allocated);
-      if (v != null && !isNaN(v)) {
-        mediaAgg[ch][kn][mi].push({ wk, v });
-        trackWeek(mi, wk);
+      addMediaValue(ch, kn, mi, wk, row.actual);
+      if (ch === 'sea' && kn === 'budget_ratio') {
+        addMediaValue(ch, 'budget_depense', mi, wk, row.budget_spent);
+        addMediaValue(ch, 'budget_alloue', mi, wk, row.budget_allocated);
       }
     });
 
@@ -398,7 +409,7 @@ export function ScorecardRECC({
         const vals = entries.map((e) => e.v);
         ensure(kpiKey)[mi] = agg === 'sum' ? sum(vals) : avg(vals);
         entries.forEach(({ wk, v }) => {
-          ensureW(kpiKey, mi)[wk] = v;
+          if (wk) ensureW(kpiKey, mi)[wk] = v;
         });
       });
     };
