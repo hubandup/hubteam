@@ -2510,6 +2510,63 @@ export type Database = {
         }
         Relationships: []
       }
+      lagostina_tiktok_top_ads: {
+        Row: {
+          ad_id: string
+          ad_name: string
+          clicks: number | null
+          content_url: string | null
+          conversions: number | null
+          cpa_usd: number | null
+          cpc_usd: number | null
+          ctr: number | null
+          cvr: number | null
+          id: string
+          impressions: number | null
+          period_end: string | null
+          period_start: string | null
+          roas_finalisation: number | null
+          spend_usd: number | null
+          updated_at: string
+        }
+        Insert: {
+          ad_id: string
+          ad_name: string
+          clicks?: number | null
+          content_url?: string | null
+          conversions?: number | null
+          cpa_usd?: number | null
+          cpc_usd?: number | null
+          ctr?: number | null
+          cvr?: number | null
+          id?: string
+          impressions?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          roas_finalisation?: number | null
+          spend_usd?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ad_id?: string
+          ad_name?: string
+          clicks?: number | null
+          content_url?: string | null
+          conversions?: number | null
+          cpa_usd?: number | null
+          cpc_usd?: number | null
+          ctr?: number | null
+          cvr?: number | null
+          id?: string
+          impressions?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          roas_finalisation?: number | null
+          spend_usd?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lagostina_top_keywords: {
         Row: {
           clicks: number | null
