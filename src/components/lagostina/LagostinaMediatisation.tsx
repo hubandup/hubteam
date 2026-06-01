@@ -22,11 +22,11 @@ const CHANNEL_MAP: Record<SubTab, string> = { SEA: 'sea', META: 'sma', TikTok: '
 // Map DB kpi_names to display keys
 const SEA_KPIS = ['roas', 'cpc_moyen', 'ctr', 'impressions', 'conversions', 'budget_ratio'];
 const SMA_KPIS = ['reach_3s_views', 'completion_video', 'traffic_qualifie_visites_site', 'cpm_reach_attentif', 'cpvisite', 'cpc', 'conversion_rate', 'roas'];
-const TIKTOK_KPIS = ['reach', 'completion', 'engagement_rate', 'cpv', 'cpc', 'roas'];
+const TIKTOK_KPIS = ['impressions', 'spend', 'cpm', 'ctr', 'cpc', 'conversions', 'cpa', 'cvr', 'completion', 'roas'];
 
 const KPI_LABELS: Record<string, string> = {
   roas: 'ROAS', cpc_moyen: 'CPC', cpc: 'CPC', ctr: 'CTR', impressions: 'Impressions', conversions: 'Conversions',
-  budget_ratio: 'Budget dépensé / alloué', reach_3s_views: 'Reach 3s', 'reach_(3s_views)': 'Reach 3s', reach: 'Reach 3s',
+  budget_ratio: 'Budget dépensé / alloué', reach_3s_views: 'Reach 3s', 'reach_(3s_views)': 'Reach 3s', reach: 'Reach',
   completion_video: 'Complétion vidéo', 'complétion_vidéo': 'Complétion vidéo', completion: 'Complétion vidéo',
   traffic_qualifie_visites_site: 'Traffic qualifié', 'traffic_qualifié_(visites_site)': 'Traffic qualifié', traffic: 'Traffic qualifié',
   cpm_reach_attentif: 'CPM', cpm: 'CPM', cpvisite: 'CPVisite', cpv: 'CPV',
@@ -34,11 +34,12 @@ const KPI_LABELS: Record<string, string> = {
   followers_evol: 'Évol. followers', taux_de_conversion: 'Taux conversion',
   'coût_/_conversion': 'Coût / conversion', cout_conversion: 'Coût / conversion',
   'budget_dépensé': 'Budget dépensé', budget_depense: 'Budget dépensé',
-  'budget_alloué': 'Budget alloué', budget_alloue: 'Budget alloué',
+  'budget_alloué': 'Budget alloué', budget_alloue: 'Budget alloue',
+  spend: 'Dépense', cpa: 'CPA', cvr: 'CVR', clicks: 'Clics',
 };
 
 // KPIs where values are already in percentage (don't multiply by 100)
-const ALREADY_PERCENT_KPIS = ['ctr', 'engagement_rate', 'conversion_rate', 'completion', 'completion_video', 'complétion_vidéo', 'taux_de_conversion'];
+const ALREADY_PERCENT_KPIS = ['ctr', 'cvr', 'engagement_rate', 'conversion_rate', 'completion', 'completion_video', 'complétion_vidéo', 'taux_de_conversion'];
 
 function getCondColor(actual: number | null, objective: number | null) {
   if (!actual || !objective) return '';
