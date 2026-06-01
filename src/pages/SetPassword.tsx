@@ -51,6 +51,7 @@ export default function SetPassword() {
     const queryParams = new URLSearchParams(window.location.search);
     const forceChange = queryParams.get('forceChange') === '1';
     if (forceChange) {
+      setIsRecovery(true); // Reuse recovery UI (password-only form)
       // L'utilisateur est déjà connecté via le mot de passe provisoire
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session) {
