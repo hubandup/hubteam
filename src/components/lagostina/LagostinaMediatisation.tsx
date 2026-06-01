@@ -54,7 +54,8 @@ function formatVal(val: number | null | undefined, kpi: string): string {
   // Bug 1 fix: values are already in percentage, just append %
   if (ALREADY_PERCENT_KPIS.includes(kpi)) return `${val.toFixed(1)}%`;
   if (['roas'].includes(kpi)) return val.toFixed(2);
-  if (['cpc_moyen', 'cpc', 'cpm', 'cpm_reach_attentif', 'cpv', 'cpvisite', 'coût_/_conversion', 'cpa', 'spend'].includes(kpi)) return `$${val.toFixed(2)}`;
+  if (['cpa', 'spend'].includes(kpi)) return `$${val.toFixed(2)}`;
+  if (['cpc_moyen', 'cpc', 'cpm', 'cpm_reach_attentif', 'cpv', 'cpvisite', 'coût_/_conversion'].includes(kpi)) return `€${val.toFixed(2)}`;
   if (['impressions', 'reach', 'reach_3s_views', 'reach_(3s_views)', 'conversions', 'clicks', 'traffic', 'traffic_qualifie_visites_site', 'traffic_qualifié_(visites_site)', 'clics'].includes(kpi)) {
     if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
     if (val >= 1_000) return `${(val / 1_000).toFixed(0)}K`;
