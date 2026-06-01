@@ -75,3 +75,7 @@ verify_jwt = false
 # Weekly Slack relances - cron only (uses x-cron-secret)
 [functions.weekly-slack-excuses]
 verify_jwt = false
+
+# Google Ads SEA sync - JWT admin/team OR x-cron-secret
+[functions.sync-google-ads-sea]
+verify_jwt = false
