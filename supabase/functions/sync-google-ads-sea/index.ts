@@ -157,6 +157,10 @@ Deno.serve(async (req) => {
     const headers = values[0].map((h) => String(h ?? ''));
     const idx = mapHeaders(headers);
 
+
+
+
+
     // Detect pivoted layout: metrics in rows, periods in columns.
     const periodCols: { col: number; week: string }[] = [];
     if (idx.period == null) {
@@ -225,7 +229,7 @@ Deno.serve(async (req) => {
       for (let r = 1; r < values.length; r++) {
         const row = values[r];
         if (!row || row.length === 0) continue;
-        const metricRaw = norm(String(row[0] ?? ''));
+        const metricRaw = norm(String(row[0] ?? '')).replace(/\s*\([^)]*\)\s*/g, '').trim();
         const key = METRIC_ROW_KEY[metricRaw];
         if (!key) continue;
         for (const { col, week } of periodCols) {
