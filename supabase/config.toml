@@ -79,3 +79,7 @@ verify_jwt = false
 # Google Ads SEA sync - JWT admin/team OR x-cron-secret
 [functions.sync-google-ads-sea]
 verify_jwt = false
+
+# TikTok OAuth callback - public (state CSRF validation)
+[functions.tiktok-oauth-callback]
+verify_jwt = false
