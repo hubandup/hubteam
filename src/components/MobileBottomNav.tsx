@@ -1,9 +1,7 @@
-import { Rss, StickyNote, Users, Briefcase } from 'lucide-react';
+import { StickyNote, Users, Briefcase } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { useMemo } from 'react';
 import { useIsNative } from '@/hooks/use-mobile';
-import { useActivities } from '@/hooks/useActivities';
-import { usePosts } from '@/hooks/usePosts';
 import { useTasks } from '@/hooks/useTasks';
 import { useClients } from '@/hooks/useClients';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,23 +12,10 @@ import { useTranslation } from 'react-i18next';
 export function MobileBottomNav() {
   const isNative = useIsNative();
   const { user } = useAuth();
-  const { data: activities } = useActivities();
-  const { data: posts } = usePosts();
   const { data: tasks } = useTasks();
   const { data: clients } = useClients();
   const lastVisits = useTabVisits();
   const { t } = useTranslation();
-
-  const feedCount = useMemo(() => {
-    const lastVisit = lastVisits.feed;
-    const newActivities = activities?.filter(
-      a => new Date(a.created_at).getTime() > lastVisit
-    ).length || 0;
-    const newPosts = posts?.filter(
-      p => new Date(p.created_at).getTime() > lastVisit
-    ).length || 0;
-    return newActivities + newPosts;
-  }, [activities, posts, lastVisits.feed]);
 
   const crmCount = useMemo(() => {
     if (!clients) return 0;
@@ -75,7 +60,6 @@ export function MobileBottomNav() {
         {navItems.map((item) => {
           const Icon = item.icon;
           let badgeCount = 0;
-          if (item.to === '/feed') badgeCount = feedCount;
           if (item.to === '/crm') badgeCount = crmCount;
           if (item.to === '/projects') badgeCount = projectsCount;
           const showBadge = badgeCount > 0;
