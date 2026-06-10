@@ -144,32 +144,95 @@ async function extractInvoiceFields(base64Pdf: string, mimeType: string) {
   return JSON.parse(toolCall.function.arguments);
 }
 
-// ---------- kDrive upload via existing kdrive-api function ----------
+// ---------- kDrive upload (direct API, inline) ----------
+function base64ToBytes(b64: string): Uint8Array {
+  const clean = b64.includes(",") ? b64.split(",").pop()! : b64;
+  const bin = atob(clean);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
 async function uploadToKDrive(
   base64: string,
   fileName: string,
   folderId: string | number,
   driveId: string,
 ) {
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/kdrive-api`, {
+  const bytes = base64ToBytes(base64);
+  const totalSize = bytes.length;
+  console.log(`kDrive direct upload: ${fileName} (${totalSize} bytes) -> folder ${folderId}`);
+
+  // 1) Start single upload session
+  const sessionUrl = `${KDRIVE_API_BASE}/3/drive/${driveId}/upload/session/start`;
+  const sessionResp = await fetch(sessionUrl, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      Authorization: `Bearer ${KDRIVE_TOKEN}`,
       "Content-Type": "application/json",
+      Accept: "application/json",
     },
     body: JSON.stringify({
-      action: "upload-file",
-      fileName,
-      fileContent: base64,
-      folderId,
-      driveId,
+      directory_id: Number(folderId),
+      file_name: fileName,
+      conflict: "rename",
+      total_size: totalSize,
+      total_chunks: 1,
     }),
   });
-  if (!res.ok) {
-    console.error("kDrive upload failed:", await res.text());
+  const sessionText = await sessionResp.text();
+  if (!sessionResp.ok) {
+    console.error("kDrive session start failed:", sessionResp.status, sessionText);
     return null;
   }
-  return await res.json();
+  let sessionData: any = {};
+  try { sessionData = JSON.parse(sessionText); } catch { /* */ }
+  const token =
+    sessionData?.data?.token ||
+    sessionData?.data?.upload_token ||
+    sessionData?.upload_token ||
+    null;
+  const uploadBase = sessionData?.data?.upload_url || KDRIVE_API_BASE;
+  if (!token) {
+    console.error("kDrive: no upload token in session response", sessionData);
+    return null;
+  }
+
+  // 2) Upload chunk
+  const chunkUrl = `${uploadBase}/3/drive/${driveId}/upload/session/${token}/chunk`;
+  const form = new FormData();
+  form.append("chunk_number", "1");
+  form.append("chunk_size", String(totalSize));
+  form.append("chunk", new Blob([bytes], { type: "application/octet-stream" }), fileName);
+  const chunkResp = await fetch(chunkUrl, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${KDRIVE_TOKEN}`, Accept: "application/json" },
+    body: form,
+  });
+  const chunkText = await chunkResp.text();
+  if (!chunkResp.ok) {
+    console.error("kDrive chunk upload failed:", chunkResp.status, chunkText);
+    return null;
+  }
+
+  // 3) Finish session
+  const finishUrl = `${uploadBase}/3/drive/${driveId}/upload/session/${token}/finish`;
+  const finishResp = await fetch(finishUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${KDRIVE_TOKEN}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ total_chunks_hash: null }),
+  });
+  const finishText = await finishResp.text();
+  if (!finishResp.ok) {
+    console.error("kDrive finish failed:", finishResp.status, finishText);
+    return null;
+  }
+  console.log(`kDrive upload OK: ${fileName}`);
+  try { return JSON.parse(finishText); } catch { return { ok: true }; }
 }
 
 // ---------- Email forward via Brevo ----------
