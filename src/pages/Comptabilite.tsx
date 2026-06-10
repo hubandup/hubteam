@@ -825,15 +825,43 @@ export default function Comptabilite() {
                     {previewLoading ? (
                       <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     ) : previewBlobUrl ? (
-                      <iframe
-                        src={previewBlobUrl}
-                        title="Aperçu de la facture"
-                        className="w-full h-full"
-                      />
+                      previewMimeType?.includes("pdf") ? (
+                        <div ref={previewContainerRef} className="h-full w-full overflow-auto bg-muted/20 p-4">
+                          <Document
+                            file={previewBlobUrl}
+                            onLoadSuccess={({ numPages }) => setPreviewPageCount(numPages)}
+                            loading={<Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto mt-8" />}
+                            error={<p className="text-sm text-muted-foreground text-center mt-8">Aperçu indisponible</p>}
+                            className="flex justify-center"
+                          >
+                            {previewWidth > 0 && (
+                              <Page
+                                pageNumber={previewPage}
+                                width={previewWidth}
+                                renderTextLayer={false}
+                                renderAnnotationLayer={false}
+                              />
+                            )}
+                          </Document>
+                        </div>
+                      ) : (
+                        <img src={previewBlobUrl} alt="Aperçu de la facture" className="h-full w-full object-contain" />
+                      )
                     ) : (
                       <p className="text-sm text-muted-foreground">Aperçu indisponible</p>
                     )}
                   </div>
+                  {previewPageCount > 1 && (
+                    <div className="flex items-center justify-center gap-3">
+                      <Button variant="outline" size="icon" onClick={() => setPreviewPage((p) => Math.max(1, p - 1))} disabled={previewPage <= 1}>
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="text-sm text-muted-foreground">Page {previewPage} / {previewPageCount}</span>
+                      <Button variant="outline" size="icon" onClick={() => setPreviewPage((p) => Math.min(previewPageCount, p + 1))} disabled={previewPage >= previewPageCount}>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
