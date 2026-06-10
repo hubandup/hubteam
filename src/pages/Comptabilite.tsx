@@ -385,21 +385,25 @@ export default function Comptabilite() {
   };
 
   const handleExportExcel = () => {
-    const rows = invoices.map((i) => ({
-      Fournisseur: i.supplier,
-      "N° Facture": i.invoiceNumber,
-      "Montant HT": i.amountHT,
-      "Montant TTC": i.amountTTC,
-      "Date facture": fmtDate(i.invoiceDate),
-      "Date échéance": fmtDate(i.dueDate),
-      "Condition règlement": i.paymentTerms,
-      Statut: i.status,
-      "Détail paiement": i.paymentDetail,
-      Remarque: i.remark,
-    }));
-    const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Factures");
+    fiscalYears.forEach((fy) => {
+      const rows = invoices
+        .filter((i) => (i.fiscalYear || computeFiscalYear(i.invoiceDate)) === fy)
+        .map((i) => ({
+          Fournisseur: i.supplier,
+          "N° Facture": i.invoiceNumber,
+          "Montant HT": i.amountHT,
+          "Montant TTC": i.amountTTC,
+          "Date facture": fmtDate(i.invoiceDate),
+          "Date échéance": fmtDate(i.dueDate),
+          "Condition règlement": i.paymentTerms,
+          Statut: i.status,
+          "Détail paiement": i.paymentDetail,
+          Remarque: i.remark,
+        }));
+      const ws = XLSX.utils.json_to_sheet(rows);
+      XLSX.utils.book_append_sheet(wb, ws, `Exercice ${fy.replace("/", "-")}`);
+    });
     XLSX.writeFile(wb, `factures-${format(today, "yyyy-MM-dd")}.xlsx`);
     toast.success("Export Excel généré");
   };
