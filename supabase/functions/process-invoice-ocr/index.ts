@@ -1,5 +1,5 @@
 // Process invoice: OCR via Lovable AI (Gemini) + upload to kDrive (ADMINISTRATIF/_NEW)
-// Also emails the invoice file as attachment to cbaulu@gmail.com via Brevo.
+// Also emails the invoice file as attachment to achats_hubandup_90265@doc.skwarel.com via Brevo.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
 
@@ -18,7 +18,7 @@ const KDRIVE_API_BASE = "https://api.infomaniak.com";
 const KDRIVE_TOKEN = Deno.env.get("KDRIVE_API_TOKEN") || "";
 const KDRIVE_PRODUCT_ID = Deno.env.get("KDRIVE_PRODUCT_ID") || "969307";
 
-const FORWARD_EMAIL = "cbaulu@gmail.com";
+const FORWARD_EMAIL = "achats_hubandup_90265@doc.skwarel.com";
 
 // ---------- kDrive helpers (resolve ADMINISTRATIF > _NEW) ----------
 const kdriveHeaders = { Authorization: `Bearer ${KDRIVE_TOKEN}` };
