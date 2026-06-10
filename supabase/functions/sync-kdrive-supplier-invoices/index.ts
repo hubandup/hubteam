@@ -282,12 +282,13 @@ serve(async (req) => {
     );
     const alnum = (s: string) =>
       (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
-    const dedupeKey = (supplier: string, invNum: string, date: string | null, ttc: number | null) =>
-      `${alnum(supplier)}|${alnum(invNum)}|${date || ""}|${Number(ttc || 0).toFixed(2)}`;
+    // Dedupe priority: invoice_number → invoice_date → amount_ttc (supplier ignored).
+    const dedupeKey = (invNum: string, date: string | null, ttc: number | null) =>
+      `${alnum(invNum)}|${date || ""}|${Number(ttc || 0).toFixed(2)}`;
     const seenLogical = new Set(
-      (existing || []).map((r: any) =>
-        dedupeKey(r.supplier, r.invoice_number, r.invoice_date, r.amount_ttc),
-      ),
+      (existing || [])
+        .filter((r: any) => r.invoice_number)
+        .map((r: any) => dedupeKey(r.invoice_number, r.invoice_date, r.amount_ttc)),
     );
 
     // 4) Walk each folder and process new files
@@ -313,18 +314,18 @@ serve(async (req) => {
           const b64 = await downloadFileBase64(driveId, child.id);
           const ocr = await extractInvoiceFields(b64, mimeType);
 
-          // Logical dedupe: skip if same supplier+invoice_number+date+amount_ttc already exists
+          // Logical dedupe — invoice_number + date + ttc (file name & source folder ignored)
           const logicalKey = dedupeKey(
-            ocr.supplier || "",
             ocr.invoiceNumber || "",
             ocr.invoiceDate || null,
             Number(ocr.amountTTC) || 0,
           );
-          if (seenLogical.has(logicalKey)) {
+          if (ocr.invoiceNumber && seenLogical.has(logicalKey)) {
             processed.push({ folder: folder.name, name: child.name, skipped: "duplicate" });
             seen.add(fileIdStr);
             continue;
           }
+
 
 
           const fy = fiscalYearLabel(ocr.invoiceDate);
