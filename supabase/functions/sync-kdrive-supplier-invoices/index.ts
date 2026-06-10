@@ -270,25 +270,15 @@ serve(async (req) => {
       else missing.push({ name, available: f.available });
     }
 
-    // 3) Build dedupe sets — ignore file name and source folder.
-    //    A duplicate = same (supplier, invoice_number, invoice_date, amount_ttc).
+    // 3) Build file-id set only. Logical duplicates are inserted, then the DB
+    //    trigger keeps the latest uploaded row and removes older duplicates.
     const { data: existing } = await admin
       .from("supplier_invoices")
-      .select("kdrive_file_id, supplier, invoice_number, invoice_date, amount_ttc");
+      .select("kdrive_file_id");
     const seen = new Set(
       (existing || [])
         .filter((r: any) => r.kdrive_file_id)
         .map((r: any) => String(r.kdrive_file_id)),
-    );
-    const alnum = (s: string) =>
-      (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
-    // Dedupe priority: invoice_number → invoice_date → amount_ttc (supplier ignored).
-    const dedupeKey = (invNum: string, date: string | null, ttc: number | null) =>
-      `${alnum(invNum)}|${date || ""}|${Number(ttc || 0).toFixed(2)}`;
-    const seenLogical = new Set(
-      (existing || [])
-        .filter((r: any) => r.invoice_number)
-        .map((r: any) => dedupeKey(r.invoice_number, r.invoice_date, r.amount_ttc)),
     );
 
     // 4) Walk each folder and process new files
@@ -313,20 +303,6 @@ serve(async (req) => {
           const mimeType = isPdf ? "application/pdf" : "image/jpeg";
           const b64 = await downloadFileBase64(driveId, child.id);
           const ocr = await extractInvoiceFields(b64, mimeType);
-
-          // Logical dedupe — invoice_number + date + ttc (file name & source folder ignored)
-          const logicalKey = dedupeKey(
-            ocr.invoiceNumber || "",
-            ocr.invoiceDate || null,
-            Number(ocr.amountTTC) || 0,
-          );
-          if (ocr.invoiceNumber && seenLogical.has(logicalKey)) {
-            processed.push({ folder: folder.name, name: child.name, skipped: "duplicate" });
-            seen.add(fileIdStr);
-            continue;
-          }
-
-
 
           const fy = fiscalYearLabel(ocr.invoiceDate);
           const status = statusForFolder(folder.name);
@@ -354,7 +330,6 @@ serve(async (req) => {
 
           processed.push({ folder: folder.name, name: child.name, fiscal_year: fy });
           seen.add(fileIdStr);
-          seenLogical.add(logicalKey);
           budget--;
         } catch (e) {
           console.error(`Failed file ${child.name}:`, e);
