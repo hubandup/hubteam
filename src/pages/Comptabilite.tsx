@@ -86,7 +86,22 @@ type DbInvoice = {
   payment_detail: string | null;
   file_url: string | null;
   remark: string | null;
+  fiscal_year?: string | null;
+  kdrive_folder?: string | null;
 };
+
+// Compute fiscal year label (April 1 → March 31). Returns e.g. "2024/2025".
+const computeFiscalYear = (iso?: string | null): string | null => {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const y = d.getUTCFullYear();
+  const m = d.getUTCMonth() + 1;
+  const start = m >= 4 ? y : y - 1;
+  return `${start}/${start + 1}`;
+};
+
+const currentFiscalYear = (): string => computeFiscalYear(new Date().toISOString())!;
 
 const fromDb = (r: DbInvoice): Invoice => ({
   id: r.id,
@@ -101,6 +116,8 @@ const fromDb = (r: DbInvoice): Invoice => ({
   paymentDetail: r.payment_detail ?? "",
   fileUrl: r.file_url || "#",
   remark: r.remark ?? "",
+  fiscalYear: r.fiscal_year ?? computeFiscalYear(r.invoice_date),
+  kdriveFolder: r.kdrive_folder ?? null,
 });
 
 const toDbInsert = (i: Invoice) => ({
@@ -115,6 +132,8 @@ const toDbInsert = (i: Invoice) => ({
   payment_detail: i.paymentDetail,
   file_url: i.fileUrl === "#" ? "" : i.fileUrl,
   remark: i.remark,
+  fiscal_year: i.fiscalYear,
+  kdrive_folder: i.kdriveFolder,
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
