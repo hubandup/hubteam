@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -58,7 +58,7 @@ interface Invoice {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Mock data
+// Date helpers
 // ──────────────────────────────────────────────────────────────────────────────
 const today = new Date();
 const offsetDate = (days: number) => {
@@ -67,78 +67,52 @@ const offsetDate = (days: number) => {
   return d.toISOString().slice(0, 10);
 };
 
-const INITIAL_INVOICES: Invoice[] = [
-  {
-    id: "inv-001",
-    supplier: "Imprimerie Dupont",
-    invoiceNumber: "F2026-0142",
-    amountHT: 1250,
-    amountTTC: 1500,
-    invoiceDate: offsetDate(-40),
-    dueDate: offsetDate(-5),
-    paymentTerms: "30 jours",
-    status: "À payer",
-    paymentDetail: "",
-    fileUrl: "#",
-    remark: "Relance envoyée",
-  },
-  {
-    id: "inv-002",
-    supplier: "Studio Création SA",
-    invoiceNumber: "SC-2026-0058",
-    amountHT: 4200,
-    amountTTC: 5040,
-    invoiceDate: offsetDate(-20),
-    dueDate: offsetDate(3),
-    paymentTerms: "30 jours",
-    status: "À payer",
-    paymentDetail: "",
-    fileUrl: "#",
-    remark: "",
-  },
-  {
-    id: "inv-003",
-    supplier: "Hosting Web Pro",
-    invoiceNumber: "HWP-99821",
-    amountHT: 89,
-    amountTTC: 106.8,
-    invoiceDate: offsetDate(-60),
-    dueDate: offsetDate(-30),
-    paymentTerms: "Comptant",
-    status: "Payé",
-    paymentDetail: "Virement SEPA 12/05",
-    fileUrl: "#",
-    remark: "Renouvellement annuel",
-  },
-  {
-    id: "inv-004",
-    supplier: "Agence Média Plus",
-    invoiceNumber: "AMP-2026-0011",
-    amountHT: 8500,
-    amountTTC: 10200,
-    invoiceDate: offsetDate(-5),
-    dueDate: offsetDate(25),
-    paymentTerms: "30 jours",
-    status: "À payer",
-    paymentDetail: "",
-    fileUrl: "#",
-    remark: "",
-  },
-  {
-    id: "inv-005",
-    supplier: "Coworking Lyon",
-    invoiceNumber: "CWL-0307",
-    amountHT: 450,
-    amountTTC: 540,
-    invoiceDate: offsetDate(-10),
-    dueDate: offsetDate(10),
-    paymentTerms: "20 jours",
-    status: "À payer",
-    paymentDetail: "",
-    fileUrl: "#",
-    remark: "Bureau juin",
-  },
-];
+// ──────────────────────────────────────────────────────────────────────────────
+// DB <-> UI mapping
+// ──────────────────────────────────────────────────────────────────────────────
+type DbInvoice = {
+  id: string;
+  supplier: string;
+  invoice_number: string;
+  amount_ht: number | string | null;
+  amount_ttc: number | string | null;
+  invoice_date: string | null;
+  due_date: string | null;
+  payment_terms: string | null;
+  status: string | null;
+  payment_detail: string | null;
+  file_url: string | null;
+  remark: string | null;
+};
+
+const fromDb = (r: DbInvoice): Invoice => ({
+  id: r.id,
+  supplier: r.supplier,
+  invoiceNumber: r.invoice_number,
+  amountHT: Number(r.amount_ht ?? 0),
+  amountTTC: Number(r.amount_ttc ?? 0),
+  invoiceDate: r.invoice_date ?? offsetDate(0),
+  dueDate: r.due_date ?? offsetDate(30),
+  paymentTerms: r.payment_terms ?? "30 jours",
+  status: (r.status as InvoiceStatus) ?? "À payer",
+  paymentDetail: r.payment_detail ?? "",
+  fileUrl: r.file_url || "#",
+  remark: r.remark ?? "",
+});
+
+const toDbInsert = (i: Invoice) => ({
+  supplier: i.supplier,
+  invoice_number: i.invoiceNumber,
+  amount_ht: i.amountHT,
+  amount_ttc: i.amountTTC,
+  invoice_date: i.invoiceDate,
+  due_date: i.dueDate,
+  payment_terms: i.paymentTerms,
+  status: i.status,
+  payment_detail: i.paymentDetail,
+  file_url: i.fileUrl === "#" ? "" : i.fileUrl,
+  remark: i.remark,
+});
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -252,29 +226,62 @@ async function processBankStatement(
 // Component
 // ──────────────────────────────────────────────────────────────────────────────
 export default function Comptabilite() {
-  const [invoices, setInvoices] = useState<Invoice[]>(INITIAL_INVOICES);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [invoiceUploadOpen, setInvoiceUploadOpen] = useState(false);
   const [bankUploadOpen, setBankUploadOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [processingLabel, setProcessingLabel] = useState("");
 
-  const handleRemarkChange = (id: string, value: string) => {
+  // Load invoices from DB
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("supplier_invoices")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (cancelled) return;
+      if (error) {
+        toast.error("Impossible de charger les factures");
+      } else {
+        setInvoices((data as DbInvoice[]).map(fromDb));
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleRemarkChange = async (id: string, value: string) => {
     setInvoices((prev) =>
       prev.map((i) => (i.id === id ? { ...i, remark: value } : i)),
     );
-    // TODO: persist remark via API onBlur
+    const { error } = await supabase
+      .from("supplier_invoices")
+      .update({ remark: value })
+      .eq("id", id);
+    if (error) toast.error("Échec de la sauvegarde de la remarque");
   };
 
   const handleInvoiceFile = async (file: File) => {
     setProcessing(true);
     setProcessingLabel("Extraction des données et envoi vers kDrive en cours…");
     try {
-      const newInvoice = await processInvoiceUpload(file);
-      setInvoices((prev) => [newInvoice, ...prev]);
+      const extracted = await processInvoiceUpload(file);
+      const { data, error } = await supabase
+        .from("supplier_invoices")
+        .insert(toDbInsert(extracted))
+        .select()
+        .single();
+      if (error) throw error;
+      setInvoices((prev) => [fromDb(data as DbInvoice), ...prev]);
       toast.success("Facture importée avec succès");
       setInvoiceUploadOpen(false);
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error("Échec du traitement de la facture");
     } finally {
       setProcessing(false);
@@ -287,6 +294,24 @@ export default function Comptabilite() {
     setProcessingLabel("Rapprochement bancaire en cours…");
     try {
       const updated = await processBankStatement(file, invoices);
+      // Persist only the rows whose status flipped to "Payé"
+      const changes = updated.filter((u) => {
+        const prev = invoices.find((i) => i.id === u.id);
+        return prev && prev.status !== u.status;
+      });
+      if (changes.length) {
+        await Promise.all(
+          changes.map((c) =>
+            supabase
+              .from("supplier_invoices")
+              .update({
+                status: c.status,
+                payment_detail: c.paymentDetail,
+              })
+              .eq("id", c.id),
+          ),
+        );
+      }
       setInvoices(updated);
       toast.success("Rapprochement bancaire terminé");
       setBankUploadOpen(false);
@@ -419,6 +444,21 @@ export default function Comptabilite() {
                 </TableCell>
               </TableRow>
             ))}
+            {!loading && invoices.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={10} className="text-center text-muted-foreground py-12">
+                  Aucune facture. Cliquez sur « Uploader une facture » pour commencer.
+                </TableCell>
+              </TableRow>
+            )}
+            {loading && (
+              <TableRow>
+                <TableCell colSpan={10} className="text-center text-muted-foreground py-12">
+                  <Loader2 className="h-5 w-5 animate-spin inline mr-2" />
+                  Chargement…
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
