@@ -365,7 +365,6 @@ export default function Comptabilite() {
               <TableHead className="text-right">TTC (€)</TableHead>
               <TableHead>Date facture</TableHead>
               <TableHead>Échéance</TableHead>
-              <TableHead>Règlement</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead>Détail paiement</TableHead>
               <TableHead>Fichier</TableHead>
@@ -388,9 +387,6 @@ export default function Comptabilite() {
                 <TableCell>{fmtDate(inv.invoiceDate)}</TableCell>
                 <TableCell className={getDueDateColor(inv.dueDate, inv.status)}>
                   {fmtDate(inv.dueDate)}
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {inv.paymentTerms}
                 </TableCell>
                 <TableCell>
                   <Badge
