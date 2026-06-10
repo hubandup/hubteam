@@ -229,19 +229,37 @@ serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // 1) Resolve drive and traverse to ADMINISTRATIF
+    // kDrive root contains shared top-level folders like "Common documents" / "Documents communs"
+    // and "Private" / "Privé". ADMINISTRATIF lives inside one of them — search recursively.
     const driveId = await getDriveId();
-    const adminLookup = await findFolderByName(driveId, 1, "ADMINISTRATIF");
-    if (!adminLookup.match) {
+    let administratif: any = null;
+    const rootLookup = await findFolderByName(driveId, 1, "ADMINISTRATIF");
+    const triedPaths: string[] = ["/"];
+    if (rootLookup.match) {
+      administratif = rootLookup.match;
+    } else {
+      // Search inside each top-level folder
+      const rootChildren = await listChildren(driveId, 1);
+      for (const top of rootChildren.filter(isDir)) {
+        triedPaths.push(`/${top.name}`);
+        const sub = await findFolderByName(driveId, top.id, "ADMINISTRATIF");
+        if (sub.match) {
+          administratif = sub.match;
+          break;
+        }
+      }
+    }
+    if (!administratif) {
       return new Response(
         JSON.stringify({
-          error: "ADMINISTRATIF folder not found at drive root",
+          error: "ADMINISTRATIF folder not found",
           driveId,
-          available_root_folders: adminLookup.available,
+          searched_paths: triedPaths,
+          available_root_folders: rootLookup.available,
         }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-    const administratif = adminLookup.match;
 
     // 2) Resolve the 4 target subfolders
     const folders: { name: string; id: string | number }[] = [];
