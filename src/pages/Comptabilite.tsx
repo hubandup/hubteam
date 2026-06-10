@@ -226,29 +226,62 @@ async function processBankStatement(
 // Component
 // ──────────────────────────────────────────────────────────────────────────────
 export default function Comptabilite() {
-  const [invoices, setInvoices] = useState<Invoice[]>(INITIAL_INVOICES);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [invoiceUploadOpen, setInvoiceUploadOpen] = useState(false);
   const [bankUploadOpen, setBankUploadOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [processingLabel, setProcessingLabel] = useState("");
 
-  const handleRemarkChange = (id: string, value: string) => {
+  // Load invoices from DB
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("supplier_invoices")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (cancelled) return;
+      if (error) {
+        toast.error("Impossible de charger les factures");
+      } else {
+        setInvoices((data as DbInvoice[]).map(fromDb));
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleRemarkChange = async (id: string, value: string) => {
     setInvoices((prev) =>
       prev.map((i) => (i.id === id ? { ...i, remark: value } : i)),
     );
-    // TODO: persist remark via API onBlur
+    const { error } = await supabase
+      .from("supplier_invoices")
+      .update({ remark: value })
+      .eq("id", id);
+    if (error) toast.error("Échec de la sauvegarde de la remarque");
   };
 
   const handleInvoiceFile = async (file: File) => {
     setProcessing(true);
     setProcessingLabel("Extraction des données et envoi vers kDrive en cours…");
     try {
-      const newInvoice = await processInvoiceUpload(file);
-      setInvoices((prev) => [newInvoice, ...prev]);
+      const extracted = await processInvoiceUpload(file);
+      const { data, error } = await supabase
+        .from("supplier_invoices")
+        .insert(toDbInsert(extracted))
+        .select()
+        .single();
+      if (error) throw error;
+      setInvoices((prev) => [fromDb(data as DbInvoice), ...prev]);
       toast.success("Facture importée avec succès");
       setInvoiceUploadOpen(false);
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error("Échec du traitement de la facture");
     } finally {
       setProcessing(false);
@@ -261,6 +294,24 @@ export default function Comptabilite() {
     setProcessingLabel("Rapprochement bancaire en cours…");
     try {
       const updated = await processBankStatement(file, invoices);
+      // Persist only the rows whose status flipped to "Payé"
+      const changes = updated.filter((u) => {
+        const prev = invoices.find((i) => i.id === u.id);
+        return prev && prev.status !== u.status;
+      });
+      if (changes.length) {
+        await Promise.all(
+          changes.map((c) =>
+            supabase
+              .from("supplier_invoices")
+              .update({
+                status: c.status,
+                payment_detail: c.paymentDetail,
+              })
+              .eq("id", c.id),
+          ),
+        );
+      }
       setInvoices(updated);
       toast.success("Rapprochement bancaire terminé");
       setBankUploadOpen(false);
