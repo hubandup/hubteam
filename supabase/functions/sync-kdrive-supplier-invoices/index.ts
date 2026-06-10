@@ -344,6 +344,7 @@ serve(async (req) => {
 
           processed.push({ folder: folder.name, name: child.name, fiscal_year: fy });
           seen.add(fileIdStr);
+          seenLogical.add(logicalKey);
           budget--;
         } catch (e) {
           console.error(`Failed file ${child.name}:`, e);
