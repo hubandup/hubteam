@@ -64,7 +64,6 @@ export function MobileBottomNav() {
   );
 
   const navItems = useMemo(() => [
-    { to: '/feed', icon: Rss, labelKey: 'nav.feed' },
     { to: '/notes', icon: StickyNote, labelKey: 'nav.notes' },
     { to: '/crm', icon: Users, labelKey: 'nav.crm' },
     { to: '/projects', icon: Briefcase, labelKey: 'nav.projects' },
