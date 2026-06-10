@@ -1,5 +1,8 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Navigate } from "react-router-dom";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -32,12 +35,16 @@ import {
   Eye,
   Loader2,
   FileText,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Types
@@ -275,20 +282,29 @@ export default function Comptabilite() {
   const [activeFY, setActiveFY] = useState<string>(currentFiscalYear());
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewMimeType, setPreviewMimeType] = useState<string | null>(null);
+  const [previewPageCount, setPreviewPageCount] = useState(0);
+  const [previewPage, setPreviewPage] = useState(1);
+  const [previewWidth, setPreviewWidth] = useState(0);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
 
   // Resolve kDrive file_url -> authenticated blob URL for iframe preview
   useEffect(() => {
     let cancelled = false;
     let createdUrl: string | null = null;
+    setPreviewPage(1);
+    setPreviewPageCount(0);
     const run = async () => {
       if (!selectedInvoice || !selectedInvoice.fileUrl || selectedInvoice.fileUrl === "#") {
         setPreviewBlobUrl(null);
+        setPreviewMimeType(null);
         return;
       }
       const raw = selectedInvoice.fileUrl;
       const isKdrive = raw.includes("kdrive-api");
       if (!isKdrive) {
         setPreviewBlobUrl(raw);
+        setPreviewMimeType(raw.toLowerCase().endsWith(".pdf") ? "application/pdf" : null);
         return;
       }
       try {
@@ -315,6 +331,7 @@ export default function Comptabilite() {
         const blob = await resp.blob();
         if (cancelled) return;
         createdUrl = URL.createObjectURL(blob);
+        setPreviewMimeType(blob.type || "application/pdf");
         setPreviewBlobUrl(createdUrl);
       } catch (e) {
         console.error("Preview load failed", e);
@@ -332,6 +349,17 @@ export default function Comptabilite() {
       if (createdUrl) URL.revokeObjectURL(createdUrl);
     };
   }, [selectedInvoice]);
+
+  useEffect(() => {
+    const updateWidth = () => {
+      if (previewContainerRef.current) {
+        setPreviewWidth(Math.max(240, previewContainerRef.current.clientWidth - 32));
+      }
+    };
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, [selectedInvoice, previewBlobUrl]);
 
   // Load invoices from DB
   const loadInvoices = async () => {
@@ -797,15 +825,43 @@ export default function Comptabilite() {
                     {previewLoading ? (
                       <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     ) : previewBlobUrl ? (
-                      <iframe
-                        src={previewBlobUrl}
-                        title="Aperçu de la facture"
-                        className="w-full h-full"
-                      />
+                      previewMimeType?.includes("pdf") ? (
+                        <div ref={previewContainerRef} className="h-full w-full overflow-auto bg-muted/20 p-4">
+                          <Document
+                            file={previewBlobUrl}
+                            onLoadSuccess={({ numPages }) => setPreviewPageCount(numPages)}
+                            loading={<Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto mt-8" />}
+                            error={<p className="text-sm text-muted-foreground text-center mt-8">Aperçu indisponible</p>}
+                            className="flex justify-center"
+                          >
+                            {previewWidth > 0 && (
+                              <Page
+                                pageNumber={previewPage}
+                                width={previewWidth}
+                                renderTextLayer={false}
+                                renderAnnotationLayer={false}
+                              />
+                            )}
+                          </Document>
+                        </div>
+                      ) : (
+                        <img src={previewBlobUrl} alt="Aperçu de la facture" className="h-full w-full object-contain" />
+                      )
                     ) : (
                       <p className="text-sm text-muted-foreground">Aperçu indisponible</p>
                     )}
                   </div>
+                  {previewPageCount > 1 && (
+                    <div className="flex items-center justify-center gap-3">
+                      <Button variant="outline" size="icon" onClick={() => setPreviewPage((p) => Math.max(1, p - 1))} disabled={previewPage <= 1}>
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="text-sm text-muted-foreground">Page {previewPage} / {previewPageCount}</span>
+                      <Button variant="outline" size="icon" onClick={() => setPreviewPage((p) => Math.min(previewPageCount, p + 1))} disabled={previewPage >= previewPageCount}>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
