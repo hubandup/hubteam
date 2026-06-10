@@ -282,11 +282,17 @@ export default function Comptabilite() {
   const [activeFY, setActiveFY] = useState<string>(currentFiscalYear());
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewPageCount, setPreviewPageCount] = useState(0);
+  const [previewPage, setPreviewPage] = useState(1);
+  const [previewWidth, setPreviewWidth] = useState(0);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
 
   // Resolve kDrive file_url -> authenticated blob URL for iframe preview
   useEffect(() => {
     let cancelled = false;
     let createdUrl: string | null = null;
+    setPreviewPage(1);
+    setPreviewPageCount(0);
     const run = async () => {
       if (!selectedInvoice || !selectedInvoice.fileUrl || selectedInvoice.fileUrl === "#") {
         setPreviewBlobUrl(null);
@@ -339,6 +345,17 @@ export default function Comptabilite() {
       if (createdUrl) URL.revokeObjectURL(createdUrl);
     };
   }, [selectedInvoice]);
+
+  useEffect(() => {
+    const updateWidth = () => {
+      if (previewContainerRef.current) {
+        setPreviewWidth(Math.max(240, previewContainerRef.current.clientWidth - 32));
+      }
+    };
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, [selectedInvoice, previewBlobUrl]);
 
   // Load invoices from DB
   const loadInvoices = async () => {
