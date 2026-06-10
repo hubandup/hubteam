@@ -72,6 +72,23 @@ async function findFolderByName(
   );
 }
 
+async function findUploadedFile(
+  driveId: string,
+  folderId: string | number,
+  fileName: string,
+): Promise<any | null> {
+  const children = await listChildren(driveId, folderId);
+  const target = normalize(fileName);
+  const base = target.replace(/\.[^.]+$/, "");
+  return children
+    .filter((c) => !isDir(c))
+    .filter((c) => {
+      const n = normalize(c.name || "");
+      return n === target || n.startsWith(base);
+    })
+    .sort((a, b) => String(b.created_at || b.added_at || b.updated_at || "").localeCompare(String(a.created_at || a.added_at || a.updated_at || "")))[0] || null;
+}
+
 async function resolveNewFolder(): Promise<{ driveId: string; folderId: string | number }> {
   const driveId = await getDriveId();
   let administratif = await findFolderByName(driveId, 1, "ADMINISTRATIF");
@@ -210,8 +227,33 @@ async function uploadToKDrive(
     body: form,
   });
   const chunkText = await chunkResp.text();
+  let chunkData: any = null;
   if (!chunkResp.ok) {
     console.error("kDrive chunk upload failed:", chunkResp.status, chunkText);
+    const needsFallback = chunkResp.status === 422 && chunkText.includes("chunk");
+    if (!needsFallback) return null;
+
+    const fallbackResp = await fetch(`${chunkUrl}?chunk_number=1&chunk_size=${totalSize}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${KDRIVE_TOKEN}`,
+        "Content-Type": "application/octet-stream",
+        Accept: "application/json",
+      },
+      body: bytes,
+    });
+    const fallbackText = await fallbackResp.text();
+    if (!fallbackResp.ok) {
+      console.error("kDrive chunk fallback failed:", fallbackResp.status, fallbackText);
+      return null;
+    }
+    try { chunkData = JSON.parse(fallbackText); } catch { chunkData = { raw: fallbackText }; }
+  } else {
+    try { chunkData = JSON.parse(chunkText); } catch { chunkData = { raw: chunkText }; }
+  }
+
+  if (chunkData?.result && chunkData.result !== "success") {
+    console.error("kDrive chunk unexpected response:", chunkData);
     return null;
   }
 
@@ -224,7 +266,7 @@ async function uploadToKDrive(
       "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body: JSON.stringify({ total_chunks_hash: null }),
+    body: JSON.stringify({ file_name: fileName }),
   });
   const finishText = await finishResp.text();
   if (!finishResp.ok) {
@@ -326,7 +368,7 @@ serve(async (req) => {
       );
     }
 
-    // 2) Upload to kDrive (awaited so we can return file id for preview)
+    // 2) Upload to kDrive (required before inserting the invoice in the app)
     let kdriveResult: { driveId: string; fileId: string | number } | null = null;
     try {
       const target = await resolveNewFolder();
@@ -339,13 +381,25 @@ serve(async (req) => {
       const fileId =
         uploadRes?.data?.id ??
         uploadRes?.data?.file?.id ??
+        uploadRes?.data?.files?.[0]?.id ??
+        uploadRes?.data?.[0]?.id ??
+        uploadRes?.data?.file_id ??
+        uploadRes?.file_id ??
         uploadRes?.id ??
+        (await findUploadedFile(target.driveId, target.folderId, fileName))?.id ??
         null;
       if (fileId != null) {
         kdriveResult = { driveId: String(target.driveId), fileId };
       }
     } catch (e) {
       console.error("kDrive upload failed:", e);
+    }
+
+    if (!kdriveResult) {
+      return new Response(
+        JSON.stringify({ error: "kDrive upload failed", details: "La facture n'a pas été stockée dans ADMINISTRATIF/_NEW." }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     // 3) Email forward in background (non-blocking)

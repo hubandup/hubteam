@@ -68,6 +68,7 @@ interface Invoice {
   remark: string;
   fiscalYear: string | null;
   kdriveFolder: string | null;
+  kdriveFileId: string | null;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -98,6 +99,7 @@ type DbInvoice = {
   remark: string | null;
   fiscal_year?: string | null;
   kdrive_folder?: string | null;
+  kdrive_file_id?: string | null;
 };
 
 // Compute fiscal year label (April 1 → March 31). Returns e.g. "2024/2025".
@@ -128,6 +130,7 @@ const fromDb = (r: DbInvoice): Invoice => ({
   remark: r.remark ?? "",
   fiscalYear: r.fiscal_year ?? computeFiscalYear(r.invoice_date),
   kdriveFolder: r.kdrive_folder ?? null,
+  kdriveFileId: r.kdrive_file_id ?? null,
 });
 
 const toDbInsert = (i: Invoice) => ({
@@ -144,6 +147,7 @@ const toDbInsert = (i: Invoice) => ({
   remark: i.remark,
   fiscal_year: i.fiscalYear,
   kdrive_folder: i.kdriveFolder,
+  kdrive_file_id: i.kdriveFileId,
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -206,12 +210,13 @@ async function processInvoiceUpload(file: File): Promise<Invoice> {
 
   const e = data.extracted ?? {};
   const kdrive = data.kdrive;
+  if (!kdrive?.driveId || !kdrive?.fileId) {
+    throw new Error("La facture n'a pas été déposée sur kDrive");
+  }
   const fileUrl =
     kdrive?.publicUrl ||
     kdrive?.url ||
-    (kdrive?.driveId && kdrive?.fileId
-      ? `/functions/v1/kdrive-api?action=download&driveId=${kdrive.driveId}&fileId=${kdrive.fileId}`
-      : "#");
+    `/functions/v1/kdrive-api?action=download&driveId=${kdrive.driveId}&fileId=${kdrive.fileId}`;
 
   return {
     id: `inv-${Date.now()}`,
@@ -227,7 +232,8 @@ async function processInvoiceUpload(file: File): Promise<Invoice> {
     fileUrl,
     remark: "",
     fiscalYear: computeFiscalYear(e.invoiceDate || offsetDate(0)),
-    kdriveFolder: null,
+    kdriveFolder: "_NEW",
+    kdriveFileId: String(kdrive.fileId),
   };
 }
 
@@ -420,6 +426,7 @@ export default function Comptabilite() {
       .update({ [dbField]: value })
       .eq("id", id);
     if (error) toast.error("Échec de la sauvegarde");
+    else await loadInvoices();
   };
 
   const handleRemarkChange = async (id: string, value: string) => {
@@ -431,13 +438,13 @@ export default function Comptabilite() {
     setProcessingLabel("Extraction des données et envoi vers kDrive en cours…");
     try {
       const extracted = await processInvoiceUpload(file);
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("supplier_invoices")
         .insert(toDbInsert(extracted))
         .select()
         .single();
       if (error) throw error;
-      setInvoices((prev) => [fromDb(data as DbInvoice), ...prev]);
+      await loadInvoices();
       toast.success("Facture importée avec succès");
       setInvoiceUploadOpen(false);
     } catch (err) {
@@ -480,7 +487,7 @@ export default function Comptabilite() {
           ),
         );
       }
-      setInvoices(updated);
+      await loadInvoices();
       toast.success("Rapprochement bancaire terminé");
       await loadBankStatements();
       setBankUploadOpen(false);
