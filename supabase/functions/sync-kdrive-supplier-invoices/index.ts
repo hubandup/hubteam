@@ -321,6 +321,7 @@ serve(async (req) => {
         processed_count: processed.length,
         processed,
         errors,
+        missing_folders: missing,
         budget_remaining: budget,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
