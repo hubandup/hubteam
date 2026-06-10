@@ -270,21 +270,24 @@ serve(async (req) => {
       else missing.push({ name, available: f.available });
     }
 
-    // 3) Collect existing kdrive_file_ids AND (supplier, invoice_number) pairs to prevent duplicates
+    // 3) Build dedupe sets — ignore file name and source folder.
+    //    A duplicate = same (supplier, invoice_number, invoice_date, amount_ttc).
     const { data: existing } = await admin
       .from("supplier_invoices")
-      .select("kdrive_file_id, supplier, invoice_number");
+      .select("kdrive_file_id, supplier, invoice_number, invoice_date, amount_ttc");
     const seen = new Set(
       (existing || [])
         .filter((r: any) => r.kdrive_file_id)
         .map((r: any) => String(r.kdrive_file_id)),
     );
-    const dedupeKey = (supplier: string, invNum: string) =>
-      `${normalize(supplier || "")}|${normalize(invNum || "")}`;
+    const alnum = (s: string) =>
+      (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const dedupeKey = (supplier: string, invNum: string, date: string | null, ttc: number | null) =>
+      `${alnum(supplier)}|${alnum(invNum)}|${date || ""}|${Number(ttc || 0).toFixed(2)}`;
     const seenLogical = new Set(
-      (existing || [])
-        .filter((r: any) => r.supplier && r.invoice_number)
-        .map((r: any) => dedupeKey(r.supplier, r.invoice_number)),
+      (existing || []).map((r: any) =>
+        dedupeKey(r.supplier, r.invoice_number, r.invoice_date, r.amount_ttc),
+      ),
     );
 
     // 4) Walk each folder and process new files
@@ -310,13 +313,19 @@ serve(async (req) => {
           const b64 = await downloadFileBase64(driveId, child.id);
           const ocr = await extractInvoiceFields(b64, mimeType);
 
-          // Logical dedupe: skip if (supplier, invoice_number) already exists
-          const logicalKey = dedupeKey(ocr.supplier || "", ocr.invoiceNumber || "");
+          // Logical dedupe: skip if same supplier+invoice_number+date+amount_ttc already exists
+          const logicalKey = dedupeKey(
+            ocr.supplier || "",
+            ocr.invoiceNumber || "",
+            ocr.invoiceDate || null,
+            Number(ocr.amountTTC) || 0,
+          );
           if (seenLogical.has(logicalKey)) {
             processed.push({ folder: folder.name, name: child.name, skipped: "duplicate" });
             seen.add(fileIdStr);
             continue;
           }
+
 
           const fy = fiscalYearLabel(ocr.invoiceDate);
           const status = statusForFolder(folder.name);
