@@ -270,28 +270,51 @@ export default function Comptabilite() {
   const [bankUploadOpen, setBankUploadOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [processingLabel, setProcessingLabel] = useState("");
+  const [syncing, setSyncing] = useState(false);
+  const [activeFY, setActiveFY] = useState<string>(currentFiscalYear());
 
   // Load invoices from DB
+  const loadInvoices = async () => {
+    const { data, error } = await supabase
+      .from("supplier_invoices")
+      .select("*")
+      .order("invoice_date", { ascending: false, nullsFirst: false });
+    if (error) {
+      toast.error("Impossible de charger les factures");
+    } else {
+      setInvoices((data as DbInvoice[]).map(fromDb));
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
     if (!allowed) return;
-    let cancelled = false;
-    (async () => {
-      const { data, error } = await supabase
-        .from("supplier_invoices")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (cancelled) return;
-      if (error) {
-        toast.error("Impossible de charger les factures");
-      } else {
-        setInvoices((data as DbInvoice[]).map(fromDb));
-      }
-      setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
+    loadInvoices();
   }, [allowed]);
+
+  const handleSyncKDrive = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "sync-kdrive-supplier-invoices",
+        { body: {} },
+      );
+      if (error) throw error;
+      const count = data?.processed_count ?? 0;
+      toast.success(
+        count > 0
+          ? `${count} nouvelle(s) facture(s) synchronisée(s) depuis kDrive`
+          : "Aucune nouvelle facture trouvée dans kDrive",
+      );
+      await loadInvoices();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(`Sync kDrive échouée : ${e?.message ?? e}`);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
 
   const handleRemarkChange = async (id: string, value: string) => {
     setInvoices((prev) =>
