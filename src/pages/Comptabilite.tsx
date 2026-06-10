@@ -367,15 +367,24 @@ export default function Comptabilite() {
   };
 
 
-  const handleRemarkChange = async (id: string, value: string) => {
+  const handleFieldUpdate = async (
+    id: string,
+    field: keyof Invoice,
+    dbField: string,
+    value: string | number,
+  ) => {
     setInvoices((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, remark: value } : i)),
+      prev.map((i) => (i.id === id ? { ...i, [field]: value } : i)),
     );
     const { error } = await supabase
       .from("supplier_invoices")
-      .update({ remark: value })
+      .update({ [dbField]: value })
       .eq("id", id);
-    if (error) toast.error("Échec de la sauvegarde de la remarque");
+    if (error) toast.error("Échec de la sauvegarde");
+  };
+
+  const handleRemarkChange = async (id: string, value: string) => {
+    await handleFieldUpdate(id, "remark", "remark", value);
   };
 
   const handleInvoiceFile = async (file: File) => {
