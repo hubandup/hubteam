@@ -367,6 +367,18 @@ export default function Comptabilite() {
     [invoices],
   );
 
+  if (!authChecked) {
+    return (
+      <div className="container mx-auto py-16 flex justify-center">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!allowed) {
+    return <Navigate to="/" replace />;
+  }
+
   return (
     <div className="container mx-auto py-8 px-4 space-y-6">
       {/* Header */}
