@@ -72,6 +72,23 @@ async function findFolderByName(
   );
 }
 
+async function findUploadedFile(
+  driveId: string,
+  folderId: string | number,
+  fileName: string,
+): Promise<any | null> {
+  const children = await listChildren(driveId, folderId);
+  const target = normalize(fileName);
+  const base = target.replace(/\.[^.]+$/, "");
+  return children
+    .filter((c) => !isDir(c))
+    .filter((c) => {
+      const n = normalize(c.name || "");
+      return n === target || n.startsWith(base);
+    })
+    .sort((a, b) => String(b.created_at || b.added_at || b.updated_at || "").localeCompare(String(a.created_at || a.added_at || a.updated_at || "")))[0] || null;
+}
+
 async function resolveNewFolder(): Promise<{ driveId: string; folderId: string | number }> {
   const driveId = await getDriveId();
   let administratif = await findFolderByName(driveId, 1, "ADMINISTRATIF");
@@ -364,7 +381,12 @@ serve(async (req) => {
       const fileId =
         uploadRes?.data?.id ??
         uploadRes?.data?.file?.id ??
+        uploadRes?.data?.files?.[0]?.id ??
+        uploadRes?.data?.[0]?.id ??
+        uploadRes?.data?.file_id ??
+        uploadRes?.file_id ??
         uploadRes?.id ??
+        (await findUploadedFile(target.driveId, target.folderId, fileName))?.id ??
         null;
       if (fileId != null) {
         kdriveResult = { driveId: String(target.driveId), fileId };
