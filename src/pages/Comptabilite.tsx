@@ -24,6 +24,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Upload,
   Landmark,
@@ -56,6 +57,8 @@ interface Invoice {
   paymentDetail: string;
   fileUrl: string;
   remark: string;
+  fiscalYear: string | null;
+  kdriveFolder: string | null;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -84,7 +87,22 @@ type DbInvoice = {
   payment_detail: string | null;
   file_url: string | null;
   remark: string | null;
+  fiscal_year?: string | null;
+  kdrive_folder?: string | null;
 };
+
+// Compute fiscal year label (April 1 → March 31). Returns e.g. "2024/2025".
+const computeFiscalYear = (iso?: string | null): string | null => {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const y = d.getUTCFullYear();
+  const m = d.getUTCMonth() + 1;
+  const start = m >= 4 ? y : y - 1;
+  return `${start}/${start + 1}`;
+};
+
+const currentFiscalYear = (): string => computeFiscalYear(new Date().toISOString())!;
 
 const fromDb = (r: DbInvoice): Invoice => ({
   id: r.id,
@@ -99,6 +117,8 @@ const fromDb = (r: DbInvoice): Invoice => ({
   paymentDetail: r.payment_detail ?? "",
   fileUrl: r.file_url || "#",
   remark: r.remark ?? "",
+  fiscalYear: r.fiscal_year ?? computeFiscalYear(r.invoice_date),
+  kdriveFolder: r.kdrive_folder ?? null,
 });
 
 const toDbInsert = (i: Invoice) => ({
@@ -113,6 +133,8 @@ const toDbInsert = (i: Invoice) => ({
   payment_detail: i.paymentDetail,
   file_url: i.fileUrl === "#" ? "" : i.fileUrl,
   remark: i.remark,
+  fiscal_year: i.fiscalYear,
+  kdrive_folder: i.kdriveFolder,
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -195,6 +217,8 @@ async function processInvoiceUpload(file: File): Promise<Invoice> {
     paymentDetail: "",
     fileUrl,
     remark: `Fichier: ${file.name}`,
+    fiscalYear: computeFiscalYear(e.invoiceDate || offsetDate(0)),
+    kdriveFolder: null,
   };
 }
 
@@ -247,28 +271,51 @@ export default function Comptabilite() {
   const [bankUploadOpen, setBankUploadOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [processingLabel, setProcessingLabel] = useState("");
+  const [syncing, setSyncing] = useState(false);
+  const [activeFY, setActiveFY] = useState<string>(currentFiscalYear());
 
   // Load invoices from DB
+  const loadInvoices = async () => {
+    const { data, error } = await supabase
+      .from("supplier_invoices")
+      .select("*")
+      .order("invoice_date", { ascending: false, nullsFirst: false });
+    if (error) {
+      toast.error("Impossible de charger les factures");
+    } else {
+      setInvoices((data as DbInvoice[]).map(fromDb));
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
     if (!allowed) return;
-    let cancelled = false;
-    (async () => {
-      const { data, error } = await supabase
-        .from("supplier_invoices")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (cancelled) return;
-      if (error) {
-        toast.error("Impossible de charger les factures");
-      } else {
-        setInvoices((data as DbInvoice[]).map(fromDb));
-      }
-      setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
+    loadInvoices();
   }, [allowed]);
+
+  const handleSyncKDrive = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "sync-kdrive-supplier-invoices",
+        { body: {} },
+      );
+      if (error) throw error;
+      const count = data?.processed_count ?? 0;
+      toast.success(
+        count > 0
+          ? `${count} nouvelle(s) facture(s) synchronisée(s) depuis kDrive`
+          : "Aucune nouvelle facture trouvée dans kDrive",
+      );
+      await loadInvoices();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(`Sync kDrive échouée : ${e?.message ?? e}`);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
 
   const handleRemarkChange = async (id: string, value: string) => {
     setInvoices((prev) =>
@@ -339,32 +386,56 @@ export default function Comptabilite() {
   };
 
   const handleExportExcel = () => {
-    const rows = invoices.map((i) => ({
-      Fournisseur: i.supplier,
-      "N° Facture": i.invoiceNumber,
-      "Montant HT": i.amountHT,
-      "Montant TTC": i.amountTTC,
-      "Date facture": fmtDate(i.invoiceDate),
-      "Date échéance": fmtDate(i.dueDate),
-      "Condition règlement": i.paymentTerms,
-      Statut: i.status,
-      "Détail paiement": i.paymentDetail,
-      Remarque: i.remark,
-    }));
-    const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Factures");
+    fiscalYears.forEach((fy) => {
+      const rows = invoices
+        .filter((i) => (i.fiscalYear || computeFiscalYear(i.invoiceDate)) === fy)
+        .map((i) => ({
+          Fournisseur: i.supplier,
+          "N° Facture": i.invoiceNumber,
+          "Montant HT": i.amountHT,
+          "Montant TTC": i.amountTTC,
+          "Date facture": fmtDate(i.invoiceDate),
+          "Date échéance": fmtDate(i.dueDate),
+          "Condition règlement": i.paymentTerms,
+          Statut: i.status,
+          "Détail paiement": i.paymentDetail,
+          Remarque: i.remark,
+        }));
+      const ws = XLSX.utils.json_to_sheet(rows);
+      XLSX.utils.book_append_sheet(wb, ws, `Exercice ${fy.replace("/", "-")}`);
+    });
     XLSX.writeFile(wb, `factures-${format(today, "yyyy-MM-dd")}.xlsx`);
     toast.success("Export Excel généré");
   };
 
+  // Group invoices by fiscal year (current FY tab + one tab per past FY found in data)
+  const fiscalYears = useMemo(() => {
+    const set = new Set<string>([currentFiscalYear()]);
+    invoices.forEach((i) => {
+      const fy = i.fiscalYear || computeFiscalYear(i.invoiceDate);
+      if (fy) set.add(fy);
+    });
+    // Sort descending (current FY first, then older)
+    return Array.from(set).sort((a, b) => b.localeCompare(a));
+  }, [invoices]);
+
+  const displayedInvoices = useMemo(
+    () =>
+      invoices.filter((i) => {
+        const fy = i.fiscalYear || computeFiscalYear(i.invoiceDate);
+        return fy === activeFY;
+      }),
+    [invoices, activeFY],
+  );
+
   const totals = useMemo(
     () => ({
-      ht: invoices.reduce((s, i) => s + i.amountHT, 0),
-      ttc: invoices.reduce((s, i) => s + i.amountTTC, 0),
-      due: invoices.filter((i) => i.status === "À payer").length,
+      ht: displayedInvoices.reduce((s, i) => s + i.amountHT, 0),
+      ttc: displayedInvoices.reduce((s, i) => s + i.amountTTC, 0),
+      due: displayedInvoices.filter((i) => i.status === "À payer").length,
     }),
-    [invoices],
+    [displayedInvoices],
   );
 
   if (!authChecked) {
@@ -386,8 +457,8 @@ export default function Comptabilite() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Factures</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {invoices.length} factures · {totals.due} à payer ·{" "}
-            {eur(totals.ttc)} TTC
+            Exercice {activeFY} · {displayedInvoices.length} factures ·{" "}
+            {totals.due} à payer · {eur(totals.ttc)} TTC
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -399,12 +470,31 @@ export default function Comptabilite() {
             <Landmark className="h-4 w-4" />
             Uploader un extrait de compte
           </Button>
+          <Button variant="outline" onClick={handleSyncKDrive} disabled={syncing}>
+            {syncing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileText className="h-4 w-4" />
+            )}
+            {syncing ? "Synchronisation…" : "Synchroniser kDrive"}
+          </Button>
           <Button variant="outline" onClick={handleExportExcel}>
             <FileSpreadsheet className="h-4 w-4" />
             Exporter en Excel
           </Button>
         </div>
       </div>
+
+      {/* Fiscal year tabs */}
+      <Tabs value={activeFY} onValueChange={setActiveFY}>
+        <TabsList className="flex flex-wrap h-auto">
+          {fiscalYears.map((fy) => (
+            <TabsTrigger key={fy} value={fy}>
+              Exercice {fy}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       {/* Table */}
       <div className="border border-border bg-card overflow-hidden">
@@ -424,7 +514,7 @@ export default function Comptabilite() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {invoices.map((inv) => (
+            {displayedInvoices.map((inv) => (
               <TableRow key={inv.id}>
                 <TableCell className="font-medium">{inv.supplier}</TableCell>
                 <TableCell className="text-muted-foreground">
@@ -471,10 +561,10 @@ export default function Comptabilite() {
                 </TableCell>
               </TableRow>
             ))}
-            {!loading && invoices.length === 0 && (
+            {!loading && displayedInvoices.length === 0 && (
               <TableRow>
                 <TableCell colSpan={10} className="text-center text-muted-foreground py-12">
-                  Aucune facture. Cliquez sur « Uploader une facture » pour commencer.
+                  Aucune facture pour l'exercice {activeFY}.
                 </TableCell>
               </TableRow>
             )}
@@ -489,6 +579,7 @@ export default function Comptabilite() {
           </TableBody>
         </Table>
       </div>
+
 
       {/* Upload Invoice Dialog */}
       <Dialog open={invoiceUploadOpen} onOpenChange={setInvoiceUploadOpen}>
