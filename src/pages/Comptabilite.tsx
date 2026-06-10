@@ -693,19 +693,25 @@ export default function Comptabilite() {
               {/* PDF Preview */}
               {selectedInvoice.fileUrl && selectedInvoice.fileUrl !== "#" ? (
                 <div className="space-y-3">
-                  <div className="aspect-[3/4] bg-muted/40 border border-border overflow-hidden">
-                    <iframe
-                      src={selectedInvoice.fileUrl}
-                      title="Aperçu de la facture"
-                      className="w-full h-full"
-                      sandbox="allow-scripts allow-same-origin"
-                    />
+                  <div className="aspect-[3/4] bg-muted/40 border border-border overflow-hidden flex items-center justify-center">
+                    {previewLoading ? (
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    ) : previewBlobUrl ? (
+                      <iframe
+                        src={previewBlobUrl}
+                        title="Aperçu de la facture"
+                        className="w-full h-full"
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Aperçu indisponible</p>
+                    )}
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     className="w-full gap-2"
-                    onClick={() => window.open(selectedInvoice.fileUrl, "_blank")}
+                    disabled={!previewBlobUrl}
+                    onClick={() => previewBlobUrl && window.open(previewBlobUrl, "_blank")}
                   >
                     <Eye className="h-4 w-4" />
                     Ouvrir dans un nouvel onglet
