@@ -273,6 +273,56 @@ export default function Comptabilite() {
   const [processingLabel, setProcessingLabel] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [activeFY, setActiveFY] = useState<string>(currentFiscalYear());
+  const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  // Resolve kDrive file_url -> authenticated blob URL for iframe preview
+  useEffect(() => {
+    let cancelled = false;
+    let createdUrl: string | null = null;
+    const run = async () => {
+      if (!selectedInvoice || !selectedInvoice.fileUrl || selectedInvoice.fileUrl === "#") {
+        setPreviewBlobUrl(null);
+        return;
+      }
+      const raw = selectedInvoice.fileUrl;
+      // If it's not a kdrive-api proxy URL, use it directly
+      if (!raw.includes("/functions/v1/kdrive-api")) {
+        setPreviewBlobUrl(raw);
+        return;
+      }
+      try {
+        setPreviewLoading(true);
+        const u = new URL(raw);
+        const driveId = u.searchParams.get("driveId");
+        const fileId = u.searchParams.get("fileId");
+        if (!driveId || !fileId) throw new Error("Paramètres manquants");
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        const resp = await fetch(raw, {
+          headers: token ? { Authorization: `Bearer ${token}`, apikey: token } : {},
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const blob = await resp.blob();
+        if (cancelled) return;
+        createdUrl = URL.createObjectURL(blob);
+        setPreviewBlobUrl(createdUrl);
+      } catch (e) {
+        console.error("Preview load failed", e);
+        if (!cancelled) {
+          setPreviewBlobUrl(null);
+          toast.error("Impossible de charger l'aperçu de la facture");
+        }
+      } finally {
+        if (!cancelled) setPreviewLoading(false);
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
+    };
+  }, [selectedInvoice]);
 
   // Load invoices from DB
   const loadInvoices = async () => {
@@ -643,19 +693,25 @@ export default function Comptabilite() {
               {/* PDF Preview */}
               {selectedInvoice.fileUrl && selectedInvoice.fileUrl !== "#" ? (
                 <div className="space-y-3">
-                  <div className="aspect-[3/4] bg-muted/40 border border-border overflow-hidden">
-                    <iframe
-                      src={selectedInvoice.fileUrl}
-                      title="Aperçu de la facture"
-                      className="w-full h-full"
-                      sandbox="allow-scripts allow-same-origin"
-                    />
+                  <div className="aspect-[3/4] bg-muted/40 border border-border overflow-hidden flex items-center justify-center">
+                    {previewLoading ? (
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    ) : previewBlobUrl ? (
+                      <iframe
+                        src={previewBlobUrl}
+                        title="Aperçu de la facture"
+                        className="w-full h-full"
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Aperçu indisponible</p>
+                    )}
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     className="w-full gap-2"
-                    onClick={() => window.open(selectedInvoice.fileUrl, "_blank")}
+                    disabled={!previewBlobUrl}
+                    onClick={() => previewBlobUrl && window.open(previewBlobUrl, "_blank")}
                   >
                     <Eye className="h-4 w-4" />
                     Ouvrir dans un nouvel onglet
