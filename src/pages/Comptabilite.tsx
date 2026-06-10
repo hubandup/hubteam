@@ -426,6 +426,7 @@ export default function Comptabilite() {
       .update({ [dbField]: value })
       .eq("id", id);
     if (error) toast.error("Échec de la sauvegarde");
+    else await loadInvoices();
   };
 
   const handleRemarkChange = async (id: string, value: string) => {
@@ -443,7 +444,7 @@ export default function Comptabilite() {
         .select()
         .single();
       if (error) throw error;
-      setInvoices((prev) => [fromDb(data as DbInvoice), ...prev]);
+      await loadInvoices();
       toast.success("Facture importée avec succès");
       setInvoiceUploadOpen(false);
     } catch (err) {
@@ -486,7 +487,7 @@ export default function Comptabilite() {
           ),
         );
       }
-      setInvoices(updated);
+      await loadInvoices();
       toast.success("Rapprochement bancaire terminé");
       await loadBankStatements();
       setBankUploadOpen(false);
