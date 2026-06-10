@@ -250,6 +250,7 @@ export default function Comptabilite() {
 
   // Load invoices from DB
   useEffect(() => {
+    if (!allowed) return;
     let cancelled = false;
     (async () => {
       const { data, error } = await supabase
