@@ -307,6 +307,8 @@ serve(async (req) => {
           const fy = fiscalYearLabel(ocr.invoiceDate);
           const status = statusForFolder(folder.name);
           const fileUrl = `${SUPABASE_URL}/functions/v1/kdrive-api?action=download&driveId=${driveId}&fileId=${child.id}`;
+          const uploadedAtSeconds = Number(child.added_at || child.created_at || child.updated_at || 0);
+          const uploadedAt = uploadedAtSeconds > 0 ? new Date(uploadedAtSeconds * 1000).toISOString() : new Date().toISOString();
 
           const { error } = await admin.from("supplier_invoices").insert({
             supplier: ocr.supplier || "Inconnu",
@@ -321,6 +323,7 @@ serve(async (req) => {
             file_url: fileUrl,
             remark: "",
             created_by: userId,
+            created_at: uploadedAt,
             kdrive_file_id: fileIdStr,
             kdrive_folder: folder.name,
             fiscal_year: fy,
