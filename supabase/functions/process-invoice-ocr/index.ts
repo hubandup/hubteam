@@ -326,33 +326,32 @@ serve(async (req) => {
       );
     }
 
-    // 2) Schedule kDrive upload + email forward as background tasks
-    const background = (async () => {
-      try {
-        const target = await resolveNewFolder().catch((e) => {
-          console.error("Failed to resolve _NEW folder:", e);
-          return null;
-        });
-        const tasks: Promise<any>[] = [];
-        if (target) {
-          tasks.push(
-            uploadToKDrive(fileContent, fileName, target.folderId, target.driveId).catch(
-              (e) => console.error("kDrive upload error:", e),
-            ),
-          );
-        }
-        tasks.push(
-          forwardByEmail(fileContent, fileName, detectedMime, extracted).catch((e) =>
-            console.error("Email forward error:", e),
-          ),
-        );
-        await Promise.allSettled(tasks);
-        console.log(`Background tasks done for ${fileName}`);
-      } catch (e) {
-        console.error("Background task error:", e);
+    // 2) Upload to kDrive (awaited so we can return file id for preview)
+    let kdriveResult: { driveId: string; fileId: string | number } | null = null;
+    try {
+      const target = await resolveNewFolder();
+      const uploadRes: any = await uploadToKDrive(
+        fileContent,
+        fileName,
+        target.folderId,
+        target.driveId,
+      );
+      const fileId =
+        uploadRes?.data?.id ??
+        uploadRes?.data?.file?.id ??
+        uploadRes?.id ??
+        null;
+      if (fileId != null) {
+        kdriveResult = { driveId: String(target.driveId), fileId };
       }
-    })();
+    } catch (e) {
+      console.error("kDrive upload failed:", e);
+    }
 
+    // 3) Email forward in background (non-blocking)
+    const background = forwardByEmail(fileContent, fileName, detectedMime, extracted).catch(
+      (e) => console.error("Email forward error:", e),
+    );
     // @ts-ignore EdgeRuntime is available in Supabase Edge Functions
     try { EdgeRuntime.waitUntil(background); } catch { /* fallback: fire & forget */ }
 
@@ -360,9 +359,8 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         extracted,
-        kdrive: null,
+        kdrive: kdriveResult,
         emailed_to: FORWARD_EMAIL,
-        background: true,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
