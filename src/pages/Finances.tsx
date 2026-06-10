@@ -787,6 +787,9 @@ export default function Finances() {
       {/* Monthly Comparison Table */}
       <MonthlyComparisonTable data={revenueData} />
 
+      {/* Comptabilité analytics: supplier spend, VAT, top suppliers, late payments */}
+      <ComptabiliteAnalytics />
+
       {/* Treasury Evolution Chart */}
       <Card ref={treasuryChartRef}>
         <CardHeader className="flex flex-row items-center justify-between">
