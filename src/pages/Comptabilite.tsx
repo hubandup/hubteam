@@ -216,6 +216,8 @@ async function processInvoiceUpload(file: File): Promise<Invoice> {
     paymentDetail: "",
     fileUrl,
     remark: `Fichier: ${file.name}`,
+    fiscalYear: computeFiscalYear(e.invoiceDate || offsetDate(0)),
+    kdriveFolder: null,
   };
 }
 
