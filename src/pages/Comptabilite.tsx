@@ -394,6 +394,7 @@ export default function Comptabilite() {
           Fournisseur: i.supplier,
           "N° Facture": i.invoiceNumber,
           "Montant HT": i.amountHT,
+          "Montant TVA": i.amountTTC - i.amountHT,
           "Montant TTC": i.amountTTC,
           "Date facture": fmtDate(i.invoiceDate),
           "Date échéance": fmtDate(i.dueDate),
@@ -504,6 +505,7 @@ export default function Comptabilite() {
               <TableHead>Fournisseur</TableHead>
               <TableHead>N° facture</TableHead>
               <TableHead className="text-right">HT (€)</TableHead>
+              <TableHead className="text-right">TVA (€)</TableHead>
               <TableHead className="text-right">TTC (€)</TableHead>
               <TableHead>Date facture</TableHead>
               <TableHead>Échéance</TableHead>
@@ -522,6 +524,9 @@ export default function Comptabilite() {
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
                   {eur(inv.amountHT)}
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {eur(inv.amountTTC - inv.amountHT)}
                 </TableCell>
                 <TableCell className="text-right tabular-nums font-medium">
                   {eur(inv.amountTTC)}
@@ -563,14 +568,14 @@ export default function Comptabilite() {
             ))}
             {!loading && displayedInvoices.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-muted-foreground py-12">
+                <TableCell colSpan={11} className="text-center text-muted-foreground py-12">
                   Aucune facture pour l'exercice {activeFY}.
                 </TableCell>
               </TableRow>
             )}
             {loading && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-muted-foreground py-12">
+                <TableCell colSpan={11} className="text-center text-muted-foreground py-12">
                   <Loader2 className="h-5 w-5 animate-spin inline mr-2" />
                   Chargement…
                 </TableCell>
@@ -676,6 +681,10 @@ export default function Comptabilite() {
                 <MetaRow
                   label="Montant HT"
                   value={eur(selectedInvoice.amountHT)}
+                />
+                <MetaRow
+                  label="Montant TVA"
+                  value={eur(selectedInvoice.amountTTC - selectedInvoice.amountHT)}
                 />
                 <MetaRow
                   label="Montant TTC"
