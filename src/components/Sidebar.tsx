@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, HelpCircle, Rss, Euro, MessageSquare, ArrowUpFromLine, CookingPot, Flame, Megaphone, Star, Receipt } from 'lucide-react';
+import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, HelpCircle, Euro, ArrowUpFromLine, CookingPot, Flame, Megaphone, Star, Receipt } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -67,7 +67,6 @@ export function Sidebar() {
   const mainItems = [
     { title: t('nav.home'), url: '/', icon: Home, module: 'dashboard' as const },
     ...(role === 'client' && clientId ? [{ title: t('nav.myClientFile'), url: `/client/${clientId}`, icon: Users, module: 'crm' as const, matchParent: true, isClientItem: true }] : []),
-    { title: t('nav.feed'), url: '/feed', icon: Rss, module: 'dashboard' as const, hideForClient: true },
     { title: t('nav.activity'), url: '/dashboard', icon: LayoutDashboard, module: 'dashboard' as const },
     ...(['compta@hubandup.com', 'charles@hubandup.com'].includes((user?.email ?? '').toLowerCase()) ? [{ title: t('nav.accounting'), url: '/comptabilite', icon: Receipt, module: 'dashboard' as const }] : []),
     { title: t('nav.finances'), url: '/finances', icon: Euro, module: 'dashboard' as const, adminOnly: true },
@@ -76,7 +75,6 @@ export function Sidebar() {
     { title: t('nav.prospection'), url: '/prospection', icon: ListTodo, module: 'crm' as const, hideForAgency: true, hideForClient: true },
     { title: t('nav.agencies'), url: '/agencies', icon: Building2, module: 'agencies' as const, matchParent: true },
     { title: t('nav.projects'), url: '/projects', icon: FolderKanban, module: 'projects' as const, matchParent: true },
-    { title: t('nav.messages'), url: '/messages', icon: MessageSquare, module: 'dashboard' as const },
     { title: t('nav.faq'), url: '/faq', icon: HelpCircle, module: 'faq' as const },
     ...(hasLagostinaAccess ? [{ title: 'Lagostina', url: '/lagostina', icon: CookingPot, module: 'dashboard' as const }] : []),
     ...(hasBrisachAccess ? [{ title: 'Brisach', url: '/brisach', icon: Flame, module: 'dashboard' as const }] : []),
