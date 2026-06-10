@@ -816,6 +816,7 @@ export default function Comptabilite() {
                         handleFieldUpdate(inv.id, "supplier", "supplier", e.target.value)
                       }
                       className={cn(editCls, "font-medium")}
+                      style={{ textTransform: "uppercase" }}
                     />
                   </TableCell>
                   <TableCell className="text-muted-foreground p-0">
