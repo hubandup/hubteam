@@ -3818,6 +3818,60 @@ export type Database = {
         }
         Relationships: []
       }
+      supplier_invoices: {
+        Row: {
+          amount_ht: number
+          amount_ttc: number
+          created_at: string
+          created_by: string | null
+          due_date: string | null
+          file_url: string | null
+          id: string
+          invoice_date: string | null
+          invoice_number: string
+          payment_detail: string | null
+          payment_terms: string | null
+          remark: string | null
+          status: string
+          supplier: string
+          updated_at: string
+        }
+        Insert: {
+          amount_ht?: number
+          amount_ttc?: number
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          file_url?: string | null
+          id?: string
+          invoice_date?: string | null
+          invoice_number: string
+          payment_detail?: string | null
+          payment_terms?: string | null
+          remark?: string | null
+          status?: string
+          supplier: string
+          updated_at?: string
+        }
+        Update: {
+          amount_ht?: number
+          amount_ttc?: number
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          file_url?: string | null
+          id?: string
+          invoice_date?: string | null
+          invoice_number?: string
+          payment_detail?: string | null
+          payment_terms?: string | null
+          remark?: string | null
+          status?: string
+          supplier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       target_relance_notifications: {
         Row: {
           channel: string
