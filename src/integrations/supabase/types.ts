@@ -3826,9 +3826,12 @@ export type Database = {
           created_by: string | null
           due_date: string | null
           file_url: string | null
+          fiscal_year: string | null
           id: string
           invoice_date: string | null
           invoice_number: string
+          kdrive_file_id: string | null
+          kdrive_folder: string | null
           payment_detail: string | null
           payment_terms: string | null
           remark: string | null
@@ -3843,9 +3846,12 @@ export type Database = {
           created_by?: string | null
           due_date?: string | null
           file_url?: string | null
+          fiscal_year?: string | null
           id?: string
           invoice_date?: string | null
           invoice_number: string
+          kdrive_file_id?: string | null
+          kdrive_folder?: string | null
           payment_detail?: string | null
           payment_terms?: string | null
           remark?: string | null
@@ -3860,9 +3866,12 @@ export type Database = {
           created_by?: string | null
           due_date?: string | null
           file_url?: string | null
+          fiscal_year?: string | null
           id?: string
           invoice_date?: string | null
           invoice_number?: string
+          kdrive_file_id?: string | null
+          kdrive_folder?: string | null
           payment_detail?: string | null
           payment_terms?: string | null
           remark?: string | null
