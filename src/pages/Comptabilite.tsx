@@ -888,6 +888,42 @@ export default function Comptabilite() {
             onFile={handleBankFile}
             accept=".csv,.ofx,.qif,.pdf"
           />
+
+          <div className="mt-4 border-t border-border pt-4">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">
+              Derniers extraits uploadés
+            </div>
+            {loadingStatements ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" /> Chargement…
+              </div>
+            ) : bankStatements.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Aucun extrait pour le moment.</p>
+            ) : (
+              <ul className="max-h-60 overflow-auto divide-y divide-border">
+                {bankStatements.map((s) => {
+                  const originalName = s.name.replace(/^[^_]*__/, "");
+                  const date = s.createdAt ? format(new Date(s.createdAt), "dd/MM/yyyy HH:mm") : "";
+                  return (
+                    <li key={s.name}>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadStatement(s)}
+                        className="w-full flex items-center justify-between gap-3 py-2 px-1 text-left hover:bg-muted/50 transition"
+                        title="Télécharger au format XLS"
+                      >
+                        <span className="flex items-center gap-2 min-w-0">
+                          <FileSpreadsheet className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <span className="truncate text-sm">{originalName}</span>
+                        </span>
+                        <span className="text-xs text-muted-foreground shrink-0">{date}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
