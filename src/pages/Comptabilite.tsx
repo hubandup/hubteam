@@ -286,21 +286,30 @@ export default function Comptabilite() {
         return;
       }
       const raw = selectedInvoice.fileUrl;
-      // If it's not a kdrive-api proxy URL, use it directly
-      if (!raw.includes("/functions/v1/kdrive-api")) {
+      const isKdrive = raw.includes("kdrive-api");
+      if (!isKdrive) {
         setPreviewBlobUrl(raw);
         return;
       }
       try {
         setPreviewLoading(true);
-        const u = new URL(raw);
+        // Build absolute URL (raw may be relative like "/functions/v1/kdrive-api?...")
+        const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL as string | undefined;
+        const base = raw.startsWith("http")
+          ? raw
+          : `${supabaseUrl?.replace(/\/$/, "") || ""}${raw.startsWith("/") ? "" : "/"}${raw}`;
+        const u = new URL(base);
         const driveId = u.searchParams.get("driveId");
         const fileId = u.searchParams.get("fileId");
         if (!driveId || !fileId) throw new Error("Paramètres manquants");
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
-        const resp = await fetch(raw, {
-          headers: token ? { Authorization: `Bearer ${token}`, apikey: token } : {},
+        const apikey = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+        const resp = await fetch(u.toString(), {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(apikey ? { apikey } : {}),
+          },
         });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const blob = await resp.blob();
