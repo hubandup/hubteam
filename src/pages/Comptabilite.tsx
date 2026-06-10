@@ -367,15 +367,24 @@ export default function Comptabilite() {
   };
 
 
-  const handleRemarkChange = async (id: string, value: string) => {
+  const handleFieldUpdate = async (
+    id: string,
+    field: keyof Invoice,
+    dbField: string,
+    value: string | number,
+  ) => {
     setInvoices((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, remark: value } : i)),
+      prev.map((i) => (i.id === id ? { ...i, [field]: value } : i)),
     );
     const { error } = await supabase
       .from("supplier_invoices")
-      .update({ remark: value })
+      .update({ [dbField]: value })
       .eq("id", id);
-    if (error) toast.error("Échec de la sauvegarde de la remarque");
+    if (error) toast.error("Échec de la sauvegarde");
+  };
+
+  const handleRemarkChange = async (id: string, value: string) => {
+    await handleFieldUpdate(id, "remark", "remark", value);
   };
 
   const handleInvoiceFile = async (file: File) => {
@@ -566,56 +575,138 @@ export default function Comptabilite() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {displayedInvoices.map((inv) => (
-              <TableRow key={inv.id}>
-                <TableCell className="font-medium">{inv.supplier}</TableCell>
-                <TableCell className="text-muted-foreground">
-                  {inv.invoiceNumber}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {eur(inv.amountHT)}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {eur(inv.amountTTC - inv.amountHT)}
-                </TableCell>
-                <TableCell className="text-right tabular-nums font-medium">
-                  {eur(inv.amountTTC)}
-                </TableCell>
-                <TableCell>{fmtDate(inv.invoiceDate)}</TableCell>
-                <TableCell className={getDueDateColor(inv.dueDate, inv.status)}>
-                  {fmtDate(inv.dueDate)}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={inv.status === "Payé" ? "success" : "warning"}
-                  >
-                    {inv.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground text-xs">
-                  {inv.paymentDetail || "—"}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="gap-1.5"
-                    onClick={() => setSelectedInvoice(inv)}
-                  >
-                    <Eye className="h-3.5 w-3.5" />
-                    Voir la facture
-                  </Button>
-                </TableCell>
-                <TableCell>
-                  <input
-                    defaultValue={inv.remark}
-                    onBlur={(e) => handleRemarkChange(inv.id, e.target.value)}
-                    placeholder="Ajouter une remarque…"
-                    className="w-full bg-transparent border-0 outline-none text-sm focus:bg-muted/40 px-2 py-1 rounded"
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
+            {displayedInvoices.map((inv) => {
+              const editCls =
+                "w-full bg-transparent border-0 outline-none text-sm focus:bg-muted/40 hover:bg-muted/20 px-2 py-1 rounded-none transition-colors";
+              return (
+                <TableRow key={inv.id}>
+                  <TableCell className="font-medium p-0">
+                    <input
+                      key={`s-${inv.supplier}`}
+                      defaultValue={inv.supplier}
+                      onBlur={(e) =>
+                        e.target.value !== inv.supplier &&
+                        handleFieldUpdate(inv.id, "supplier", "supplier", e.target.value)
+                      }
+                      className={cn(editCls, "font-medium")}
+                    />
+                  </TableCell>
+                  <TableCell className="text-muted-foreground p-0">
+                    <input
+                      key={`n-${inv.invoiceNumber}`}
+                      defaultValue={inv.invoiceNumber}
+                      onBlur={(e) =>
+                        e.target.value !== inv.invoiceNumber &&
+                        handleFieldUpdate(inv.id, "invoiceNumber", "invoice_number", e.target.value)
+                      }
+                      className={editCls}
+                    />
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums p-0">
+                    <input
+                      key={`ht-${inv.amountHT}`}
+                      type="number"
+                      step="0.01"
+                      defaultValue={inv.amountHT}
+                      onBlur={(e) => {
+                        const v = Number(e.target.value);
+                        if (!Number.isNaN(v) && v !== inv.amountHT)
+                          handleFieldUpdate(inv.id, "amountHT", "amount_ht", v);
+                      }}
+                      className={cn(editCls, "text-right")}
+                    />
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-muted-foreground">
+                    {eur(inv.amountTTC - inv.amountHT)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums font-medium p-0">
+                    <input
+                      key={`ttc-${inv.amountTTC}`}
+                      type="number"
+                      step="0.01"
+                      defaultValue={inv.amountTTC}
+                      onBlur={(e) => {
+                        const v = Number(e.target.value);
+                        if (!Number.isNaN(v) && v !== inv.amountTTC)
+                          handleFieldUpdate(inv.id, "amountTTC", "amount_ttc", v);
+                      }}
+                      className={cn(editCls, "text-right font-medium")}
+                    />
+                  </TableCell>
+                  <TableCell className="p-0">
+                    <input
+                      key={`d-${inv.invoiceDate}`}
+                      type="date"
+                      defaultValue={inv.invoiceDate}
+                      onBlur={(e) =>
+                        e.target.value !== inv.invoiceDate &&
+                        handleFieldUpdate(inv.id, "invoiceDate", "invoice_date", e.target.value)
+                      }
+                      className={editCls}
+                    />
+                  </TableCell>
+                  <TableCell className={cn("p-0", getDueDateColor(inv.dueDate, inv.status))}>
+                    <input
+                      key={`dd-${inv.dueDate}`}
+                      type="date"
+                      defaultValue={inv.dueDate}
+                      onBlur={(e) =>
+                        e.target.value !== inv.dueDate &&
+                        handleFieldUpdate(inv.id, "dueDate", "due_date", e.target.value)
+                      }
+                      className={cn(editCls, getDueDateColor(inv.dueDate, inv.status))}
+                    />
+                  </TableCell>
+                  <TableCell className="p-0">
+                    <select
+                      value={inv.status}
+                      onChange={(e) =>
+                        handleFieldUpdate(inv.id, "status", "status", e.target.value)
+                      }
+                      className={cn(
+                        editCls,
+                        "cursor-pointer font-medium",
+                        inv.status === "Payé" ? "text-green-700" : "text-amber-700",
+                      )}
+                    >
+                      <option value="À payer">À payer</option>
+                      <option value="Payé">Payé</option>
+                    </select>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-xs p-0">
+                    <input
+                      key={`pd-${inv.paymentDetail}`}
+                      defaultValue={inv.paymentDetail}
+                      placeholder="—"
+                      onBlur={(e) =>
+                        e.target.value !== inv.paymentDetail &&
+                        handleFieldUpdate(inv.id, "paymentDetail", "payment_detail", e.target.value)
+                      }
+                      className={cn(editCls, "text-xs")}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => setSelectedInvoice(inv)}
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      Voir la facture
+                    </Button>
+                  </TableCell>
+                  <TableCell className="p-0">
+                    <input
+                      defaultValue={inv.remark}
+                      onBlur={(e) => handleRemarkChange(inv.id, e.target.value)}
+                      placeholder="Ajouter une remarque…"
+                      className={editCls}
+                    />
+                  </TableCell>
+                </TableRow>
+              );
+            })}
             {!loading && displayedInvoices.length === 0 && (
               <TableRow>
                 <TableCell colSpan={11} className="text-center text-muted-foreground py-12">
