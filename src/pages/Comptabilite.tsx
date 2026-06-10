@@ -485,26 +485,22 @@ export default function Comptabilite() {
 
   const handleExportExcel = () => {
     const wb = XLSX.utils.book_new();
-    fiscalYears.forEach((fy) => {
-      const rows = invoices
-        .filter((i) => (i.fiscalYear || computeFiscalYear(i.invoiceDate)) === fy)
-        .map((i) => ({
-          Fournisseur: i.supplier,
-          "N° Facture": i.invoiceNumber,
-          "Montant HT": i.amountHT,
-          "Montant TVA": i.amountTTC - i.amountHT,
-          "Montant TTC": i.amountTTC,
-          "Date facture": fmtDate(i.invoiceDate),
-          "Date échéance": fmtDate(i.dueDate),
-          "Condition règlement": i.paymentTerms,
-          Statut: i.status,
-          "Détail paiement": i.paymentDetail,
-          Remarque: i.remark,
-        }));
-      const ws = XLSX.utils.json_to_sheet(rows);
-      XLSX.utils.book_append_sheet(wb, ws, `Exercice ${fy.replace("/", "-")}`);
-    });
-    XLSX.writeFile(wb, `factures-${format(today, "yyyy-MM-dd")}.xlsx`);
+    const rows = displayedInvoices.map((i) => ({
+      Fournisseur: i.supplier,
+      "N° Facture": i.invoiceNumber,
+      "Montant HT": i.amountHT,
+      "Montant TVA": i.amountTTC - i.amountHT,
+      "Montant TTC": i.amountTTC,
+      "Date facture": fmtDate(i.invoiceDate),
+      "Date échéance": fmtDate(i.dueDate),
+      "Condition règlement": i.paymentTerms,
+      Statut: i.status,
+      "Détail paiement": i.paymentDetail,
+      Remarque: i.remark,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, `Exercice ${activeFY.replace("/", "-")}`);
+    XLSX.writeFile(wb, `factures-${activeFY.replace("/", "-")}-${format(today, "yyyy-MM-dd")}.xlsx`);
     toast.success("Export Excel généré");
   };
 
