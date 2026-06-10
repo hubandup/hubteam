@@ -80,18 +80,24 @@ async function listChildren(driveId: string, folderId: string | number): Promise
   return all;
 }
 
+function isDir(c: any): boolean {
+  const t = (c?.type || c?.kind || "").toString().toLowerCase();
+  return t === "dir" || t === "folder" || t === "directory" || c?.is_dir === true;
+}
+
 async function findFolderByName(
   driveId: string,
   parentId: string | number,
   name: string,
-): Promise<any | null> {
+): Promise<{ match: any | null; available: string[] }> {
   const children = await listChildren(driveId, parentId);
   const target = normalize(name);
-  return (
-    children.find(
-      (c) => c.type === "dir" && normalize(c.name || "") === target,
-    ) || null
-  );
+  const dirs = children.filter(isDir);
+  const match =
+    dirs.find((c) => normalize(c.name || "") === target) ||
+    dirs.find((c) => normalize(c.name || "").includes(target)) ||
+    null;
+  return { match, available: dirs.map((d) => d.name) };
 }
 
 async function downloadFileBase64(driveId: string, fileId: string | number): Promise<string> {
