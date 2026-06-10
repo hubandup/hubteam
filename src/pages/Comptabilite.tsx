@@ -404,13 +404,33 @@ export default function Comptabilite() {
     toast.success("Export Excel généré");
   };
 
+  // Group invoices by fiscal year (current FY tab + one tab per past FY found in data)
+  const fiscalYears = useMemo(() => {
+    const set = new Set<string>([currentFiscalYear()]);
+    invoices.forEach((i) => {
+      const fy = i.fiscalYear || computeFiscalYear(i.invoiceDate);
+      if (fy) set.add(fy);
+    });
+    // Sort descending (current FY first, then older)
+    return Array.from(set).sort((a, b) => b.localeCompare(a));
+  }, [invoices]);
+
+  const displayedInvoices = useMemo(
+    () =>
+      invoices.filter((i) => {
+        const fy = i.fiscalYear || computeFiscalYear(i.invoiceDate);
+        return fy === activeFY;
+      }),
+    [invoices, activeFY],
+  );
+
   const totals = useMemo(
     () => ({
-      ht: invoices.reduce((s, i) => s + i.amountHT, 0),
-      ttc: invoices.reduce((s, i) => s + i.amountTTC, 0),
-      due: invoices.filter((i) => i.status === "À payer").length,
+      ht: displayedInvoices.reduce((s, i) => s + i.amountHT, 0),
+      ttc: displayedInvoices.reduce((s, i) => s + i.amountTTC, 0),
+      due: displayedInvoices.filter((i) => i.status === "À payer").length,
     }),
-    [invoices],
+    [displayedInvoices],
   );
 
   if (!authChecked) {
