@@ -438,7 +438,7 @@ export default function Comptabilite() {
     setProcessingLabel("Extraction des données et envoi vers kDrive en cours…");
     try {
       const extracted = await processInvoiceUpload(file);
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("supplier_invoices")
         .insert(toDbInsert(extracted))
         .select()
