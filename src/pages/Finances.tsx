@@ -19,6 +19,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MonthlyComparisonTable } from '@/components/finances/MonthlyComparisonTable';
+import { ComptabiliteAnalytics } from '@/components/finances/ComptabiliteAnalytics';
 
 
 export default function Finances() {
