@@ -251,51 +251,59 @@ serve(async (req) => {
 
     console.log(`Processing invoice: ${fileName} (${detectedMime})`);
 
-    // Resolve target folder (ADMINISTRATIF/_NEW)
-    let target: { driveId: string; folderId: string | number } | null = null;
+    // 1) OCR first (needed for the response)
+    let extracted: any;
     try {
-      target = await resolveNewFolder();
+      extracted = await extractInvoiceFields(fileContent, detectedMime);
     } catch (e) {
-      console.error("Failed to resolve _NEW folder:", e);
-    }
-
-    // Run OCR + upload + email forward in parallel
-    const [ocrResult, kdriveResult, emailResult] = await Promise.allSettled([
-      extractInvoiceFields(fileContent, detectedMime),
-      target
-        ? uploadToKDrive(fileContent, fileName, target.folderId, target.driveId)
-        : Promise.resolve(null),
-      // email runs after OCR via a thenable; we'll send a basic email if OCR fails too
-      (async () => {
-        // Wait briefly for OCR to enrich the email content (best-effort)
-        return null;
-      })(),
-    ]);
-
-    if (ocrResult.status === "rejected") {
-      console.error("OCR error:", ocrResult.reason);
+      console.error("OCR error:", e);
       return new Response(
-        JSON.stringify({ error: "OCR extraction failed", details: String(ocrResult.reason) }),
+        JSON.stringify({ error: "OCR extraction failed", details: String(e) }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const kdriveData = kdriveResult.status === "fulfilled" ? kdriveResult.value : null;
+    // 2) Schedule kDrive upload + email forward as background tasks
+    const background = (async () => {
+      try {
+        const target = await resolveNewFolder().catch((e) => {
+          console.error("Failed to resolve _NEW folder:", e);
+          return null;
+        });
+        const tasks: Promise<any>[] = [];
+        if (target) {
+          tasks.push(
+            uploadToKDrive(fileContent, fileName, target.folderId, target.driveId).catch(
+              (e) => console.error("kDrive upload error:", e),
+            ),
+          );
+        }
+        tasks.push(
+          forwardByEmail(fileContent, fileName, detectedMime, extracted).catch((e) =>
+            console.error("Email forward error:", e),
+          ),
+        );
+        await Promise.allSettled(tasks);
+        console.log(`Background tasks done for ${fileName}`);
+      } catch (e) {
+        console.error("Background task error:", e);
+      }
+    })();
 
-    // Send forward email with extracted metadata (non-blocking on failure)
-    await forwardByEmail(fileContent, fileName, detectedMime, ocrResult.value).catch((e) =>
-      console.error("Email forward error:", e),
-    );
+    // @ts-ignore EdgeRuntime is available in Supabase Edge Functions
+    try { EdgeRuntime.waitUntil(background); } catch { /* fallback: fire & forget */ }
 
     return new Response(
       JSON.stringify({
         success: true,
-        extracted: ocrResult.value,
-        kdrive: kdriveData,
+        extracted,
+        kdrive: null,
         emailed_to: FORWARD_EMAIL,
+        background: true,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
+
   } catch (e) {
     console.error("process-invoice-ocr error:", e);
     return new Response(JSON.stringify({ error: String(e) }), {
