@@ -456,8 +456,8 @@ export default function Comptabilite() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Factures</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {invoices.length} factures · {totals.due} à payer ·{" "}
-            {eur(totals.ttc)} TTC
+            Exercice {activeFY} · {displayedInvoices.length} factures ·{" "}
+            {totals.due} à payer · {eur(totals.ttc)} TTC
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -469,12 +469,31 @@ export default function Comptabilite() {
             <Landmark className="h-4 w-4" />
             Uploader un extrait de compte
           </Button>
+          <Button variant="outline" onClick={handleSyncKDrive} disabled={syncing}>
+            {syncing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileText className="h-4 w-4" />
+            )}
+            {syncing ? "Synchronisation…" : "Synchroniser kDrive"}
+          </Button>
           <Button variant="outline" onClick={handleExportExcel}>
             <FileSpreadsheet className="h-4 w-4" />
             Exporter en Excel
           </Button>
         </div>
       </div>
+
+      {/* Fiscal year tabs */}
+      <Tabs value={activeFY} onValueChange={setActiveFY}>
+        <TabsList className="flex flex-wrap h-auto">
+          {fiscalYears.map((fy) => (
+            <TabsTrigger key={fy} value={fy}>
+              Exercice {fy}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       {/* Table */}
       <div className="border border-border bg-card overflow-hidden">
@@ -494,7 +513,7 @@ export default function Comptabilite() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {invoices.map((inv) => (
+            {displayedInvoices.map((inv) => (
               <TableRow key={inv.id}>
                 <TableCell className="font-medium">{inv.supplier}</TableCell>
                 <TableCell className="text-muted-foreground">
@@ -541,10 +560,10 @@ export default function Comptabilite() {
                 </TableCell>
               </TableRow>
             ))}
-            {!loading && invoices.length === 0 && (
+            {!loading && displayedInvoices.length === 0 && (
               <TableRow>
                 <TableCell colSpan={10} className="text-center text-muted-foreground py-12">
-                  Aucune facture. Cliquez sur « Uploader une facture » pour commencer.
+                  Aucune facture pour l'exercice {activeFY}.
                 </TableCell>
               </TableRow>
             )}
@@ -559,6 +578,7 @@ export default function Comptabilite() {
           </TableBody>
         </Table>
       </div>
+
 
       {/* Upload Invoice Dialog */}
       <Dialog open={invoiceUploadOpen} onOpenChange={setInvoiceUploadOpen}>
