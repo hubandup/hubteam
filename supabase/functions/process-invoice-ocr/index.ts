@@ -210,8 +210,33 @@ async function uploadToKDrive(
     body: form,
   });
   const chunkText = await chunkResp.text();
+  let chunkData: any = null;
   if (!chunkResp.ok) {
     console.error("kDrive chunk upload failed:", chunkResp.status, chunkText);
+    const needsFallback = chunkResp.status === 422 && chunkText.includes("chunk");
+    if (!needsFallback) return null;
+
+    const fallbackResp = await fetch(`${chunkUrl}?chunk_number=1&chunk_size=${totalSize}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${KDRIVE_TOKEN}`,
+        "Content-Type": "application/octet-stream",
+        Accept: "application/json",
+      },
+      body: bytes,
+    });
+    const fallbackText = await fallbackResp.text();
+    if (!fallbackResp.ok) {
+      console.error("kDrive chunk fallback failed:", fallbackResp.status, fallbackText);
+      return null;
+    }
+    try { chunkData = JSON.parse(fallbackText); } catch { chunkData = { raw: fallbackText }; }
+  } else {
+    try { chunkData = JSON.parse(chunkText); } catch { chunkData = { raw: chunkText }; }
+  }
+
+  if (chunkData?.result && chunkData.result !== "success") {
+    console.error("kDrive chunk unexpected response:", chunkData);
     return null;
   }
 
@@ -224,7 +249,7 @@ async function uploadToKDrive(
       "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body: JSON.stringify({ total_chunks_hash: null }),
+    body: JSON.stringify({ file_name: fileName }),
   });
   const finishText = await finishResp.text();
   if (!finishResp.ok) {
