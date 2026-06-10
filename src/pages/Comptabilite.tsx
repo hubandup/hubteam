@@ -226,7 +226,20 @@ async function processBankStatement(
 // ──────────────────────────────────────────────────────────────────────────────
 // Component
 // ──────────────────────────────────────────────────────────────────────────────
+const ALLOWED_EMAILS = ["compta@hubandup.com", "charles@hubandup.com"];
+
 export default function Comptabilite() {
+  const [authChecked, setAuthChecked] = useState(false);
+  const [allowed, setAllowed] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const email = data.user?.email?.toLowerCase() ?? "";
+      setAllowed(ALLOWED_EMAILS.includes(email));
+      setAuthChecked(true);
+    });
+  }, []);
+
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
