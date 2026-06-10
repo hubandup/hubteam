@@ -80,18 +80,24 @@ async function listChildren(driveId: string, folderId: string | number): Promise
   return all;
 }
 
+function isDir(c: any): boolean {
+  const t = (c?.type || c?.kind || "").toString().toLowerCase();
+  return t === "dir" || t === "folder" || t === "directory" || c?.is_dir === true;
+}
+
 async function findFolderByName(
   driveId: string,
   parentId: string | number,
   name: string,
-): Promise<any | null> {
+): Promise<{ match: any | null; available: string[] }> {
   const children = await listChildren(driveId, parentId);
   const target = normalize(name);
-  return (
-    children.find(
-      (c) => c.type === "dir" && normalize(c.name || "") === target,
-    ) || null
-  );
+  const dirs = children.filter(isDir);
+  const match =
+    dirs.find((c) => normalize(c.name || "") === target) ||
+    dirs.find((c) => normalize(c.name || "").includes(target)) ||
+    null;
+  return { match, available: dirs.map((d) => d.name) };
 }
 
 async function downloadFileBase64(driveId: string, fileId: string | number): Promise<string> {
@@ -224,19 +230,26 @@ serve(async (req) => {
 
     // 1) Resolve drive and traverse to ADMINISTRATIF
     const driveId = await getDriveId();
-    const administratif = await findFolderByName(driveId, 1, "ADMINISTRATIF");
-    if (!administratif) {
-      return new Response(JSON.stringify({ error: "ADMINISTRATIF folder not found" }), {
-        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const adminLookup = await findFolderByName(driveId, 1, "ADMINISTRATIF");
+    if (!adminLookup.match) {
+      return new Response(
+        JSON.stringify({
+          error: "ADMINISTRATIF folder not found at drive root",
+          driveId,
+          available_root_folders: adminLookup.available,
+        }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
+    const administratif = adminLookup.match;
 
     // 2) Resolve the 4 target subfolders
     const folders: { name: string; id: string | number }[] = [];
+    const missing: { name: string; available: string[] }[] = [];
     for (const name of TARGET_FOLDERS) {
       const f = await findFolderByName(driveId, administratif.id, name);
-      if (f) folders.push({ name, id: f.id });
-      else console.warn(`Folder not found: ADMINISTRATIF > ${name}`);
+      if (f.match) folders.push({ name, id: f.match.id });
+      else missing.push({ name, available: f.available });
     }
 
     // 3) Collect existing kdrive_file_ids
@@ -308,6 +321,7 @@ serve(async (req) => {
         processed_count: processed.length,
         processed,
         errors,
+        missing_folders: missing,
         budget_remaining: budget,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
