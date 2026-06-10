@@ -557,25 +557,42 @@ export default function Comptabilite() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => setInvoiceUploadOpen(true)}>
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={() => setInvoiceUploadOpen(true)}
+            title="Uploader une facture"
+          >
             <Upload className="h-4 w-4" />
-            Uploader une facture
           </Button>
-          <Button variant="outline" onClick={() => setBankUploadOpen(true)}>
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={() => setBankUploadOpen(true)}
+            title="Uploader un extrait de compte"
+          >
             <Landmark className="h-4 w-4" />
-            Uploader un extrait de compte
           </Button>
-          <Button variant="outline" onClick={handleSyncKDrive} disabled={syncing}>
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={handleSyncKDrive}
+            disabled={syncing}
+            title="Synchroniser kDrive"
+          >
             {syncing ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <FileText className="h-4 w-4" />
+              <RefreshCw className="h-4 w-4" />
             )}
-            {syncing ? "Synchronisation…" : "Synchroniser kDrive"}
           </Button>
-          <Button variant="outline" onClick={handleExportExcel}>
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={handleExportExcel}
+            title="Exporter le tableau au format Excel"
+          >
             <FileSpreadsheet className="h-4 w-4" />
-            Exporter en Excel
           </Button>
         </div>
       </div>
