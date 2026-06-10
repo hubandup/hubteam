@@ -309,6 +309,15 @@ serve(async (req) => {
           const mimeType = isPdf ? "application/pdf" : "image/jpeg";
           const b64 = await downloadFileBase64(driveId, child.id);
           const ocr = await extractInvoiceFields(b64, mimeType);
+
+          // Logical dedupe: skip if (supplier, invoice_number) already exists
+          const logicalKey = dedupeKey(ocr.supplier || "", ocr.invoiceNumber || "");
+          if (seenLogical.has(logicalKey)) {
+            processed.push({ folder: folder.name, name: child.name, skipped: "duplicate" });
+            seen.add(fileIdStr);
+            continue;
+          }
+
           const fy = fiscalYearLabel(ocr.invoiceDate);
           const status = statusForFolder(folder.name);
           const fileUrl = `${SUPABASE_URL}/functions/v1/kdrive-api?action=download&driveId=${driveId}&fileId=${child.id}`;
