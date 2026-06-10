@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -225,7 +226,20 @@ async function processBankStatement(
 // ──────────────────────────────────────────────────────────────────────────────
 // Component
 // ──────────────────────────────────────────────────────────────────────────────
+const ALLOWED_EMAILS = ["compta@hubandup.com", "charles@hubandup.com"];
+
 export default function Comptabilite() {
+  const [authChecked, setAuthChecked] = useState(false);
+  const [allowed, setAllowed] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const email = data.user?.email?.toLowerCase() ?? "";
+      setAllowed(ALLOWED_EMAILS.includes(email));
+      setAuthChecked(true);
+    });
+  }, []);
+
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -236,6 +250,7 @@ export default function Comptabilite() {
 
   // Load invoices from DB
   useEffect(() => {
+    if (!allowed) return;
     let cancelled = false;
     (async () => {
       const { data, error } = await supabase
@@ -253,7 +268,7 @@ export default function Comptabilite() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [allowed]);
 
   const handleRemarkChange = async (id: string, value: string) => {
     setInvoices((prev) =>
@@ -351,6 +366,18 @@ export default function Comptabilite() {
     }),
     [invoices],
   );
+
+  if (!authChecked) {
+    return (
+      <div className="container mx-auto py-16 flex justify-center">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!allowed) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="container mx-auto py-8 px-4 space-y-6">
