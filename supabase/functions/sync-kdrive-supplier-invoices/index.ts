@@ -270,12 +270,22 @@ serve(async (req) => {
       else missing.push({ name, available: f.available });
     }
 
-    // 3) Collect existing kdrive_file_ids
+    // 3) Collect existing kdrive_file_ids AND (supplier, invoice_number) pairs to prevent duplicates
     const { data: existing } = await admin
       .from("supplier_invoices")
-      .select("kdrive_file_id")
-      .not("kdrive_file_id", "is", null);
-    const seen = new Set((existing || []).map((r: any) => String(r.kdrive_file_id)));
+      .select("kdrive_file_id, supplier, invoice_number");
+    const seen = new Set(
+      (existing || [])
+        .filter((r: any) => r.kdrive_file_id)
+        .map((r: any) => String(r.kdrive_file_id)),
+    );
+    const dedupeKey = (supplier: string, invNum: string) =>
+      `${normalize(supplier || "")}|${normalize(invNum || "")}`;
+    const seenLogical = new Set(
+      (existing || [])
+        .filter((r: any) => r.supplier && r.invoice_number)
+        .map((r: any) => dedupeKey(r.supplier, r.invoice_number)),
+    );
 
     // 4) Walk each folder and process new files
     const processed: any[] = [];
@@ -299,6 +309,15 @@ serve(async (req) => {
           const mimeType = isPdf ? "application/pdf" : "image/jpeg";
           const b64 = await downloadFileBase64(driveId, child.id);
           const ocr = await extractInvoiceFields(b64, mimeType);
+
+          // Logical dedupe: skip if (supplier, invoice_number) already exists
+          const logicalKey = dedupeKey(ocr.supplier || "", ocr.invoiceNumber || "");
+          if (seenLogical.has(logicalKey)) {
+            processed.push({ folder: folder.name, name: child.name, skipped: "duplicate" });
+            seen.add(fileIdStr);
+            continue;
+          }
+
           const fy = fiscalYearLabel(ocr.invoiceDate);
           const status = statusForFolder(folder.name);
           const fileUrl = `${SUPABASE_URL}/functions/v1/kdrive-api?action=download&driveId=${driveId}&fileId=${child.id}`;
@@ -325,6 +344,7 @@ serve(async (req) => {
 
           processed.push({ folder: folder.name, name: child.name, fiscal_year: fy });
           seen.add(fileIdStr);
+          seenLogical.add(logicalKey);
           budget--;
         } catch (e) {
           console.error(`Failed file ${child.name}:`, e);
