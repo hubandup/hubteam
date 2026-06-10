@@ -185,13 +185,16 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    // Auth: admin JWT OR cron secret
+    // Auth: cron secret OR service-role bearer OR admin JWT
     const cronHeader = req.headers.get("x-cron-secret");
-    const isCron = CRON_SECRET && cronHeader === CRON_SECRET;
+    const authHeader = req.headers.get("Authorization") || "";
+    const bearer = authHeader.replace(/^Bearer\s+/i, "");
+    const isCron =
+      (CRON_SECRET && cronHeader === CRON_SECRET) ||
+      (bearer && bearer === SUPABASE_SERVICE_ROLE_KEY);
     let userId: string | null = null;
 
     if (!isCron) {
-      const authHeader = req.headers.get("Authorization");
       if (!authHeader) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -206,7 +209,6 @@ serve(async (req) => {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      // Admin check
       const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
       const { data: role } = await admin
         .from("user_roles").select("role").eq("user_id", user.id).maybeSingle();
