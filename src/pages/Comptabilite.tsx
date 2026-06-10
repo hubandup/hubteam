@@ -32,6 +32,7 @@ import {
   FileText,
 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
@@ -166,23 +167,58 @@ const getDueDateColor = (dueDate: string, status: InvoiceStatus) => {
 // API stubs — connect your backend here
 // ──────────────────────────────────────────────────────────────────────────────
 
-/** STUB: Replace with real OCR + kDrive upload integration. */
+/** Read a File as base64 (without the data URL prefix). */
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.split(",")[1] ?? "");
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Upload invoice to kDrive + OCR extraction via Gemini.
+ * Calls the `process-invoice-ocr` edge function.
+ */
 async function processInvoiceUpload(file: File): Promise<Invoice> {
-  // TODO: call OCR service to extract metadata
-  // TODO: upload file to kDrive and return file URL
-  await new Promise((r) => setTimeout(r, 2200));
+  const base64 = await fileToBase64(file);
+
+  const { data, error } = await supabase.functions.invoke("process-invoice-ocr", {
+    body: {
+      fileName: file.name,
+      fileContent: base64,
+      mimeType: file.type || "application/pdf",
+    },
+  });
+
+  if (error) throw error;
+  if (!data?.success) throw new Error(data?.error || "Échec du traitement");
+
+  const e = data.extracted ?? {};
+  const kdrive = data.kdrive;
+  const fileUrl =
+    kdrive?.publicUrl ||
+    kdrive?.url ||
+    (kdrive?.driveId && kdrive?.fileId
+      ? `/functions/v1/kdrive-api?action=download&driveId=${kdrive.driveId}&fileId=${kdrive.fileId}`
+      : "#");
+
   return {
     id: `inv-${Date.now()}`,
-    supplier: "Nouveau fournisseur (OCR)",
-    invoiceNumber: `AUTO-${Math.floor(Math.random() * 9000) + 1000}`,
-    amountHT: 1000,
-    amountTTC: 1200,
-    invoiceDate: offsetDate(0),
-    dueDate: offsetDate(30),
-    paymentTerms: "30 jours",
+    supplier: e.supplier || "Fournisseur inconnu",
+    invoiceNumber: e.invoiceNumber || `AUTO-${Date.now()}`,
+    amountHT: Number(e.amountHT) || 0,
+    amountTTC: Number(e.amountTTC) || 0,
+    invoiceDate: e.invoiceDate || offsetDate(0),
+    dueDate: e.dueDate || offsetDate(30),
+    paymentTerms: e.paymentTerms || "30 jours",
     status: "À payer",
     paymentDetail: "",
-    fileUrl: "#",
+    fileUrl,
     remark: `Fichier: ${file.name}`,
   };
 }
