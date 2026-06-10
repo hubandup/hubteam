@@ -56,6 +56,8 @@ interface Invoice {
   paymentDetail: string;
   fileUrl: string;
   remark: string;
+  fiscalYear: string | null;
+  kdriveFolder: string | null;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
