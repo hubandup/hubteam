@@ -230,19 +230,26 @@ serve(async (req) => {
 
     // 1) Resolve drive and traverse to ADMINISTRATIF
     const driveId = await getDriveId();
-    const administratif = await findFolderByName(driveId, 1, "ADMINISTRATIF");
-    if (!administratif) {
-      return new Response(JSON.stringify({ error: "ADMINISTRATIF folder not found" }), {
-        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const adminLookup = await findFolderByName(driveId, 1, "ADMINISTRATIF");
+    if (!adminLookup.match) {
+      return new Response(
+        JSON.stringify({
+          error: "ADMINISTRATIF folder not found at drive root",
+          driveId,
+          available_root_folders: adminLookup.available,
+        }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
+    const administratif = adminLookup.match;
 
     // 2) Resolve the 4 target subfolders
     const folders: { name: string; id: string | number }[] = [];
+    const missing: { name: string; available: string[] }[] = [];
     for (const name of TARGET_FOLDERS) {
       const f = await findFolderByName(driveId, administratif.id, name);
-      if (f) folders.push({ name, id: f.id });
-      else console.warn(`Folder not found: ADMINISTRATIF > ${name}`);
+      if (f.match) folders.push({ name, id: f.match.id });
+      else missing.push({ name, available: f.available });
     }
 
     // 3) Collect existing kdrive_file_ids
