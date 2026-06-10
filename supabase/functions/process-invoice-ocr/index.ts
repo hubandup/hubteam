@@ -351,7 +351,7 @@ serve(async (req) => {
       );
     }
 
-    // 2) Upload to kDrive (awaited so we can return file id for preview)
+    // 2) Upload to kDrive (required before inserting the invoice in the app)
     let kdriveResult: { driveId: string; fileId: string | number } | null = null;
     try {
       const target = await resolveNewFolder();
@@ -371,6 +371,13 @@ serve(async (req) => {
       }
     } catch (e) {
       console.error("kDrive upload failed:", e);
+    }
+
+    if (!kdriveResult) {
+      return new Response(
+        JSON.stringify({ error: "kDrive upload failed", details: "La facture n'a pas été stockée dans ADMINISTRATIF/_NEW." }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     // 3) Email forward in background (non-blocking)
