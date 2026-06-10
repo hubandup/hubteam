@@ -477,14 +477,36 @@ export default function Comptabilite() {
           </SheetHeader>
           {selectedInvoice && (
             <div className="space-y-6 mt-6">
-              {/* PDF Preview placeholder */}
-              <div className="aspect-[3/4] bg-muted/40 border border-dashed border-border flex flex-col items-center justify-center text-muted-foreground">
-                <FileText className="h-12 w-12 mb-3 opacity-50" />
-                <p className="text-sm">Aperçu PDF de la facture</p>
-                <p className="text-xs mt-1">
-                  (À connecter au stockage kDrive)
-                </p>
-              </div>
+              {/* PDF Preview */}
+              {selectedInvoice.fileUrl && selectedInvoice.fileUrl !== "#" ? (
+                <div className="space-y-3">
+                  <div className="aspect-[3/4] bg-muted/40 border border-border overflow-hidden">
+                    <iframe
+                      src={selectedInvoice.fileUrl}
+                      title="Aperçu de la facture"
+                      className="w-full h-full"
+                      sandbox="allow-scripts allow-same-origin"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2"
+                    onClick={() => window.open(selectedInvoice.fileUrl, "_blank")}
+                  >
+                    <Eye className="h-4 w-4" />
+                    Ouvrir dans un nouvel onglet
+                  </Button>
+                </div>
+              ) : (
+                <div className="aspect-[3/4] bg-muted/40 border border-dashed border-border flex flex-col items-center justify-center text-muted-foreground">
+                  <FileText className="h-12 w-12 mb-3 opacity-50" />
+                  <p className="text-sm">Aucun PDF disponible</p>
+                  <p className="text-xs mt-1">
+                    Uploader une facture pour voir l&apos;aperçu
+                  </p>
+                </div>
+              )}
 
               {/* Metadata */}
               <div className="grid grid-cols-2 gap-4 text-sm">
