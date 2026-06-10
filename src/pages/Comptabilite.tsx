@@ -282,6 +282,7 @@ export default function Comptabilite() {
   const [activeFY, setActiveFY] = useState<string>(currentFiscalYear());
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewMimeType, setPreviewMimeType] = useState<string | null>(null);
   const [previewPageCount, setPreviewPageCount] = useState(0);
   const [previewPage, setPreviewPage] = useState(1);
   const [previewWidth, setPreviewWidth] = useState(0);
@@ -296,12 +297,14 @@ export default function Comptabilite() {
     const run = async () => {
       if (!selectedInvoice || !selectedInvoice.fileUrl || selectedInvoice.fileUrl === "#") {
         setPreviewBlobUrl(null);
+        setPreviewMimeType(null);
         return;
       }
       const raw = selectedInvoice.fileUrl;
       const isKdrive = raw.includes("kdrive-api");
       if (!isKdrive) {
         setPreviewBlobUrl(raw);
+        setPreviewMimeType(raw.toLowerCase().endsWith(".pdf") ? "application/pdf" : null);
         return;
       }
       try {
@@ -328,6 +331,7 @@ export default function Comptabilite() {
         const blob = await resp.blob();
         if (cancelled) return;
         createdUrl = URL.createObjectURL(blob);
+        setPreviewMimeType(blob.type || "application/pdf");
         setPreviewBlobUrl(createdUrl);
       } catch (e) {
         console.error("Preview load failed", e);
