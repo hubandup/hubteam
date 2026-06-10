@@ -444,6 +444,21 @@ export default function Comptabilite() {
                 </TableCell>
               </TableRow>
             ))}
+            {!loading && invoices.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={10} className="text-center text-muted-foreground py-12">
+                  Aucune facture. Cliquez sur « Uploader une facture » pour commencer.
+                </TableCell>
+              </TableRow>
+            )}
+            {loading && (
+              <TableRow>
+                <TableCell colSpan={10} className="text-center text-muted-foreground py-12">
+                  <Loader2 className="h-5 w-5 animate-spin inline mr-2" />
+                  Chargement…
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
