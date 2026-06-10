@@ -453,8 +453,16 @@ export default function Comptabilite() {
     setProcessing(true);
     setProcessingLabel("Rapprochement bancaire en cours…");
     try {
+      // Persist the uploaded statement in storage
+      const ts = new Date().toISOString().replace(/[:.]/g, "-");
+      const safeName = file.name.replace(/[^\w.\-]/g, "_");
+      const storagePath = `${ts}__${safeName}`;
+      const { error: upErr } = await supabase.storage
+        .from("bank-statements")
+        .upload(storagePath, file, { upsert: false, contentType: file.type || undefined });
+      if (upErr) console.error("Bank statement upload failed", upErr);
+
       const updated = await processBankStatement(file, invoices);
-      // Persist only the rows whose status flipped to "Payé"
       const changes = updated.filter((u) => {
         const prev = invoices.find((i) => i.id === u.id);
         return prev && prev.status !== u.status;
@@ -474,12 +482,78 @@ export default function Comptabilite() {
       }
       setInvoices(updated);
       toast.success("Rapprochement bancaire terminé");
+      await loadBankStatements();
       setBankUploadOpen(false);
     } catch {
       toast.error("Échec du rapprochement");
     } finally {
       setProcessing(false);
       setProcessingLabel("");
+    }
+  };
+
+  // ── Bank statements history ────────────────────────────────────────────────
+  type BankStatementEntry = { name: string; createdAt: string };
+  const [bankStatements, setBankStatements] = useState<BankStatementEntry[]>([]);
+  const [loadingStatements, setLoadingStatements] = useState(false);
+
+  const loadBankStatements = async () => {
+    setLoadingStatements(true);
+    try {
+      const { data, error } = await supabase.storage
+        .from("bank-statements")
+        .list("", { limit: 50, sortBy: { column: "created_at", order: "desc" } });
+      if (error) throw error;
+      setBankStatements(
+        (data || [])
+          .filter((f) => f.name && !f.name.startsWith("."))
+          .map((f) => ({
+            name: f.name,
+            createdAt: (f as any).created_at || (f as any).updated_at || "",
+          })),
+      );
+    } catch (e) {
+      console.error("Failed to list bank statements", e);
+    } finally {
+      setLoadingStatements(false);
+    }
+  };
+
+  useEffect(() => {
+    if (bankUploadOpen) loadBankStatements();
+  }, [bankUploadOpen]);
+
+  const handleDownloadStatement = async (entry: BankStatementEntry) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from("bank-statements")
+        .download(entry.name);
+      if (error || !data) throw error;
+      const originalName = entry.name.replace(/^[^_]*__/, "");
+      const ext = originalName.split(".").pop()?.toLowerCase() || "";
+      const baseName = originalName.replace(/\.[^.]+$/, "");
+
+      if (ext === "csv" || ext === "tsv" || ext === "txt") {
+        const text = await data.text();
+        const wb = XLSX.read(text, { type: "string" });
+        XLSX.writeFile(wb, `${baseName}.xlsx`);
+      } else if (ext === "xls" || ext === "xlsx") {
+        const buf = await data.arrayBuffer();
+        const wb = XLSX.read(buf, { type: "array" });
+        XLSX.writeFile(wb, `${baseName}.xlsx`);
+      } else {
+        const url = URL.createObjectURL(data);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = originalName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Échec du téléchargement");
     }
   };
 
@@ -814,6 +888,42 @@ export default function Comptabilite() {
             onFile={handleBankFile}
             accept=".csv,.ofx,.qif,.pdf"
           />
+
+          <div className="mt-4 border-t border-border pt-4">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">
+              Derniers extraits uploadés
+            </div>
+            {loadingStatements ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" /> Chargement…
+              </div>
+            ) : bankStatements.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Aucun extrait pour le moment.</p>
+            ) : (
+              <ul className="max-h-60 overflow-auto divide-y divide-border">
+                {bankStatements.map((s) => {
+                  const originalName = s.name.replace(/^[^_]*__/, "");
+                  const date = s.createdAt ? format(new Date(s.createdAt), "dd/MM/yyyy HH:mm") : "";
+                  return (
+                    <li key={s.name}>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadStatement(s)}
+                        className="w-full flex items-center justify-between gap-3 py-2 px-1 text-left hover:bg-muted/50 transition"
+                        title="Télécharger au format XLS"
+                      >
+                        <span className="flex items-center gap-2 min-w-0">
+                          <FileSpreadsheet className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <span className="truncate text-sm">{originalName}</span>
+                        </span>
+                        <span className="text-xs text-muted-foreground shrink-0">{date}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
