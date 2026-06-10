@@ -268,7 +268,7 @@ export default function Comptabilite() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [allowed]);
 
   const handleRemarkChange = async (id: string, value: string) => {
     setInvoices((prev) =>
