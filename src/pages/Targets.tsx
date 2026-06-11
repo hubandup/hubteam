@@ -219,9 +219,8 @@ export default function Targets() {
         />
       )}
 
-      </div>
-
       {/* Contenu */}
+
       <div className="min-w-0">
         {clients.length === 0 ? (
           <div className="text-center py-12 px-4">
