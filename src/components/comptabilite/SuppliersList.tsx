@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Search, Loader2, AlertCircle, CheckCircle2, ChevronDown, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 
 const eur = (n: number) =>
