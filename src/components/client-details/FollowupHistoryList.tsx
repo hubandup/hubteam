@@ -123,7 +123,7 @@ export function FollowupHistoryList({ trackingId }: Props) {
           <div className="flex items-center gap-2">
             <Label className="text-xs text-muted-foreground">Filtrer :</Label>
             <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="h-8 w-[180px] text-xs rounded-none">
+              <SelectTrigger className="h-8 w-[180px] text-xs">
                 <SelectValue placeholder="Toutes les actions" />
               </SelectTrigger>
               <SelectContent>
@@ -224,14 +224,14 @@ export function FollowupHistoryList({ trackingId }: Props) {
               </div>
 
               <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
-                <Button size="sm" variant="outline" onClick={() => copyHtml(opened.body_html || '')} className="rounded-none">
+                <Button size="sm" variant="outline" onClick={() => copyHtml(opened.body_html || '')} className="">
                   <Copy className="h-4 w-4 mr-1" /> Copier le HTML
                 </Button>
                 {opened.recipient_email && (
                   <Button
                     size="sm"
                     onClick={() => sendMail(opened.recipient_email, opened.subject, opened.body_html)}
-                    className="rounded-none"
+                    className=""
                     style={{ background: 'hsl(var(--brand-ink))', color: 'hsl(var(--card))' }}
                   >
                     <Mail className="h-4 w-4 mr-1" /> Envoyer par email

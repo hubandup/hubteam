@@ -864,11 +864,11 @@ export default function Finances() {
                 </p>
                 <Sheet>
                   <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="mt-3 rounded-none">
+                    <Button variant="outline" size="sm" className="mt-3">
                       Voir le détail du calcul
                     </Button>
                   </SheetTrigger>
-                  <SheetContent className="w-full overflow-y-auto rounded-none sm:max-w-3xl">
+                  <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
                     <SheetHeader className="pr-8">
                       <SheetTitle>Détail du CA prévisionnel</SheetTitle>
                       <SheetDescription>

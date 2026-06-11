@@ -735,7 +735,7 @@ function SortableTaskItem({
             onChange={(e) => setEditedTitle(e.target.value)}
             onKeyDown={handleTitleKeyDown}
             onBlur={handleTitleBlur}
-            className="flex-1 h-auto py-0 px-1 text-sm border-0 border-b border-primary bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none"
+            className="flex-1 h-auto py-0 px-1 text-sm border-0 border-b border-primary bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         ) : (
           <p 

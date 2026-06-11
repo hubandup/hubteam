@@ -175,10 +175,10 @@ function MainContactSection({ client }: { client: any }) {
         Interlocuteur Hub & Up
       </span>
       <Select value={client.main_contact_id || 'none'} onValueChange={handleChange}>
-        <SelectTrigger className="w-[260px] h-8 text-xs rounded-none">
+        <SelectTrigger className="w-[260px] h-8 text-xs">
           <SelectValue placeholder="Sélectionner un interlocuteur" />
         </SelectTrigger>
-        <SelectContent className="rounded-none">
+        <SelectContent className="">
           <SelectItem value="none">Aucun</SelectItem>
           {teamMembers.map((m: any) => (
             <SelectItem key={m.id} value={m.id}>
@@ -237,10 +237,10 @@ function StatusActionsBar({ tracking, client }: { tracking: any; client: any }) 
         Statut commercial
       </span>
       <Select value={tracking.status} onValueChange={updateStatus}>
-        <SelectTrigger className="w-[220px] h-8 text-xs rounded-none">
+        <SelectTrigger className="w-[220px] h-8 text-xs">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent className="rounded-none">
+        <SelectContent className="">
           {STATUS_OPTIONS.map((s) => (
             <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
           ))}
@@ -487,7 +487,7 @@ function ContactsSection({ trackingId, client }: { trackingId: string; client: a
         <span className="uppercase tracking-wider font-semibold text-muted-foreground" style={{ fontSize: 10 }}>
           Contacts additionnels
         </span>
-        <Button size="sm" variant="outline" onClick={addContact} className="rounded-none h-7 text-xs">
+        <Button size="sm" variant="outline" onClick={addContact} className="h-7 text-xs">
           <Plus className="h-3 w-3 mr-1" /> Ajouter un contact
         </Button>
       </div>
@@ -505,7 +505,7 @@ function ContactsSection({ trackingId, client }: { trackingId: string; client: a
             {contacts.length}
           </span>
         </div>
-        <Button size="sm" variant="outline" onClick={addContact} className="rounded-none h-7 text-xs">
+        <Button size="sm" variant="outline" onClick={addContact} className="h-7 text-xs">
           <Plus className="h-3 w-3 mr-1" /> Ajouter
         </Button>
       </div>

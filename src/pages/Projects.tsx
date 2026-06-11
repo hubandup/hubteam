@@ -279,10 +279,10 @@ export default function Projects() {
       {/* ── Tabs ──────────────────────────────────────────────────────── */}
       {isMobile ? (
         <Select value={activeTab} onValueChange={handleTabChange}>
-          <SelectTrigger className="w-full mb-3 rounded-none border-[hsl(var(--border))] h-10 font-['Instrument_Sans'] font-semibold text-[13px]">
+          <SelectTrigger className="w-full mb-3 border-[hsl(var(--border))] h-10 font-['Instrument_Sans'] font-semibold text-[13px]">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="rounded-none border-[hsl(var(--border))]">
+          <SelectContent className="border-[hsl(var(--border))]">
             {TABS.map(tab => (
               <SelectItem key={tab.key} value={tab.key} className="font-['Instrument_Sans'] font-semibold text-[13px]">
                 {tab.label} ({statusCounts[tab.key as keyof typeof statusCounts] || 0})
@@ -519,7 +519,7 @@ export default function Projects() {
 
       {/* ── Dialog suppression ────────────────────────────────────────── */}
       <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
-        <AlertDialogContent className="rounded-none border-[hsl(var(--border))]">
+        <AlertDialogContent className="border-[hsl(var(--border))]">
           <AlertDialogHeader>
             <AlertDialogTitle style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 16, color: 'hsl(var(--foreground))' }}>
               {t('projects.confirmDelete')}
@@ -529,12 +529,12 @@ export default function Projects() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-none border-[hsl(var(--border))] font-['Instrument_Sans'] font-semibold text-sm">
+            <AlertDialogCancel className="border-[hsl(var(--border))] font-['Instrument_Sans'] font-semibold text-sm">
               {t('common.cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => projectToDelete && deleteMutation.mutate(projectToDelete)}
-              className="rounded-none bg-[#DC2626] hover:bg-[#B91C1C] font-['Instrument_Sans'] font-bold text-sm"
+              className="bg-[#DC2626] hover:bg-[#B91C1C] font-['Instrument_Sans'] font-bold text-sm"
             >
               {t('common.deleteForever')}
             </AlertDialogAction>

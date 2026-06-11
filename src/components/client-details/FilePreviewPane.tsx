@@ -87,7 +87,7 @@ export function FilePreviewPane({ file, onClose, onGetFileUrl }: FilePreviewPane
   const isPdf = file.name.match(/\.pdf$/i) || mimeType?.includes('pdf');
 
   return (
-    <Card className="fixed right-0 top-0 bottom-0 w-96 rounded-none border-l shadow-lg z-50 overflow-hidden flex flex-col bg-background">
+    <Card className="fixed right-0 top-0 bottom-0 w-96 border-l shadow-lg z-50 overflow-hidden flex flex-col bg-background">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
         <h3 className="font-semibold truncate flex-1">Aperçu</h3>

@@ -146,15 +146,15 @@ export function ScrapeUrlsManagerModal({ open, onOpenChange, trackingId }: Props
               placeholder="https://..."
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              className="flex-1 rounded-none"
+              className="flex-1"
             />
             <Input
               placeholder="Libellé (optionnel)"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              className="md:w-[200px] rounded-none"
+              className="md:w-[200px]"
             />
-            <Button onClick={add} className="rounded-none" style={{ background: 'hsl(var(--brand-ink))', color: 'hsl(var(--card))' }}>
+            <Button onClick={add} className="" style={{ background: 'hsl(var(--brand-ink))', color: 'hsl(var(--card))' }}>
               <Plus className="h-4 w-4 mr-1" /> Ajouter
             </Button>
           </div>
@@ -166,7 +166,7 @@ export function ScrapeUrlsManagerModal({ open, onOpenChange, trackingId }: Props
                 variant="outline"
                 onClick={scrapeAll}
                 disabled={scrapingAll}
-                className="rounded-none"
+                className=""
               >
                 {scrapingAll ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}
                 Scraper toutes

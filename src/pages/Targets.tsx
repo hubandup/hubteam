@@ -196,7 +196,7 @@ export default function Targets() {
 
           <div className="flex items-center gap-2">
             {/* Toggle vue */}
-            <div className="flex border border-border bg-card">
+            <div className="flex border border-border bg-card rounded-full overflow-hidden">
               {([
                 { v: 'list' as const, Icon: List },
                 { v: 'kanban' as const, Icon: Columns3 },
@@ -223,11 +223,12 @@ export default function Targets() {
             <button
               type="button"
               onClick={() => setAddOpen(true)}
-              className="px-3 py-2 text-xs font-semibold bg-foreground text-background flex items-center gap-1.5 hover:opacity-90 transition-opacity"
+              className="px-3 py-2 text-xs font-semibold bg-foreground text-background flex items-center gap-1.5 hover:opacity-90 transition-opacity rounded-full"
             >
               <Plus size={14} />
               Ajouter un target
             </button>
+
           </div>
         </div>
 
@@ -265,7 +266,7 @@ export default function Targets() {
                       setVisibleCount(PAGE_SIZE);
                     }}
                     className={cn(
-                      'px-3 py-1.5 text-xs font-semibold transition-colors flex items-center gap-1.5',
+                      'px-3 py-1.5 text-xs font-semibold transition-colors flex items-center gap-1.5 rounded-full',
                       active
                         ? 'bg-foreground text-background'
                         : 'bg-muted text-foreground hover:bg-muted/70',
@@ -274,13 +275,14 @@ export default function Targets() {
                     {label}
                     <span
                       className={cn(
-                        'text-[10px] px-1 py-0.5 leading-none',
+                        'text-[10px] px-1.5 py-0.5 leading-none rounded-full',
                         active ? 'bg-background/20 text-background' : 'bg-card text-foreground',
                       )}
                     >
                       {n}
                     </span>
                   </button>
+
                 );
               })}
             </div>

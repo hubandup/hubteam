@@ -156,7 +156,7 @@ export function TargetCard({ client, onClick, onEdited }: TargetCardProps) {
                     <MoreHorizontal size={14} className="text-muted-foreground" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="rounded-none">
+                <DropdownMenuContent align="end" className="">
                   <DropdownMenuItem onSelect={() => onClick()}>
                     Voir la fiche
                   </DropdownMenuItem>
@@ -228,7 +228,7 @@ export function TargetCard({ client, onClick, onEdited }: TargetCardProps) {
 
       {/* Confirm unpin */}
       <AlertDialog open={confirmRemove} onOpenChange={setConfirmRemove}>
-        <AlertDialogContent className="rounded-none">
+        <AlertDialogContent className="">
           <AlertDialogHeader>
             <AlertDialogTitle>Désépingler ce target ?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -236,9 +236,9 @@ export function TargetCard({ client, onClick, onEdited }: TargetCardProps) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-none">Annuler</AlertDialogCancel>
+            <AlertDialogCancel className="">Annuler</AlertDialogCancel>
             <AlertDialogAction
-              className="rounded-none"
+              className=""
               onClick={() => {
                 toggleTarget.mutate({ clientId: client.id, starred: true });
                 setConfirmRemove(false);
