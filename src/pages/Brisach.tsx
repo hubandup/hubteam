@@ -507,8 +507,9 @@ export default function Brisach() {
               </DialogContent>
             </Dialog>
           )}
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
