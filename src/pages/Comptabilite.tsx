@@ -150,6 +150,7 @@ const toDbInsert = (i: Invoice) => ({
   payment_terms: i.paymentTerms,
   status: i.status,
   payment_detail: i.paymentDetail,
+  payment_date: i.paymentDate || null,
   file_url: i.fileUrl === "#" ? "" : i.fileUrl,
   remark: i.remark,
   fiscal_year: i.fiscalYear,
