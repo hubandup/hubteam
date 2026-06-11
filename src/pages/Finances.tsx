@@ -728,9 +728,10 @@ export default function Finances() {
             <Euro className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalRevenue.toLocaleString('fr-FR')} €</div>
+            <div className="text-2xl font-bold">{totalRevenue.toLocaleString('fr-FR')} € <span className="text-base font-normal text-muted-foreground">HT</span></div>
             <p className="text-xs text-muted-foreground">
-              Chiffre d'affaires de l'année fiscale en cours
+              Somme HT des factures Facturation.pro sur l'exercice (1er avril → 31 mars)
+
             </p>
           </CardContent>
         </Card>
