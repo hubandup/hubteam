@@ -68,6 +68,7 @@ interface Invoice {
   paymentTerms: string;
   status: InvoiceStatus;
   paymentDetail: string;
+  paymentDate: string;
   fileUrl: string;
   remark: string;
   fiscalYear: string | null;
