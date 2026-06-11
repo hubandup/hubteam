@@ -23,6 +23,7 @@ interface FacturationProInvoice {
 interface FacturationProQuote {
   id: number;
   total: string;
+  amount_invoiced?: string;
   quote_status: number;
   term_on?: string | null;
   due_date?: string;
@@ -265,16 +266,23 @@ Deno.serve(async (req) => {
     // 1. Fetch recurring invoices (CA HT récurrent) for all 3 months
     // =========================================
     try {
-      const recurringUrl = new URL(`${FACTURATION_PRO_API_URL}/firms/${firmId}/recurring_invoices.json`);
-      recurringUrl.searchParams.set('per_page', '100');
-
-      const recurringResponse = await fetch(recurringUrl.toString(), { headers });
-
-      if (recurringResponse.ok) {
+      const recurringInvoices: RecurringInvoice[] = [];
+      let recurringFirstId: number | null = null;
+      for (let page = 1; page <= 50; page++) {
+        const recurringUrl = new URL(`${FACTURATION_PRO_API_URL}/firms/${firmId}/recurring_invoices.json`);
+        recurringUrl.searchParams.set('page', String(page));
+        recurringUrl.searchParams.set('per_page', '100');
+        const recurringResponse = await fetch(recurringUrl.toString(), { headers });
+        if (!recurringResponse.ok) throw new Error(`Facturation.PRO recurring API error: ${recurringResponse.status}`);
         const recurringData = await recurringResponse.json();
-        const recurringInvoices: RecurringInvoice[] = Array.isArray(recurringData)
+        const pageItems: RecurringInvoice[] = Array.isArray(recurringData)
           ? recurringData
           : (recurringData?.recurring_invoices || recurringData?.data || []);
+        if (page > 1 && pageItems.length > 0 && pageItems[0]?.id === recurringFirstId) break;
+        if (pageItems.length > 0 && recurringFirstId === null) recurringFirstId = pageItems[0].id;
+        recurringInvoices.push(...pageItems);
+        if (pageItems.length === 0 || pageItems.length < 50) break;
+      }
 
         console.log(`[FORECAST] Found ${recurringInvoices.length} recurring invoices`);
 
@@ -325,9 +333,9 @@ Deno.serve(async (req) => {
             }
           }
         }
-      }
     } catch (recurringError) {
-      console.log('[FORECAST] Could not fetch recurring invoices:', recurringError);
+      console.error('[FORECAST] Could not fetch recurring invoices:', recurringError);
+      throw recurringError;
     }
 
     console.log(
@@ -384,7 +392,9 @@ Deno.serve(async (req) => {
       console.log(`[FORECAST] Quotes "À facturer" (status=to_invoice): ${allQuotesToInvoice.length}`);
 
       for (const quote of allQuotesToInvoice) {
-        const amount = parseFloat(String(quote.total ?? '0')) || 0;
+        const quoteTotal = parseFloat(String(quote.total ?? '0')) || 0;
+        const alreadyInvoiced = parseFloat(String(quote.amount_invoiced ?? '0')) || 0;
+        const amount = Math.max(quoteTotal - alreadyInvoiced, 0);
         if (amount === 0) continue;
 
         // Log all date fields for debugging
@@ -416,7 +426,6 @@ Deno.serve(async (req) => {
 
         if (bucket === null) {
           console.log(`[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": ${amount}€ outside range (term_on: ${validityDate.toISOString().split('T')[0]})`);
-          totalDevisAFacturer += amount;
           continue;
         }
 
@@ -428,7 +437,8 @@ Deno.serve(async (req) => {
         );
       }
     } catch (quotesError) {
-      console.log('[FORECAST] Could not fetch quotes:', quotesError);
+      console.error('[FORECAST] Could not fetch quotes:', quotesError);
+      throw quotesError;
     }
 
     console.log(
