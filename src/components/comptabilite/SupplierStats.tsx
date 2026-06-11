@@ -105,6 +105,17 @@ export function SupplierStats({ invoices, fiscalYear }: Props) {
     const overdueTTC = overdue.reduce((s, i) => s + i.amountTTC, 0);
 
     const avgInvoiceTTC = totalCount ? totalTTC / totalCount : 0;
+    const totalTVA = totalTTC - totalHT;
+
+    // Current month TVA
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const currentMonthTVA = invoices.reduce((s, i) => {
+      const d = new Date(i.invoiceDate);
+      if (isNaN(d.getTime())) return s;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      return key === currentMonthKey ? s + (i.amountTTC - i.amountHT) : s;
+    }, 0);
 
     // Monthly spend: bucket by YYYY-MM of invoice date
     const byMonth = new Map<string, { ttc: number; ht: number; count: number }>();
@@ -132,6 +143,8 @@ export function SupplierStats({ invoices, fiscalYear }: Props) {
       totalCount,
       totalTTC,
       totalHT,
+      totalTVA,
+      currentMonthTVA,
       paidCount: paid.length,
       unpaidCount: unpaid.length,
       totalUnpaidTTC,
@@ -195,6 +208,16 @@ export function SupplierStats({ invoices, fiscalYear }: Props) {
           value={stats.overdueCount.toString()}
           sub={`${eur(stats.overdueTTC)} TTC`}
           tone={stats.overdueCount > 0 ? "warn" : "default"}
+        />
+        <KpiCard
+          label="TVA récupérable (mois en cours)"
+          value={eur(stats.currentMonthTVA)}
+          sub={new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+        />
+        <KpiCard
+          label="TVA récupérable (exercice)"
+          value={eur(stats.totalTVA)}
+          sub={`Exercice ${fiscalYear}`}
         />
       </div>
 
