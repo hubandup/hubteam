@@ -667,8 +667,61 @@ export default function Finances() {
         </div>
       </div>
 
+      {/* Synchro Facturation.pro - panneau santé */}
+      {syncHealth && (
+        <Card className="border-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center justify-between">
+              <span>Santé de la synchronisation Facturation.pro</span>
+              <span className="text-xs font-normal text-muted-foreground">
+                Dernière exécution : {format(new Date(syncHealth.ran_at), 'dd/MM/yyyy à HH:mm', { locale: fr })} ({syncHealth.trigger})
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+              <div>
+                <div className="text-xs text-muted-foreground">Factures synchronisées</div>
+                <div className="text-lg font-bold">{syncHealth.synced_invoices ?? 0}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Ignorées</div>
+                <div className={`text-lg font-bold ${syncHealth.skipped_invoices > 0 ? 'text-orange-600' : ''}`}>
+                  {syncHealth.skipped_invoices ?? 0}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Clients auto-créés</div>
+                <div className="text-lg font-bold">{syncHealth.auto_created_clients ?? 0}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Total HT cumulé</div>
+                <div className="text-lg font-bold">{Number(syncHealth.total_ht ?? 0).toLocaleString('fr-FR')} €</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Total TTC cumulé</div>
+                <div className="text-lg font-bold">{Number(syncHealth.total_ttc ?? 0).toLocaleString('fr-FR')} €</div>
+              </div>
+            </div>
+            {syncHealth.error && (
+              <div className="mt-3 text-xs text-destructive border border-destructive/30 bg-destructive/5 p-2">
+                Erreur : {syncHealth.error}
+              </div>
+            )}
+            {Array.isArray(syncHealth.missing_customer_ids) && syncHealth.missing_customer_ids.length > 0 && (
+              <div className="mt-3 text-xs text-muted-foreground">
+                <span className="font-medium">customer_id Facturation.pro orphelins :</span>{' '}
+                {syncHealth.missing_customer_ids.slice(0, 20).join(', ')}
+                {syncHealth.missing_customer_ids.length > 20 ? ` … (+${syncHealth.missing_customer_ids.length - 20})` : ''}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Financial Stats Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">CA Année Fiscale</CardTitle>
