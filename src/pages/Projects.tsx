@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Search, Archive, ArchiveRestore, Edit, Trash2 } from 'lucide-react';
 import { ExportButton } from '@/components/exports/ExportButton';
+import { PageHeader } from '@/components/layout';
+
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
