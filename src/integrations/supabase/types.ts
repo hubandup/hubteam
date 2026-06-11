@@ -3985,6 +3985,27 @@ export type Database = {
         }
         Relationships: []
       }
+      supplier_name_aliases: {
+        Row: {
+          created_at: string
+          display_name: string
+          key: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          key: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       target_relance_notifications: {
         Row: {
           channel: string

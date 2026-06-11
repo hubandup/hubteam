@@ -10,8 +10,10 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Loader2, AlertCircle, CheckCircle2, ChevronDown, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Loader2, AlertCircle, CheckCircle2, ChevronDown, ChevronRight, Pencil, Check, X } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 const eur = (n: number) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
@@ -63,15 +65,18 @@ const normKey = (s: string): string =>
 export function SuppliersList() {
   const [bankLines, setBankLines] = useState<BankLine[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [aliases, setAliases] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "missing" | "complete">("all");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [{ data: lines }, { data: invs }] = await Promise.all([
+      const [{ data: lines }, { data: invs }, { data: aliasRows }] = await Promise.all([
         supabase
           .from("bank_statement_lines")
           .select("id, line_date, label, raw_text, amount, matched_invoice_id")
@@ -79,7 +84,16 @@ export function SuppliersList() {
         supabase
           .from("supplier_invoices")
           .select("id, supplier, amount_ttc, invoice_date"),
+        supabase
+          .from("supplier_name_aliases")
+          .select("key, display_name"),
       ]);
+
+      const aliasMap: Record<string, string> = {};
+      for (const a of (aliasRows as { key: string; display_name: string }[] ?? [])) {
+        aliasMap[a.key] = a.display_name;
+      }
+      setAliases(aliasMap);
 
       // Keep only debit lines (supplier expenses). Bank statements store amounts
       // as positive numbers; the debit/credit info lives in raw_text columns.
@@ -168,15 +182,62 @@ export function SuppliersList() {
     return Array.from(map.values()).sort((a, b) => b.total - a.total);
   }, [bankLines, invoices]);
 
+  const displayNameOf = (key: string, fallback: string) => aliases[key] ?? fallback;
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return suppliers.filter((s) => {
-      if (q && !s.name.toLowerCase().includes(q)) return false;
+      const dn = (aliases[s.key] ?? s.name).toLowerCase();
+      if (q && !dn.includes(q) && !s.name.toLowerCase().includes(q)) return false;
       if (filter === "missing" && s.missingLines.length === 0) return false;
       if (filter === "complete" && s.missingLines.length > 0) return false;
       return true;
     });
-  }, [suppliers, search, filter]);
+  }, [suppliers, search, filter, aliases]);
+
+  const startEdit = (key: string, currentName: string) => {
+    setEditingKey(key);
+    setEditValue(currentName);
+  };
+
+  const cancelEdit = () => {
+    setEditingKey(null);
+    setEditValue("");
+  };
+
+  const saveEdit = async (key: string, originalName: string) => {
+    const trimmed = editValue.trim();
+    if (!trimmed) {
+      toast.error("Le nom ne peut pas être vide");
+      return;
+    }
+    if (trimmed === originalName) {
+      const { error } = await supabase
+        .from("supplier_name_aliases")
+        .delete()
+        .eq("key", key);
+      if (error) {
+        toast.error("Erreur lors de la suppression de l'alias");
+        return;
+      }
+      setAliases((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    } else {
+      const { error } = await supabase
+        .from("supplier_name_aliases")
+        .upsert({ key, display_name: trimmed, updated_at: new Date().toISOString() });
+      if (error) {
+        toast.error("Erreur lors du renommage");
+        return;
+      }
+      setAliases((prev) => ({ ...prev, [key]: trimmed }));
+    }
+    toast.success("Fournisseur renommé");
+    cancelEdit();
+  };
 
   const stats = useMemo(() => {
     const totalSuppliers = suppliers.length;
@@ -278,9 +339,61 @@ export function SuppliersList() {
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => setExpanded(isOpen ? null : s.key)}
                     >
-                      <TableCell className="font-medium flex items-center gap-2">
-                        {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-                        {s.name}
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
+                          {editingKey === s.key ? (
+                            <div className="flex items-center gap-1 flex-1" onClick={(e) => e.stopPropagation()}>
+                              <Input
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") saveEdit(s.key, s.name);
+                                  if (e.key === "Escape") cancelEdit();
+                                }}
+                                autoFocus
+                                className="h-7 text-sm rounded-none"
+                              />
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 rounded-none"
+                                onClick={() => saveEdit(s.key, s.name)}
+                                title="Enregistrer"
+                              >
+                                <Check className="h-4 w-4 text-green-600" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 rounded-none"
+                                onClick={cancelEdit}
+                                title="Annuler"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <>
+                              <span>{displayNameOf(s.key, s.name)}</span>
+                              {aliases[s.key] && aliases[s.key] !== s.name && (
+                                <span className="text-xs text-muted-foreground italic">({s.name})</span>
+                              )}
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-6 w-6 rounded-none opacity-50 hover:opacity-100"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  startEdit(s.key, displayNameOf(s.key, s.name));
+                                }}
+                                title="Renommer"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right font-semibold">{eur(s.total)}</TableCell>
                       <TableCell className="text-right">{s.txCount}</TableCell>
