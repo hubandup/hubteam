@@ -42,8 +42,10 @@ export default function Finances() {
   const [forecastRevenue, setForecastRevenue] = useState(0);
   const [monthlyForecasts, setMonthlyForecasts] = useState<{ month: number; encaisser: number; recurrent: number; devisAFacturer?: number; total: number }[]>([]);
   const [isLoadingForecast, setIsLoadingForecast] = useState(false);
-  
+  const [syncHealth, setSyncHealth] = useState<any | null>(null);
+
   const [revenuePeriod, setRevenuePeriod] = useState<string>('6');
+
 
   // Refs for charts to capture in PDF
   const revenueChartRef = useRef<HTMLDivElement>(null);
