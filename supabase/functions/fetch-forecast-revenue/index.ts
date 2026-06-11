@@ -423,7 +423,16 @@ Deno.serve(async (req) => {
         const total = parseFloat(String(quote.total ?? '0')) || 0;
         const invoiced = parseFloat(String(quote.amount_invoiced ?? '0')) || 0;
         const remaining = Math.max(total - invoiced, 0);
-        return !quote.ignore_quote && quote.fully_invoiced !== true && remaining > 0;
+        const eligible = !quote.ignore_quote && quote.fully_invoiced !== true && remaining > 0;
+        if (!eligible) {
+          const reason = quote.ignore_quote
+            ? 'Devis marqué comme ignoré'
+            : quote.fully_invoiced === true
+              ? 'Devis entièrement facturé'
+              : 'Aucun montant HT restant à facturer';
+          auditItems.push({ id: quote.id, type: 'devis', label: quote.title || `Devis #${quote.id}`, amount: remaining, date: quote.term_on || null, month: null, included: false, reason });
+        }
+        return eligible;
       });
 
       console.log(`[FORECAST] Unique quotes « À facturer » or with HT remaining: ${eligibleQuotes.length}`);

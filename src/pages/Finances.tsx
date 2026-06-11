@@ -19,6 +19,18 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MonthlyComparisonTable } from '@/components/finances/MonthlyComparisonTable';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+
+type ForecastAuditItem = {
+  id: number;
+  type: 'devis' | 'facture_recurrente';
+  label: string;
+  amount: number;
+  date: string | null;
+  month: number | null;
+  included: boolean;
+  reason: string;
+};
 
 
 export default function Finances() {
@@ -42,6 +54,7 @@ export default function Finances() {
   const [forecastRevenue, setForecastRevenue] = useState(0);
   const [currentMonthForecastRevenue, setCurrentMonthForecastRevenue] = useState(0);
   const [monthlyForecasts, setMonthlyForecasts] = useState<{ month: number; encaisser: number; recurrent: number; devisAFacturer?: number; total: number }[]>([]);
+  const [forecastAuditItems, setForecastAuditItems] = useState<ForecastAuditItem[]>([]);
   const [isLoadingForecast, setIsLoadingForecast] = useState(false);
   const [syncHealth, setSyncHealth] = useState<any | null>(null);
 
@@ -320,6 +333,7 @@ export default function Finances() {
       if (data?.success) {
         setForecastRevenue(data.forecastRevenue || 0);
         setMonthlyForecasts(data.monthlyForecasts || []);
+        setForecastAuditItems(data.auditItems || []);
       }
     } catch (error) {
       console.error('Error fetching forecast revenue:', error);
