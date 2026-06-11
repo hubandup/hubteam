@@ -9,6 +9,7 @@ import { useFeedActivities } from '@/hooks/useFeedActivities';
 import { usePosts } from '@/hooks/usePosts';
 import { useLinkedInPosts } from '@/hooks/useLinkedInPosts';
 import { PageLoader } from '@/components/PageLoader';
+import { PageHeader } from '@/components/layout';
 import { useTranslation } from 'react-i18next';
 
 
@@ -62,12 +63,11 @@ export default function Feed() {
 
   return (
     <div className="w-full md:container md:mx-auto md:p-4 md:max-w-2xl">
-      <div className="mb-3 md:mb-6">
-        <h1 className="text-xl md:text-3xl font-bold mb-0.5">{t('feed.title')}</h1>
-        <p className="text-muted-foreground text-xs md:text-base">
-          {t('feed.subtitle')}
-        </p>
-      </div>
+      <PageHeader
+        className="mb-3 md:mb-6"
+        title={t('feed.title')}
+        subtitle={t('feed.subtitle')}
+      />
 
       <div className="mb-3 md:mb-4">
         <OnlineUsersIndicator />
