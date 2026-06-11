@@ -76,7 +76,7 @@ export function SuppliersList() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [{ data: lines }, { data: invs }] = await Promise.all([
+      const [{ data: lines }, { data: invs }, { data: aliasRows }] = await Promise.all([
         supabase
           .from("bank_statement_lines")
           .select("id, line_date, label, raw_text, amount, matched_invoice_id")
@@ -84,7 +84,16 @@ export function SuppliersList() {
         supabase
           .from("supplier_invoices")
           .select("id, supplier, amount_ttc, invoice_date"),
+        supabase
+          .from("supplier_name_aliases")
+          .select("key, display_name"),
       ]);
+
+      const aliasMap: Record<string, string> = {};
+      for (const a of (aliasRows as { key: string; display_name: string }[] ?? [])) {
+        aliasMap[a.key] = a.display_name;
+      }
+      setAliases(aliasMap);
 
       // Keep only debit lines (supplier expenses). Bank statements store amounts
       // as positive numbers; the debit/credit info lives in raw_text columns.
