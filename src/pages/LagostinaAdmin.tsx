@@ -192,14 +192,10 @@ export default function LagostinaAdmin() {
   return (
     <div className="min-h-screen bg-card dark:bg-[#0a0e1a] p-6">
       <div className="max-w-5xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground font-['Instrument_Sans'] tracking-tight">
-            Administration Lagostina
-          </h1>
-          <p className="text-muted-foreground font-['Roboto'] text-sm mt-1">
-            Import et synchronisation des données
-          </p>
-        </div>
+        <PageHeader
+          title="Administration Lagostina"
+          subtitle="Import et synchronisation des données"
+        />
 
         <div className="bg-card border border-border/30 p-6 space-y-4">
           <div className="flex items-center gap-4 flex-wrap">

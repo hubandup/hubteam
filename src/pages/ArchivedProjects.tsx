@@ -86,17 +86,15 @@ export default function ArchivedProjects() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Archive className="h-8 w-8 text-muted-foreground" />
-          <div>
-            <h1 className="text-3xl font-bold">Projets archivés</h1>
-            <p className="text-muted-foreground">
-              {projects?.length || 0} projet(s) archivé(s)
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title={
+          <span className="flex items-center gap-3">
+            <Archive className="h-8 w-8 text-muted-foreground" />
+            Projets archivés
+          </span>
+        }
+        subtitle={`${projects?.length || 0} projet(s) archivé(s)`}
+      />
 
       {!projects || projects.length === 0 ? (
         <Card>

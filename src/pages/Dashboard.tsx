@@ -519,23 +519,23 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">{t('dashboard.title')}</h1>
-          <p className="text-muted-foreground">{t('dashboard.subtitle')}</p>
-        </div>
-        <Select value={periodFilter} onValueChange={setPeriodFilter}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="30">30 jours</SelectItem>
-            <SelectItem value="90">90 jours</SelectItem>
-            <SelectItem value="180">6 mois</SelectItem>
-            <SelectItem value="365">1 an</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <PageHeader
+        title={t('dashboard.title')}
+        subtitle={t('dashboard.subtitle')}
+        actions={
+          <Select value={periodFilter} onValueChange={setPeriodFilter}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="30">30 jours</SelectItem>
+              <SelectItem value="90">90 jours</SelectItem>
+              <SelectItem value="180">6 mois</SelectItem>
+              <SelectItem value="365">1 an</SelectItem>
+            </SelectContent>
+          </Select>
+        }
+      />
 
       {/* Role & Permissions Indicator */}
       <RolePermissionsIndicator />

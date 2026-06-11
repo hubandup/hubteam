@@ -273,23 +273,24 @@ export default function FAQ() {
   return (
     <div className="h-screen flex flex-col bg-background">
       <div className="border-b px-6 py-4 bg-card">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <HelpCircle className="h-6 w-6 text-primary flex-shrink-0" />
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">{t('faq.title')}</h1>
-              <p className="text-sm text-muted-foreground">
-                {t('faq.subtitle')}
-              </p>
-            </div>
-          </div>
-          {isAdmin && (
-            <Button onClick={() => setIsDialogOpen(true)} className="flex-shrink-0">
-              <Plus className="h-4 w-4 mr-2" />
-              {t('faq.addQuestion')}
-            </Button>
-          )}
-        </div>
+        <PageHeader
+          className="mb-0"
+          title={
+            <span className="flex items-center gap-3">
+              <HelpCircle className="h-6 w-6 text-primary flex-shrink-0" />
+              {t('faq.title')}
+            </span>
+          }
+          subtitle={t('faq.subtitle')}
+          actions={
+            isAdmin ? (
+              <Button onClick={() => setIsDialogOpen(true)} className="flex-shrink-0">
+                <Plus className="h-4 w-4 mr-2" />
+                {t('faq.addQuestion')}
+              </Button>
+            ) : undefined
+          }
+        />
       </div>
 
       <div className="flex-1 overflow-auto p-6 bg-background">

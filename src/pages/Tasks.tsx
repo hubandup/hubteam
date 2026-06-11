@@ -74,24 +74,24 @@ export default function Tasks() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">{t('tasks.title')}</h1>
-          <p className="text-muted-foreground">{t('tasks.subtitle')}</p>
-        </div>
-        <ExportButton
-          data={filteredTasks}
-          columns={[
-            { key: 'title', label: 'Tâche' },
-            { key: 'status', label: 'Statut' },
-            { key: 'priority', label: 'Priorité' },
-            { key: 'projects.name', label: 'Projet' },
-            { key: 'end_date', label: 'Échéance' },
-            { key: 'profiles', label: 'Assigné à', formatter: (v: any) => v ? `${v.first_name} ${v.last_name}` : '' },
-          ]}
-          filename="taches"
-        />
-      </div>
+      <PageHeader
+        title={t('tasks.title')}
+        subtitle={t('tasks.subtitle')}
+        actions={
+          <ExportButton
+            data={filteredTasks}
+            columns={[
+              { key: 'title', label: 'Tâche' },
+              { key: 'status', label: 'Statut' },
+              { key: 'priority', label: 'Priorité' },
+              { key: 'projects.name', label: 'Projet' },
+              { key: 'end_date', label: 'Échéance' },
+              { key: 'profiles', label: 'Assigné à', formatter: (v: any) => v ? `${v.first_name} ${v.last_name}` : '' },
+            ]}
+            filename="taches"
+          />
+        }
+      />
 
       {tasks.length > 0 && (
         <div className="relative">

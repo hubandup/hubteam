@@ -108,12 +108,10 @@ export default function Settings() {
 
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">{t('settings.title')}</h1>
-        <p className="text-muted-foreground">
-          {isAdmin ? t('settings.subtitleAdmin') : t('settings.subtitleUser')}
-        </p>
-      </div>
+      <PageHeader
+        title={t('settings.title')}
+        subtitle={isAdmin ? t('settings.subtitleAdmin') : t('settings.subtitleUser')}
+      />
 
       <ResponsiveTabs defaultValue="profile" tabs={allTabs} storageKey="settings-tabs" />
     </div>
