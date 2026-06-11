@@ -710,6 +710,66 @@ export default function Comptabilite() {
     return matches.length;
   };
 
+  /**
+   * Re-parse every bank statement file currently in storage, upsert all their
+   * lines into bank_statement_lines, then run a full rematch. Guarantees that
+   * each sync reconciles the latest state — including older uploads done
+   * before line persistence existed.
+   */
+  const reprocessAllBankStatements = async (currentInvoices: Invoice[]): Promise<number> => {
+    try {
+      const { data: files, error: listErr } = await supabase.storage
+        .from("bank-statements")
+        .list("", { limit: 200, sortBy: { column: "created_at", order: "desc" } });
+      if (listErr) {
+        console.error("[Reprocess] list failed", listErr);
+        return 0;
+      }
+      const targets = (files || []).filter((f) => f.name && !f.name.startsWith("."));
+      console.info(`[Reprocess] ${targets.length} bank statement file(s) found`);
+
+      for (const f of targets) {
+        const { data: blob, error: dlErr } = await supabase.storage
+          .from("bank-statements")
+          .download(f.name);
+        if (dlErr || !blob) {
+          console.error(`[Reprocess] download failed for ${f.name}`, dlErr);
+          continue;
+        }
+        const buf = await blob.arrayBuffer();
+        const parsed = parseBankBuffer(buf);
+        if (!parsed) continue;
+        const { lines, sheetUsed } = parsed;
+        if (!lines.length) {
+          console.warn(`[Reprocess] ${f.name}: no lines parsed (sheet="${sheetUsed}")`);
+          continue;
+        }
+        const { error: upErr } = await supabase
+          .from("bank_statement_lines")
+          .upsert(
+            lines.map((l) => ({
+              statement_path: f.name,
+              line_index: l.line_index,
+              line_date: l.line_date,
+              label: l.label,
+              raw_text: l.raw_text,
+              amount: l.amount,
+            })),
+            { onConflict: "statement_path,line_index", ignoreDuplicates: false },
+          );
+        if (upErr) console.error(`[Reprocess] upsert failed for ${f.name}`, upErr);
+        else console.info(`[Reprocess] ${f.name}: ${lines.length} lines upserted (sheet="${sheetUsed}")`);
+      }
+
+      // Full rematch on all currently-unmatched stored lines
+      return await rematchUnmatchedLines(currentInvoices);
+    } catch (e) {
+      console.error("[Reprocess] fatal", e);
+      return 0;
+    }
+  };
+
+
   const handleInvoiceFile = async (file: File) => {
     setProcessing(true);
     setProcessingLabel("Extraction des données et envoi vers kDrive en cours…");
