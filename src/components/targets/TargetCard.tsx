@@ -17,13 +17,13 @@ import { useToggleTarget } from '@/hooks/useTargets';
 import { useUserRole } from '@/hooks/useUserRole';
 import { EditClientDialog } from '@/components/EditClientDialog';
 import { EntityCard } from '@/components/layout';
+import { URGENCY_TOKENS } from '@/lib/design-tokens';
 import {
   getUrgency,
   getStatusBucket,
   getStatusStyle,
   formatShortFrDate,
   formatCa,
-  type UrgencyBucket,
 } from './targetUtils';
 
 interface TargetClient {
@@ -47,12 +47,6 @@ interface TargetCardProps {
   onEdited?: () => void;
 }
 
-const URGENCY_TEXT_COLOR: Record<UrgencyBucket, string> = {
-  late: '#DC2626',
-  week: '#EA580C',
-  month: '#65748B',
-  none: '',
-};
 
 export function TargetCard({ client, onClick, onEdited }: TargetCardProps) {
   const { isAgency, loading: roleLoading } = useUserRole();
