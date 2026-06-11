@@ -1,9 +1,10 @@
 import * as React from "react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ViewToggleOption<T extends string> {
   value: T;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: LucideIcon;
   label: string;
 }
 
@@ -13,6 +14,7 @@ interface ViewToggleProps<T extends string> {
   onChange: (v: T) => void;
   className?: string;
 }
+
 
 /**
  * Pill segmented control for switching between views (list/kanban/grid…).
