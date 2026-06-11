@@ -250,7 +250,7 @@ export function SuppliersList() {
                 const isOpen = expanded === s.key;
                 const missingAmount = s.missingLines.reduce((a, l) => a + Number(l.amount ?? 0), 0);
                 return (
-                  <>
+                  <Fragment key={s.key}>
                     <TableRow
                       key={s.key}
                       className="cursor-pointer hover:bg-muted/50"
@@ -352,7 +352,7 @@ export function SuppliersList() {
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </Fragment>
                 );
               })
             )}
