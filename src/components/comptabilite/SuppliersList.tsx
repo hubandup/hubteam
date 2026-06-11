@@ -361,7 +361,7 @@ export function SuppliersList() {
             placeholder="Rechercher un fournisseur…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 rounded-none"
+            className="pl-9"
           />
         </div>
         <div className="flex gap-1">
@@ -390,10 +390,10 @@ export function SuppliersList() {
                 if (e.key === "Enter") createFolder();
                 if (e.key === "Escape") { setCreatingFolder(false); setNewFolderName(""); }
               }}
-              className="h-8 w-48 rounded-none text-xs"
+              className="h-8 w-48 text-xs"
             />
-            <Button size="sm" onClick={createFolder} className="h-8 rounded-none">Créer</Button>
-            <Button size="sm" variant="ghost" onClick={() => { setCreatingFolder(false); setNewFolderName(""); }} className="h-8 rounded-none">
+            <Button size="sm" onClick={createFolder} className="h-8">Créer</Button>
+            <Button size="sm" variant="ghost" onClick={() => { setCreatingFolder(false); setNewFolderName(""); }} className="h-8">
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -402,7 +402,7 @@ export function SuppliersList() {
             size="sm"
             variant="outline"
             onClick={() => setCreatingFolder(true)}
-            className="h-8 rounded-none gap-1.5"
+            className="h-8 gap-1.5"
           >
             <FolderPlus className="h-4 w-4" /> Nouveau dossier
           </Button>
@@ -477,12 +477,12 @@ export function SuppliersList() {
                                   if (e.key === "Escape") cancelEdit();
                                 }}
                                 autoFocus
-                                className="h-7 text-sm rounded-none"
+                                className="h-7 text-sm"
                               />
-                              <Button size="icon" variant="ghost" className="h-7 w-7 rounded-none" onClick={() => saveEdit(s.key, s.name)} title="Enregistrer">
+                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => saveEdit(s.key, s.name)} title="Enregistrer">
                                 <Check className="h-4 w-4 text-green-600" />
                               </Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7 rounded-none" onClick={cancelEdit} title="Annuler">
+                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelEdit} title="Annuler">
                                 <X className="h-4 w-4" />
                               </Button>
                             </div>
@@ -495,7 +495,7 @@ export function SuppliersList() {
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-6 w-6 rounded-none opacity-50 hover:opacity-100"
+                                className="h-6 w-6 opacity-50 hover:opacity-100"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   startEdit(s.key, displayNameOf(s.key, s.name));
@@ -522,15 +522,15 @@ export function SuppliersList() {
                       </TableCell>
                       <TableCell>
                         {s.txCount === 0 ? (
-                          <Badge variant="outline" className="border-muted-foreground text-muted-foreground rounded-none">
+                          <Badge variant="outline" className="border-muted-foreground text-muted-foreground">
                             Vide
                           </Badge>
                         ) : s.missingLines.length > 0 ? (
-                          <Badge variant="outline" className="border-red-600 text-red-600 rounded-none">
+                          <Badge variant="outline" className="border-red-600 text-red-600">
                             <AlertCircle className="h-3 w-3 mr-1" /> Incomplet
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="border-green-600 text-green-600 rounded-none">
+                          <Badge variant="outline" className="border-green-600 text-green-600">
                             <CheckCircle2 className="h-3 w-3 mr-1" /> OK
                           </Badge>
                         )}

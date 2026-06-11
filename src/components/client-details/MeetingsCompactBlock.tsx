@@ -299,7 +299,7 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
                   onChange={(e) =>
                     update(editing.id, { meeting_date: e.target.value ? new Date(e.target.value).toISOString() : null })
                   }
-                  className="mt-1 rounded-none"
+                  className="mt-1"
                 />
               </div>
 
@@ -310,7 +310,7 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
                     value={editing.source_type || ''}
                     onValueChange={(v) => update(editing.id, { source_type: v })}
                   >
-                    <SelectTrigger className="mt-1 rounded-none">
+                    <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Choisir..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -325,7 +325,7 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
           )}
 
           <DialogFooter>
-            <Button onClick={() => setEditingId(null)} className="rounded-none" style={{ background: 'hsl(var(--brand-ink))', color: 'hsl(var(--card))' }}>
+            <Button onClick={() => setEditingId(null)} className="" style={{ background: 'hsl(var(--brand-ink))', color: 'hsl(var(--card))' }}>
               Fermer
             </Button>
           </DialogFooter>
@@ -334,7 +334,7 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
 
       {/* Confirm delete */}
       <AlertDialog open={!!confirmDeleteId} onOpenChange={(o) => !o && setConfirmDeleteId(null)}>
-        <AlertDialogContent className="rounded-none">
+        <AlertDialogContent className="">
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer {toDelete?._displayLabel} ?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -342,10 +342,10 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-none">Annuler</AlertDialogCancel>
+            <AlertDialogCancel className="">Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => confirmDeleteId && remove(confirmDeleteId)}
-              className="rounded-none bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700"
             >
               Supprimer
             </AlertDialogAction>

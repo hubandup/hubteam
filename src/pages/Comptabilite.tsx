@@ -1147,7 +1147,7 @@ export default function Comptabilite() {
           placeholder="Rechercher fournisseur, n° facture, montant…"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 rounded-none"
+          className="pl-9"
         />
       </div>
 
@@ -1298,7 +1298,7 @@ export default function Comptabilite() {
           <TableBody>
             {displayedInvoices.map((inv) => {
               const editCls =
-                "w-full bg-transparent border-0 outline-none text-sm focus:bg-muted/40 hover:bg-muted/20 px-2 py-1 rounded-none transition-colors";
+                "w-full bg-transparent border-0 outline-none text-sm focus:bg-muted/40 hover:bg-muted/20 px-2 py-1 transition-colors";
               return (
                 <TableRow key={inv.id}>
                   <TableCell className="font-medium p-0">

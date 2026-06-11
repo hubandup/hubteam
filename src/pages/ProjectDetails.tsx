@@ -212,12 +212,12 @@ export default function ProjectDetails() {
             <ChevronDown size={11} />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="bg-card border border-[hsl(var(--border))] shadow-sm rounded-none p-1 min-w-[160px]">
+        <DropdownMenuContent align="start" className="bg-card border border-[hsl(var(--border))] shadow-sm p-1 min-w-[160px]">
           {Object.entries(statusConfig).map(([key, cfg]) => (
             <DropdownMenuItem
               key={key}
               onClick={() => handleStatusChange(key)}
-              className="cursor-pointer rounded-none focus:bg-[hsl(var(--muted))] px-3 py-2"
+              className="cursor-pointer focus:bg-[hsl(var(--muted))] px-3 py-2"
             >
               <span style={{
                 fontFamily: "'Instrument Sans', sans-serif",
@@ -537,7 +537,7 @@ export default function ProjectDetails() {
             />
 
             <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-              <AlertDialogContent className="rounded-none border-[hsl(var(--border))]">
+              <AlertDialogContent className="border-[hsl(var(--border))]">
                 <AlertDialogHeader>
                   <AlertDialogTitle style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 16, color: 'hsl(var(--foreground))' }}>
                     Confirmer la suppression
@@ -551,14 +551,14 @@ export default function ProjectDetails() {
                 <AlertDialogFooter>
                   <AlertDialogCancel
                     disabled={deleting}
-                    className="rounded-none border-[hsl(var(--border))] font-['Instrument_Sans'] font-semibold text-sm"
+                    className="border-[hsl(var(--border))] font-['Instrument_Sans'] font-semibold text-sm"
                   >
                     Annuler
                   </AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleDeleteProject}
                     disabled={deleting}
-                    className="rounded-none bg-[#DC2626] hover:bg-[#B91C1C] font-['Instrument_Sans'] font-bold text-sm"
+                    className="bg-[#DC2626] hover:bg-[#B91C1C] font-['Instrument_Sans'] font-bold text-sm"
                   >
                     {deleting ? (
                       <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Suppression...</>

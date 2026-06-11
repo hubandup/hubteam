@@ -198,7 +198,7 @@ export default function ClientDetails() {
       <div className="p-6 space-y-4 max-w-[1400px] mx-auto">
         {/* Back button */}
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="rounded-none -ml-2">
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="-ml-2">
             <ArrowLeft className="h-4 w-4 mr-1" /> Retour
           </Button>
         </div>
@@ -296,11 +296,11 @@ export default function ClientDetails() {
             {/* Menu actions */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-none flex-shrink-0">
+                <Button variant="ghost" size="icon" className="flex-shrink-0">
                   <MoreHorizontal className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="rounded-none">
+              <DropdownMenuContent align="end" className="">
                 <ProtectedAction module="crm" action="update">
                   <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setEditDialogOpen(true); }}>
                     <Pencil className="h-4 w-4 mr-2" /> Modifier
