@@ -24,14 +24,14 @@
     
     /* Ultra-modern Light Theme */
     --background: 0 0% 100%;
-    --foreground: 224 71% 4%;
+    --foreground: 216 60% 10%;
     
     --card: 0 0% 100%;
-    --card-foreground: 224 71% 4%;
+    --card-foreground: 216 60% 10%;
     --card-border: 220 13% 91%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71% 4%;
+    --popover-foreground: 216 60% 10%;
     
     --primary: 0 0% 9%;
     --primary-foreground: 0 0% 100%;
@@ -39,13 +39,13 @@
     --primary-active: 0 0% 4%;
     
     --secondary: 220 14% 96%;
-    --secondary-foreground: 224 71% 4%;
+    --secondary-foreground: 216 60% 10%;
     
     --muted: 220 14% 96%;
     --muted-foreground: 220 9% 46%;
     
     --accent: 68 100% 64%;
-    --accent-foreground: 224 71% 4%;
+    --accent-foreground: 216 60% 10%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -76,7 +76,7 @@
     --status-active: 152 69% 40%;
     --status-active-foreground: 0 0% 100%;
     --status-completed: 220 14% 90%;
-    --status-completed-foreground: 224 71% 4%;
+    --status-completed-foreground: 216 60% 10%;
     --status-urgent: 0 84% 60%;
     --status-urgent-foreground: 0 0% 100%;
     --status-lost: 0 74% 55%;
@@ -95,15 +95,15 @@
 
     /* Brand & semantic tokens (used by business components) */
     --brand-yellow: 68 100% 64%;            /* #E8FF4C accent — same in dark */
-    --brand-yellow-foreground: 224 71% 4%;  /* dark text on yellow */
-    --brand-ink: 224 71% 4%;                /* deep ink (#0f1422-ish) */
+    --brand-yellow-foreground: 216 60% 10%;  /* dark text on yellow */
+    --brand-ink: 216 60% 10%;                /* deep ink (#0f1422-ish) */
     --brand-ink-foreground: 0 0% 100%;
 
     /* Neutral surfaces */
     --surface: 0 0% 100%;
     --surface-muted: 220 14% 96%;
     --surface-strong: 0 0% 100%;
-    --surface-foreground: 224 71% 4%;
+    --surface-foreground: 216 60% 10%;
     --surface-muted-foreground: 220 9% 46%;
     --hairline: 220 13% 91%;
     --hairline-strong: 220 13% 80%;
