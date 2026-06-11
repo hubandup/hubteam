@@ -1453,6 +1453,10 @@ export default function Comptabilite() {
         <TabsContent value="stats" className="mt-0">
           <SupplierStats invoices={displayedInvoices} fiscalYear={activeFY} />
         </TabsContent>
+
+        <TabsContent value="suppliers" className="mt-0">
+          <SuppliersList />
+        </TabsContent>
       </Tabs>
 
 
