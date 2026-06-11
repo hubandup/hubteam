@@ -106,6 +106,28 @@ export function SupplierStats({ invoices, fiscalYear }: Props) {
 
     const avgInvoiceTTC = totalCount ? totalTTC / totalCount : 0;
 
+    // Monthly spend: bucket by YYYY-MM of invoice date
+    const byMonth = new Map<string, { ttc: number; ht: number; count: number }>();
+    invoices.forEach((i) => {
+      const d = new Date(i.invoiceDate);
+      if (isNaN(d.getTime())) return;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const cur = byMonth.get(key) || { ttc: 0, ht: 0, count: 0 };
+      cur.ttc += i.amountTTC;
+      cur.ht += i.amountHT;
+      cur.count += 1;
+      byMonth.set(key, cur);
+    });
+    const monthsWithActivity = byMonth.size;
+    const avgMonthlyTTC = monthsWithActivity ? totalTTC / monthsWithActivity : 0;
+    const avgMonthlyHT = monthsWithActivity ? totalHT / monthsWithActivity : 0;
+    const monthlySpend = Array.from(byMonth.entries())
+      .map(([month, v]) => ({ month, ...v }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+
+    // All suppliers (sorted by TTC desc)
+    const allSuppliers = [...suppliers].sort((a, b) => b.ttc - a.ttc);
+
     return {
       totalCount,
       totalTTC,
@@ -116,11 +138,16 @@ export function SupplierStats({ invoices, fiscalYear }: Props) {
       suppliersCount: suppliers.length,
       topByValue,
       topByCount,
+      allSuppliers,
       avgPaymentDelay,
       onTimeRatio,
       overdueCount: overdue.length,
       overdueTTC,
       avgInvoiceTTC,
+      avgMonthlyTTC,
+      avgMonthlyHT,
+      monthsWithActivity,
+      monthlySpend,
     };
   }, [invoices]);
 
