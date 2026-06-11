@@ -31,9 +31,13 @@ interface EntityCardProps {
   title: string;
   subtitle?: React.ReactNode;
   logoUrl?: string | null;
+  /** 'md' = 56px (default), 'xl' = 64px for project-like cards */
+  logoSize?: "md" | "xl";
   logoTitleAdornment?: React.ReactNode;
   alert?: EntityCardAlert;
   status?: EntityCardStatus;
+  /** Custom node rendered top-right of the header (replaces status pill placement when used). */
+  headerRight?: React.ReactNode;
   email?: string | null;
   phone?: string | null;
   extraInfo?: React.ReactNode;
@@ -42,6 +46,7 @@ interface EntityCardProps {
   actions?: React.ReactNode;
   onClick?: () => void;
   onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
   className?: string;
 }
 
@@ -60,9 +65,11 @@ export function EntityCard({
   title,
   subtitle,
   logoUrl,
+  logoSize = "md",
   logoTitleAdornment,
   alert,
   status,
+  headerRight,
   email,
   phone,
   extraInfo,
@@ -71,17 +78,20 @@ export function EntityCard({
   actions,
   onClick,
   onMouseEnter,
+  onMouseLeave,
   className,
 }: EntityCardProps) {
   const [logoError, setLogoError] = useState(false);
   const fallback = getLogoFallback(title);
 
   const hasFooter = !!(footerLeft || footerRight);
+  const logoBox = logoSize === "xl" ? "w-16 h-16" : "w-14 h-14";
 
   return (
     <div
       onClick={onClick}
       onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       className={cn(
         "group relative bg-card border border-border hover:border-foreground/40 transition-colors rounded-card",
         onClick && "cursor-pointer",
@@ -103,7 +113,10 @@ export function EntityCard({
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <div
-              className="w-14 h-14 shrink-0 border border-border bg-card p-1.5 flex items-center justify-center overflow-hidden rounded-card"
+              className={cn(
+                logoBox,
+                "shrink-0 border border-border bg-card p-1.5 flex items-center justify-center overflow-hidden rounded-card",
+              )}
               style={
                 !logoUrl || logoError
                   ? { background: fallback.bg, borderColor: "rgba(0,0,0,0.06)" }
