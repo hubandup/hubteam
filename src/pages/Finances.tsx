@@ -656,28 +656,26 @@ export default function Finances() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold text-foreground">Finances</h1>
-          <Select value={revenuePeriod} onValueChange={setRevenuePeriod}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="3">3 derniers mois</SelectItem>
-              <SelectItem value="6">6 derniers mois</SelectItem>
-              <SelectItem value="12">12 derniers mois</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          <div className="flex gap-2">
-            <Button
-              onClick={handleExportPDF}
-              variant="default"
-              size="sm"
-              className="gap-2"
-            >
+      <PageHeader
+        title={
+          <span className="flex items-center gap-4">
+            Finances
+            <Select value={revenuePeriod} onValueChange={setRevenuePeriod}>
+              <SelectTrigger className="w-[160px] text-sm font-normal">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="3">3 derniers mois</SelectItem>
+                <SelectItem value="6">6 derniers mois</SelectItem>
+                <SelectItem value="12">12 derniers mois</SelectItem>
+              </SelectContent>
+            </Select>
+          </span>
+        }
+        subtitle={lastSyncTimestamp ? `Dernière sync: ${format(new Date(lastSyncTimestamp), 'dd/MM/yyyy à HH:mm', { locale: fr })}` : undefined}
+        actions={
+          <>
+            <Button onClick={handleExportPDF} variant="default" size="sm" className="gap-2">
               <FileDown className="h-4 w-4" />
               PDF
             </Button>
@@ -702,14 +700,9 @@ export default function Finances() {
                 Facturation.Pro
               </a>
             </Button>
-          </div>
-          {lastSyncTimestamp && (
-            <p className="text-xs text-muted-foreground">
-              Dernière sync: {format(new Date(lastSyncTimestamp), 'dd/MM/yyyy à HH:mm', { locale: fr })}
-            </p>
-          )}
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Synchro Facturation.pro - panneau santé */}
       {syncHealth && (
