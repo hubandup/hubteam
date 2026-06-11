@@ -1440,6 +1440,15 @@ export default function Comptabilite() {
           </TableBody>
         </Table>
       </div>
+        </TabsContent>
+
+        <TabsContent value="stats" className="mt-0">
+          <SupplierStats invoices={displayedInvoices} fiscalYear={activeFY} />
+        </TabsContent>
+      </Tabs>
+
+
+
 
 
       {/* Upload Invoice Dialog */}
