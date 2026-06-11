@@ -697,14 +697,60 @@ export default function Comptabilite() {
     return Array.from(set).sort((a, b) => b.localeCompare(a));
   }, [invoices]);
 
-  const displayedInvoices = useMemo(
-    () =>
-      invoices.filter((i) => {
-        const fy = i.fiscalYear || computeFiscalYear(i.invoiceDate);
-        return fy === activeFY;
-      }),
-    [invoices, activeFY],
-  );
+  const displayedInvoices = useMemo(() => {
+    let list = invoices.filter((i) => {
+      const fy = i.fiscalYear || computeFiscalYear(i.invoiceDate);
+      return fy === activeFY;
+    });
+
+    // Search filter
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter((i) =>
+        [i.supplier, i.invoiceNumber, i.remark, i.paymentDetail]
+          .filter(Boolean)
+          .some((v) => String(v).toLowerCase().includes(q)) ||
+        String(i.amountTTC).includes(q) ||
+        String(i.amountHT).includes(q) ||
+        fmtDate(i.invoiceDate).includes(q) ||
+        fmtDate(i.dueDate).includes(q)
+      );
+    }
+
+    // Sorting
+    if (sortConfig) {
+      const { key, dir } = sortConfig;
+      list = [...list].sort((a, b) => {
+        let cmp = 0;
+        switch (key) {
+          case "supplier":
+            cmp = a.supplier.localeCompare(b.supplier);
+            break;
+          case "invoiceNumber":
+            cmp = a.invoiceNumber.localeCompare(b.invoiceNumber);
+            break;
+          case "amountHT":
+            cmp = a.amountHT - b.amountHT;
+            break;
+          case "amountTTC":
+            cmp = a.amountTTC - b.amountTTC;
+            break;
+          case "invoiceDate":
+            cmp = new Date(a.invoiceDate).getTime() - new Date(b.invoiceDate).getTime();
+            break;
+          case "dueDate":
+            cmp = new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+            break;
+          case "status":
+            cmp = a.status.localeCompare(b.status);
+            break;
+        }
+        return dir === "asc" ? cmp : -cmp;
+      });
+    }
+
+    return list;
+  }, [invoices, activeFY, searchQuery, sortConfig]);
 
   const totals = useMemo(
     () => ({
