@@ -10,8 +10,10 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Loader2, AlertCircle, CheckCircle2, ChevronDown, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Loader2, AlertCircle, CheckCircle2, ChevronDown, ChevronRight, Pencil, Check, X } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 const eur = (n: number) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
