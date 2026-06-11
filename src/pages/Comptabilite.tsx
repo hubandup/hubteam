@@ -1527,6 +1527,75 @@ export default function Comptabilite() {
         </DialogContent>
       </Dialog>
 
+      {/* Unmatched Lines Review Dialog */}
+      <Dialog open={unmatchedDialogOpen} onOpenChange={setUnmatchedDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Lignes non rapprochées</DialogTitle>
+            <DialogDescription>
+              Lignes des relevés bancaires qui n'ont pas pu être associées automatiquement à une facture. Lie-les manuellement ou ignore-les.
+            </DialogDescription>
+          </DialogHeader>
+          {loadingUnmatched ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" /> Chargement…
+            </div>
+          ) : unmatchedLines.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucune ligne non rapprochée. 🎉</p>
+          ) : (
+            <div className="max-h-[60vh] overflow-auto divide-y divide-border">
+              {unmatchedLines.map((line) => {
+                const candidates = invoices.filter(
+                  (i) => i.status === "À payer" && Math.abs(Number(i.amountTTC) - Number(line.amount || 0)) < 0.01,
+                );
+                return (
+                  <div key={line.id} className="py-3 space-y-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs text-muted-foreground">
+                          {line.line_date ? format(new Date(line.line_date + "T00:00:00"), "dd/MM/yyyy") : "—"}
+                          {" · "}
+                          <span className="font-medium text-foreground">{eur(Number(line.amount || 0))}</span>
+                          {line.reject_reason && (
+                            <span className="ml-2 text-amber-600">[{line.reject_reason}]</span>
+                          )}
+                        </div>
+                        <div className="text-sm truncate" title={line.raw_text || ""}>
+                          {line.label || line.raw_text}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {candidates.length === 0 ? (
+                        <span className="text-xs text-muted-foreground">Aucune facture impayée avec ce montant</span>
+                      ) : (
+                        <select
+                          className="text-sm border border-input bg-background px-2 py-1 rounded-none"
+                          defaultValue=""
+                          onChange={(e) => {
+                            if (e.target.value) handleManualLink(line, e.target.value);
+                          }}
+                        >
+                          <option value="">Lier à une facture…</option>
+                          {candidates.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.supplier} — {c.invoiceNumber} ({eur(c.amountTTC)})
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      <Button size="sm" variant="ghost" onClick={() => handleIgnoreLine(line.id)}>
+                        Ignorer
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Invoice Detail Sheet */}
       <Sheet
         open={!!selectedInvoice}
