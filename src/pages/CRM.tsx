@@ -21,6 +21,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { prefetchClientDetails } from '@/hooks/usePrefetchAppData';
 import { useUserRole } from '@/hooks/useUserRole';
 import { PageLoader } from '@/components/PageLoader';
+import { PageHeader, ViewToggle } from '@/components/layout';
+
 
 export default function CRM() {
   const navigate = useNavigate();
