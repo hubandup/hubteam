@@ -5,6 +5,8 @@ import { Navigate } from 'react-router-dom';
 import { LagostinaExportButtons } from '@/components/lagostina/LagostinaExportButtons';
 import { LagostinaLearningsPanel } from '@/components/lagostina/LagostinaLearningsPanel';
 import { Database, SquarePen } from 'lucide-react';
+import { PageHeader } from '@/components/layout';
+
 
 // Lazy load tab components
 const ScorecardRECC = lazy(() => import('@/components/lagostina/ScorecardRECC').then(m => ({ default: m.ScorecardRECC })));
