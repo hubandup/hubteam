@@ -33,6 +33,8 @@ export function Sidebar() {
   const [clientId, setClientId] = useState<string | null>(null);
   const [smashOpen, setSmashOpen] = useState(false);
   const { t } = useTranslation();
+  const normalizedEmail = (user?.email ?? '').trim().toLowerCase();
+  const hasAccountingAccess = ['compta@hubandup.com', 'charles@hubandup.com'].includes(normalizedEmail);
 
   useEffect(() => {
     const fetchClientId = async () => {
@@ -68,7 +70,7 @@ export function Sidebar() {
     { title: t('nav.home'), url: '/', icon: Home, module: 'dashboard' as const },
     ...(role === 'client' && clientId ? [{ title: t('nav.myClientFile'), url: `/client/${clientId}`, icon: Users, module: 'crm' as const, matchParent: true, isClientItem: true }] : []),
     { title: t('nav.activity'), url: '/dashboard', icon: LayoutDashboard, module: 'dashboard' as const },
-    ...(['compta@hubandup.com', 'charles@hubandup.com'].includes((user?.email ?? '').toLowerCase()) ? [{ title: t('nav.accounting'), url: '/comptabilite', icon: Receipt, module: 'dashboard' as const }] : []),
+    ...(hasAccountingAccess ? [{ title: t('nav.accounting'), url: '/comptabilite', icon: Receipt, module: 'dashboard' as const, hasDedicatedAccess: true }] : []),
     { title: t('nav.finances'), url: '/finances', icon: Euro, module: 'dashboard' as const, adminOnly: true },
     { title: t('nav.crm'), url: '/crm', icon: Users, module: 'crm' as const, matchParent: true },
     { title: 'Targets', url: '/targets', icon: Star, module: 'crm' as const, hideForClient: true, hideForAgency: true },
@@ -100,7 +102,7 @@ export function Sidebar() {
                 .filter(item => !(item as any).hideForAgency || role !== 'agency')
                 .filter(item => !(item as any).hideForClient || role !== 'client')
                 .map((item) =>
-                  canRead(item.module) ? (
+                  ((item as { hasDedicatedAccess?: boolean }).hasDedicatedAccess || canRead(item.module)) ? (
                     <SidebarMenuItem key={item.url}>
                       <SidebarMenuButton asChild>
                         <NavLink 
