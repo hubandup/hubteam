@@ -15,6 +15,7 @@ import { TestSlackExcuses } from '@/components/settings/TestSlackExcuses';
 import { LagostinaAccessTab } from '@/components/settings/LagostinaAccessTab';
 import { BrisachAccessTab } from '@/components/settings/BrisachAccessTab';
 import { useTranslation } from 'react-i18next';
+import { PageHeader } from '@/components/layout';
 
 export default function Settings() {
   const { isAdmin } = useUserRole();

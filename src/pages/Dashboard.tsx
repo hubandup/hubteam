@@ -23,6 +23,7 @@ import { useNavigate } from 'react-router-dom';
 import { format, subMonths, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useUserRole } from '@/hooks/useUserRole';
+import { PageHeader } from '@/components/layout';
 
 export default function Dashboard() {
   const navigate = useNavigate();

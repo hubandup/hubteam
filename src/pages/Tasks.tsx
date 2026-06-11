@@ -14,6 +14,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useTasks } from '@/hooks/useTasks';
 import { PageLoader } from '@/components/PageLoader';
 import { useTranslation } from 'react-i18next';
+import { PageHeader } from '@/components/layout';
 
 export default function Tasks() {
   const navigate = useNavigate();

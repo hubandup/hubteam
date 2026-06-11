@@ -36,6 +36,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { getIconComponent } from '@/components/faq/faqConstants';
+import { PageHeader } from '@/components/layout';
 
 interface FaqCategory {
   id: string;

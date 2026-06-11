@@ -18,6 +18,7 @@ import { createSafeHtml } from '@/lib/sanitize';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Navigate } from 'react-router-dom';
+import { PageHeader } from '@/components/layout';
 
 interface Announcement {
   id: string;

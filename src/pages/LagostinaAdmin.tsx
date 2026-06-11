@@ -22,6 +22,7 @@ import {
 } from '@/lib/lagostina-parsers';
 import { useLagostinaSync } from '@/hooks/useLagostinaSync';
 import { GoogleAdsSeaConfig } from '@/components/lagostina/GoogleAdsSeaConfig';
+import { PageHeader } from '@/components/layout';
 
 const FILE_TYPES = [
   { value: 'scorecard', label: 'Scorecard' },

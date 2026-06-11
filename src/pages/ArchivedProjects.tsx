@@ -10,6 +10,7 @@ import { fr } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ProtectedAction } from "@/components/ProtectedAction";
+import { PageHeader } from "@/components/layout";
 
 export default function ArchivedProjects() {
   const navigate = useNavigate();
