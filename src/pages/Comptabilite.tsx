@@ -132,6 +132,7 @@ const fromDb = (r: DbInvoice): Invoice => ({
   paymentTerms: r.payment_terms ?? "30 jours",
   status: (r.status as InvoiceStatus) ?? "À payer",
   paymentDetail: r.payment_detail ?? "",
+  paymentDate: r.payment_date ?? "",
   fileUrl: r.file_url || "#",
   remark: r.remark ?? "",
   fiscalYear: r.fiscal_year ?? computeFiscalYear(r.invoice_date),
