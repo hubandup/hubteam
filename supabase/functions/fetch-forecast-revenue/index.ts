@@ -61,6 +61,17 @@ interface MonthlyForecast {
   total: number;
 }
 
+interface ForecastAuditItem {
+  id: number;
+  type: 'devis' | 'facture_recurrente';
+  label: string;
+  amount: number;
+  date: string | null;
+  month: number | null;
+  included: boolean;
+  reason: string;
+}
+
 function getInvoiceDueDate(invoice: any): Date | null {
   const dueStr = invoice?.due_date || invoice?.term_on || invoice?.due_on;
   if (dueStr) {
@@ -263,6 +274,7 @@ Deno.serve(async (req) => {
     ];
 
     let totalDevisAFacturer = 0;
+    const auditItems: ForecastAuditItem[] = [];
 
     // =========================================
     // 1. Fetch recurring invoices (CA HT récurrent) for all 3 months
