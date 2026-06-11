@@ -50,6 +50,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
+import { PageHeader } from "@/components/layout";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -1071,54 +1072,26 @@ export default function Comptabilite() {
   return (
     <div className="container mx-auto py-8 px-4 space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Factures</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Exercice {activeFY} · {displayedInvoices.length} factures ·{" "}
-            {totals.due} à payer · {eur(totals.ttc)} TTC
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={() => setInvoiceUploadOpen(true)}
-            title="Uploader une facture"
-          >
-            <Upload className="h-4 w-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={() => setBankUploadOpen(true)}
-            title="Uploader un extrait de compte"
-          >
-            <Landmark className="h-4 w-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={handleSyncKDrive}
-            disabled={syncing}
-            title="Synchroniser kDrive"
-          >
-            {syncing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-          </Button>
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={handleExportExcel}
-            title="Exporter le tableau au format Excel"
-          >
-            <FileSpreadsheet className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Factures"
+        subtitle={`Exercice ${activeFY} · ${displayedInvoices.length} factures · ${totals.due} à payer · ${eur(totals.ttc)} TTC`}
+        actions={
+          <>
+            <Button size="icon" variant="outline" onClick={() => setInvoiceUploadOpen(true)} title="Uploader une facture">
+              <Upload className="h-4 w-4" />
+            </Button>
+            <Button size="icon" variant="outline" onClick={() => setBankUploadOpen(true)} title="Uploader un extrait de compte">
+              <Landmark className="h-4 w-4" />
+            </Button>
+            <Button size="icon" variant="outline" onClick={handleSyncKDrive} disabled={syncing} title="Synchroniser kDrive">
+              {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            </Button>
+            <Button size="icon" variant="outline" onClick={handleExportExcel} title="Exporter le tableau au format Excel">
+              <FileSpreadsheet className="h-4 w-4" />
+            </Button>
+          </>
+        }
+      />
 
       {/* Main view tabs */}
       <Tabs defaultValue="invoices" className="space-y-6">

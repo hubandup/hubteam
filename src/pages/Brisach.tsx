@@ -21,6 +21,7 @@ import { fr } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
+import { PageHeader } from '@/components/layout';
 
 const FORFAIT_DAYS_PER_MONTH = 2;
 const HOURS_PER_DAY = 7;
@@ -424,70 +425,69 @@ export default function Brisach() {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+      <PageHeader
+        title={
+          <span className="flex items-center gap-3">
             <Flame className="h-8 w-8 text-orange-500" />
             Brisach — Suivi Forfait PAO
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Forfait : {FORFAIT_DAYS_PER_MONTH} jours / mois ({FORFAIT_HOURS_PER_MONTH}h)
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={exportPdf} disabled={exporting}>
-            <FileDown className="h-4 w-4 mr-2" />
-            {exporting ? 'Export...' : 'Export PDF'}
-          </Button>
-          <Select value={String(selectedYear)} onValueChange={v => setSelectedYear(Number(v))}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[currentYear - 1, currentYear, currentYear + 1].map(y => (
-                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {canEdit && (
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Ajouter du temps
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Ajouter une entrée PAO</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-2">
-                  <div>
-                    <Label>Date</Label>
-                    <Input type="date" value={entryDate} onChange={e => setEntryDate(e.target.value)} />
-                  </div>
-                  <div>
-                    <Label>Durée (heures)</Label>
-                    <Input
-                      type="number"
-                      step="0.5"
-                      min="0"
-                      placeholder="Ex: 3.5"
-                      value={durationHours}
-                      onChange={e => setDurationHours(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label>Projet associé</Label>
-                    <Input
-                      placeholder="Nom du projet"
-                      value={projectName}
-                      onChange={e => setProjectName(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label>Description</Label>
-                    <Textarea
+          </span>
+        }
+        subtitle={`Forfait : ${FORFAIT_DAYS_PER_MONTH} jours / mois (${FORFAIT_HOURS_PER_MONTH}h)`}
+        actions={
+          <>
+            <Button variant="outline" onClick={exportPdf} disabled={exporting}>
+              <FileDown className="h-4 w-4 mr-2" />
+              {exporting ? 'Export...' : 'Export PDF'}
+            </Button>
+            <Select value={String(selectedYear)} onValueChange={v => setSelectedYear(Number(v))}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[currentYear - 1, currentYear, currentYear + 1].map(y => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {canEdit && (
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Ajouter du temps
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Ajouter une entrée PAO</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-2">
+                    <div>
+                      <Label>Date</Label>
+                      <Input type="date" value={entryDate} onChange={e => setEntryDate(e.target.value)} />
+                    </div>
+                    <div>
+                      <Label>Durée (heures)</Label>
+                      <Input
+                        type="number"
+                        step="0.5"
+                        min="0"
+                        placeholder="Ex: 3.5"
+                        value={durationHours}
+                        onChange={e => setDurationHours(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Projet associé</Label>
+                      <Input
+                        placeholder="Nom du projet"
+                        value={projectName}
+                        onChange={e => setProjectName(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Description</Label>
+                      <Textarea
                       placeholder="Description du travail effectué..."
                       value={description}
                       onChange={e => setDescription(e.target.value)}
@@ -507,8 +507,9 @@ export default function Brisach() {
               </DialogContent>
             </Dialog>
           )}
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
