@@ -302,11 +302,15 @@ Deno.serve(async (req) => {
 
         for (const recInvoice of recurringInvoices) {
           if (recInvoice.active === false || recInvoice.status === 'inactive' || recInvoice.status === 'suspended') {
+            auditItems.push({ id: recInvoice.id, type: 'facture_recurrente', label: `Facture récurrente #${recInvoice.id}`, amount: parseFloat(String(recInvoice.total || recInvoice.amount || '0')) || 0, date: null, month: null, included: false, reason: 'Récurrence inactive ou suspendue' });
             continue;
           }
 
           const amount = parseFloat(String(recInvoice.total || recInvoice.amount || '0')) || 0;
-          if (amount === 0) continue;
+          if (amount === 0) {
+            auditItems.push({ id: recInvoice.id, type: 'facture_recurrente', label: `Facture récurrente #${recInvoice.id}`, amount, date: null, month: null, included: false, reason: 'Montant HT nul' });
+            continue;
+          }
 
           const frequency = (recInvoice as any).frequency ?? (recInvoice as any).period ?? 'monthly';
           const nextDateStr =
@@ -315,7 +319,10 @@ Deno.serve(async (req) => {
             (recInvoice as any).next_invoice_date;
           const endDateStr = (recInvoice as any).term_on || (recInvoice as any).end_date;
 
-          if (!nextDateStr) continue;
+          if (!nextDateStr) {
+            auditItems.push({ id: recInvoice.id, type: 'facture_recurrente', label: `Facture récurrente #${recInvoice.id}`, amount, date: null, month: null, included: false, reason: 'Aucune prochaine échéance' });
+            continue;
+          }
 
           const nextDate = new Date(nextDateStr);
           const endDate = endDateStr ? new Date(endDateStr) : null;
@@ -323,8 +330,10 @@ Deno.serve(async (req) => {
           const sixtyDaysAgo = new Date();
           sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
-          if (nextDate < sixtyDaysAgo) continue;
-          if (endDate && endDate < now) continue;
+          if (nextDate < sixtyDaysAgo || (endDate && endDate < now)) {
+            auditItems.push({ id: recInvoice.id, type: 'facture_recurrente', label: `Facture récurrente #${recInvoice.id}`, amount, date: nextDateStr, month: null, included: false, reason: 'Récurrence échue' });
+            continue;
+          }
 
           // Calculate occurrences for all 3 months
           const occurrences = getOccurrencesInPeriod(nextDate, frequency, endDate, month1Start, month3End);
@@ -341,10 +350,14 @@ Deno.serve(async (req) => {
             );
             if (bucket !== null) {
               monthlyForecasts[bucket].recurrent += amount;
+              auditItems.push({ id: recInvoice.id, type: 'facture_recurrente', label: `Facture récurrente #${recInvoice.id}`, amount, date: occDate.toISOString().split('T')[0], month: bucket + 1, included: true, reason: `Échéance récurrente prévue en M+${bucket + 1}` });
               console.log(
                 `[FORECAST] Recurring ${recInvoice.id}: +${amount}€ → month +${bucket + 1} (occurrence: ${occDate.toISOString().split('T')[0]})`,
               );
             }
+          }
+          if (occurrences.length === 0) {
+            auditItems.push({ id: recInvoice.id, type: 'facture_recurrente', label: `Facture récurrente #${recInvoice.id}`, amount, date: nextDateStr, month: null, included: false, reason: 'Aucune échéance dans M+1 à M+3' });
           }
         }
     } catch (recurringError) {
