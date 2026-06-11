@@ -165,6 +165,8 @@ export default function Finances() {
 
       if (clientsResult.error) throw clientsResult.error;
       if (invoicesResult.error) throw invoicesResult.error;
+      if (fiscalInvoicesResult.error) throw fiscalInvoicesResult.error;
+      if (syncLogResult.error) throw syncLogResult.error;
 
       const clients = clientsResult.data || [];
       const invoices = invoicesResult.data || [];
@@ -217,9 +219,10 @@ export default function Finances() {
 
       setRevenueData(revenueByMonth);
 
-      if (lastSyncedClientResult.data?.facturation_pro_synced_at) {
-        setLastSyncTimestamp(lastSyncedClientResult.data.facturation_pro_synced_at);
-      }
+      const authoritativeSyncTimestamp = syncLogResult.data?.ran_at
+        ?? lastSyncedClientResult.data?.facturation_pro_synced_at
+        ?? null;
+      setLastSyncTimestamp(authoritativeSyncTimestamp);
       setSyncHealth(syncLogResult.data || null);
     } catch (error) {
       console.error('Error fetching financial data:', error);
@@ -770,7 +773,7 @@ export default function Finances() {
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
             ) : (
               <>
-                <div className="text-2xl font-bold">{adhesionsTotal.toLocaleString('fr-FR')} €</div>
+                <div className="text-2xl font-bold">{adhesionsTotal.toLocaleString('fr-FR')} € <span className="text-base font-normal text-muted-foreground">HT</span></div>
                 <p className="text-xs text-muted-foreground">
                   {adhesionsCount} facture{adhesionsCount > 1 ? 's' : ''} sur l'exercice fiscal
                 </p>
@@ -828,6 +831,9 @@ export default function Finances() {
                   <span className="font-semibold text-orange-500">
                     {forecastRevenue.toLocaleString('fr-FR')} €
                   </span>
+                </p>
+                <p className="text-xs mt-1">
+                  Facturation récurrente et solde HT des devis « À facturer », ventilés selon leur date de validité.
                 </p>
               </div>
             )}
