@@ -42,7 +42,6 @@ import {
   ArrowUp,
   ArrowDown,
   Search,
-  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -853,80 +852,8 @@ export default function Comptabilite() {
     if (bankUploadOpen) loadBankStatements();
   }, [bankUploadOpen]);
 
-  // ── Unmatched bank lines (manual review) ────────────────────────────────
-  type UnmatchedLine = {
-    id: string;
-    statement_path: string;
-    line_index: number;
-    line_date: string | null;
-    label: string | null;
-    raw_text: string | null;
-    amount: number | null;
-    reject_reason: string | null;
-  };
-  const [unmatchedDialogOpen, setUnmatchedDialogOpen] = useState(false);
-  const [unmatchedLines, setUnmatchedLines] = useState<UnmatchedLine[]>([]);
-  const [loadingUnmatched, setLoadingUnmatched] = useState(false);
 
-  const loadUnmatchedLines = async () => {
-    setLoadingUnmatched(true);
-    try {
-      const { data, error } = await supabase
-        .from("bank_statement_lines")
-        .select("id, statement_path, line_index, line_date, label, raw_text, amount, reject_reason")
-        .is("matched_invoice_id", null)
-        .or("reject_reason.is.null,reject_reason.neq.ignored_manually")
-        .order("line_date", { ascending: false, nullsFirst: false })
-        .limit(200);
-      if (error) throw error;
-      setUnmatchedLines((data || []) as UnmatchedLine[]);
-    } catch (e) {
-      console.error(e);
-      toast.error("Impossible de charger les lignes non rapprochées");
-    } finally {
-      setLoadingUnmatched(false);
-    }
-  };
 
-  const handleManualLink = async (line: UnmatchedLine, invoiceId: string) => {
-    const inv = invoices.find((i) => i.id === invoiceId);
-    if (!inv) return;
-    const dateLabel = line.line_date
-      ? format(new Date(line.line_date + "T00:00:00"), "dd/MM/yyyy")
-      : format(today, "dd/MM/yyyy");
-    const paymentDetail = `Rapprochement bancaire ${dateLabel} (manuel)`;
-    const { error: e1 } = await supabase
-      .from("supplier_invoices")
-      .update({ status: "Payé", payment_detail: paymentDetail })
-      .eq("id", invoiceId);
-    const { error: e2 } = await supabase
-      .from("bank_statement_lines")
-      .update({
-        matched_invoice_id: invoiceId,
-        matched_at: new Date().toISOString(),
-        reject_reason: null,
-      })
-      .eq("id", line.id);
-    if (e1 || e2) {
-      toast.error("Échec du lien manuel");
-      return;
-    }
-    toast.success(`Facture ${inv.invoiceNumber} marquée payée`);
-    setUnmatchedLines((prev) => prev.filter((l) => l.id !== line.id));
-    await loadInvoices();
-  };
-
-  const handleIgnoreLine = async (lineId: string) => {
-    const { error } = await supabase
-      .from("bank_statement_lines")
-      .update({ matched_invoice_id: null, reject_reason: "ignored_manually", matched_at: new Date().toISOString() })
-      .eq("id", lineId);
-    if (error) {
-      toast.error("Échec");
-      return;
-    }
-    setUnmatchedLines((prev) => prev.filter((l) => l.id !== lineId));
-  };
 
   const handleDownloadStatement = async (entry: BankStatementEntry) => {
     try {
@@ -1110,17 +1037,6 @@ export default function Comptabilite() {
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
-          </Button>
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={() => {
-              setUnmatchedDialogOpen(true);
-              loadUnmatchedLines();
-            }}
-            title="Lignes non rapprochées"
-          >
-            <AlertCircle className="h-4 w-4" />
           </Button>
           <Button
             size="icon"
@@ -1527,74 +1443,8 @@ export default function Comptabilite() {
         </DialogContent>
       </Dialog>
 
-      {/* Unmatched Lines Review Dialog */}
-      <Dialog open={unmatchedDialogOpen} onOpenChange={setUnmatchedDialogOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Lignes non rapprochées</DialogTitle>
-            <DialogDescription>
-              Lignes des relevés bancaires qui n'ont pas pu être associées automatiquement à une facture. Lie-les manuellement ou ignore-les.
-            </DialogDescription>
-          </DialogHeader>
-          {loadingUnmatched ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-3 w-3 animate-spin" /> Chargement…
-            </div>
-          ) : unmatchedLines.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aucune ligne non rapprochée. 🎉</p>
-          ) : (
-            <div className="max-h-[60vh] overflow-auto divide-y divide-border">
-              {unmatchedLines.map((line) => {
-                const candidates = invoices.filter(
-                  (i) => i.status === "À payer" && Math.abs(Number(i.amountTTC) - Number(line.amount || 0)) < 0.01,
-                );
-                return (
-                  <div key={line.id} className="py-3 space-y-2">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs text-muted-foreground">
-                          {line.line_date ? format(new Date(line.line_date + "T00:00:00"), "dd/MM/yyyy") : "—"}
-                          {" · "}
-                          <span className="font-medium text-foreground">{eur(Number(line.amount || 0))}</span>
-                          {line.reject_reason && (
-                            <span className="ml-2 text-amber-600">[{line.reject_reason}]</span>
-                          )}
-                        </div>
-                        <div className="text-sm truncate" title={line.raw_text || ""}>
-                          {line.label || line.raw_text}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {candidates.length === 0 ? (
-                        <span className="text-xs text-muted-foreground">Aucune facture impayée avec ce montant</span>
-                      ) : (
-                        <select
-                          className="text-sm border border-input bg-background px-2 py-1 rounded-none"
-                          defaultValue=""
-                          onChange={(e) => {
-                            if (e.target.value) handleManualLink(line, e.target.value);
-                          }}
-                        >
-                          <option value="">Lier à une facture…</option>
-                          {candidates.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.supplier} — {c.invoiceNumber} ({eur(c.amountTTC)})
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                      <Button size="sm" variant="ghost" onClick={() => handleIgnoreLine(line.id)}>
-                        Ignorer
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+
+
 
       {/* Invoice Detail Sheet */}
       <Sheet
