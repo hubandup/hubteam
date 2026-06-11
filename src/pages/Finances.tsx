@@ -319,12 +319,23 @@ export default function Finances() {
     toast.info('Synchronisation Facturation.PRO en cours...');
     
     try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (sessionError || !accessToken) {
+        throw new Error('Session expirée. Veuillez vous reconnecter.');
+      }
+      const authHeaders = { Authorization: `Bearer ${accessToken}` };
+
       // Sync clients
-      const { error: clientsError } = await supabase.functions.invoke('sync-facturation-pro-clients');
+      const { error: clientsError } = await supabase.functions.invoke('sync-facturation-pro-clients', {
+        headers: authHeaders,
+      });
       if (clientsError) throw new Error(`Erreur clients: ${clientsError.message}`);
       
       // Sync invoices
-      const { error: invoicesError } = await supabase.functions.invoke('sync-facturation-pro-invoices');
+      const { error: invoicesError } = await supabase.functions.invoke('sync-facturation-pro-invoices', {
+        headers: authHeaders,
+      });
       if (invoicesError) throw new Error(`Erreur factures: ${invoicesError.message}`);
       
       toast.success('Synchronisation Facturation.PRO terminée avec succès');
