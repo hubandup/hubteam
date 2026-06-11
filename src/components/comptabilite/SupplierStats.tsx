@@ -172,6 +172,15 @@ export function SupplierStats({ invoices, fiscalYear }: Props) {
         />
         <KpiCard label="Montant moyen" value={eur(stats.avgInvoiceTTC)} sub="TTC par facture" />
         <KpiCard
+          label="Dépense mensuelle moyenne"
+          value={eur(stats.avgMonthlyTTC)}
+          sub={
+            stats.monthsWithActivity > 0
+              ? `${eur(stats.avgMonthlyHT)} HT · sur ${stats.monthsWithActivity} mois`
+              : "—"
+          }
+        />
+        <KpiCard
           label="Délai moyen paiement"
           value={stats.avgPaymentDelay !== null ? `${stats.avgPaymentDelay} j` : "—"}
           sub={stats.avgPaymentDelay !== null ? "facture → règlement" : "données insuffisantes"}
