@@ -148,81 +148,61 @@ export default function CRM() {
     <div className="flex flex-col h-full min-h-0 overflow-hidden">
       {/* Header - Always visible */}
       <div className="flex-shrink-0 pb-2 md:pb-4 bg-background">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-xl md:text-3xl font-bold text-foreground mb-0.5">
-              {showArchived ? t('crm.archivesTitle') : t('crm.title')}
-            </h1>
-            <p className="text-muted-foreground text-xs md:text-base">
-              {showArchived ? t('crm.archivesSubtitle') : t('crm.subtitle')}
-            </p>
-            {isMobile && (
-              <div className="mt-3">
+        <PageHeader
+          title={showArchived ? t('crm.archivesTitle') : t('crm.title')}
+          subtitle={showArchived ? t('crm.archivesSubtitle') : t('crm.subtitle')}
+          actions={
+            <>
+              {!isMobile && (
+                <ExportButton
+                  data={filteredClients}
+                  columns={[
+                    { key: 'company', label: 'Société' },
+                    { key: 'first_name', label: 'Prénom' },
+                    { key: 'last_name', label: 'Nom' },
+                    { key: 'email', label: 'Email' },
+                    { key: 'phone', label: 'Téléphone' },
+                    { key: 'kanban_stage', label: 'Étape' },
+                    ...(showRevenue ? [{ key: 'revenue_current_year', label: 'CA Année Fiscale', formatter: (v: any) => v ?? 0 }] : []),
+                  ]}
+                  filename="clients"
+                />
+              )}
+              {!isMobile && (
+                <ViewToggle
+                  options={[
+                    { value: 'list', icon: List, label: 'Vue liste' },
+                    { value: 'kanban', icon: Columns3, label: 'Vue kanban' },
+                    { value: 'grid', icon: LayoutGrid, label: 'Vue grille' },
+                  ]}
+                  value={viewMode}
+                  onChange={setViewMode}
+                />
+              )}
+              {!isMobile && (
                 <ProtectedAction module="crm" action="create">
-                  <AddClientDialog onClientAdded={() => queryClient.invalidateQueries({ queryKey: ['clients'] })} />
+                  <ImportClientsValidationDialog onClientsImported={() => queryClient.invalidateQueries({ queryKey: ['clients'] })} />
                 </ProtectedAction>
-              </div>
-            )}
-          </div>
-          <Button
-            variant={showArchived ? "default" : "outline"}
-            size="sm"
-            onClick={() => setShowArchived(!showArchived)}
-            className="gap-2"
-          >
-            <Archive className="h-4 w-4" />
-            {!isMobile && (
-              <span>{t('crm.archives')} {archivedCount > 0 && `(${archivedCount})`}</span>
-            )}
-          </Button>
-        </div>
-        {!isMobile && (
-          <div className="flex gap-2 mt-4 justify-end">
-            <ExportButton
-              data={filteredClients}
-              columns={[
-                { key: 'company', label: 'Société' },
-                { key: 'first_name', label: 'Prénom' },
-                { key: 'last_name', label: 'Nom' },
-                { key: 'email', label: 'Email' },
-                { key: 'phone', label: 'Téléphone' },
-                { key: 'kanban_stage', label: 'Étape' },
-                ...(showRevenue ? [{ key: 'revenue_current_year', label: 'CA Année Fiscale', formatter: (v: any) => v ?? 0 }] : []),
-              ]}
-              filename="clients"
-            />
-            <div className="flex gap-1 border rounded-md">
+              )}
+              <ProtectedAction module="crm" action="create">
+                <AddClientDialog onClientAdded={() => queryClient.invalidateQueries({ queryKey: ['clients'] })} />
+              </ProtectedAction>
               <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                variant="outline"
                 size="sm"
-                onClick={() => setViewMode('list')}
+                onClick={() => setShowArchived(!showArchived)}
+                className="gap-2"
               >
-                <List className="h-4 w-4" />
+                <Archive className="h-4 w-4" />
+                {!isMobile && (
+                  <span>{t('crm.archives')} {archivedCount > 0 && `(${archivedCount})`}</span>
+                )}
               </Button>
-              <Button
-                variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('kanban')}
-              >
-                <Columns3 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-            </div>
-            <ProtectedAction module="crm" action="create">
-              <ImportClientsValidationDialog onClientsImported={() => queryClient.invalidateQueries({ queryKey: ['clients'] })} />
-            </ProtectedAction>
-            <ProtectedAction module="crm" action="create">
-              <AddClientDialog onClientAdded={() => queryClient.invalidateQueries({ queryKey: ['clients'] })} />
-            </ProtectedAction>
-          </div>
-        )}
+            </>
+          }
+        />
       </div>
+
 
       {/* Search bar and filters - Always visible */}
       {clients.length > 0 && (
