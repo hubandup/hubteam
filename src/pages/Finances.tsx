@@ -841,7 +841,7 @@ export default function Finances() {
                   </span>
                 </p>
                 <p className="text-xs mt-1">
-                  Devis « À facturer », soldes HT restant à facturer et factures récurrentes à venir, sans double comptage.
+                  Devis « À facturer », soldes HT restant à facturer et factures récurrentes à venir sur M+1 à M+3. Devis échus exclus.
                 </p>
               </div>
             )}
