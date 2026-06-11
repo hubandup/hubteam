@@ -26,7 +26,8 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const CRON_SECRET = Deno.env.get("CRON_SECRET") || "";
 
-const MAX_FILES_PER_RUN = 30; // cap to stay under edge function timeout
+const MAX_FILES_PER_RUN = 15; // cap to stay under edge function timeout
+const MAX_RUN_MS = 120_000; // hard wall-clock budget (<150s idle limit)
 
 const TARGET_FOLDERS = [
   "FACTURES À TRAITER",
@@ -285,12 +286,14 @@ serve(async (req) => {
     const processed: any[] = [];
     const errors: any[] = [];
     let budget = MAX_FILES_PER_RUN;
+    const startedAt = Date.now();
+    const timeUp = () => Date.now() - startedAt > MAX_RUN_MS;
 
     for (const folder of folders) {
-      if (budget <= 0) break;
+      if (budget <= 0 || timeUp()) break;
       const children = await listChildren(driveId, folder.id);
       for (const child of children) {
-        if (budget <= 0) break;
+        if (budget <= 0 || timeUp()) break;
         if (child.type !== "file") continue;
         const lower = (child.name || "").toLowerCase();
         const isPdf = lower.endsWith(".pdf");
