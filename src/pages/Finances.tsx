@@ -531,9 +531,9 @@ export default function Finances() {
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(255, 255, 255);
-      doc.text('50 Derniers Projets Validés', pageWidth / 2, 16, { align: 'center' });
+      doc.text("30 Derniers Projets Validés de l'exercice", pageWidth / 2, 16, { align: 'center' });
       
-      const quotesData = validatedQuotes.slice(0, 50).map((quote) => [
+      const quotesData = validatedQuotes.slice(0, 30).map((quote) => [
         quote.client.length > 18 ? quote.client.substring(0, 18) + '...' : quote.client,
         quote.quoteRef,
         quote.title.length > 25 ? quote.title.substring(0, 25) + '...' : quote.title,
