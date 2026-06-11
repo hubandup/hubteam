@@ -62,38 +62,39 @@ Deno.serve(async (req) => {
     let updatedCount = 0
 
     for (const client of clients) {
-      // Calculate total revenue from all invoices
+      // Total revenue (HT preferred, TTC fallback) from all invoices
       const { data: allInvoices } = await supabaseClient
         .from('invoices')
-        .select('amount')
+        .select('amount, amount_ht')
         .eq('client_id', client.id)
-      
-      const revenue = allInvoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0
 
-      // Calculate revenue for current fiscal year
+      const revenue = allInvoices?.reduce(
+        (sum, inv: any) => sum + Number(inv.amount_ht ?? inv.amount ?? 0), 0
+      ) || 0
+
+      // Fiscal year revenue (HT)
       const { data: fiscalYearInvoices } = await supabaseClient
         .from('invoices')
-        .select('amount')
+        .select('amount, amount_ht')
         .eq('client_id', client.id)
         .gte('invoice_date', fiscalYearStart)
         .lte('invoice_date', fiscalYearEnd)
-      
-      const revenueCurrentYear = fiscalYearInvoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0
-      
-      // Update client revenue (both total and current year)
+
+      const revenueCurrentYear = fiscalYearInvoices?.reduce(
+        (sum, inv: any) => sum + Number(inv.amount_ht ?? inv.amount ?? 0), 0
+      ) || 0
+
       await supabaseClient
         .from('clients')
-        .update({ 
-          revenue,
-          revenue_current_year: revenueCurrentYear
-        })
+        .update({ revenue, revenue_current_year: revenueCurrentYear })
         .eq('id', client.id)
-      
+
       updatedCount++
       if (updatedCount % 10 === 0) {
         console.log(`Updated ${updatedCount}/${clients.length} clients`)
       }
     }
+
 
     console.log(`Revenue calculation completed for ${updatedCount} clients`)
 
