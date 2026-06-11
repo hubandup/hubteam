@@ -393,6 +393,10 @@ export default function Comptabilite() {
   const [previewWidth, setPreviewWidth] = useState(0);
   const previewContainerRef = useRef<HTMLDivElement>(null);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  type SortKey = "supplier" | "invoiceNumber" | "amountHT" | "amountTTC" | "invoiceDate" | "dueDate" | "status";
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(null);
+
   // Resolve kDrive file_url -> authenticated blob URL for iframe preview
   useEffect(() => {
     let cancelled = false;
