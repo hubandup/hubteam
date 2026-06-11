@@ -579,17 +579,18 @@ export default function Comptabilite() {
           : "Aucune nouvelle facture trouvée dans kDrive",
       );
       await loadInvoices();
-      // Auto-rematch: a freshly-synced invoice may match previously unmatched lines
+      // Re-parse every bank statement in storage, upsert lines, then rematch
       const fresh = await supabase
         .from("supplier_invoices")
         .select("*")
         .order("invoice_date", { ascending: false, nullsFirst: false });
       const freshList = (fresh.data as DbInvoice[] | null)?.map(fromDb) || [];
-      const matched = await rematchUnmatchedLines(freshList);
+      const matched = await reprocessAllBankStatements(freshList);
       if (matched > 0) {
         await loadInvoices();
         toast.success(`Rapprochement automatique : ${matched} facture(s) marquée(s) payée(s)`);
       }
+
     } catch (e: any) {
       console.error(e);
       toast.error(`Sync kDrive échouée : ${e?.message ?? e}`);
