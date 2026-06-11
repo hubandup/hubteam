@@ -441,12 +441,14 @@ Deno.serve(async (req) => {
         const validityStr = (quote as any).term_on;
 
         if (!validityStr) {
+          auditItems.push({ id: quote.id, type: 'devis', label: quote.title || `Devis #${quote.id}`, amount, date: null, month: null, included: false, reason: 'Date term_on absente' });
           console.log(`[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": excluded (no term_on date)`);
           continue;
         }
 
         const validityDate = new Date(validityStr);
         if (Number.isNaN(validityDate.getTime())) {
+          auditItems.push({ id: quote.id, type: 'devis', label: quote.title || `Devis #${quote.id}`, amount, date: validityStr, month: null, included: false, reason: 'Date term_on invalide' });
           console.log(`[FORECAST] Quote ${quote.id}: excluded (invalid term_on: ${validityStr})`);
           continue;
         }
@@ -463,12 +465,14 @@ Deno.serve(async (req) => {
         );
 
         if (bucket === null) {
+          auditItems.push({ id: quote.id, type: 'devis', label: quote.title || `Devis #${quote.id}`, amount, date: validityDate.toISOString().split('T')[0], month: null, included: false, reason: validityDate < month1Start ? 'Devis échu' : 'Échéance hors M+1 à M+3' });
           console.log(`[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": ${amount}€ excluded (expired or outside M+1–M+3, term_on: ${validityDate.toISOString().split('T')[0]})`);
           continue;
         }
 
         monthlyForecasts[bucket].devisAFacturer += amount;
         totalDevisAFacturer += amount;
+        auditItems.push({ id: quote.id, type: 'devis', label: quote.title || `Devis #${quote.id}`, amount, date: validityDate.toISOString().split('T')[0], month: bucket + 1, included: true, reason: `Devis éligible avec solde HT prévu en M+${bucket + 1}` });
 
         console.log(
           `[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": +${amount}€ → month +${bucket + 1} (term_on: ${validityDate.toISOString().split('T')[0]})`,
@@ -513,6 +517,7 @@ Deno.serve(async (req) => {
           recurrent: totalRecurrent,
           devisAFacturer: totalDevisAFacturer,
         },
+        auditItems,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
