@@ -875,6 +875,7 @@ export default function Comptabilite() {
         .from("bank_statement_lines")
         .select("id, statement_path, line_index, line_date, label, raw_text, amount, reject_reason")
         .is("matched_invoice_id", null)
+        .or("reject_reason.is.null,reject_reason.neq.ignored_manually")
         .order("line_date", { ascending: false, nullsFirst: false })
         .limit(200);
       if (error) throw error;
