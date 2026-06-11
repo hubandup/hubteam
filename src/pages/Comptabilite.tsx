@@ -1288,7 +1288,7 @@ export default function Comptabilite() {
                   )}
                 </span>
               </TableHead>
-              <TableHead>Détail paiement</TableHead>
+              <TableHead>Date de paiement</TableHead>
               <TableHead>Fichier</TableHead>
               <TableHead className="min-w-[180px]">Remarque</TableHead>
             </TableRow>
@@ -1393,14 +1393,15 @@ export default function Comptabilite() {
                       <option value="Payé">Payé</option>
                     </select>
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-xs p-0">
+                  <TableCell className="p-0">
                     <input
-                      key={`pd-${inv.paymentDetail}`}
-                      defaultValue={inv.paymentDetail}
+                      key={`pd-${inv.paymentDate}`}
+                      type="date"
+                      defaultValue={inv.paymentDate}
                       placeholder="—"
                       onBlur={(e) =>
-                        e.target.value !== inv.paymentDetail &&
-                        handleFieldUpdate(inv.id, "paymentDetail", "payment_detail", e.target.value)
+                        e.target.value !== inv.paymentDate &&
+                        handleFieldUpdate(inv.id, "paymentDate", "payment_date", e.target.value)
                       }
                       className={cn(editCls, "text-xs")}
                     />
@@ -1412,8 +1413,8 @@ export default function Comptabilite() {
                       className="gap-1.5"
                       onClick={() => setSelectedInvoice(inv)}
                     >
-                      <Eye className="h-3.5 w-3.5" />
-                      Voir la facture
+                      <FileText className="h-3.5 w-3.5 text-red-500" />
+                      Facture
                     </Button>
                   </TableCell>
                   <TableCell className="p-0">
