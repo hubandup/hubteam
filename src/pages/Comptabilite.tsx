@@ -1114,6 +1114,14 @@ export default function Comptabilite() {
         </div>
       </div>
 
+      {/* Main view tabs */}
+      <Tabs defaultValue="invoices" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="invoices">Factures Fournisseurs</TabsTrigger>
+          <TabsTrigger value="stats">Statistiques</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="invoices" className="space-y-6 mt-0">
       {/* Fiscal year tabs */}
       <Tabs value={activeFY} onValueChange={setActiveFY}>
         <TabsList className="flex flex-wrap h-auto">
