@@ -19,6 +19,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MonthlyComparisonTable } from '@/components/finances/MonthlyComparisonTable';
+import { CashflowChart } from '@/components/finances/CashflowChart';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 type ForecastAuditItem = {
@@ -835,8 +836,12 @@ export default function Finances() {
         </Card>
       </div>
 
+      {/* Cashflow Chart: Encaissements vs Dépenses */}
+      <CashflowChart periodMonths={parseInt(revenuePeriod) || 6} />
+
       {/* Revenue Evolution Chart */}
       <Card ref={revenueChartRef}>
+
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Évolution du CA</CardTitle>
