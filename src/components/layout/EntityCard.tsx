@@ -159,6 +159,8 @@ export function EntityCard({
             </div>
           </div>
 
+          {headerRight && <div className="shrink-0">{headerRight}</div>}
+
           {actions && (
             <div onClick={(e) => e.stopPropagation()} className="shrink-0">
               <DropdownMenu>
