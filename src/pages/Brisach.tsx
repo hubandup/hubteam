@@ -21,6 +21,7 @@ import { fr } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
+import { PageHeader } from '@/components/layout';
 
 const FORFAIT_DAYS_PER_MONTH = 2;
 const HOURS_PER_DAY = 7;

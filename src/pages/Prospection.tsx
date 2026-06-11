@@ -37,6 +37,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { PageLoader } from '@/components/PageLoader';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
+import { PageHeader, ViewToggle } from '@/components/layout';
 
 type SortKey = 'company' | 'first_name' | 'last_name' | 'contact_name' | 'job_title' | 'email' | 'phone' | 'stage';
 type SortDir = 'asc' | 'desc';

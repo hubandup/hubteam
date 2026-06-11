@@ -50,6 +50,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
+import { PageHeader } from "@/components/layout";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 

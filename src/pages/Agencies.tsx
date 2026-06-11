@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PageLoader } from '@/components/PageLoader';
 import { useSilentTagsReconciliation } from '@/hooks/useSilentTagsReconciliation';
+import { PageHeader } from '@/components/layout';
 
 export default function Agencies() {
   const navigate = useNavigate();
