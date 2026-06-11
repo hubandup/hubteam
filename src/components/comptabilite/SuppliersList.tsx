@@ -182,15 +182,62 @@ export function SuppliersList() {
     return Array.from(map.values()).sort((a, b) => b.total - a.total);
   }, [bankLines, invoices]);
 
+  const displayNameOf = (key: string, fallback: string) => aliases[key] ?? fallback;
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return suppliers.filter((s) => {
-      if (q && !s.name.toLowerCase().includes(q)) return false;
+      const dn = (aliases[s.key] ?? s.name).toLowerCase();
+      if (q && !dn.includes(q) && !s.name.toLowerCase().includes(q)) return false;
       if (filter === "missing" && s.missingLines.length === 0) return false;
       if (filter === "complete" && s.missingLines.length > 0) return false;
       return true;
     });
-  }, [suppliers, search, filter]);
+  }, [suppliers, search, filter, aliases]);
+
+  const startEdit = (key: string, currentName: string) => {
+    setEditingKey(key);
+    setEditValue(currentName);
+  };
+
+  const cancelEdit = () => {
+    setEditingKey(null);
+    setEditValue("");
+  };
+
+  const saveEdit = async (key: string, originalName: string) => {
+    const trimmed = editValue.trim();
+    if (!trimmed) {
+      toast.error("Le nom ne peut pas être vide");
+      return;
+    }
+    if (trimmed === originalName) {
+      const { error } = await supabase
+        .from("supplier_name_aliases")
+        .delete()
+        .eq("key", key);
+      if (error) {
+        toast.error("Erreur lors de la suppression de l'alias");
+        return;
+      }
+      setAliases((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    } else {
+      const { error } = await supabase
+        .from("supplier_name_aliases")
+        .upsert({ key, display_name: trimmed, updated_at: new Date().toISOString() });
+      if (error) {
+        toast.error("Erreur lors du renommage");
+        return;
+      }
+      setAliases((prev) => ({ ...prev, [key]: trimmed }));
+    }
+    toast.success("Fournisseur renommé");
+    cancelEdit();
+  };
 
   const stats = useMemo(() => {
     const totalSuppliers = suppliers.length;
