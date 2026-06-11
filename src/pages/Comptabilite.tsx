@@ -1114,17 +1114,6 @@ export default function Comptabilite() {
           <Button
             size="icon"
             variant="outline"
-            onClick={() => {
-              setUnmatchedDialogOpen(true);
-              loadUnmatchedLines();
-            }}
-            title="Lignes non rapprochées"
-          >
-            <AlertCircle className="h-4 w-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="outline"
             onClick={handleExportExcel}
             title="Exporter le tableau au format Excel"
           >
