@@ -1181,47 +1181,44 @@ export default function Prospection() {
       {/* Header fixe en haut de ce conteneur */}
       <div className="flex-none bg-background pb-2 z-20">
         {/* Title + actions */}
-        <div className="pb-2 md:pb-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-xl md:text-3xl font-bold text-foreground mb-0.5">Prospection</h1>
-              <p className="text-muted-foreground text-xs md:text-base">
-                {contacts.length} contact(s) • {contacts.filter(c => c.stage === 'meeting_planned').length} RDV planifié(s)
-              </p>
-            </div>
-            {isMobile && <AddContactDialog onAdd={handleCreate} />}
-          </div>
-
-          {!isMobile && (
-            <div className="flex gap-2 mt-3 justify-end">
-              <Button variant="outline" size="sm" className="gap-2" onClick={handleEnrich}>
-                <Sparkles className="h-4 w-4" /> Enrichir
-              </Button>
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => handleExport()}>
-                <Download className="h-4 w-4" /> Exporter
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={() => setShowEmailDialog(true)}
-                disabled={filtered.length === 0}
-              >
-                <Mail className="h-4 w-4" /> Envoyer un email
-              </Button>
-              <ImportDialog onImport={handleImport} />
-              <div className="flex gap-1 border rounded-md">
-                <Button variant={viewMode === 'table' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('table')}>
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button variant={viewMode === 'kanban' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('kanban')}>
-                  <Columns3 className="h-4 w-4" />
-                </Button>
-              </div>
+        <PageHeader
+          className="mb-2 md:mb-3"
+          title="Prospection"
+          subtitle={`${contacts.length} contact(s) • ${contacts.filter(c => c.stage === 'meeting_planned').length} RDV planifié(s)`}
+          actions={
+            isMobile ? (
               <AddContactDialog onAdd={handleCreate} />
-            </div>
-          )}
-        </div>
+            ) : (
+              <>
+                <Button variant="outline" size="sm" className="gap-2" onClick={handleEnrich}>
+                  <Sparkles className="h-4 w-4" /> Enrichir
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => handleExport()}>
+                  <Download className="h-4 w-4" /> Exporter
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => setShowEmailDialog(true)}
+                  disabled={filtered.length === 0}
+                >
+                  <Mail className="h-4 w-4" /> Envoyer un email
+                </Button>
+                <ImportDialog onImport={handleImport} />
+                <ViewToggle<'table' | 'kanban'>
+                  options={[
+                    { value: 'table', icon: List, label: 'Vue liste' },
+                    { value: 'kanban', icon: Columns3, label: 'Vue kanban' },
+                  ]}
+                  value={viewMode}
+                  onChange={setViewMode}
+                />
+                <AddContactDialog onAdd={handleCreate} />
+              </>
+            )
+          }
+        />
 
         {/* Filters */}
         <div className="pb-2 md:pb-3">
