@@ -65,10 +65,13 @@ const normKey = (s: string): string =>
 export function SuppliersList() {
   const [bankLines, setBankLines] = useState<BankLine[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [aliases, setAliases] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "missing" | "complete">("all");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
 
   useEffect(() => {
     (async () => {
