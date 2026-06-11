@@ -85,7 +85,7 @@ export function EntityCard({
   const fallback = getLogoFallback(title);
 
   const hasFooter = !!(footerLeft || footerRight);
-  const logoBox = logoSize === "xl" ? "w-16 h-16" : "w-14 h-14";
+  const logoBox = LOGO_SIZE[logoSize];
 
   return (
     <div
