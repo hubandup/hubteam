@@ -852,80 +852,8 @@ export default function Comptabilite() {
     if (bankUploadOpen) loadBankStatements();
   }, [bankUploadOpen]);
 
-  // ── Unmatched bank lines (manual review) ────────────────────────────────
-  type UnmatchedLine = {
-    id: string;
-    statement_path: string;
-    line_index: number;
-    line_date: string | null;
-    label: string | null;
-    raw_text: string | null;
-    amount: number | null;
-    reject_reason: string | null;
-  };
-  const [unmatchedDialogOpen, setUnmatchedDialogOpen] = useState(false);
-  const [unmatchedLines, setUnmatchedLines] = useState<UnmatchedLine[]>([]);
-  const [loadingUnmatched, setLoadingUnmatched] = useState(false);
 
-  const loadUnmatchedLines = async () => {
-    setLoadingUnmatched(true);
-    try {
-      const { data, error } = await supabase
-        .from("bank_statement_lines")
-        .select("id, statement_path, line_index, line_date, label, raw_text, amount, reject_reason")
-        .is("matched_invoice_id", null)
-        .or("reject_reason.is.null,reject_reason.neq.ignored_manually")
-        .order("line_date", { ascending: false, nullsFirst: false })
-        .limit(200);
-      if (error) throw error;
-      setUnmatchedLines((data || []) as UnmatchedLine[]);
-    } catch (e) {
-      console.error(e);
-      toast.error("Impossible de charger les lignes non rapprochées");
-    } finally {
-      setLoadingUnmatched(false);
-    }
-  };
 
-  const handleManualLink = async (line: UnmatchedLine, invoiceId: string) => {
-    const inv = invoices.find((i) => i.id === invoiceId);
-    if (!inv) return;
-    const dateLabel = line.line_date
-      ? format(new Date(line.line_date + "T00:00:00"), "dd/MM/yyyy")
-      : format(today, "dd/MM/yyyy");
-    const paymentDetail = `Rapprochement bancaire ${dateLabel} (manuel)`;
-    const { error: e1 } = await supabase
-      .from("supplier_invoices")
-      .update({ status: "Payé", payment_detail: paymentDetail })
-      .eq("id", invoiceId);
-    const { error: e2 } = await supabase
-      .from("bank_statement_lines")
-      .update({
-        matched_invoice_id: invoiceId,
-        matched_at: new Date().toISOString(),
-        reject_reason: null,
-      })
-      .eq("id", line.id);
-    if (e1 || e2) {
-      toast.error("Échec du lien manuel");
-      return;
-    }
-    toast.success(`Facture ${inv.invoiceNumber} marquée payée`);
-    setUnmatchedLines((prev) => prev.filter((l) => l.id !== line.id));
-    await loadInvoices();
-  };
-
-  const handleIgnoreLine = async (lineId: string) => {
-    const { error } = await supabase
-      .from("bank_statement_lines")
-      .update({ matched_invoice_id: null, reject_reason: "ignored_manually", matched_at: new Date().toISOString() })
-      .eq("id", lineId);
-    if (error) {
-      toast.error("Échec");
-      return;
-    }
-    setUnmatchedLines((prev) => prev.filter((l) => l.id !== lineId));
-  };
 
   const handleDownloadStatement = async (entry: BankStatementEntry) => {
     try {
