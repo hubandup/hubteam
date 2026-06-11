@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SupplierStats } from "@/components/comptabilite/SupplierStats";
+import { SuppliersList } from "@/components/comptabilite/SuppliersList";
 import {
   Upload,
   Landmark,
@@ -1124,6 +1125,7 @@ export default function Comptabilite() {
         <TabsList>
           <TabsTrigger value="invoices">Factures Fournisseurs</TabsTrigger>
           <TabsTrigger value="stats">Statistiques</TabsTrigger>
+          <TabsTrigger value="suppliers">Fournisseurs</TabsTrigger>
         </TabsList>
 
         <TabsContent value="invoices" className="space-y-6 mt-0">
@@ -1450,6 +1452,10 @@ export default function Comptabilite() {
 
         <TabsContent value="stats" className="mt-0">
           <SupplierStats invoices={displayedInvoices} fiscalYear={activeFY} />
+        </TabsContent>
+
+        <TabsContent value="suppliers" className="mt-0">
+          <SuppliersList />
         </TabsContent>
       </Tabs>
 
