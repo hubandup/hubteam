@@ -27,7 +27,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SupplierStats } from "@/components/comptabilite/SupplierStats";
 import {
   Upload,
   Landmark,
@@ -1113,6 +1114,14 @@ export default function Comptabilite() {
         </div>
       </div>
 
+      {/* Main view tabs */}
+      <Tabs defaultValue="invoices" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="invoices">Factures Fournisseurs</TabsTrigger>
+          <TabsTrigger value="stats">Statistiques</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="invoices" className="space-y-6 mt-0">
       {/* Fiscal year tabs */}
       <Tabs value={activeFY} onValueChange={setActiveFY}>
         <TabsList className="flex flex-wrap h-auto">
@@ -1431,6 +1440,15 @@ export default function Comptabilite() {
           </TableBody>
         </Table>
       </div>
+        </TabsContent>
+
+        <TabsContent value="stats" className="mt-0">
+          <SupplierStats invoices={displayedInvoices} fiscalYear={activeFY} />
+        </TabsContent>
+      </Tabs>
+
+
+
 
 
       {/* Upload Invoice Dialog */}
