@@ -42,6 +42,7 @@ import {
   ArrowUp,
   ArrowDown,
   Search,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -241,13 +242,15 @@ async function processInvoiceUpload(file: File): Promise<Invoice> {
 }
 
 /**
- * Bank statement matching.
- * Parse the uploaded Excel, focus on the sheet "Cpt 07255 00020692502",
- * and match each line against unpaid invoices using:
- *   - Amount TTC (exact match within 0.01)
- *   - Invoice number found in the line text, OR
- *   - Supplier name token found in the line text
- * Matched invoices are flipped to "Payé".
+ * Bank statement matching v2 — flexible, persistent, auditable.
+ *
+ * - Parses the Excel sheet "Cpt 07255 00020692502" into structured lines
+ *   (date, label, raw_text, primary amount) and persists them in
+ *   `bank_statement_lines` so unmatched lines can be replayed later.
+ * - Matching tries (in order): exact invoice number, normalized alphanumeric
+ *   number, digits-only fallback (e.g. "F-20260638" ↔ "VIR F-20260638"
+ *   or even "VIR 20260638"), then supplier-name token fallback.
+ * - Each rejected line stores an explicit `reject_reason` for debugging.
  */
 const TARGET_SHEET_NAME = "Cpt 07255 00020692502";
 
@@ -259,6 +262,9 @@ const normalizeText = (s: unknown): string =>
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
 
+const alphaNum = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+const digitsOnly = (s: string): string => s.replace(/\D/g, "");
+
 const findTargetSheet = (wb: XLSX.WorkBook): string => {
   const target = normalizeText(TARGET_SHEET_NAME);
   const exact = wb.SheetNames.find((n) => normalizeText(n) === target);
@@ -267,16 +273,21 @@ const findTargetSheet = (wb: XLSX.WorkBook): string => {
   return partial || wb.SheetNames[0];
 };
 
-const parseRowDate = (row: unknown[]): string | null => {
+const parseRowDateISO = (row: unknown[]): string | null => {
   for (const cell of row) {
-    if (cell instanceof Date) return format(cell, "dd/MM/yyyy");
+    if (cell instanceof Date && !isNaN(cell.getTime())) {
+      return cell.toISOString().slice(0, 10);
+    }
     if (typeof cell === "number" && cell > 30000 && cell < 60000 && Number.isInteger(cell)) {
       const d = XLSX.SSF.parse_date_code(cell);
-      if (d) return `${String(d.d).padStart(2, "0")}/${String(d.m).padStart(2, "0")}/${d.y}`;
+      if (d) return `${d.y}-${String(d.m).padStart(2, "0")}-${String(d.d).padStart(2, "0")}`;
     }
     if (typeof cell === "string") {
       const m = cell.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
-      if (m) return `${m[1].padStart(2, "0")}/${m[2].padStart(2, "0")}/${m[3].length === 2 ? "20" + m[3] : m[3]}`;
+      if (m) {
+        const y = m[3].length === 2 ? "20" + m[3] : m[3];
+        return `${y}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+      }
     }
   }
   return null;
@@ -286,7 +297,7 @@ const rowAmounts = (row: unknown[]): number[] => {
   const out: number[] = [];
   for (const cell of row) {
     if (typeof cell === "number" && Number.isFinite(cell) && Math.abs(cell) > 0.001 && Math.abs(cell) < 1e7) {
-      if (cell > 30000 && cell < 60000 && Number.isInteger(cell)) continue; // skip date serials
+      if (cell > 30000 && cell < 60000 && Number.isInteger(cell)) continue;
       out.push(Math.abs(cell));
     } else if (typeof cell === "string" && /\d/.test(cell)) {
       const cleaned = cell.replace(/\s/g, "").replace(/€/g, "").replace(",", ".");
@@ -297,66 +308,128 @@ const rowAmounts = (row: unknown[]): number[] => {
   return out;
 };
 
-async function processBankStatement(
-  file: File,
+export type ParsedBankLine = {
+  line_index: number;
+  line_date: string | null; // ISO YYYY-MM-DD
+  label: string;
+  raw_text: string;
+  amount: number | null;
+};
+
+function parseBankFile(file: File): Promise<{ lines: ParsedBankLine[]; sheetUsed: string } | null> {
+  return file.arrayBuffer().then((buf) => {
+    try {
+      const wb = XLSX.read(buf, { type: "array", cellDates: true });
+      const sheetUsed = findTargetSheet(wb);
+      const ws = wb.Sheets[sheetUsed];
+      const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null, raw: true });
+      const lines: ParsedBankLine[] = rows.map((r, idx) => {
+        const amounts = rowAmounts(r);
+        const label = r
+          .map((c) => (c instanceof Date ? "" : String(c ?? "")))
+          .filter((s) => s && !/^-?\d+([.,]\d+)?$/.test(s.trim()))
+          .join(" ")
+          .replace(/\s+/g, " ")
+          .trim();
+        const raw_text = r.map((c) => (c instanceof Date ? "" : String(c ?? ""))).join(" | ");
+        return {
+          line_index: idx,
+          line_date: parseRowDateISO(r),
+          label: label.slice(0, 500),
+          raw_text: raw_text.slice(0, 2000),
+          amount: amounts.length ? amounts[0] : null,
+        };
+      }).filter((l) => l.amount !== null && l.amount > 0);
+      return { lines, sheetUsed };
+    } catch (e) {
+      console.error("Bank statement parse failed", e);
+      return null;
+    }
+  });
+}
+
+export type LineMatchResult = {
+  invoiceId: string;
+  lineIndex: number;
+  paymentDetail: string;
+};
+export type RejectStats = Record<string, number>;
+
+/**
+ * Try to match a list of unmatched bank lines against unpaid invoices.
+ * Returns successful matches + per-reason rejection counts (for logging).
+ */
+function matchInvoicesToLines(
   invoices: Invoice[],
-): Promise<Invoice[]> {
-  let rows: unknown[][] = [];
-  let sheetUsed = "";
-  try {
-    const buf = await file.arrayBuffer();
-    const wb = XLSX.read(buf, { type: "array", cellDates: true });
-    sheetUsed = findTargetSheet(wb);
-    const ws = wb.Sheets[sheetUsed];
-    rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null, raw: true });
-  } catch (e) {
-    console.error("Bank statement parse failed", e);
-    toast.error("Impossible de lire le fichier Excel");
-    return invoices;
-  }
-
-  const indexed = rows.map((r) => ({
-    text: normalizeText(r.map((c) => (c instanceof Date ? "" : String(c ?? ""))).join(" ")),
-    amounts: rowAmounts(r),
-    date: parseRowDate(r),
-  }));
-
+  lines: ParsedBankLine[],
+): { matches: LineMatchResult[]; rejects: RejectStats; lineReasons: Map<number, string> } {
   const used = new Set<number>();
-  let matchedCount = 0;
-  const updated = invoices.map((inv) => {
-    if (inv.status !== "À payer") return inv;
+  const matches: LineMatchResult[] = [];
+  const rejects: RejectStats = {};
+  const lineReasons = new Map<number, string>();
+  const bump = (k: string) => { rejects[k] = (rejects[k] || 0) + 1; };
+
+  for (const inv of invoices) {
+    if (inv.status !== "À payer") continue;
     const ttc = Number(inv.amountTTC);
-    if (!Number.isFinite(ttc) || ttc <= 0) return inv;
-    const invNum = normalizeText(inv.invoiceNumber);
+    if (!Number.isFinite(ttc) || ttc <= 0) { bump("invoice_invalid_amount"); continue; }
+
+    const invNumNorm = normalizeText(inv.invoiceNumber);
+    const invNumAlpha = alphaNum(inv.invoiceNumber);
+    const invNumDigits = digitsOnly(inv.invoiceNumber);
     const supplierTokens = normalizeText(inv.supplier).split(" ").filter((t) => t.length >= 4);
 
-    for (let i = 0; i < indexed.length; i++) {
+    let matched = false;
+    let bestAmountSeen = false;
+    for (let i = 0; i < lines.length; i++) {
       if (used.has(i)) continue;
-      const row = indexed[i];
-      const amountMatch = row.amounts.some((a) => Math.abs(a - ttc) < 0.01);
-      if (!amountMatch) continue;
-      const numMatch = invNum.length >= 3 && row.text.includes(invNum);
-      const supplierMatch = supplierTokens.some((t) => row.text.includes(t));
-      if (numMatch || supplierMatch) {
+      const line = lines[i];
+      if (line.amount === null) continue;
+      if (Math.abs(line.amount - ttc) >= 0.01) continue;
+      bestAmountSeen = true;
+
+      const lineTextNorm = normalizeText(line.raw_text + " " + line.label);
+      const lineAlpha = alphaNum(line.raw_text);
+      const lineDigits = digitsOnly(line.raw_text);
+
+      const numMatchStrict = invNumNorm.length >= 3 && lineTextNorm.includes(invNumNorm);
+      const numMatchAlpha = invNumAlpha.length >= 4 && lineAlpha.includes(invNumAlpha);
+      const numMatchDigits = invNumDigits.length >= 5 && lineDigits.includes(invNumDigits);
+      const supplierMatch = supplierTokens.some((t) => lineTextNorm.includes(t));
+
+      if (numMatchStrict || numMatchAlpha || numMatchDigits || supplierMatch) {
         used.add(i);
-        matchedCount++;
-        const dateLabel = row.date || format(today, "dd/MM/yyyy");
-        return {
-          ...inv,
-          status: "Payé" as const,
+        matched = true;
+        const dateLabel = line.line_date
+          ? format(new Date(line.line_date + "T00:00:00"), "dd/MM/yyyy")
+          : format(today, "dd/MM/yyyy");
+        matches.push({
+          invoiceId: inv.id,
+          lineIndex: line.line_index,
           paymentDetail: `Rapprochement bancaire ${dateLabel}`,
-        };
+        });
+        lineReasons.delete(line.line_index);
+        break;
+      } else {
+        if (!lineReasons.has(line.line_index)) {
+          lineReasons.set(line.line_index, "amount_match_but_no_label_match");
+        }
       }
     }
-    return inv;
-  });
-
-  if (matchedCount === 0) {
-    toast.info(`Aucune correspondance trouvée dans l'onglet "${sheetUsed}"`);
-  } else {
-    toast.success(`${matchedCount} facture(s) marquée(s) comme payée(s)`);
+    if (!matched) {
+      bump(bestAmountSeen ? "no_label_or_supplier_match" : "no_amount_match");
+    }
   }
-  return updated;
+
+  // Lines with no amount match at all get the default reason
+  for (let i = 0; i < lines.length; i++) {
+    if (used.has(i)) continue;
+    if (!lineReasons.has(lines[i].line_index)) {
+      lineReasons.set(lines[i].line_index, "no_invoice_with_matching_amount");
+    }
+  }
+
+  return { matches, rejects, lineReasons };
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -504,6 +577,17 @@ export default function Comptabilite() {
           : "Aucune nouvelle facture trouvée dans kDrive",
       );
       await loadInvoices();
+      // Auto-rematch: a freshly-synced invoice may match previously unmatched lines
+      const fresh = await supabase
+        .from("supplier_invoices")
+        .select("*")
+        .order("invoice_date", { ascending: false, nullsFirst: false });
+      const freshList = (fresh.data as DbInvoice[] | null)?.map(fromDb) || [];
+      const matched = await rematchUnmatchedLines(freshList);
+      if (matched > 0) {
+        await loadInvoices();
+        toast.success(`Rapprochement automatique : ${matched} facture(s) marquée(s) payée(s)`);
+      }
     } catch (e: any) {
       console.error(e);
       toast.error(`Sync kDrive échouée : ${e?.message ?? e}`);
@@ -534,6 +618,96 @@ export default function Comptabilite() {
     await handleFieldUpdate(id, "remark", "remark", value);
   };
 
+  // ──────────────────────────────────────────────────────────────────────
+  // Reconciliation engine: apply matches to DB (invoices + lines)
+  // ──────────────────────────────────────────────────────────────────────
+  const applyMatches = async (matches: LineMatchResult[], statementPath?: string) => {
+    if (!matches.length) return 0;
+    await Promise.all(
+      matches.map((m) =>
+        supabase
+          .from("supplier_invoices")
+          .update({ status: "Payé", payment_detail: m.paymentDetail })
+          .eq("id", m.invoiceId),
+      ),
+    );
+    if (statementPath) {
+      await Promise.all(
+        matches.map((m) =>
+          supabase
+            .from("bank_statement_lines")
+            .update({
+              matched_invoice_id: m.invoiceId,
+              matched_at: new Date().toISOString(),
+              reject_reason: null,
+            })
+            .eq("statement_path", statementPath)
+            .eq("line_index", m.lineIndex),
+        ),
+      );
+    } else {
+      // rematch path: line_index alone is not globally unique, so use id list
+      await Promise.all(
+        matches.map((m) =>
+          supabase
+            .from("bank_statement_lines")
+            .update({
+              matched_invoice_id: m.invoiceId,
+              matched_at: new Date().toISOString(),
+              reject_reason: null,
+            })
+            .is("matched_invoice_id", null)
+            .eq("line_index", m.lineIndex),
+        ),
+      );
+    }
+    return matches.length;
+  };
+
+  /** Replay stored unmatched lines against current invoices (silent). */
+  const rematchUnmatchedLines = async (currentInvoices: Invoice[]) => {
+    const { data, error } = await supabase
+      .from("bank_statement_lines")
+      .select("id, statement_path, line_index, line_date, label, raw_text, amount")
+      .is("matched_invoice_id", null);
+    if (error || !data || !data.length) return 0;
+    const lines: ParsedBankLine[] = data.map((d: any) => ({
+      line_index: d.line_index,
+      line_date: d.line_date,
+      label: d.label || "",
+      raw_text: d.raw_text || "",
+      amount: d.amount !== null ? Number(d.amount) : null,
+    }));
+    const { matches, rejects } = matchInvoicesToLines(currentInvoices, lines);
+    console.info("[Rematch] matches:", matches.length, "rejects:", rejects);
+    if (matches.length) {
+      // group by statement_path via the data array
+      const byKey = new Map<string, string>();
+      data.forEach((d: any) => byKey.set(`${d.statement_path}|${d.line_index}`, d.id));
+      await Promise.all(
+        matches.map(async (m) => {
+          await supabase
+            .from("supplier_invoices")
+            .update({ status: "Payé", payment_detail: m.paymentDetail })
+            .eq("id", m.invoiceId);
+          // update the first unmatched line with the right line_index
+          const lineRow = data.find((d: any) => d.line_index === m.lineIndex);
+          if (lineRow) {
+            await supabase
+              .from("bank_statement_lines")
+              .update({
+                matched_invoice_id: m.invoiceId,
+                matched_at: new Date().toISOString(),
+                reject_reason: null,
+              })
+              .eq("id", lineRow.id);
+          }
+        }),
+      );
+    }
+    return matches.length;
+  };
+
   const handleInvoiceFile = async (file: File) => {
     setProcessing(true);
     setProcessingLabel("Extraction des données et envoi vers kDrive en cours…");
@@ -548,6 +722,17 @@ export default function Comptabilite() {
       await loadInvoices();
       toast.success("Facture importée avec succès");
       setInvoiceUploadOpen(false);
+      // Auto-rematch: maybe this invoice matches a previously unmatched line
+      const fresh = await supabase
+        .from("supplier_invoices")
+        .select("*")
+        .order("invoice_date", { ascending: false, nullsFirst: false });
+      const freshList = (fresh.data as DbInvoice[] | null)?.map(fromDb) || [];
+      const matched = await rematchUnmatchedLines(freshList);
+      if (matched > 0) {
+        await loadInvoices();
+        toast.success(`Rapprochement automatique : ${matched} facture(s) marquée(s) payée(s)`);
+      }
     } catch (err) {
       console.error(err);
       toast.error("Échec du traitement de la facture");
@@ -561,7 +746,7 @@ export default function Comptabilite() {
     setProcessing(true);
     setProcessingLabel("Rapprochement bancaire en cours…");
     try {
-      // Persist the uploaded statement in storage
+      // 1) Persist file in storage
       const ts = new Date().toISOString().replace(/[:.]/g, "-");
       const safeName = file.name.replace(/[^\w.\-]/g, "_");
       const storagePath = `${ts}__${safeName}`;
@@ -570,29 +755,66 @@ export default function Comptabilite() {
         .upload(storagePath, file, { upsert: false, contentType: file.type || undefined });
       if (upErr) console.error("Bank statement upload failed", upErr);
 
-      const updated = await processBankStatement(file, invoices);
-      const changes = updated.filter((u) => {
-        const prev = invoices.find((i) => i.id === u.id);
-        return prev && prev.status !== u.status;
-      });
-      if (changes.length) {
-        await Promise.all(
-          changes.map((c) =>
-            supabase
-              .from("supplier_invoices")
-              .update({
-                status: c.status,
-                payment_detail: c.paymentDetail,
-              })
-              .eq("id", c.id),
-          ),
-        );
+      // 2) Parse the Excel file into structured lines
+      const parsed = await parseBankFile(file);
+      if (!parsed) {
+        toast.error("Impossible de lire le fichier Excel");
+        return;
       }
+      const { lines, sheetUsed } = parsed;
+      console.info(`[Bank] Parsed ${lines.length} lines from sheet "${sheetUsed}"`);
+
+      // 3) Persist all lines (one row per spreadsheet line)
+      if (lines.length) {
+        const { error: insErr } = await supabase
+          .from("bank_statement_lines")
+          .insert(
+            lines.map((l) => ({
+              statement_path: storagePath,
+              line_index: l.line_index,
+              line_date: l.line_date,
+              label: l.label,
+              raw_text: l.raw_text,
+              amount: l.amount,
+            })),
+          );
+        if (insErr) console.error("Persist lines failed", insErr);
+      }
+
+      // 4) Run matching against current invoices
+      const { matches, rejects, lineReasons } = matchInvoicesToLines(invoices, lines);
+      console.info("[Bank] matches:", matches.length, "rejects:", rejects);
+
+      const matchedCount = await applyMatches(matches, storagePath);
+
+      // 5) Persist reject reasons for unmatched lines (for the manual review UI)
+      const unmatchedUpdates = lines
+        .filter((l) => !matches.some((m) => m.lineIndex === l.line_index))
+        .map((l) => ({
+          line_index: l.line_index,
+          reason: lineReasons.get(l.line_index) || "no_invoice_with_matching_amount",
+        }));
+      await Promise.all(
+        unmatchedUpdates.map((u) =>
+          supabase
+            .from("bank_statement_lines")
+            .update({ reject_reason: u.reason })
+            .eq("statement_path", storagePath)
+            .eq("line_index", u.line_index),
+        ),
+      );
+
       await loadInvoices();
-      toast.success("Rapprochement bancaire terminé");
       await loadBankStatements();
       setBankUploadOpen(false);
-    } catch {
+
+      if (matchedCount === 0) {
+        toast.info(`Aucune correspondance trouvée dans "${sheetUsed}". Consultez "Lignes non rapprochées" pour revoir manuellement.`);
+      } else {
+        toast.success(`${matchedCount} facture(s) marquée(s) payée(s) · ${unmatchedUpdates.length} ligne(s) à revoir`);
+      }
+    } catch (e) {
+      console.error(e);
       toast.error("Échec du rapprochement");
     } finally {
       setProcessing(false);
@@ -630,6 +852,81 @@ export default function Comptabilite() {
   useEffect(() => {
     if (bankUploadOpen) loadBankStatements();
   }, [bankUploadOpen]);
+
+  // ── Unmatched bank lines (manual review) ────────────────────────────────
+  type UnmatchedLine = {
+    id: string;
+    statement_path: string;
+    line_index: number;
+    line_date: string | null;
+    label: string | null;
+    raw_text: string | null;
+    amount: number | null;
+    reject_reason: string | null;
+  };
+  const [unmatchedDialogOpen, setUnmatchedDialogOpen] = useState(false);
+  const [unmatchedLines, setUnmatchedLines] = useState<UnmatchedLine[]>([]);
+  const [loadingUnmatched, setLoadingUnmatched] = useState(false);
+
+  const loadUnmatchedLines = async () => {
+    setLoadingUnmatched(true);
+    try {
+      const { data, error } = await supabase
+        .from("bank_statement_lines")
+        .select("id, statement_path, line_index, line_date, label, raw_text, amount, reject_reason")
+        .is("matched_invoice_id", null)
+        .or("reject_reason.is.null,reject_reason.neq.ignored_manually")
+        .order("line_date", { ascending: false, nullsFirst: false })
+        .limit(200);
+      if (error) throw error;
+      setUnmatchedLines((data || []) as UnmatchedLine[]);
+    } catch (e) {
+      console.error(e);
+      toast.error("Impossible de charger les lignes non rapprochées");
+    } finally {
+      setLoadingUnmatched(false);
+    }
+  };
+
+  const handleManualLink = async (line: UnmatchedLine, invoiceId: string) => {
+    const inv = invoices.find((i) => i.id === invoiceId);
+    if (!inv) return;
+    const dateLabel = line.line_date
+      ? format(new Date(line.line_date + "T00:00:00"), "dd/MM/yyyy")
+      : format(today, "dd/MM/yyyy");
+    const paymentDetail = `Rapprochement bancaire ${dateLabel} (manuel)`;
+    const { error: e1 } = await supabase
+      .from("supplier_invoices")
+      .update({ status: "Payé", payment_detail: paymentDetail })
+      .eq("id", invoiceId);
+    const { error: e2 } = await supabase
+      .from("bank_statement_lines")
+      .update({
+        matched_invoice_id: invoiceId,
+        matched_at: new Date().toISOString(),
+        reject_reason: null,
+      })
+      .eq("id", line.id);
+    if (e1 || e2) {
+      toast.error("Échec du lien manuel");
+      return;
+    }
+    toast.success(`Facture ${inv.invoiceNumber} marquée payée`);
+    setUnmatchedLines((prev) => prev.filter((l) => l.id !== line.id));
+    await loadInvoices();
+  };
+
+  const handleIgnoreLine = async (lineId: string) => {
+    const { error } = await supabase
+      .from("bank_statement_lines")
+      .update({ matched_invoice_id: null, reject_reason: "ignored_manually", matched_at: new Date().toISOString() })
+      .eq("id", lineId);
+    if (error) {
+      toast.error("Échec");
+      return;
+    }
+    setUnmatchedLines((prev) => prev.filter((l) => l.id !== lineId));
+  };
 
   const handleDownloadStatement = async (entry: BankStatementEntry) => {
     try {
@@ -813,6 +1110,17 @@ export default function Comptabilite() {
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
+          </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={() => {
+              setUnmatchedDialogOpen(true);
+              loadUnmatchedLines();
+            }}
+            title="Lignes non rapprochées"
+          >
+            <AlertCircle className="h-4 w-4" />
           </Button>
           <Button
             size="icon"
@@ -1216,6 +1524,75 @@ export default function Comptabilite() {
               </ul>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Unmatched Lines Review Dialog */}
+      <Dialog open={unmatchedDialogOpen} onOpenChange={setUnmatchedDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Lignes non rapprochées</DialogTitle>
+            <DialogDescription>
+              Lignes des relevés bancaires qui n'ont pas pu être associées automatiquement à une facture. Lie-les manuellement ou ignore-les.
+            </DialogDescription>
+          </DialogHeader>
+          {loadingUnmatched ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" /> Chargement…
+            </div>
+          ) : unmatchedLines.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucune ligne non rapprochée. 🎉</p>
+          ) : (
+            <div className="max-h-[60vh] overflow-auto divide-y divide-border">
+              {unmatchedLines.map((line) => {
+                const candidates = invoices.filter(
+                  (i) => i.status === "À payer" && Math.abs(Number(i.amountTTC) - Number(line.amount || 0)) < 0.01,
+                );
+                return (
+                  <div key={line.id} className="py-3 space-y-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs text-muted-foreground">
+                          {line.line_date ? format(new Date(line.line_date + "T00:00:00"), "dd/MM/yyyy") : "—"}
+                          {" · "}
+                          <span className="font-medium text-foreground">{eur(Number(line.amount || 0))}</span>
+                          {line.reject_reason && (
+                            <span className="ml-2 text-amber-600">[{line.reject_reason}]</span>
+                          )}
+                        </div>
+                        <div className="text-sm truncate" title={line.raw_text || ""}>
+                          {line.label || line.raw_text}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {candidates.length === 0 ? (
+                        <span className="text-xs text-muted-foreground">Aucune facture impayée avec ce montant</span>
+                      ) : (
+                        <select
+                          className="text-sm border border-input bg-background px-2 py-1 rounded-none"
+                          defaultValue=""
+                          onChange={(e) => {
+                            if (e.target.value) handleManualLink(line, e.target.value);
+                          }}
+                        >
+                          <option value="">Lier à une facture…</option>
+                          {candidates.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.supplier} — {c.invoiceNumber} ({eur(c.amountTTC)})
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      <Button size="sm" variant="ghost" onClick={() => handleIgnoreLine(line.id)}>
+                        Ignorer
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

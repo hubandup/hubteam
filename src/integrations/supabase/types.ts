@@ -407,6 +407,59 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_statement_lines: {
+        Row: {
+          amount: number | null
+          created_at: string
+          id: string
+          label: string | null
+          line_date: string | null
+          line_index: number
+          matched_at: string | null
+          matched_invoice_id: string | null
+          raw_text: string | null
+          reject_reason: string | null
+          statement_path: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          id?: string
+          label?: string | null
+          line_date?: string | null
+          line_index: number
+          matched_at?: string | null
+          matched_invoice_id?: string | null
+          raw_text?: string | null
+          reject_reason?: string | null
+          statement_path: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          id?: string
+          label?: string | null
+          line_date?: string | null
+          line_index?: number
+          matched_at?: string | null
+          matched_invoice_id?: string | null
+          raw_text?: string | null
+          reject_reason?: string | null
+          statement_path?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_statement_lines_matched_invoice_id_fkey"
+            columns: ["matched_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brisach_access: {
         Row: {
           created_at: string
