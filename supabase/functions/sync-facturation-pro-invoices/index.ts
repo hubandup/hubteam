@@ -191,11 +191,15 @@ Deno.serve(async (req) => {
         .eq('facturation_pro_id', fp.id?.toString())
         .maybeSingle();
 
+      let writeError = null;
       if (existingInvoice) {
-        await supabaseClient.from('invoices').update(invoiceData).eq('id', existingInvoice.id);
+        const result = await supabaseClient.from('invoices').update(invoiceData).eq('id', existingInvoice.id);
+        writeError = result.error;
       } else {
-        await supabaseClient.from('invoices').insert(invoiceData);
+        const result = await supabaseClient.from('invoices').insert(invoiceData);
+        writeError = result.error;
       }
+      if (writeError) throw new Error(`Invoice ${fp.id} write failed: ${writeError.message}`);
       syncedInvoices++;
     }
 

@@ -350,9 +350,13 @@ export default function Finances() {
       toast.success('Synchronisation Facturation.PRO terminée avec succès');
       
       // Refresh financial data
-      fetchFinancialData();
-      fetchValidatedQuotes();
-      fetchAdhesions();
+      await Promise.all([
+        fetchFinancialData(),
+        fetchValidatedQuotes(),
+        fetchAdhesions(),
+        fetchForecastRevenue(),
+        fetchTreasuryData(),
+      ]);
     } catch (error) {
       console.error('Sync error:', error);
       toast.error(error instanceof Error ? error.message : 'Erreur lors de la synchronisation');
