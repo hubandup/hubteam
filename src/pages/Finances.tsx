@@ -836,8 +836,12 @@ export default function Finances() {
         </Card>
       </div>
 
+      {/* Cashflow Chart: Encaissements vs Dépenses */}
+      <CashflowChart periodMonths={parseInt(revenuePeriod) || 6} />
+
       {/* Revenue Evolution Chart */}
       <Card ref={revenueChartRef}>
+
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Évolution du CA</CardTitle>
