@@ -315,37 +315,40 @@ export type ParsedBankLine = {
   amount: number | null;
 };
 
-function parseBankFile(file: File): Promise<{ lines: ParsedBankLine[]; sheetUsed: string } | null> {
-  return file.arrayBuffer().then((buf) => {
-    try {
-      const wb = XLSX.read(buf, { type: "array", cellDates: true });
-      const sheetUsed = findTargetSheet(wb);
-      const ws = wb.Sheets[sheetUsed];
-      const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null, raw: true });
-      const lines: ParsedBankLine[] = rows.map((r, idx) => {
-        const amounts = rowAmounts(r);
-        const label = r
-          .map((c) => (c instanceof Date ? "" : String(c ?? "")))
-          .filter((s) => s && !/^-?\d+([.,]\d+)?$/.test(s.trim()))
-          .join(" ")
-          .replace(/\s+/g, " ")
-          .trim();
-        const raw_text = r.map((c) => (c instanceof Date ? "" : String(c ?? ""))).join(" | ");
-        return {
-          line_index: idx,
-          line_date: parseRowDateISO(r),
-          label: label.slice(0, 500),
-          raw_text: raw_text.slice(0, 2000),
-          amount: amounts.length ? amounts[0] : null,
-        };
-      }).filter((l) => l.amount !== null && l.amount > 0);
-      return { lines, sheetUsed };
-    } catch (e) {
-      console.error("Bank statement parse failed", e);
-      return null;
-    }
-  });
+function parseBankBuffer(buf: ArrayBuffer): { lines: ParsedBankLine[]; sheetUsed: string } | null {
+  try {
+    const wb = XLSX.read(buf, { type: "array", cellDates: true });
+    const sheetUsed = findTargetSheet(wb);
+    const ws = wb.Sheets[sheetUsed];
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null, raw: true });
+    const lines: ParsedBankLine[] = rows.map((r, idx) => {
+      const amounts = rowAmounts(r);
+      const label = r
+        .map((c) => (c instanceof Date ? "" : String(c ?? "")))
+        .filter((s) => s && !/^-?\d+([.,]\d+)?$/.test(s.trim()))
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim();
+      const raw_text = r.map((c) => (c instanceof Date ? "" : String(c ?? ""))).join(" | ");
+      return {
+        line_index: idx,
+        line_date: parseRowDateISO(r),
+        label: label.slice(0, 500),
+        raw_text: raw_text.slice(0, 2000),
+        amount: amounts.length ? amounts[0] : null,
+      };
+    }).filter((l) => l.amount !== null && l.amount > 0);
+    return { lines, sheetUsed };
+  } catch (e) {
+    console.error("Bank statement parse failed", e);
+    return null;
+  }
 }
+
+function parseBankFile(file: File): Promise<{ lines: ParsedBankLine[]; sheetUsed: string } | null> {
+  return file.arrayBuffer().then((buf) => parseBankBuffer(buf));
+}
+
 
 export type LineMatchResult = {
   invoiceId: string;
