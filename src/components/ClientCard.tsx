@@ -108,7 +108,7 @@ export function ClientCard({ client, onClick, onMouseEnter }: ClientCardProps) {
           }
           alert={
             urgency.bucket !== 'none'
-              ? { label: urgency.label, color: URGENCY_TEXT_COLOR[urgency.bucket] }
+              ? { label: urgency.label, color: URGENCY_TOKENS[urgency.bucket] }
               : undefined
           }
           status={statusStyle}
