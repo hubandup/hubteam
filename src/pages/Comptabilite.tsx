@@ -68,6 +68,7 @@ interface Invoice {
   paymentTerms: string;
   status: InvoiceStatus;
   paymentDetail: string;
+  paymentDate: string;
   fileUrl: string;
   remark: string;
   fiscalYear: string | null;
@@ -99,6 +100,7 @@ type DbInvoice = {
   payment_terms: string | null;
   status: string | null;
   payment_detail: string | null;
+  payment_date: string | null;
   file_url: string | null;
   remark: string | null;
   fiscal_year?: string | null;
@@ -130,6 +132,7 @@ const fromDb = (r: DbInvoice): Invoice => ({
   paymentTerms: r.payment_terms ?? "30 jours",
   status: (r.status as InvoiceStatus) ?? "À payer",
   paymentDetail: r.payment_detail ?? "",
+  paymentDate: r.payment_date ?? "",
   fileUrl: r.file_url || "#",
   remark: r.remark ?? "",
   fiscalYear: r.fiscal_year ?? computeFiscalYear(r.invoice_date),
@@ -147,6 +150,7 @@ const toDbInsert = (i: Invoice) => ({
   payment_terms: i.paymentTerms,
   status: i.status,
   payment_detail: i.paymentDetail,
+  payment_date: i.paymentDate || null,
   file_url: i.fileUrl === "#" ? "" : i.fileUrl,
   remark: i.remark,
   fiscal_year: i.fiscalYear,
@@ -233,6 +237,7 @@ async function processInvoiceUpload(file: File): Promise<Invoice> {
     paymentTerms: e.paymentTerms || "30 jours",
     status: "À payer",
     paymentDetail: "",
+    paymentDate: "",
     fileUrl,
     remark: "",
     fiscalYear: computeFiscalYear(e.invoiceDate || offsetDate(0)),
@@ -1283,7 +1288,7 @@ export default function Comptabilite() {
                   )}
                 </span>
               </TableHead>
-              <TableHead>Détail paiement</TableHead>
+              <TableHead>Date de paiement</TableHead>
               <TableHead>Fichier</TableHead>
               <TableHead className="min-w-[180px]">Remarque</TableHead>
             </TableRow>
@@ -1388,14 +1393,15 @@ export default function Comptabilite() {
                       <option value="Payé">Payé</option>
                     </select>
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-xs p-0">
+                  <TableCell className="p-0">
                     <input
-                      key={`pd-${inv.paymentDetail}`}
-                      defaultValue={inv.paymentDetail}
+                      key={`pd-${inv.paymentDate}`}
+                      type="date"
+                      defaultValue={inv.paymentDate}
                       placeholder="—"
                       onBlur={(e) =>
-                        e.target.value !== inv.paymentDetail &&
-                        handleFieldUpdate(inv.id, "paymentDetail", "payment_detail", e.target.value)
+                        e.target.value !== inv.paymentDate &&
+                        handleFieldUpdate(inv.id, "paymentDate", "payment_date", e.target.value)
                       }
                       className={cn(editCls, "text-xs")}
                     />
@@ -1407,8 +1413,8 @@ export default function Comptabilite() {
                       className="gap-1.5"
                       onClick={() => setSelectedInvoice(inv)}
                     >
-                      <Eye className="h-3.5 w-3.5" />
-                      Voir la facture
+                      <FileText className="h-3.5 w-3.5 text-red-500" />
+                      Facture
                     </Button>
                   </TableCell>
                   <TableCell className="p-0">
