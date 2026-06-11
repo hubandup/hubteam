@@ -1520,6 +1520,51 @@ export type Database = {
           },
         ]
       }
+      facturation_sync_log: {
+        Row: {
+          auto_created_clients: number
+          duration_ms: number | null
+          error: string | null
+          id: string
+          missing_customer_ids: Json
+          ran_at: string
+          skipped_invoices: number
+          synced_invoices: number
+          total_ht: number | null
+          total_invoices: number
+          total_ttc: number | null
+          trigger: string
+        }
+        Insert: {
+          auto_created_clients?: number
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          missing_customer_ids?: Json
+          ran_at?: string
+          skipped_invoices?: number
+          synced_invoices?: number
+          total_ht?: number | null
+          total_invoices?: number
+          total_ttc?: number | null
+          trigger?: string
+        }
+        Update: {
+          auto_created_clients?: number
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          missing_customer_ids?: Json
+          ran_at?: string
+          skipped_invoices?: number
+          synced_invoices?: number
+          total_ht?: number | null
+          total_invoices?: number
+          total_ttc?: number | null
+          trigger?: string
+        }
+        Relationships: []
+      }
       faq_categories: {
         Row: {
           color: string
@@ -1743,6 +1788,7 @@ export type Database = {
       invoices: {
         Row: {
           amount: number
+          amount_ht: number | null
           client_id: string
           created_at: string
           facturation_pro_id: string | null
@@ -1757,6 +1803,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_ht?: number | null
           client_id: string
           created_at?: string
           facturation_pro_id?: string | null
@@ -1771,6 +1818,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_ht?: number | null
           client_id?: string
           created_at?: string
           facturation_pro_id?: string | null
