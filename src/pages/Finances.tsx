@@ -857,6 +857,62 @@ export default function Finances() {
                 <p className="text-xs mt-1">
                   Devis « À facturer », soldes HT restant à facturer et factures récurrentes à venir sur M+1 à M+3. Devis échus exclus.
                 </p>
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="sm" className="mt-3 rounded-none">
+                      Voir le détail du calcul
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent className="w-full overflow-y-auto rounded-none sm:max-w-3xl">
+                    <SheetHeader className="pr-8">
+                      <SheetTitle>Détail du CA prévisionnel</SheetTitle>
+                      <SheetDescription>
+                        {forecastAuditItems.filter(item => item.included).length} ligne(s) incluse(s) et {forecastAuditItems.filter(item => !item.included).length} exclue(s), M+1 à M+3.
+                      </SheetDescription>
+                    </SheetHeader>
+                    <div className="mt-6 space-y-6">
+                      {(['included', 'excluded'] as const).map(group => {
+                        const included = group === 'included';
+                        const items = forecastAuditItems.filter(item => item.included === included);
+                        return (
+                          <section key={group}>
+                            <div className="mb-2 flex items-center justify-between border-b pb-2">
+                              <h3 className="font-semibold">{included ? 'Inclus dans le calcul' : 'Exclus du calcul'}</h3>
+                              <span className="text-sm text-muted-foreground">{items.length} ligne(s)</span>
+                            </div>
+                            {items.length === 0 ? (
+                              <p className="py-4 text-sm text-muted-foreground">Aucune ligne.</p>
+                            ) : (
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Type / libellé</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead>Motif</TableHead>
+                                    <TableHead className="text-right">Montant HT</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {items.map((item, index) => (
+                                    <TableRow key={`${group}-${item.type}-${item.id}-${item.date || index}`}>
+                                      <TableCell>
+                                        <div className="font-medium">{item.label}</div>
+                                        <div className="text-xs text-muted-foreground">{item.type === 'devis' ? 'Devis' : 'Facture récurrente'} · #{item.id}</div>
+                                      </TableCell>
+                                      <TableCell>{item.date ? format(new Date(item.date), 'dd/MM/yyyy') : '—'}</TableCell>
+                                      <TableCell className="max-w-64 text-sm">{item.reason}</TableCell>
+                                      <TableCell className="text-right font-medium">{item.amount.toLocaleString('fr-FR')} €</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            )}
+                          </section>
+                        );
+                      })}
+                    </div>
+                  </SheetContent>
+                </Sheet>
               </div>
             )}
           </div>
