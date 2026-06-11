@@ -5,14 +5,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { ClientKanbanView } from '@/components/ClientKanbanView';
 import { ClientListView } from '@/components/ClientListView';
 import { Input } from '@/components/ui/input';
-import { LayoutGrid, Columns3, List, Search, Star, Plus } from 'lucide-react';
+import { LayoutGrid, Columns3, List, Star, Plus } from 'lucide-react';
 import { useTargets } from '@/hooks/useTargets';
 import { PageLoader } from '@/components/PageLoader';
 import { toast } from 'sonner';
 import { TargetCard } from '@/components/targets/TargetCard';
 import { getUrgency, getStatusBucket, type UrgencyBucket } from '@/components/targets/targetUtils';
 import { AddClientDialog } from '@/components/AddClientDialog';
+import { PageHeader, ViewToggle, SearchFilterBar, SectionHeader } from '@/components/layout';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+
 
 type ViewMode = 'list' | 'kanban' | 'grid';
 type StatusFilter = 'all' | 'prospect' | 'client' | 'relancer';
@@ -171,126 +174,53 @@ export default function Targets() {
 
   return (
     <div className="flex flex-col min-h-full -mx-5 md:-mx-8 -mt-4 px-5 md:px-8 pt-4 pb-8 bg-background">
-      {/* En-tête */}
-      <div className="pb-4">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 flex items-center justify-center shrink-0"
-              style={{ backgroundColor: 'hsl(var(--brand-yellow))' }}
-            >
-              <Star size={18} fill="hsl(var(--brand-yellow-foreground))" stroke="hsl(var(--brand-yellow-foreground))" />
-            </div>
-            <div>
-              <h1
-                className="font-display font-bold leading-tight text-foreground"
-                style={{ fontSize: '30px' }}
-              >
-                Targets
-              </h1>
-              <p className="text-sm text-muted-foreground font-roboto">
-                Vos prospects et clients prioritaires ({totalAfterFilters})
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Toggle vue */}
-            <div className="flex border border-border bg-card rounded-full overflow-hidden">
-              {([
-                { v: 'list' as const, Icon: List },
-                { v: 'kanban' as const, Icon: Columns3 },
-                { v: 'grid' as const, Icon: LayoutGrid },
-              ]).map(({ v, Icon }) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => handleViewChange(v)}
-                  className={cn(
-                    'p-2 transition-colors',
-                    viewMode === v
-                      ? 'bg-foreground text-background'
-                      : 'text-muted-foreground hover:bg-muted',
-                  )}
-                  aria-label={`Vue ${v}`}
-                >
-                  <Icon size={16} />
-                </button>
-              ))}
-            </div>
-
-            {/* Bouton ajouter */}
-            <button
-              type="button"
-              onClick={() => setAddOpen(true)}
-              className="px-3 py-2 text-xs font-semibold bg-foreground text-background flex items-center gap-1.5 hover:opacity-90 transition-opacity rounded-full"
-            >
-              <Plus size={14} />
+      <PageHeader
+        title="Targets"
+        subtitle={`Vos prospects et clients prioritaires (${totalAfterFilters})`}
+        actions={
+          <>
+            <ViewToggle
+              options={[
+                { value: 'list', icon: List, label: 'Vue liste' },
+                { value: 'kanban', icon: Columns3, label: 'Vue kanban' },
+                { value: 'grid', icon: LayoutGrid, label: 'Vue grille' },
+              ]}
+              value={viewMode}
+              onChange={handleViewChange}
+            />
+            <Button size="sm" onClick={() => setAddOpen(true)}>
+              <Plus />
               Ajouter un target
-            </button>
+            </Button>
+          </>
+        }
+      />
 
-          </div>
-        </div>
-
-        {/* Recherche + filtres */}
-        {clients.length > 0 && (
-          <div className="mt-4 bg-card border border-border p-3 flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-              <Search size={14} className="text-muted-foreground shrink-0" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setVisibleCount(PAGE_SIZE);
-                }}
-                placeholder="Rechercher une entreprise ou un contact..."
-                className="flex-1 text-sm outline-none bg-transparent font-roboto text-foreground placeholder:text-muted-foreground"
-              />
-            </div>
-
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {([
-                { key: 'all' as const, label: 'Tous', n: counts.all },
-                { key: 'prospect' as const, label: 'Prospects', n: counts.prospect },
-                { key: 'client' as const, label: 'Clients actifs', n: counts.client },
-                { key: 'relancer' as const, label: 'À relancer', n: counts.relancer },
-              ]).map(({ key, label, n }) => {
-                const active = statusFilter === key;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => {
-                      setStatusFilter(key);
-                      setVisibleCount(PAGE_SIZE);
-                    }}
-                    className={cn(
-                      'px-3 py-1.5 text-xs font-semibold transition-colors flex items-center gap-1.5 rounded-full',
-                      active
-                        ? 'bg-foreground text-background'
-                        : 'bg-muted text-foreground hover:bg-muted/70',
-                    )}
-                  >
-                    {label}
-                    <span
-                      className={cn(
-                        'text-[10px] px-1.5 py-0.5 leading-none rounded-full',
-                        active ? 'bg-background/20 text-background' : 'bg-card text-foreground',
-                      )}
-                    >
-                      {n}
-                    </span>
-                  </button>
-
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
+      {clients.length > 0 && (
+        <SearchFilterBar
+          className="mb-4"
+          searchValue={search}
+          onSearchChange={(v) => {
+            setSearch(v);
+            setVisibleCount(PAGE_SIZE);
+          }}
+          searchPlaceholder="Rechercher une entreprise ou un contact..."
+          activeFilter={statusFilter}
+          onFilterChange={(k) => {
+            setStatusFilter(k as StatusFilter);
+            setVisibleCount(PAGE_SIZE);
+          }}
+          filters={[
+            { key: 'all', label: 'Tous', count: counts.all },
+            { key: 'prospect', label: 'Prospects', count: counts.prospect },
+            { key: 'client', label: 'Clients actifs', count: counts.client },
+            { key: 'relancer', label: 'À relancer', count: counts.relancer },
+          ]}
+        />
+      )}
 
       {/* Contenu */}
+
       <div className="min-w-0">
         {clients.length === 0 ? (
           <div className="text-center py-12 px-4">
@@ -386,15 +316,7 @@ function SectionBlock({
 }) {
   return (
     <section>
-      <header className="flex items-center gap-3 mb-3">
-        <span className="block" style={{ width: 4, height: 20, background: color }} />
-        <h2 className="font-display font-bold uppercase tracking-wider text-sm text-foreground">
-          {title}
-        </h2>
-        <span className="text-xs font-semibold px-1.5 py-0.5 bg-foreground text-background">
-          {count}
-        </span>
-      </header>
+      <SectionHeader title={title} color={color} count={count} className="mb-3" />
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {items.map((c: any) => (
           <TargetCard key={c.id} client={c} onClick={() => onClick(c.id)} />
@@ -403,3 +325,4 @@ function SectionBlock({
     </section>
   );
 }
+
