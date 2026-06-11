@@ -64,7 +64,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
   const tasksTotal = project.tasks_total || 0;
   const tasksCompleted = project.tasks_completed || 0;
 
-  const status = statusConfig[project.status] || statusConfig.active;
+  const status = STATUS_TOKENS[PROJECT_STATUS_MAP[project.status] || 'project_active'];
 
   return (
     <EntityCard
