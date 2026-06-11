@@ -100,6 +100,7 @@ type DbInvoice = {
   payment_terms: string | null;
   status: string | null;
   payment_detail: string | null;
+  payment_date: string | null;
   file_url: string | null;
   remark: string | null;
   fiscal_year?: string | null;
