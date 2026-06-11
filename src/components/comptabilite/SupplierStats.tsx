@@ -269,9 +269,94 @@ export function SupplierStats({ invoices, fiscalYear }: Props) {
         </Card>
       </div>
 
+      {/* Monthly spend */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Dépenses par mois</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Mois</TableHead>
+                <TableHead className="text-right">Factures</TableHead>
+                <TableHead className="text-right">Total HT</TableHead>
+                <TableHead className="text-right">Total TTC</TableHead>
+                <TableHead className="text-right">Écart vs moyenne</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {stats.monthlySpend.map((m) => {
+                const diff = m.ttc - stats.avgMonthlyTTC;
+                const pct = stats.avgMonthlyTTC > 0 ? (diff / stats.avgMonthlyTTC) * 100 : 0;
+                const [y, mm] = m.month.split("-");
+                const label = new Date(Number(y), Number(mm) - 1, 1).toLocaleDateString("fr-FR", {
+                  month: "long",
+                  year: "numeric",
+                });
+                return (
+                  <TableRow key={m.month}>
+                    <TableCell className="font-medium capitalize">{label}</TableCell>
+                    <TableCell className="text-right tabular-nums">{m.count}</TableCell>
+                    <TableCell className="text-right tabular-nums">{eur(m.ht)}</TableCell>
+                    <TableCell className="text-right tabular-nums font-medium">{eur(m.ttc)}</TableCell>
+                    <TableCell
+                      className={
+                        "text-right tabular-nums " +
+                        (diff > 0 ? "text-orange-600" : diff < 0 ? "text-green-700" : "text-muted-foreground")
+                      }
+                    >
+                      {diff >= 0 ? "+" : ""}
+                      {pct.toFixed(0)}%
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* All suppliers */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Tous les fournisseurs ({stats.suppliersCount})</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Fournisseur</TableHead>
+                <TableHead className="text-right">Factures</TableHead>
+                <TableHead className="text-right">Total HT</TableHead>
+                <TableHead className="text-right">Total TTC</TableHead>
+                <TableHead className="text-right">Part</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {stats.allSuppliers.map((s) => {
+                const share = stats.totalTTC > 0 ? (s.ttc / stats.totalTTC) * 100 : 0;
+                return (
+                  <TableRow key={s.name}>
+                    <TableCell className="font-medium">{s.name}</TableCell>
+                    <TableCell className="text-right tabular-nums">{s.count}</TableCell>
+                    <TableCell className="text-right tabular-nums">{eur(s.ht)}</TableCell>
+                    <TableCell className="text-right tabular-nums font-medium">{eur(s.ttc)}</TableCell>
+                    <TableCell className="text-right tabular-nums text-muted-foreground">
+                      {share.toFixed(1)}%
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
       <p className="text-xs text-muted-foreground">
-        Statistiques calculées sur l'exercice {fiscalYear}. Le délai moyen de paiement est
-        estimé à partir de la date de rapprochement bancaire (champ « Détail paiement »).
+        Statistiques calculées sur l'exercice {fiscalYear}. La dépense mensuelle moyenne est
+        rapportée au nombre de mois avec activité. Le délai moyen de paiement est estimé à
+        partir de la date de rapprochement bancaire (champ « Détail paiement »).
       </p>
     </div>
   );
