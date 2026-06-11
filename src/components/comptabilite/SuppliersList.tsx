@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Loader2, AlertCircle, CheckCircle2, ChevronDown, ChevronRight, Pencil, Check, X } from "lucide-react";
+import { Search, Loader2, AlertCircle, CheckCircle2, ChevronDown, ChevronRight, Pencil, Check, X, GripVertical, FolderPlus, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -34,6 +34,12 @@ type Invoice = {
   invoice_date: string | null;
 };
 
+type Override = {
+  line_id: string;
+  supplier_key: string;
+  display_name: string;
+};
+
 // Heuristic: extract a clean supplier name from a bank line label.
 const NOISE = new Set([
   "vir", "virement", "prlv", "prelvt", "prelvmt", "prelevement", "sepa",
@@ -49,10 +55,10 @@ const cleanSupplier = (label: string): string => {
     .split(/[\s,;:/|()\-_.]+/)
     .map((t) => t.trim())
     .filter(Boolean)
-    .filter((t) => !/^\d+[.,]?\d*$/.test(t)) // pure numbers
-    .filter((t) => !/^[A-Z0-9]{6,}$/.test(t) || /[A-Z]{4,}/.test(t)) // long codes
+    .filter((t) => !/^\d+[.,]?\d*$/.test(t))
+    .filter((t) => !/^[A-Z0-9]{6,}$/.test(t) || /[A-Z]{4,}/.test(t))
     .filter((t) => !NOISE.has(t.toLowerCase()))
-    .filter((t) => !/^\d/.test(t)) // tokens starting with digit
+    .filter((t) => !/^\d/.test(t))
     .filter((t) => t.length >= 2);
 
   const out = tokens.slice(0, 4).join(" ").toUpperCase();
@@ -66,17 +72,23 @@ export function SuppliersList() {
   const [bankLines, setBankLines] = useState<BankLine[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [aliases, setAliases] = useState<Record<string, string>>({});
+  const [overrides, setOverrides] = useState<Record<string, { key: string; name: string }>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "missing" | "complete">("all");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [dragLineId, setDragLineId] = useState<string | null>(null);
+  const [dropTargetKey, setDropTargetKey] = useState<string | null>(null);
+  const [creatingFolder, setCreatingFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [extraFolders, setExtraFolders] = useState<{ key: string; name: string }[]>([]);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [{ data: lines }, { data: invs }, { data: aliasRows }] = await Promise.all([
+      const [{ data: lines }, { data: invs }, { data: aliasRows }, { data: overrideRows }] = await Promise.all([
         supabase
           .from("bank_statement_lines")
           .select("id, line_date, label, raw_text, amount, matched_invoice_id")
@@ -87,6 +99,9 @@ export function SuppliersList() {
         supabase
           .from("supplier_name_aliases")
           .select("key, display_name"),
+        supabase
+          .from("bank_line_supplier_overrides")
+          .select("line_id, supplier_key, display_name"),
       ]);
 
       const aliasMap: Record<string, string> = {};
@@ -95,17 +110,18 @@ export function SuppliersList() {
       }
       setAliases(aliasMap);
 
-      // Keep only debit lines (supplier expenses). Bank statements store amounts
-      // as positive numbers; the debit/credit info lives in raw_text columns.
-      // A debit row has a "-<number>" token (e.g. "| -126.2 |"). Exclude solde rows.
+      const ovMap: Record<string, { key: string; name: string }> = {};
+      for (const o of (overrideRows as Override[] ?? [])) {
+        ovMap[o.line_id] = { key: o.supplier_key, name: o.display_name };
+      }
+      setOverrides(ovMap);
+
       const isDebit = (l: BankLine): boolean => {
         const lbl = (l.label || "").toLowerCase();
         if (lbl.startsWith("solde") || lbl.includes("solde au ")) return false;
         return /\|\s*-\s*\d/.test(l.raw_text || "");
       };
 
-      // Dedupe identical rows (same date + label + amount) coming from
-      // overlapping bank statements.
       const seen = new Set<string>();
       const filtered: BankLine[] = [];
       for (const l of ((lines as BankLine[]) ?? [])) {
@@ -135,30 +151,40 @@ export function SuppliersList() {
     };
     const map = new Map<string, Row>();
 
-    // Group bank lines
+    const ensure = (key: string, name: string): Row => {
+      let r = map.get(key);
+      if (!r) {
+        r = {
+          key,
+          name,
+          total: 0,
+          txCount: 0,
+          lines: [],
+          matchedInvoiceIds: new Set<string>(),
+          missingLines: [],
+          invoices: [],
+        };
+        map.set(key, r);
+      }
+      return r;
+    };
+
+    // Pre-create empty folders the user added manually
+    for (const f of extraFolders) ensure(f.key, f.name);
+
     for (const l of bankLines) {
-      const name = cleanSupplier(l.label);
-      const key = normKey(name);
+      const ov = overrides[l.id];
+      const name = ov?.name ?? cleanSupplier(l.label);
+      const key = ov?.key ?? normKey(name);
       if (!key) continue;
-      const r = map.get(key) ?? {
-        key,
-        name,
-        total: 0,
-        txCount: 0,
-        lines: [],
-        matchedInvoiceIds: new Set<string>(),
-        missingLines: [],
-        invoices: [],
-      };
+      const r = ensure(key, name);
       r.total += Number(l.amount ?? 0);
       r.txCount += 1;
       r.lines.push(l);
       if (l.matched_invoice_id) r.matchedInvoiceIds.add(l.matched_invoice_id);
       else r.missingLines.push(l);
-      map.set(key, r);
     }
 
-    // Attach invoices (matched by id OR by supplier-name normalisation)
     const invById = new Map(invoices.map((i) => [i.id, i]));
     for (const r of map.values()) {
       for (const id of r.matchedInvoiceIds) {
@@ -169,7 +195,6 @@ export function SuppliersList() {
     for (const inv of invoices) {
       const k = normKey(inv.supplier || "");
       if (!k) continue;
-      // find a row whose key contains or is contained in invoice key
       for (const r of map.values()) {
         if (r.invoices.some((i) => i.id === inv.id)) continue;
         if (r.key.includes(k) || k.includes(r.key)) {
@@ -180,7 +205,7 @@ export function SuppliersList() {
     }
 
     return Array.from(map.values()).sort((a, b) => b.total - a.total);
-  }, [bankLines, invoices]);
+  }, [bankLines, invoices, overrides, extraFolders]);
 
   const displayNameOf = (key: string, fallback: string) => aliases[key] ?? fallback;
 
@@ -212,14 +237,7 @@ export function SuppliersList() {
       return;
     }
     if (trimmed === originalName) {
-      const { error } = await supabase
-        .from("supplier_name_aliases")
-        .delete()
-        .eq("key", key);
-      if (error) {
-        toast.error("Erreur lors de la suppression de l'alias");
-        return;
-      }
+      await supabase.from("supplier_name_aliases").delete().eq("key", key);
       setAliases((prev) => {
         const next = { ...prev };
         delete next[key];
@@ -237,6 +255,61 @@ export function SuppliersList() {
     }
     toast.success("Fournisseur renommé");
     cancelEdit();
+  };
+
+  const moveLineToSupplier = async (lineId: string, targetKey: string, targetName: string) => {
+    const { error } = await supabase
+      .from("bank_line_supplier_overrides")
+      .upsert({
+        line_id: lineId,
+        supplier_key: targetKey,
+        display_name: targetName,
+        updated_at: new Date().toISOString(),
+      });
+    if (error) {
+      toast.error("Erreur lors du déplacement");
+      return;
+    }
+    setOverrides((prev) => ({ ...prev, [lineId]: { key: targetKey, name: targetName } }));
+    toast.success(`Déplacé vers ${targetName}`);
+  };
+
+  const resetLineOverride = async (lineId: string) => {
+    const { error } = await supabase
+      .from("bank_line_supplier_overrides")
+      .delete()
+      .eq("line_id", lineId);
+    if (error) {
+      toast.error("Erreur lors de la réinitialisation");
+      return;
+    }
+    setOverrides((prev) => {
+      const next = { ...prev };
+      delete next[lineId];
+      return next;
+    });
+    toast.success("Classement réinitialisé");
+  };
+
+  const createFolder = () => {
+    const trimmed = newFolderName.trim();
+    if (!trimmed) {
+      toast.error("Nom requis");
+      return;
+    }
+    const key = normKey(trimmed);
+    if (!key) {
+      toast.error("Nom invalide");
+      return;
+    }
+    if (suppliers.some((s) => s.key === key)) {
+      toast.error("Ce fournisseur existe déjà");
+      return;
+    }
+    setExtraFolders((prev) => [...prev, { key, name: trimmed.toUpperCase() }]);
+    setNewFolderName("");
+    setCreatingFolder(false);
+    toast.success("Dossier créé — glissez-y des dépenses");
   };
 
   const stats = useMemo(() => {
@@ -306,6 +379,37 @@ export function SuppliersList() {
             </button>
           ))}
         </div>
+        {creatingFolder ? (
+          <div className="flex items-center gap-1">
+            <Input
+              autoFocus
+              placeholder="Nom du fournisseur"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") createFolder();
+                if (e.key === "Escape") { setCreatingFolder(false); setNewFolderName(""); }
+              }}
+              className="h-8 w-48 rounded-none text-xs"
+            />
+            <Button size="sm" onClick={createFolder} className="h-8 rounded-none">Créer</Button>
+            <Button size="sm" variant="ghost" onClick={() => { setCreatingFolder(false); setNewFolderName(""); }} className="h-8 rounded-none">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setCreatingFolder(true)}
+            className="h-8 rounded-none gap-1.5"
+          >
+            <FolderPlus className="h-4 w-4" /> Nouveau dossier
+          </Button>
+        )}
+        <div className="text-xs text-muted-foreground ml-auto hidden md:block">
+          💡 Glissez-déposez les lignes entre fournisseurs pour les reclasser
+        </div>
       </div>
 
       {/* Table */}
@@ -332,12 +436,33 @@ export function SuppliersList() {
               filtered.map((s) => {
                 const isOpen = expanded === s.key;
                 const missingAmount = s.missingLines.reduce((a, l) => a + Number(l.amount ?? 0), 0);
+                const isDropTarget = dropTargetKey === s.key && dragLineId !== null;
+                const onDragOver = (e: React.DragEvent) => {
+                  if (!dragLineId) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  if (dropTargetKey !== s.key) setDropTargetKey(s.key);
+                };
+                const onDragLeave = () => {
+                  if (dropTargetKey === s.key) setDropTargetKey(null);
+                };
+                const onDrop = (e: React.DragEvent) => {
+                  e.preventDefault();
+                  const lineId = e.dataTransfer.getData("text/plain") || dragLineId;
+                  setDropTargetKey(null);
+                  setDragLineId(null);
+                  if (!lineId) return;
+                  moveLineToSupplier(lineId, s.key, displayNameOf(s.key, s.name));
+                };
                 return (
                   <Fragment key={s.key}>
                     <TableRow
                       key={s.key}
-                      className="cursor-pointer hover:bg-muted/50"
+                      className={`cursor-pointer hover:bg-muted/50 ${isDropTarget ? "bg-primary/20 outline outline-2 outline-primary" : ""}`}
                       onClick={() => setExpanded(isOpen ? null : s.key)}
+                      onDragOver={onDragOver}
+                      onDragLeave={onDragLeave}
+                      onDrop={onDrop}
                     >
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
@@ -354,22 +479,10 @@ export function SuppliersList() {
                                 autoFocus
                                 className="h-7 text-sm rounded-none"
                               />
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7 rounded-none"
-                                onClick={() => saveEdit(s.key, s.name)}
-                                title="Enregistrer"
-                              >
+                              <Button size="icon" variant="ghost" className="h-7 w-7 rounded-none" onClick={() => saveEdit(s.key, s.name)} title="Enregistrer">
                                 <Check className="h-4 w-4 text-green-600" />
                               </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7 rounded-none"
-                                onClick={cancelEdit}
-                                title="Annuler"
-                              >
+                              <Button size="icon" variant="ghost" className="h-7 w-7 rounded-none" onClick={cancelEdit} title="Annuler">
                                 <X className="h-4 w-4" />
                               </Button>
                             </div>
@@ -408,7 +521,11 @@ export function SuppliersList() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {s.missingLines.length > 0 ? (
+                        {s.txCount === 0 ? (
+                          <Badge variant="outline" className="border-muted-foreground text-muted-foreground rounded-none">
+                            Vide
+                          </Badge>
+                        ) : s.missingLines.length > 0 ? (
                           <Badge variant="outline" className="border-red-600 text-red-600 rounded-none">
                             <AlertCircle className="h-3 w-3 mr-1" /> Incomplet
                           </Badge>
@@ -423,33 +540,61 @@ export function SuppliersList() {
                       <TableRow key={s.key + "-detail"} className="bg-muted/30">
                         <TableCell colSpan={6} className="p-4">
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Missing invoices */}
+                            {/* All bank lines (draggable) */}
                             <div>
-                              <div className="text-xs uppercase font-semibold mb-2 text-red-600">
-                                Factures manquantes ({s.missingLines.length})
+                              <div className="text-xs uppercase font-semibold mb-2">
+                                Dépenses ({s.lines.length}) — glissez pour reclasser
                               </div>
-                              {s.missingLines.length === 0 ? (
-                                <div className="text-xs text-muted-foreground">
-                                  Aucune facture manquante.
+                              {s.lines.length === 0 ? (
+                                <div className="text-xs text-muted-foreground italic">
+                                  Dossier vide. Déposez-y des dépenses depuis un autre fournisseur.
                                 </div>
                               ) : (
-                                <div className="space-y-1 max-h-64 overflow-auto">
-                                  {s.missingLines.map((l) => (
-                                    <div
-                                      key={l.id}
-                                      className="flex justify-between gap-2 text-xs border-b border-border/60 py-1.5"
-                                    >
-                                      <span className="text-muted-foreground">
-                                        {l.line_date
-                                          ? format(new Date(l.line_date + "T00:00:00"), "dd/MM/yyyy")
-                                          : "—"}
-                                      </span>
-                                      <span className="flex-1 truncate" title={l.label}>
-                                        {l.label}
-                                      </span>
-                                      <span className="font-semibold">{eur(Number(l.amount ?? 0))}</span>
-                                    </div>
-                                  ))}
+                                <div className="space-y-1 max-h-72 overflow-auto">
+                                  {s.lines.map((l) => {
+                                    const isMissing = !l.matched_invoice_id;
+                                    const isOverridden = !!overrides[l.id];
+                                    return (
+                                      <div
+                                        key={l.id}
+                                        draggable
+                                        onDragStart={(e) => {
+                                          setDragLineId(l.id);
+                                          e.dataTransfer.setData("text/plain", l.id);
+                                          e.dataTransfer.effectAllowed = "move";
+                                        }}
+                                        onDragEnd={() => {
+                                          setDragLineId(null);
+                                          setDropTargetKey(null);
+                                        }}
+                                        className={`group flex items-center gap-2 text-xs border border-border/60 bg-background px-2 py-1.5 cursor-grab active:cursor-grabbing hover:border-primary ${dragLineId === l.id ? "opacity-50" : ""}`}
+                                        title={l.label}
+                                      >
+                                        <GripVertical className="h-3 w-3 text-muted-foreground shrink-0" />
+                                        <span className="text-muted-foreground shrink-0">
+                                          {l.line_date
+                                            ? format(new Date(l.line_date + "T00:00:00"), "dd/MM/yy")
+                                            : "—"}
+                                        </span>
+                                        <span className="flex-1 truncate">{l.label}</span>
+                                        {isMissing ? (
+                                          <AlertCircle className="h-3 w-3 text-red-600 shrink-0" />
+                                        ) : (
+                                          <CheckCircle2 className="h-3 w-3 text-green-600 shrink-0" />
+                                        )}
+                                        <span className="font-semibold shrink-0">{eur(Number(l.amount ?? 0))}</span>
+                                        {isOverridden && (
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); resetLineOverride(l.id); }}
+                                            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+                                            title="Réinitialiser le classement"
+                                          >
+                                            <RotateCcw className="h-3 w-3" />
+                                          </button>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               )}
                             </div>
@@ -464,7 +609,7 @@ export function SuppliersList() {
                                   Aucune facture enregistrée pour ce fournisseur.
                                 </div>
                               ) : (
-                                <div className="space-y-1 max-h-64 overflow-auto">
+                                <div className="space-y-1 max-h-72 overflow-auto">
                                   {s.invoices.map((i) => (
                                     <div
                                       key={i.id}
