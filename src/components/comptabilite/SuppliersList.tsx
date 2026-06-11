@@ -278,7 +278,10 @@ export function SuppliersList() {
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => setExpanded(isOpen ? null : s.key)}
                     >
-                      <TableCell className="font-medium">{s.name}</TableCell>
+                      <TableCell className="font-medium flex items-center gap-2">
+                        {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                        {s.name}
+                      </TableCell>
                       <TableCell className="text-right font-semibold">{eur(s.total)}</TableCell>
                       <TableCell className="text-right">{s.txCount}</TableCell>
                       <TableCell className="text-right">{s.invoices.length}</TableCell>
