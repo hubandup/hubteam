@@ -40,6 +40,7 @@ export default function Finances() {
   const [isLoadingTreasury, setIsLoadingTreasury] = useState(false);
   const [treasuryLastUpdated, setTreasuryLastUpdated] = useState<string | null>(null);
   const [forecastRevenue, setForecastRevenue] = useState(0);
+  const [currentMonthForecastRevenue, setCurrentMonthForecastRevenue] = useState(0);
   const [monthlyForecasts, setMonthlyForecasts] = useState<{ month: number; encaisser: number; recurrent: number; devisAFacturer?: number; total: number }[]>([]);
   const [isLoadingForecast, setIsLoadingForecast] = useState(false);
   const [syncHealth, setSyncHealth] = useState<any | null>(null);
@@ -197,6 +198,7 @@ export default function Finances() {
         acc[key] = (acc[key] || 0) + val;
         return acc;
       }, {});
+      setCurrentMonthForecastRevenue(revenueTotalsByMonth[format(new Date(), 'yyyy-MM')] || 0);
 
       const revenueByMonth = [];
       for (let i = periodMonths - 1; i >= 0; i--) {
@@ -830,6 +832,12 @@ export default function Finances() {
                   CA prévisionnel (M+1 à M+3) :{' '}
                   <span className="font-semibold text-orange-500">
                     {forecastRevenue.toLocaleString('fr-FR')} €
+                  </span>
+                </p>
+                <p>
+                  CA prévisionnel mois en cours :{' '}
+                  <span className="font-semibold text-orange-500">
+                    {currentMonthForecastRevenue.toLocaleString('fr-FR')} €
                   </span>
                 </p>
                 <p className="text-xs mt-1">
