@@ -15,6 +15,7 @@ interface FacturationProQuote {
   quote_status: number;
   total: string;
   internal_note: string;
+  invoiced_on?: string;
   quote_date: string;
   accepted_date?: string;
 }
@@ -121,23 +122,30 @@ Deno.serve(async (req) => {
 
       if (pageQuotes.length === 0) break;
       if (expectedPageSize && pageQuotes.length < expectedPageSize) break;
-
-      // Optimization: if we already have plenty of accepted quotes, we can stop early.
-      const acceptedSoFar = allQuotes.reduce((acc, q) => acc + (q.quote_status === 1 ? 1 : 0), 0);
-      if (acceptedSoFar >= 80) break;
     }
 
     console.log(`Found ${allQuotes.length} total quotes (across pages)`);
 
-    // Filter validated quotes (status 1) and sort by validation date
+    const now = new Date();
+    const fiscalStartYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+    const fiscalStart = new Date(Date.UTC(fiscalStartYear, 3, 1));
+    const fiscalEnd = new Date(Date.UTC(fiscalStartYear + 1, 2, 31, 23, 59, 59, 999));
+
+    // Projets validés de l'exercice uniquement, pour rester comparable au CA fiscal.
     const validatedQuotes = allQuotes
       .filter((quote: FacturationProQuote) => quote.quote_status === 1)
+      .filter((quote: FacturationProQuote) => {
+        const dateValue = quote.accepted_date || quote.invoiced_on || quote.quote_date;
+        if (!dateValue) return false;
+        const date = new Date(dateValue);
+        return !Number.isNaN(date.getTime()) && date >= fiscalStart && date <= fiscalEnd;
+      })
       .sort((a: FacturationProQuote, b: FacturationProQuote) => {
         const dateA = a.accepted_date ? new Date(a.accepted_date).getTime() : 0;
         const dateB = b.accepted_date ? new Date(b.accepted_date).getTime() : 0;
         return dateB - dateA; // Most recent first
       })
-      .slice(0, 50)
+      .slice(0, 30)
       .map((quote: FacturationProQuote) => {
         const montantHT = parseFloat(quote.total) || 0;
         const montantHA = parseFloat(quote.internal_note || '0') || 0;

@@ -58,10 +58,10 @@ serve(async (req) => {
     
     if (currentMonth >= 3) { // April (3) or later
       fiscalYearStart = new Date(currentYear, 3, 1); // April 1 current year
-      fiscalYearEnd = new Date(currentYear + 1, 2, 31); // March 31 next year
+      fiscalYearEnd = new Date(currentYear + 1, 2, 31, 23, 59, 59, 999); // March 31 next year
     } else { // January to March
       fiscalYearStart = new Date(currentYear - 1, 3, 1); // April 1 previous year
-      fiscalYearEnd = new Date(currentYear, 2, 31); // March 31 current year
+      fiscalYearEnd = new Date(currentYear, 2, 31, 23, 59, 59, 999); // March 31 current year
     }
 
     console.log(`[ADHESIONS] Fetching for fiscal year: ${fiscalYearStart.toISOString()} to ${fiscalYearEnd.toISOString()}`);
@@ -190,6 +190,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         total: totalAdhesions,
+        amountBasis: 'HT',
         count: invoicesDetails.length,
         invoices: invoicesDetails,
         fiscalYearStart: fiscalYearStart.toISOString(),

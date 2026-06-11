@@ -12,8 +12,8 @@ interface FacturationProInvoice {
   customer_id: number
   invoice_ref: string
   title?: string
-  total: string          // TTC
-  total_pre_tax?: string // HT
+  total: string          // HT (documentation Facturation.pro)
+  total_with_vat?: string // TTC
   paid_on: string | null
   invoiced_on: string
 }
@@ -167,8 +167,8 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const amountTTC = parseFloat(fp.total) || 0;
-      const amountHT = fp.total_pre_tax != null ? parseFloat(fp.total_pre_tax) : amountTTC;
+      const amountHT = parseFloat(fp.total) || 0;
+      const amountTTC = fp.total_with_vat != null ? parseFloat(fp.total_with_vat) : amountHT;
       totalTTC += amountTTC;
       totalHT += amountHT;
 
@@ -191,11 +191,15 @@ Deno.serve(async (req) => {
         .eq('facturation_pro_id', fp.id?.toString())
         .maybeSingle();
 
+      let writeError = null;
       if (existingInvoice) {
-        await supabaseClient.from('invoices').update(invoiceData).eq('id', existingInvoice.id);
+        const result = await supabaseClient.from('invoices').update(invoiceData).eq('id', existingInvoice.id);
+        writeError = result.error;
       } else {
-        await supabaseClient.from('invoices').insert(invoiceData);
+        const result = await supabaseClient.from('invoices').insert(invoiceData);
+        writeError = result.error;
       }
+      if (writeError) throw new Error(`Invoice ${fp.id} write failed: ${writeError.message}`);
       syncedInvoices++;
     }
 
