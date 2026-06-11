@@ -339,9 +339,61 @@ export function SuppliersList() {
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => setExpanded(isOpen ? null : s.key)}
                     >
-                      <TableCell className="font-medium flex items-center gap-2">
-                        {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-                        {s.name}
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
+                          {editingKey === s.key ? (
+                            <div className="flex items-center gap-1 flex-1" onClick={(e) => e.stopPropagation()}>
+                              <Input
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") saveEdit(s.key, s.name);
+                                  if (e.key === "Escape") cancelEdit();
+                                }}
+                                autoFocus
+                                className="h-7 text-sm rounded-none"
+                              />
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 rounded-none"
+                                onClick={() => saveEdit(s.key, s.name)}
+                                title="Enregistrer"
+                              >
+                                <Check className="h-4 w-4 text-green-600" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 rounded-none"
+                                onClick={cancelEdit}
+                                title="Annuler"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <>
+                              <span>{displayNameOf(s.key, s.name)}</span>
+                              {aliases[s.key] && aliases[s.key] !== s.name && (
+                                <span className="text-xs text-muted-foreground italic">({s.name})</span>
+                              )}
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-6 w-6 rounded-none opacity-50 hover:opacity-100"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  startEdit(s.key, displayNameOf(s.key, s.name));
+                                }}
+                                title="Renommer"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right font-semibold">{eur(s.total)}</TableCell>
                       <TableCell className="text-right">{s.txCount}</TableCell>
