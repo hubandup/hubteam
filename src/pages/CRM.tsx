@@ -190,7 +190,6 @@ export default function CRM() {
               </ProtectedAction>
               <Button
                 variant="outline"
-                size="sm"
                 onClick={() => setShowArchived(!showArchived)}
                 className="gap-2"
               >

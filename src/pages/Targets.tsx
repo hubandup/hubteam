@@ -188,8 +188,8 @@ export default function Targets() {
               value={viewMode}
               onChange={handleViewChange}
             />
-            <Button size="sm" onClick={() => setAddOpen(true)}>
-              <Plus />
+            <Button onClick={() => setAddOpen(true)}>
+              <Plus className="h-4 w-4" />
               Ajouter un target
             </Button>
           </>
