@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
 }
 
 const FACTURATION_PRO_API_URL = 'https://www.facturation.pro'
@@ -12,7 +12,8 @@ interface FacturationProInvoice {
   customer_id: number
   invoice_ref: string
   title?: string
-  total: string
+  total: string          // TTC
+  total_pre_tax?: string // HT
   paid_on: string | null
   invoiced_on: string
 }
@@ -22,24 +23,22 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
-  // ── CRON_SECRET guard (cron via x-cron-secret, frontend via authenticated JWT) ──
+  // ── Auth guard ──
   const cronSecret = Deno.env.get('CRON_SECRET');
   const xCronHeader = req.headers.get('x-cron-secret');
+  let trigger = 'manual';
   if (xCronHeader) {
-    // Cron path: must match secret exactly
     if (xCronHeader !== cronSecret) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    trigger = 'cron';
   } else {
-    // Frontend path: require a valid authenticated JWT
     const authHeader = req.headers.get('Authorization') || '';
     if (!authHeader.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
     const authClient = createClient(
@@ -50,155 +49,187 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await authClient.auth.getUser();
     if (authError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
   }
 
+  const startedAt = Date.now();
+  const supabaseClient = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
+
+  let syncedInvoices = 0;
+  let skippedInvoices = 0;
+  let autoCreatedClients = 0;
+  let totalHT = 0;
+  let totalTTC = 0;
+  const missingCustomerIds = new Set<number>();
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
     const apiId = Deno.env.get('FACTURATION_PRO_API_ID')
     const apiKey = Deno.env.get('FACTURATION_PRO_API_KEY')
     const firmId = Deno.env.get('FACTURATION_PRO_FIRM_ID')
-
     if (!apiId || !apiKey || !firmId) {
       throw new Error('Missing Facturation.PRO API credentials')
     }
+    const authHeader = `Basic ${btoa(`${apiId}:${apiKey}`)}`;
 
     console.log('Starting invoice synchronization from Facturation.PRO')
 
-    // Fetch all invoices from Facturation.PRO with pagination
+    // Fetch all invoices with pagination
     const allInvoices: FacturationProInvoice[] = []
     let page = 1
-    let hasMorePages = true
-
-    while (hasMorePages) {
-      const invoicesResponse = await fetch(
-        `${FACTURATION_PRO_API_URL}/firms/${firmId}/invoices.json?page=${page}`,
-        {
-          headers: {
-            'Authorization': `Basic ${btoa(`${apiId}:${apiKey}`)}`,
-            'Content-Type': 'application/json',
-          },
-        }
+    while (true) {
+      const r = await fetch(
+        `${FACTURATION_PRO_API_URL}/firms/${firmId}/invoices.json?page=${page}&per_page=100`,
+        { headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' } }
       )
-
-      if (!invoicesResponse.ok) {
-        const errorText = await invoicesResponse.text()
-        throw new Error(`Facturation.PRO API error: ${errorText}`)
-      }
-
-      const pageInvoices: FacturationProInvoice[] = await invoicesResponse.json()
-      console.log(`Fetched ${pageInvoices.length} invoices from page ${page}`)
-      
-      if (pageInvoices.length === 0) {
-        hasMorePages = false
-      } else {
-        allInvoices.push(...pageInvoices)
-        page++
-      }
+      if (!r.ok) throw new Error(`Facturation.PRO API error (page ${page}): ${await r.text()}`)
+      const pageInvoices: FacturationProInvoice[] = await r.json()
+      console.log(`Page ${page}: ${pageInvoices.length} invoices`)
+      if (pageInvoices.length === 0) break
+      allInvoices.push(...pageInvoices)
+      page++
+      if (page > 200) break // safety
     }
+    console.log(`Total fetched: ${allInvoices.length}`)
 
-    console.log(`Total: ${allInvoices.length} invoices fetched from Facturation.PRO`)
-    const facturationProInvoices = allInvoices
+    // Cache to avoid lookup duplication
+    const clientCache = new Map<string, string>(); // fp_customer_id -> client.id
 
-    let syncedInvoices = 0
-    let skippedInvoices = 0
-    const missingClientIds = new Set<number>()
+    for (const fp of allInvoices) {
+      const customerKey = fp.customer_id?.toString();
+      if (!customerKey) { skippedInvoices++; continue; }
 
-    for (const fpInvoice of facturationProInvoices) {
-      // Find the corresponding client in our CRM
-      const { data: client } = await supabaseClient
-        .from('clients')
-        .select('id')
-        .eq('facturation_pro_id', fpInvoice.customer_id?.toString())
-        .single()
-
-      if (!client) {
-        missingClientIds.add(fpInvoice.customer_id)
-        skippedInvoices++
-        continue
+      let clientId = clientCache.get(customerKey);
+      if (!clientId) {
+        const { data: existingClient } = await supabaseClient
+          .from('clients')
+          .select('id')
+          .eq('facturation_pro_id', customerKey)
+          .maybeSingle();
+        if (existingClient?.id) {
+          clientId = existingClient.id;
+        } else {
+          // Auto-create minimal client by fetching its details
+          try {
+            const cr = await fetch(
+              `${FACTURATION_PRO_API_URL}/firms/${firmId}/customers/${customerKey}.json`,
+              { headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' } }
+            );
+            if (cr.ok) {
+              const cust = await cr.json();
+              const company = cust.company_name || cust.last_name || `Facturation #${customerKey}`;
+              const { data: created } = await supabaseClient
+                .from('clients')
+                .insert({
+                  company,
+                  first_name: cust.first_name || null,
+                  last_name: cust.last_name || null,
+                  email: cust.email || null,
+                  phone: cust.phone || null,
+                  facturation_pro_id: customerKey,
+                  facturation_pro_synced_at: new Date().toISOString(),
+                  active: true,
+                })
+                .select('id')
+                .single();
+              if (created?.id) {
+                clientId = created.id;
+                autoCreatedClients++;
+                console.log(`Auto-created client for FP customer ${customerKey} (${company})`);
+              }
+            }
+          } catch (e) {
+            console.warn(`Failed to auto-create client ${customerKey}:`, e);
+          }
+        }
+        if (clientId) clientCache.set(customerKey, clientId);
       }
 
-      // Check if invoice already exists
-      const { data: existingInvoice } = await supabaseClient
-        .from('invoices')
-        .select('id')
-        .eq('facturation_pro_id', fpInvoice.id?.toString())
-        .single()
+      if (!clientId) {
+        missingCustomerIds.add(fp.customer_id);
+        skippedInvoices++;
+        continue;
+      }
 
-      // Generate PDF URL
-      const pdfUrl = `${FACTURATION_PRO_API_URL}/firms/${firmId}/invoices/${fpInvoice.id}.pdf`
+      const amountTTC = parseFloat(fp.total) || 0;
+      const amountHT = fp.total_pre_tax != null ? parseFloat(fp.total_pre_tax) : amountTTC;
+      totalTTC += amountTTC;
+      totalHT += amountHT;
 
+      const pdfUrl = `${FACTURATION_PRO_API_URL}/firms/${firmId}/invoices/${fp.id}.pdf`
       const invoiceData = {
-        client_id: client.id,
-        invoice_number: fpInvoice.invoice_ref,
-        title: fpInvoice.title || null,
-        amount: parseFloat(fpInvoice.total),
-        status: fpInvoice.paid_on ? 'paid' : 'unpaid',
-        invoice_date: fpInvoice.invoiced_on,
-        facturation_pro_id: fpInvoice.id?.toString(),
+        client_id: clientId,
+        invoice_number: fp.invoice_ref,
+        title: fp.title || null,
+        amount: amountTTC,
+        amount_ht: amountHT,
+        status: fp.paid_on ? 'paid' : 'unpaid',
+        invoice_date: fp.invoiced_on,
+        facturation_pro_id: fp.id?.toString(),
         facturation_pro_pdf_url: pdfUrl,
       }
 
+      const { data: existingInvoice } = await supabaseClient
+        .from('invoices')
+        .select('id')
+        .eq('facturation_pro_id', fp.id?.toString())
+        .maybeSingle();
+
       if (existingInvoice) {
-        // Update existing invoice
-        await supabaseClient
-          .from('invoices')
-          .update(invoiceData)
-          .eq('id', existingInvoice.id)
+        await supabaseClient.from('invoices').update(invoiceData).eq('id', existingInvoice.id);
       } else {
-        // Create new invoice
-        await supabaseClient
-          .from('invoices')
-          .insert(invoiceData)
+        await supabaseClient.from('invoices').insert(invoiceData);
       }
-
-      syncedInvoices++
+      syncedInvoices++;
     }
 
-    // Step 4: Trigger revenue calculation for all clients
-    console.log('Invoking calculate-client-revenue function...')
-    const { error: revenueError } = await supabaseClient.functions.invoke('calculate-client-revenue')
-    
-    if (revenueError) {
-      console.error('Failed to calculate client revenue:', revenueError)
-    } else {
-      console.log('Revenue calculation completed successfully')
-    }
+    console.log('Invoking calculate-client-revenue...');
+    const { error: revenueError } = await supabaseClient.functions.invoke('calculate-client-revenue', {
+      headers: { 'x-cron-secret': cronSecret ?? '' },
+    });
+    if (revenueError) console.error('Failed to calculate client revenue:', revenueError);
 
-    console.log(`Synced ${syncedInvoices} invoices, skipped ${skippedInvoices}`)
-    if (missingClientIds.size > 0) {
-      console.warn(`Missing clients for customer IDs: ${Array.from(missingClientIds).join(', ')}`)
-    }
+    // Log
+    await supabaseClient.from('facturation_sync_log').insert({
+      trigger,
+      synced_invoices: syncedInvoices,
+      skipped_invoices: skippedInvoices,
+      auto_created_clients: autoCreatedClients,
+      total_invoices: allInvoices.length,
+      missing_customer_ids: Array.from(missingCustomerIds),
+      total_ht: totalHT,
+      total_ttc: totalTTC,
+      duration_ms: Date.now() - startedAt,
+    });
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        syncedInvoices,
-        skippedInvoices,
-        totalInvoices: facturationProInvoices.length,
-        missingClientIds: Array.from(missingClientIds),
-        message: 'Invoice synchronization completed',
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    )
+    return new Response(JSON.stringify({
+      success: true,
+      syncedInvoices, skippedInvoices, autoCreatedClients,
+      totalInvoices: allInvoices.length,
+      missingCustomerIds: Array.from(missingCustomerIds),
+      totalHT, totalTTC,
+    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
   } catch (error) {
-    console.error('Error in sync-facturation-pro-invoices:', error)
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    )
+    console.error('Error in sync-facturation-pro-invoices:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    await supabaseClient.from('facturation_sync_log').insert({
+      trigger,
+      synced_invoices: syncedInvoices,
+      skipped_invoices: skippedInvoices,
+      auto_created_clients: autoCreatedClients,
+      missing_customer_ids: Array.from(missingCustomerIds),
+      total_ht: totalHT,
+      total_ttc: totalTTC,
+      error: message,
+      duration_ms: Date.now() - startedAt,
+    });
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 })
