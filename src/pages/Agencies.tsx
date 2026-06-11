@@ -181,15 +181,15 @@ export default function Agencies() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">{t('agencies.title')}</h1>
-          <p className="text-muted-foreground">{t('agencies.subtitle')}</p>
-        </div>
-        <ProtectedAction module="agencies" action="create">
-          <AddAgencyDialog onAgencyAdded={fetchAgencies} />
-        </ProtectedAction>
-      </div>
+      <PageHeader
+        title={t('agencies.title')}
+        subtitle={t('agencies.subtitle')}
+        actions={
+          <ProtectedAction module="agencies" action="create">
+            <AddAgencyDialog onAgencyAdded={fetchAgencies} />
+          </ProtectedAction>
+        }
+      />
 
       <div className="space-y-3">
         <p className="text-sm font-medium text-muted-foreground">{t('agencies.searchLabel')}</p>
