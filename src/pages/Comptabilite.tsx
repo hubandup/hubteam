@@ -606,6 +606,96 @@ export default function Comptabilite() {
     await handleFieldUpdate(id, "remark", "remark", value);
   };
 
+  // ──────────────────────────────────────────────────────────────────────
+  // Reconciliation engine: apply matches to DB (invoices + lines)
+  // ──────────────────────────────────────────────────────────────────────
+  const applyMatches = async (matches: LineMatchResult[], statementPath?: string) => {
+    if (!matches.length) return 0;
+    await Promise.all(
+      matches.map((m) =>
+        supabase
+          .from("supplier_invoices")
+          .update({ status: "Payé", payment_detail: m.paymentDetail })
+          .eq("id", m.invoiceId),
+      ),
+    );
+    if (statementPath) {
+      await Promise.all(
+        matches.map((m) =>
+          supabase
+            .from("bank_statement_lines")
+            .update({
+              matched_invoice_id: m.invoiceId,
+              matched_at: new Date().toISOString(),
+              reject_reason: null,
+            })
+            .eq("statement_path", statementPath)
+            .eq("line_index", m.lineIndex),
+        ),
+      );
+    } else {
+      // rematch path: line_index alone is not globally unique, so use id list
+      await Promise.all(
+        matches.map((m) =>
+          supabase
+            .from("bank_statement_lines")
+            .update({
+              matched_invoice_id: m.invoiceId,
+              matched_at: new Date().toISOString(),
+              reject_reason: null,
+            })
+            .is("matched_invoice_id", null)
+            .eq("line_index", m.lineIndex),
+        ),
+      );
+    }
+    return matches.length;
+  };
+
+  /** Replay stored unmatched lines against current invoices (silent). */
+  const rematchUnmatchedLines = async (currentInvoices: Invoice[]) => {
+    const { data, error } = await supabase
+      .from("bank_statement_lines")
+      .select("id, statement_path, line_index, line_date, label, raw_text, amount")
+      .is("matched_invoice_id", null);
+    if (error || !data || !data.length) return 0;
+    const lines: ParsedBankLine[] = data.map((d: any) => ({
+      line_index: d.line_index,
+      line_date: d.line_date,
+      label: d.label || "",
+      raw_text: d.raw_text || "",
+      amount: d.amount !== null ? Number(d.amount) : null,
+    }));
+    const { matches, rejects } = matchInvoicesToLines(currentInvoices, lines);
+    console.info("[Rematch] matches:", matches.length, "rejects:", rejects);
+    if (matches.length) {
+      // group by statement_path via the data array
+      const byKey = new Map<string, string>();
+      data.forEach((d: any) => byKey.set(`${d.statement_path}|${d.line_index}`, d.id));
+      await Promise.all(
+        matches.map(async (m) => {
+          await supabase
+            .from("supplier_invoices")
+            .update({ status: "Payé", payment_detail: m.paymentDetail })
+            .eq("id", m.invoiceId);
+          // update the first unmatched line with the right line_index
+          const lineRow = data.find((d: any) => d.line_index === m.lineIndex);
+          if (lineRow) {
+            await supabase
+              .from("bank_statement_lines")
+              .update({
+                matched_invoice_id: m.invoiceId,
+                matched_at: new Date().toISOString(),
+                reject_reason: null,
+              })
+              .eq("id", lineRow.id);
+          }
+        }),
+      );
+    }
+    return matches.length;
+  };
+
   const handleInvoiceFile = async (file: File) => {
     setProcessing(true);
     setProcessingLabel("Extraction des données et envoi vers kDrive en cours…");
@@ -620,6 +710,17 @@ export default function Comptabilite() {
       await loadInvoices();
       toast.success("Facture importée avec succès");
       setInvoiceUploadOpen(false);
+      // Auto-rematch: maybe this invoice matches a previously unmatched line
+      const fresh = await supabase
+        .from("supplier_invoices")
+        .select("*")
+        .order("invoice_date", { ascending: false, nullsFirst: false });
+      const freshList = (fresh.data as DbInvoice[] | null)?.map(fromDb) || [];
+      const matched = await rematchUnmatchedLines(freshList);
+      if (matched > 0) {
+        await loadInvoices();
+        toast.success(`Rapprochement automatique : ${matched} facture(s) marquée(s) payée(s)`);
+      }
     } catch (err) {
       console.error(err);
       toast.error("Échec du traitement de la facture");
@@ -633,7 +734,7 @@ export default function Comptabilite() {
     setProcessing(true);
     setProcessingLabel("Rapprochement bancaire en cours…");
     try {
-      // Persist the uploaded statement in storage
+      // 1) Persist file in storage
       const ts = new Date().toISOString().replace(/[:.]/g, "-");
       const safeName = file.name.replace(/[^\w.\-]/g, "_");
       const storagePath = `${ts}__${safeName}`;
@@ -642,29 +743,66 @@ export default function Comptabilite() {
         .upload(storagePath, file, { upsert: false, contentType: file.type || undefined });
       if (upErr) console.error("Bank statement upload failed", upErr);
 
-      const updated = await processBankStatement(file, invoices);
-      const changes = updated.filter((u) => {
-        const prev = invoices.find((i) => i.id === u.id);
-        return prev && prev.status !== u.status;
-      });
-      if (changes.length) {
-        await Promise.all(
-          changes.map((c) =>
-            supabase
-              .from("supplier_invoices")
-              .update({
-                status: c.status,
-                payment_detail: c.paymentDetail,
-              })
-              .eq("id", c.id),
-          ),
-        );
+      // 2) Parse the Excel file into structured lines
+      const parsed = await parseBankFile(file);
+      if (!parsed) {
+        toast.error("Impossible de lire le fichier Excel");
+        return;
       }
+      const { lines, sheetUsed } = parsed;
+      console.info(`[Bank] Parsed ${lines.length} lines from sheet "${sheetUsed}"`);
+
+      // 3) Persist all lines (one row per spreadsheet line)
+      if (lines.length) {
+        const { error: insErr } = await supabase
+          .from("bank_statement_lines")
+          .insert(
+            lines.map((l) => ({
+              statement_path: storagePath,
+              line_index: l.line_index,
+              line_date: l.line_date,
+              label: l.label,
+              raw_text: l.raw_text,
+              amount: l.amount,
+            })),
+          );
+        if (insErr) console.error("Persist lines failed", insErr);
+      }
+
+      // 4) Run matching against current invoices
+      const { matches, rejects, lineReasons } = matchInvoicesToLines(invoices, lines);
+      console.info("[Bank] matches:", matches.length, "rejects:", rejects);
+
+      const matchedCount = await applyMatches(matches, storagePath);
+
+      // 5) Persist reject reasons for unmatched lines (for the manual review UI)
+      const unmatchedUpdates = lines
+        .filter((l) => !matches.some((m) => m.lineIndex === l.line_index))
+        .map((l) => ({
+          line_index: l.line_index,
+          reason: lineReasons.get(l.line_index) || "no_invoice_with_matching_amount",
+        }));
+      await Promise.all(
+        unmatchedUpdates.map((u) =>
+          supabase
+            .from("bank_statement_lines")
+            .update({ reject_reason: u.reason })
+            .eq("statement_path", storagePath)
+            .eq("line_index", u.line_index),
+        ),
+      );
+
       await loadInvoices();
-      toast.success("Rapprochement bancaire terminé");
       await loadBankStatements();
       setBankUploadOpen(false);
-    } catch {
+
+      if (matchedCount === 0) {
+        toast.info(`Aucune correspondance trouvée dans "${sheetUsed}". Consultez "Lignes non rapprochées" pour revoir manuellement.`);
+      } else {
+        toast.success(`${matchedCount} facture(s) marquée(s) payée(s) · ${unmatchedUpdates.length} ligne(s) à revoir`);
+      }
+    } catch (e) {
+      console.error(e);
       toast.error("Échec du rapprochement");
     } finally {
       setProcessing(false);
