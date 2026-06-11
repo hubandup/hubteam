@@ -199,22 +199,25 @@ export default function Projects() {
       {/* ── Page title + actions ──────────────────────────────────────── */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 style={{
-            fontFamily: "'Instrument Sans', sans-serif",
-            fontWeight: 700,
-            fontSize: 28,
-            color: 'hsl(var(--foreground))',
-            letterSpacing: '-0.03em',
-            lineHeight: 1,
-            marginBottom: 4,
-          }}>
-            Projets
-          </h1>
-          <p style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))' }}>
-            Vue d'ensemble de tous vos projets actifs et archivés
-          </p>
-          {isMobile && !isClient && (
-            <div className="mt-3">
+      <PageHeader
+        title="Projets"
+        subtitle="Vue d'ensemble de tous vos projets actifs et archivés"
+        actions={
+          !isClient ? (
+            <>
+              {!isMobile && (
+                <ExportButton
+                  data={filteredProjects}
+                  columns={[
+                    { key: 'name', label: 'Projet' },
+                    { key: 'status', label: 'Statut' },
+                    { key: 'description', label: 'Description' },
+                    { key: 'start_date', label: 'Date début' },
+                    { key: 'end_date', label: 'Date fin' },
+                  ]}
+                  filename="projets"
+                />
+              )}
               <ProtectedAction module="projects" action="create">
                 <AddProjectDialog onProjectAdded={() => {
                   void Promise.all([
@@ -223,33 +226,11 @@ export default function Projects() {
                   ]);
                 }} />
               </ProtectedAction>
-            </div>
-          )}
-        </div>
-        {!isMobile && !isClient && (
-          <div className="flex items-center gap-2">
-            <ExportButton
-              data={filteredProjects}
-              columns={[
-                { key: 'name', label: 'Projet' },
-                { key: 'status', label: 'Statut' },
-                { key: 'description', label: 'Description' },
-                { key: 'start_date', label: 'Date début' },
-                { key: 'end_date', label: 'Date fin' },
-              ]}
-              filename="projets"
-            />
-            <ProtectedAction module="projects" action="create">
-              <AddProjectDialog onProjectAdded={() => {
-                void Promise.all([
-                  queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' }),
-                  queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' }),
-                ]);
-              }} />
-            </ProtectedAction>
-          </div>
-        )}
-      </div>
+            </>
+          ) : null
+        }
+      />
+
 
       {/* ── Stats bar ─────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 24 }}>
