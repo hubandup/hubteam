@@ -15,13 +15,13 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { EntityCard } from '@/components/layout';
+import { URGENCY_TOKENS } from '@/lib/design-tokens';
 import {
   getUrgency,
   getStatusBucket,
   getStatusStyle,
   formatShortFrDate,
   formatCa,
-  type UrgencyBucket,
 } from '@/components/targets/targetUtils';
 
 interface ClientCardProps {
@@ -49,12 +49,6 @@ interface ClientCardProps {
   onMouseEnter?: () => void;
 }
 
-const URGENCY_TEXT_COLOR: Record<UrgencyBucket, string> = {
-  late: '#DC2626',
-  week: '#EA580C',
-  month: '#65748B',
-  none: '',
-};
 
 export function ClientCard({ client, onClick, onMouseEnter }: ClientCardProps) {
   const { isAgency, loading: roleLoading } = useUserRole();
