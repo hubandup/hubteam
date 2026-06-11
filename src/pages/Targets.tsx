@@ -5,14 +5,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { ClientKanbanView } from '@/components/ClientKanbanView';
 import { ClientListView } from '@/components/ClientListView';
 import { Input } from '@/components/ui/input';
-import { LayoutGrid, Columns3, List, Search, Star, Plus } from 'lucide-react';
+import { LayoutGrid, Columns3, List, Star, Plus } from 'lucide-react';
 import { useTargets } from '@/hooks/useTargets';
 import { PageLoader } from '@/components/PageLoader';
 import { toast } from 'sonner';
 import { TargetCard } from '@/components/targets/TargetCard';
 import { getUrgency, getStatusBucket, type UrgencyBucket } from '@/components/targets/targetUtils';
 import { AddClientDialog } from '@/components/AddClientDialog';
+import { PageHeader, ViewToggle, SearchFilterBar, SectionHeader } from '@/components/layout';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+
 
 type ViewMode = 'list' | 'kanban' | 'grid';
 type StatusFilter = 'all' | 'prospect' | 'client' | 'relancer';
