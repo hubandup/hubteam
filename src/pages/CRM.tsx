@@ -169,7 +169,7 @@ export default function CRM() {
                 />
               )}
               {!isMobile && (
-                <ViewToggle
+                <ViewToggle<'list' | 'kanban' | 'grid'>
                   options={[
                     { value: 'list', icon: List, label: 'Vue liste' },
                     { value: 'kanban', icon: Columns3, label: 'Vue kanban' },
@@ -179,6 +179,7 @@ export default function CRM() {
                   onChange={setViewMode}
                 />
               )}
+
               {!isMobile && (
                 <ProtectedAction module="crm" action="create">
                   <ImportClientsValidationDialog onClientsImported={() => queryClient.invalidateQueries({ queryKey: ['clients'] })} />
