@@ -72,7 +72,7 @@ export function TargetCard({ client, onClick, onEdited }: TargetCardProps) {
         logoUrl={client.logo_url}
         alert={
           urgency.bucket !== 'none'
-            ? { label: urgency.label, color: URGENCY_TEXT_COLOR[urgency.bucket] }
+            ? { label: urgency.label, color: URGENCY_TOKENS[urgency.bucket] }
             : undefined
         }
         status={statusStyle}
