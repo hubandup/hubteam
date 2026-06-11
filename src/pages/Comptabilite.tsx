@@ -236,6 +236,7 @@ async function processInvoiceUpload(file: File): Promise<Invoice> {
     paymentTerms: e.paymentTerms || "30 jours",
     status: "À payer",
     paymentDetail: "",
+    paymentDate: "",
     fileUrl,
     remark: "",
     fiscalYear: computeFiscalYear(e.invoiceDate || offsetDate(0)),
