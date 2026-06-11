@@ -852,14 +852,140 @@ export default function Comptabilite() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Fournisseur</TableHead>
-              <TableHead>N° facture</TableHead>
-              <TableHead className="text-right">HT (€)</TableHead>
+              <TableHead
+                className="cursor-pointer select-none"
+                onClick={() =>
+                  setSortConfig((prev) =>
+                    prev?.key === "supplier"
+                      ? { key: "supplier", dir: prev.dir === "asc" ? "desc" : "asc" }
+                      : { key: "supplier", dir: "asc" }
+                  )
+                }
+              >
+                <span className="inline-flex items-center gap-1">
+                  Fournisseur
+                  {sortConfig?.key === "supplier" ? (
+                    sortConfig.dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  ) : (
+                    <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                  )}
+                </span>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none"
+                onClick={() =>
+                  setSortConfig((prev) =>
+                    prev?.key === "invoiceNumber"
+                      ? { key: "invoiceNumber", dir: prev.dir === "asc" ? "desc" : "asc" }
+                      : { key: "invoiceNumber", dir: "asc" }
+                  )
+                }
+              >
+                <span className="inline-flex items-center gap-1">
+                  N° facture
+                  {sortConfig?.key === "invoiceNumber" ? (
+                    sortConfig.dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  ) : (
+                    <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                  )}
+                </span>
+              </TableHead>
+              <TableHead
+                className="text-right cursor-pointer select-none"
+                onClick={() =>
+                  setSortConfig((prev) =>
+                    prev?.key === "amountHT"
+                      ? { key: "amountHT", dir: prev.dir === "asc" ? "desc" : "asc" }
+                      : { key: "amountHT", dir: "asc" }
+                  )
+                }
+              >
+                <span className="inline-flex items-center gap-1 justify-end">
+                  HT (€)
+                  {sortConfig?.key === "amountHT" ? (
+                    sortConfig.dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  ) : (
+                    <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                  )}
+                </span>
+              </TableHead>
               <TableHead className="text-right">TVA (€)</TableHead>
-              <TableHead className="text-right">TTC (€)</TableHead>
-              <TableHead>Date facture</TableHead>
-              <TableHead>Échéance</TableHead>
-              <TableHead>Statut</TableHead>
+              <TableHead
+                className="text-right cursor-pointer select-none"
+                onClick={() =>
+                  setSortConfig((prev) =>
+                    prev?.key === "amountTTC"
+                      ? { key: "amountTTC", dir: prev.dir === "asc" ? "desc" : "asc" }
+                      : { key: "amountTTC", dir: "asc" }
+                  )
+                }
+              >
+                <span className="inline-flex items-center gap-1 justify-end">
+                  TTC (€)
+                  {sortConfig?.key === "amountTTC" ? (
+                    sortConfig.dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  ) : (
+                    <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                  )}
+                </span>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none"
+                onClick={() =>
+                  setSortConfig((prev) =>
+                    prev?.key === "invoiceDate"
+                      ? { key: "invoiceDate", dir: prev.dir === "asc" ? "desc" : "asc" }
+                      : { key: "invoiceDate", dir: "asc" }
+                  )
+                }
+              >
+                <span className="inline-flex items-center gap-1">
+                  Date facture
+                  {sortConfig?.key === "invoiceDate" ? (
+                    sortConfig.dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  ) : (
+                    <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                  )}
+                </span>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none"
+                onClick={() =>
+                  setSortConfig((prev) =>
+                    prev?.key === "dueDate"
+                      ? { key: "dueDate", dir: prev.dir === "asc" ? "desc" : "asc" }
+                      : { key: "dueDate", dir: "asc" }
+                  )
+                }
+              >
+                <span className="inline-flex items-center gap-1">
+                  Échéance
+                  {sortConfig?.key === "dueDate" ? (
+                    sortConfig.dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  ) : (
+                    <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                  )}
+                </span>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none"
+                onClick={() =>
+                  setSortConfig((prev) =>
+                    prev?.key === "status"
+                      ? { key: "status", dir: prev.dir === "asc" ? "desc" : "asc" }
+                      : { key: "status", dir: "asc" }
+                  )
+                }
+              >
+                <span className="inline-flex items-center gap-1">
+                  Statut
+                  {sortConfig?.key === "status" ? (
+                    sortConfig.dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  ) : (
+                    <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                  )}
+                </span>
+              </TableHead>
               <TableHead>Détail paiement</TableHead>
               <TableHead>Fichier</TableHead>
               <TableHead className="min-w-[180px]">Remarque</TableHead>
