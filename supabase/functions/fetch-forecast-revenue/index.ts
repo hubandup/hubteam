@@ -415,14 +415,20 @@ Deno.serve(async (req) => {
         // Date d'échéance: priorité term_on (date d'échéance)
         const validityStr = (quote as any).term_on;
 
-        const parsedValidityDate = validityStr ? new Date(validityStr) : null;
-        const validityDate = parsedValidityDate && !Number.isNaN(parsedValidityDate.getTime())
-          ? parsedValidityDate
-          : month1Start;
+        if (!validityStr) {
+          console.log(`[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": excluded (no term_on date)`);
+          continue;
+        }
 
-        // An overdue/no-date quote still represents future billable revenue: place it in M+1.
+        const validityDate = new Date(validityStr);
+        if (Number.isNaN(validityDate.getTime())) {
+          console.log(`[FORECAST] Quote ${quote.id}: excluded (invalid term_on: ${validityStr})`);
+          continue;
+        }
+
+        // Only quotes whose actual Facturation.PRO date falls within M+1 to M+3 are forecast.
         const bucket = getMonthBucket(
-          validityDate < month1Start ? month1Start : validityDate,
+          validityDate,
           month1Start,
           month1End,
           month2Start,
@@ -432,7 +438,7 @@ Deno.serve(async (req) => {
         );
 
         if (bucket === null) {
-          console.log(`[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": ${amount}€ outside range (term_on: ${validityDate.toISOString().split('T')[0]})`);
+          console.log(`[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": ${amount}€ excluded (expired or outside M+1–M+3, term_on: ${validityDate.toISOString().split('T')[0]})`);
           continue;
         }
 
