@@ -315,37 +315,40 @@ export type ParsedBankLine = {
   amount: number | null;
 };
 
-function parseBankFile(file: File): Promise<{ lines: ParsedBankLine[]; sheetUsed: string } | null> {
-  return file.arrayBuffer().then((buf) => {
-    try {
-      const wb = XLSX.read(buf, { type: "array", cellDates: true });
-      const sheetUsed = findTargetSheet(wb);
-      const ws = wb.Sheets[sheetUsed];
-      const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null, raw: true });
-      const lines: ParsedBankLine[] = rows.map((r, idx) => {
-        const amounts = rowAmounts(r);
-        const label = r
-          .map((c) => (c instanceof Date ? "" : String(c ?? "")))
-          .filter((s) => s && !/^-?\d+([.,]\d+)?$/.test(s.trim()))
-          .join(" ")
-          .replace(/\s+/g, " ")
-          .trim();
-        const raw_text = r.map((c) => (c instanceof Date ? "" : String(c ?? ""))).join(" | ");
-        return {
-          line_index: idx,
-          line_date: parseRowDateISO(r),
-          label: label.slice(0, 500),
-          raw_text: raw_text.slice(0, 2000),
-          amount: amounts.length ? amounts[0] : null,
-        };
-      }).filter((l) => l.amount !== null && l.amount > 0);
-      return { lines, sheetUsed };
-    } catch (e) {
-      console.error("Bank statement parse failed", e);
-      return null;
-    }
-  });
+function parseBankBuffer(buf: ArrayBuffer): { lines: ParsedBankLine[]; sheetUsed: string } | null {
+  try {
+    const wb = XLSX.read(buf, { type: "array", cellDates: true });
+    const sheetUsed = findTargetSheet(wb);
+    const ws = wb.Sheets[sheetUsed];
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null, raw: true });
+    const lines: ParsedBankLine[] = rows.map((r, idx) => {
+      const amounts = rowAmounts(r);
+      const label = r
+        .map((c) => (c instanceof Date ? "" : String(c ?? "")))
+        .filter((s) => s && !/^-?\d+([.,]\d+)?$/.test(s.trim()))
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim();
+      const raw_text = r.map((c) => (c instanceof Date ? "" : String(c ?? ""))).join(" | ");
+      return {
+        line_index: idx,
+        line_date: parseRowDateISO(r),
+        label: label.slice(0, 500),
+        raw_text: raw_text.slice(0, 2000),
+        amount: amounts.length ? amounts[0] : null,
+      };
+    }).filter((l) => l.amount !== null && l.amount > 0);
+    return { lines, sheetUsed };
+  } catch (e) {
+    console.error("Bank statement parse failed", e);
+    return null;
+  }
 }
+
+function parseBankFile(file: File): Promise<{ lines: ParsedBankLine[]; sheetUsed: string } | null> {
+  return file.arrayBuffer().then((buf) => parseBankBuffer(buf));
+}
+
 
 export type LineMatchResult = {
   invoiceId: string;
@@ -576,17 +579,18 @@ export default function Comptabilite() {
           : "Aucune nouvelle facture trouvée dans kDrive",
       );
       await loadInvoices();
-      // Auto-rematch: a freshly-synced invoice may match previously unmatched lines
+      // Re-parse every bank statement in storage, upsert lines, then rematch
       const fresh = await supabase
         .from("supplier_invoices")
         .select("*")
         .order("invoice_date", { ascending: false, nullsFirst: false });
       const freshList = (fresh.data as DbInvoice[] | null)?.map(fromDb) || [];
-      const matched = await rematchUnmatchedLines(freshList);
+      const matched = await reprocessAllBankStatements(freshList);
       if (matched > 0) {
         await loadInvoices();
         toast.success(`Rapprochement automatique : ${matched} facture(s) marquée(s) payée(s)`);
       }
+
     } catch (e: any) {
       console.error(e);
       toast.error(`Sync kDrive échouée : ${e?.message ?? e}`);
@@ -706,6 +710,66 @@ export default function Comptabilite() {
     }
     return matches.length;
   };
+
+  /**
+   * Re-parse every bank statement file currently in storage, upsert all their
+   * lines into bank_statement_lines, then run a full rematch. Guarantees that
+   * each sync reconciles the latest state — including older uploads done
+   * before line persistence existed.
+   */
+  const reprocessAllBankStatements = async (currentInvoices: Invoice[]): Promise<number> => {
+    try {
+      const { data: files, error: listErr } = await supabase.storage
+        .from("bank-statements")
+        .list("", { limit: 200, sortBy: { column: "created_at", order: "desc" } });
+      if (listErr) {
+        console.error("[Reprocess] list failed", listErr);
+        return 0;
+      }
+      const targets = (files || []).filter((f) => f.name && !f.name.startsWith("."));
+      console.info(`[Reprocess] ${targets.length} bank statement file(s) found`);
+
+      for (const f of targets) {
+        const { data: blob, error: dlErr } = await supabase.storage
+          .from("bank-statements")
+          .download(f.name);
+        if (dlErr || !blob) {
+          console.error(`[Reprocess] download failed for ${f.name}`, dlErr);
+          continue;
+        }
+        const buf = await blob.arrayBuffer();
+        const parsed = parseBankBuffer(buf);
+        if (!parsed) continue;
+        const { lines, sheetUsed } = parsed;
+        if (!lines.length) {
+          console.warn(`[Reprocess] ${f.name}: no lines parsed (sheet="${sheetUsed}")`);
+          continue;
+        }
+        const { error: upErr } = await supabase
+          .from("bank_statement_lines")
+          .upsert(
+            lines.map((l) => ({
+              statement_path: f.name,
+              line_index: l.line_index,
+              line_date: l.line_date,
+              label: l.label,
+              raw_text: l.raw_text,
+              amount: l.amount,
+            })),
+            { onConflict: "statement_path,line_index", ignoreDuplicates: false },
+          );
+        if (upErr) console.error(`[Reprocess] upsert failed for ${f.name}`, upErr);
+        else console.info(`[Reprocess] ${f.name}: ${lines.length} lines upserted (sheet="${sheetUsed}")`);
+      }
+
+      // Full rematch on all currently-unmatched stored lines
+      return await rematchUnmatchedLines(currentInvoices);
+    } catch (e) {
+      console.error("[Reprocess] fatal", e);
+      return 0;
+    }
+  };
+
 
   const handleInvoiceFile = async (file: File) => {
     setProcessing(true);
