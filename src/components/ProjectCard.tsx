@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { EntityCard } from '@/components/layout';
+import { STATUS_TOKENS, type StatusKey } from '@/lib/design-tokens';
 
 interface ProjectCardProps {
   project: {
@@ -25,13 +26,13 @@ interface ProjectCardProps {
   onClick: () => void;
 }
 
-const statusConfig: Record<string, { bg: string; text: string; dot: string; label: string }> = {
-  active:           { bg: '#ECFDF5', text: '#047857', dot: '#059669', label: 'En cours' },
-  planning:         { bg: '#F1F5F9', text: '#475569', dot: '#94A3B8', label: 'À faire' },
-  reco_in_progress: { bg: '#F3E8FF', text: '#6B21A8', dot: '#9333EA', label: 'Reco' },
-  completed:        { bg: '#F1F5F9', text: '#475569', dot: '#94A3B8', label: 'Terminé' },
-  lost:             { bg: '#FEF2F2', text: '#B91C1C', dot: '#DC2626', label: 'Perdu' },
-  urgent:           { bg: '#FEF2F2', text: '#B91C1C', dot: '#DC2626', label: 'Urgent' },
+const PROJECT_STATUS_MAP: Record<string, StatusKey> = {
+  active: 'project_active',
+  planning: 'project_planning',
+  reco_in_progress: 'project_reco',
+  completed: 'project_completed',
+  lost: 'project_lost',
+  urgent: 'project_urgent',
 };
 
 function TaskBar({ completed, total }: { completed: number; total: number }) {
@@ -63,7 +64,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
   const tasksTotal = project.tasks_total || 0;
   const tasksCompleted = project.tasks_completed || 0;
 
-  const status = statusConfig[project.status] || statusConfig.active;
+  const status = STATUS_TOKENS[PROJECT_STATUS_MAP[project.status] || 'project_active'];
 
   return (
     <EntityCard

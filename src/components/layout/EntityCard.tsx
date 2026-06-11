@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getLogoFallback } from "@/components/targets/targetUtils";
+import { LOGO_SIZE } from "@/lib/design-tokens";
 
 export interface EntityCardStatus {
   label: string;
@@ -85,7 +86,7 @@ export function EntityCard({
   const fallback = getLogoFallback(title);
 
   const hasFooter = !!(footerLeft || footerRight);
-  const logoBox = logoSize === "xl" ? "w-16 h-16" : "w-14 h-14";
+  const logoBox = LOGO_SIZE[logoSize];
 
   return (
     <div

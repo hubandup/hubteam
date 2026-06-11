@@ -1,5 +1,7 @@
 import { differenceInCalendarDays, format, isSameYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { STATUS_TOKENS, type StatusToken } from '@/lib/design-tokens';
+
 
 export type UrgencyBucket = 'late' | 'week' | 'month' | 'none';
 export type StatusBucket = 'prospect' | 'client' | 'relancer';
@@ -47,21 +49,10 @@ export function getStatusBucket(
   return 'prospect';
 }
 
-export function getStatusStyle(bucket: StatusBucket): {
-  bg: string;
-  text: string;
-  dot: string;
-  label: string;
-} {
-  switch (bucket) {
-    case 'prospect':
-      return { bg: '#EFF6FF', text: '#1D4ED8', dot: '#2563EB', label: 'Prospect' };
-    case 'client':
-      return { bg: '#ECFDF5', text: '#047857', dot: '#059669', label: 'Client actif' };
-    case 'relancer':
-      return { bg: '#FFF7ED', text: '#C2410C', dot: '#EA580C', label: 'À relancer' };
-  }
+export function getStatusStyle(bucket: StatusBucket): StatusToken {
+  return STATUS_TOKENS[bucket];
 }
+
 
 const PASTEL_PALETTE = [
   { bg: '#FEF3C7', text: '#92400E' },

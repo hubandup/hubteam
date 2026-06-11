@@ -2,6 +2,7 @@ import { FolderCheck } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { EntityCard } from '@/components/layout';
+import { STATUS_TOKENS } from '@/lib/design-tokens';
 
 interface AgencyCardProps {
   agency: {
@@ -57,9 +58,8 @@ export function AgencyCard({ agency, onClick }: AgencyCardProps) {
   const email = mainContact?.email || agency.contact_email || undefined;
   const phone = mainContact?.phone || agency.contact_phone || undefined;
 
-  const status = agency.active
-    ? { label: 'Actif', bg: '#ECFDF5', text: '#047857', dot: '#059669' }
-    : { label: 'Inactif', bg: '#F1F5F9', text: '#475569', dot: '#94A3B8' };
+  const status = agency.active ? STATUS_TOKENS.active : STATUS_TOKENS.inactive;
+
 
   return (
     <EntityCard
