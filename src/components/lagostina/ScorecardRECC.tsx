@@ -505,7 +505,7 @@ export function ScorecardRECC({
     <div className="space-y-4">
       {/* Header: current week badge + learnings */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] font-['Roboto'] text-sm font-medium">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] font-['Roboto'] text-sm font-medium">
           <CalendarClock className="h-4 w-4" />
           <span>Semaine en cours&nbsp;: <strong>S{currentWeek}</strong></span>
           <span className="opacity-60">·</span>
