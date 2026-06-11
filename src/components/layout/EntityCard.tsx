@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getLogoFallback } from "@/components/targets/targetUtils";
+import { LOGO_SIZE } from "@/lib/design-tokens";
 
 export interface EntityCardStatus {
   label: string;
