@@ -45,21 +45,9 @@ function applyDesignSettings(data: any) {
   root.style.setProperty('--font-body-weight', data.body_font_weight || '400');
   root.style.setProperty('--font-body-size', data.body_font_size || '1rem');
 
-  // NOTE: Color tokens (--primary, --background, --secondary, --ring) are
-  // intentionally NOT overridden here — index.css owns the light/dark palette
-  // so dark mode works consistently across the app. Only radius is enforced.
-  const style = document.getElementById('dynamic-theme-style') || document.createElement('style');
-  style.id = 'dynamic-theme-style';
-  style.innerHTML = `
-    button, [role="tab"], .btn,
-    [data-radix-collection-item],
-    [class*="rounded"] {
-      border-radius: 0 !important;
-    }
-  `;
-  if (!document.getElementById('dynamic-theme-style')) {
-    document.head.appendChild(style);
-  }
+  // NOTE: Color and radius tokens are intentionally NOT overridden here —
+  // index.css and Tailwind own the visual system so component radius variants apply.
+  document.getElementById('dynamic-theme-style')?.remove();
 
   // Load Google Fonts
   loadGoogleFonts(headingFont, bodyFont);
