@@ -97,10 +97,10 @@ export function Sidebar() {
             <SidebarMenu>
               {mainItems
                 .filter(item => item.title !== t('nav.activity') || role === 'admin')
-                .filter(item => !(item as any).adminOnly || role === 'admin')
+                .filter(item => !('adminOnly' in item) || !item.adminOnly || role === 'admin')
                 .filter(item => item.title !== t('nav.crm') || role !== 'client')
-                .filter(item => !(item as any).hideForAgency || role !== 'agency')
-                .filter(item => !(item as any).hideForClient || role !== 'client')
+                .filter(item => !('hideForAgency' in item) || !item.hideForAgency || role !== 'agency')
+                .filter(item => !('hideForClient' in item) || !item.hideForClient || role !== 'client')
                 .map((item) =>
                   ((item as { hasDedicatedAccess?: boolean }).hasDedicatedAccess || canRead(item.module)) ? (
                     <SidebarMenuItem key={item.url}>
@@ -115,7 +115,7 @@ export function Sidebar() {
                         >
                           <item.icon className="mr-2.5 h-4 w-4" />
                           <span>{item.title}</span>
-                          {(item as any).isClientItem && (
+                          {'isClientItem' in item && item.isClientItem && (
                             <span className="ml-auto">
                               <span className="inline-flex items-center justify-center w-1.5 h-1.5 rounded-full bg-sidebar-primary" />
                             </span>
