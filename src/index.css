@@ -119,34 +119,34 @@
   
   .dark {
     /* Ultra-modern Dark Theme */
-    --background: 224 71% 4%;
+    --background: 216 60% 6%;
     --foreground: 220 20% 95%;
     
-    --card: 224 50% 7%;
+    --card: 216 60% 10%;
     --card-foreground: 220 20% 95%;
     
-    --popover: 224 50% 7%;
+    --popover: 216 60% 10%;
     --popover-foreground: 220 20% 95%;
     
     --primary: 68 100% 64%;
-    --primary-foreground: 224 71% 4%;
+    --primary-foreground: 216 60% 10%;
     --primary-hover: 68 100% 58%;
     --primary-active: 68 100% 70%;
     
-    --secondary: 224 40% 12%;
+    --secondary: 216 60% 14%;
     --secondary-foreground: 220 20% 95%;
     
-    --muted: 224 40% 12%;
+    --muted: 216 60% 14%;
     --muted-foreground: 220 20% 55%;
     
     --accent: 68 100% 64%;
-    --accent-foreground: 224 71% 4%;
+    --accent-foreground: 216 60% 10%;
     
     --destructive: 0 63% 40%;
     --destructive-foreground: 220 20% 95%;
     
-    --border: 224 40% 14%;
-    --input: 224 40% 14%;
+    --border: 216 60% 16%;
+    --input: 216 60% 16%;
     --ring: 68 100% 64%;
     
     --primary-light: 68 100% 50%;
@@ -164,36 +164,36 @@
     --status-reco-in-progress: 262 55% 68%;
     --status-reco-in-progress-foreground: 0 0% 100%;
     --status-active: 152 69% 50%;
-    --status-active-foreground: 224 71% 4%;
-    --status-completed: 224 40% 18%;
+    --status-active-foreground: 216 60% 10%;
+    --status-completed: 216 60% 20%;
     --status-completed-foreground: 220 20% 60%;
     --status-urgent: 0 75% 60%;
     --status-urgent-foreground: 0 0% 100%;
     --status-lost: 0 84% 60%;
     --status-lost-foreground: 0 0% 100%;
     
-    --sidebar-background: 224 71% 3%;
+    --sidebar-background: 216 60% 5%;
     --sidebar-foreground: 220 20% 95%;
     --sidebar-primary: 68 100% 64%;
-    --sidebar-primary-foreground: 224 71% 4%;
-    --sidebar-accent: 224 50% 10%;
+    --sidebar-primary-foreground: 216 60% 10%;
+    --sidebar-accent: 216 60% 12%;
     --sidebar-accent-foreground: 220 20% 95%;
-    --sidebar-border: 224 40% 10%;
+    --sidebar-border: 216 60% 12%;
     --sidebar-ring: 68 100% 64%;
 
     /* Brand & semantic tokens — dark variants */
     --brand-yellow: 68 100% 64%;
-    --brand-yellow-foreground: 224 71% 4%;
+    --brand-yellow-foreground: 216 60% 10%;
     --brand-ink: 220 20% 95%;
-    --brand-ink-foreground: 224 71% 4%;
+    --brand-ink-foreground: 216 60% 10%;
 
-    --surface: 224 50% 7%;
-    --surface-muted: 224 40% 12%;
-    --surface-strong: 224 50% 9%;
+    --surface: 216 60% 10%;
+    --surface-muted: 216 60% 14%;
+    --surface-strong: 216 60% 12%;
     --surface-foreground: 220 20% 95%;
     --surface-muted-foreground: 220 20% 65%;
-    --hairline: 224 40% 14%;
-    --hairline-strong: 224 40% 22%;
+    --hairline: 216 60% 16%;
+    --hairline-strong: 216 60% 24%;
 
     --urgency-late: 0 75% 60%;
     --urgency-late-foreground: 0 0% 100%;
