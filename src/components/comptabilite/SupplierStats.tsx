@@ -209,6 +209,16 @@ export function SupplierStats({ invoices, fiscalYear }: Props) {
           sub={`${eur(stats.overdueTTC)} TTC`}
           tone={stats.overdueCount > 0 ? "warn" : "default"}
         />
+        <KpiCard
+          label="TVA récupérable (mois en cours)"
+          value={eur(stats.currentMonthTVA)}
+          sub={new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+        />
+        <KpiCard
+          label="TVA récupérable (exercice)"
+          value={eur(stats.totalTVA)}
+          sub={`Exercice ${fiscalYear}`}
+        />
       </div>
 
       {/* Top suppliers */}
