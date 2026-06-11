@@ -126,7 +126,14 @@ export default function Finances() {
       const startDate = startOfMonth(subMonths(new Date(), periodMonths - 1)).toISOString();
       const endDate = endOfMonth(new Date()).toISOString();
 
-      const [clientsResult, invoicesResult, lastSyncedClientResult] = await Promise.all([
+      // Fiscal year period (April 1 -> March 31)
+      const now = new Date();
+      const m = now.getMonth() + 1;
+      const y = now.getFullYear();
+      const fyStart = (m >= 4 ? `${y}-04-01` : `${y - 1}-04-01`);
+      const fyEnd = (m >= 4 ? `${y + 1}-03-31` : `${y}-03-31`);
+
+      const [clientsResult, invoicesResult, fiscalInvoicesResult, lastSyncedClientResult, syncLogResult] = await Promise.all([
         supabase
           .from('clients')
           .select('revenue_current_year, company, first_name, last_name')
@@ -134,10 +141,15 @@ export default function Finances() {
           .order('revenue_current_year', { ascending: false }),
         supabase
           .from('invoices')
-          .select('invoice_date, amount')
+          .select('invoice_date, amount, amount_ht')
           .gte('invoice_date', startDate)
           .lte('invoice_date', endDate)
           .order('invoice_date', { ascending: true }),
+        supabase
+          .from('invoices')
+          .select('amount, amount_ht')
+          .gte('invoice_date', fyStart)
+          .lte('invoice_date', fyEnd + 'T23:59:59'),
         supabase
           .from('clients')
           .select('facturation_pro_synced_at')
@@ -145,6 +157,12 @@ export default function Finances() {
           .order('facturation_pro_synced_at', { ascending: false })
           .limit(1)
           .single(),
+        supabase
+          .from('facturation_sync_log')
+          .select('*')
+          .order('ran_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
 
       if (clientsResult.error) throw clientsResult.error;
@@ -152,15 +170,20 @@ export default function Finances() {
 
       const clients = clientsResult.data || [];
       const invoices = invoicesResult.data || [];
+      const fiscalInvoices = fiscalInvoicesResult.data || [];
 
-      const currentYearRevenue = clients.reduce((sum, client) => sum + (client.revenue_current_year || 0), 0);
+      // CA Année Fiscale = somme HT directe des factures sur l'exercice
+      const currentYearRevenue = fiscalInvoices.reduce(
+        (sum: number, inv: any) => sum + Number(inv.amount_ht ?? inv.amount ?? 0), 0
+      );
       setTotalRevenue(currentYearRevenue);
       setTopClients(clients.slice(0, 5));
 
       const revenueTotalsByMonth = invoices.reduce((acc: Record<string, number>, invoice: any) => {
         if (!invoice.invoice_date) return acc;
         const key = format(new Date(invoice.invoice_date), 'yyyy-MM');
-        acc[key] = (acc[key] || 0) + (invoice.amount || 0);
+        const val = Number(invoice.amount_ht ?? invoice.amount ?? 0);
+        acc[key] = (acc[key] || 0) + val;
         return acc;
       }, {});
 
@@ -188,6 +211,7 @@ export default function Finances() {
       if (lastSyncedClientResult.data?.facturation_pro_synced_at) {
         setLastSyncTimestamp(lastSyncedClientResult.data.facturation_pro_synced_at);
       }
+      setSyncHealth(syncLogResult.data || null);
     } catch (error) {
       console.error('Error fetching financial data:', error);
       toast.error('Erreur lors du chargement des données financières');
@@ -195,6 +219,7 @@ export default function Finances() {
       setLoading(false);
     }
   };
+
 
   const fetchValidatedQuotes = async () => {
     setIsLoadingQuotes(true);
