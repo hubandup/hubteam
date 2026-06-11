@@ -196,7 +196,7 @@ export default function Targets() {
 
           <div className="flex items-center gap-2">
             {/* Toggle vue */}
-            <div className="flex border border-border bg-card">
+            <div className="flex border border-border bg-card rounded-full overflow-hidden">
               {([
                 { v: 'list' as const, Icon: List },
                 { v: 'kanban' as const, Icon: Columns3 },
@@ -223,11 +223,12 @@ export default function Targets() {
             <button
               type="button"
               onClick={() => setAddOpen(true)}
-              className="px-3 py-2 text-xs font-semibold bg-foreground text-background flex items-center gap-1.5 hover:opacity-90 transition-opacity"
+              className="px-3 py-2 text-xs font-semibold bg-foreground text-background flex items-center gap-1.5 hover:opacity-90 transition-opacity rounded-full"
             >
               <Plus size={14} />
               Ajouter un target
             </button>
+
           </div>
         </div>
 
