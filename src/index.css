@@ -55,6 +55,16 @@
     --ring: 0 0% 9%;
     
     --radius: 0.75rem;
+
+    /* Semantic radius tokens — change here to reshape the whole app.
+       Override per scope/theme if needed. Never hardcode rounded-* in components. */
+    --radius-pill: 9999px;
+    --radius-button: 9999px;
+    --radius-badge: 9999px;
+    --radius-card: var(--radius);
+    --radius-input: calc(var(--radius) - 4px);
+    --radius-control: calc(var(--radius) - 2px);
+
     
     /* Custom tokens */
     --primary-light: 0 0% 96%;
