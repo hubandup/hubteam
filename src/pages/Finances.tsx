@@ -19,7 +19,6 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MonthlyComparisonTable } from '@/components/finances/MonthlyComparisonTable';
-import { ComptabiliteAnalytics } from '@/components/finances/ComptabiliteAnalytics';
 
 
 export default function Finances() {
@@ -786,9 +785,6 @@ export default function Finances() {
 
       {/* Monthly Comparison Table */}
       <MonthlyComparisonTable data={revenueData} />
-
-      {/* Comptabilité analytics: supplier spend, VAT, top suppliers, late payments */}
-      <ComptabiliteAnalytics />
 
       {/* Treasury Evolution Chart */}
       <Card ref={treasuryChartRef}>
