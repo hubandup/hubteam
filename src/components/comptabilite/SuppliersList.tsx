@@ -80,7 +80,29 @@ export function SuppliersList() {
           .from("supplier_invoices")
           .select("id, supplier, amount_ttc, invoice_date"),
       ]);
-      setBankLines((lines as BankLine[]) ?? []);
+
+      // Keep only debit lines (supplier expenses). Bank statements store amounts
+      // as positive numbers; the debit/credit info lives in raw_text columns.
+      // A debit row has a "-<number>" token (e.g. "| -126.2 |"). Exclude solde rows.
+      const isDebit = (l: BankLine): boolean => {
+        const lbl = (l.label || "").toLowerCase();
+        if (lbl.startsWith("solde") || lbl.includes("solde au ")) return false;
+        return /\|\s*-\s*\d/.test(l.raw_text || "");
+      };
+
+      // Dedupe identical rows (same date + label + amount) coming from
+      // overlapping bank statements.
+      const seen = new Set<string>();
+      const filtered: BankLine[] = [];
+      for (const l of ((lines as BankLine[]) ?? [])) {
+        if (!isDebit(l)) continue;
+        const key = `${l.line_date ?? ""}|${(l.label ?? "").trim()}|${Number(l.amount ?? 0).toFixed(2)}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        filtered.push(l);
+      }
+
+      setBankLines(filtered);
       setInvoices((invs as Invoice[]) ?? []);
       setLoading(false);
     })();
