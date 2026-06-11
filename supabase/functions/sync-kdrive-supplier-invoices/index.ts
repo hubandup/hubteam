@@ -286,12 +286,14 @@ serve(async (req) => {
     const processed: any[] = [];
     const errors: any[] = [];
     let budget = MAX_FILES_PER_RUN;
+    const startedAt = Date.now();
+    const timeUp = () => Date.now() - startedAt > MAX_RUN_MS;
 
     for (const folder of folders) {
-      if (budget <= 0) break;
+      if (budget <= 0 || timeUp()) break;
       const children = await listChildren(driveId, folder.id);
       for (const child of children) {
-        if (budget <= 0) break;
+        if (budget <= 0 || timeUp()) break;
         if (child.type !== "file") continue;
         const lower = (child.name || "").toLowerCase();
         const isPdf = lower.endsWith(".pdf");
