@@ -197,9 +197,8 @@ export default function Projects() {
       <PendingQuoteActionsBanner />
 
       {/* ── Page title + actions ──────────────────────────────────────── */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
       <PageHeader
+
         title="Projets"
         subtitle="Vue d'ensemble de tous vos projets actifs et archivés"
         actions={
