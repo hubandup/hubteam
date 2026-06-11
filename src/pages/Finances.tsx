@@ -833,7 +833,7 @@ export default function Finances() {
                   </span>
                 </p>
                 <p className="text-xs mt-1">
-                  Facturation récurrente et solde HT des devis « À facturer », ventilés selon leur date de validité.
+                  Devis « À facturer », soldes HT restant à facturer et factures récurrentes à venir, sans double comptage.
                 </p>
               </div>
             )}

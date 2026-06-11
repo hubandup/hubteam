@@ -25,6 +25,8 @@ interface FacturationProQuote {
   total: string;
   amount_invoiced?: string;
   quote_status: number;
+  fully_invoiced?: boolean;
+  ignore_quote?: boolean;
   term_on?: string | null;
   due_date?: string;
   quote_date?: string;
@@ -343,8 +345,8 @@ Deno.serve(async (req) => {
     );
 
     // =========================================
-    // 2. Fetch quotes with status "À facturer" (API status=to_invoice)
-    // Added to the corresponding month bucket based on the quote "validity" date
+    // 2. Fetch every quote that is either "À facturer" or still has HT left to invoice.
+    // The two API queries are merged by ID to avoid double counting.
     // =========================================
     try {
       const perPage = 100;
@@ -352,46 +354,56 @@ Deno.serve(async (req) => {
       let expectedPageSize: number | null = null;
       let lastFirstId: number | null = null;
 
-      const allQuotesToInvoice: FacturationProQuote[] = [];
+      const quotesById = new Map<number, FacturationProQuote>();
 
-      for (let page = 1; page <= maxPages; page++) {
-        const quotesUrl = new URL(`${FACTURATION_PRO_API_URL}/firms/${firmId}/quotes.json`);
-        quotesUrl.searchParams.set('page', String(page));
-        quotesUrl.searchParams.set('per_page', String(perPage));
-        quotesUrl.searchParams.set('limit', String(perPage));
-        // Docs Facturation.PRO: status=to_invoice => A facturer (devis acceptés et non soldés)
-        quotesUrl.searchParams.set('status', 'to_invoice');
+      for (const status of ['to_invoice', '1']) {
+        expectedPageSize = null;
+        lastFirstId = null;
+        for (let page = 1; page <= maxPages; page++) {
+          const quotesUrl = new URL(`${FACTURATION_PRO_API_URL}/firms/${firmId}/quotes.json`);
+          quotesUrl.searchParams.set('page', String(page));
+          quotesUrl.searchParams.set('per_page', String(perPage));
+          quotesUrl.searchParams.set('limit', String(perPage));
+          // to_invoice = filtre métier « À facturer » ; 1 = tous les devis acceptés.
+          quotesUrl.searchParams.set('status', status);
 
-        const quotesResponse = await fetch(quotesUrl.toString(), { headers });
-        if (!quotesResponse.ok) {
-          const errorText = await quotesResponse.text();
-          console.error('[FORECAST] Quotes API error:', errorText);
-          throw new Error(`Facturation.PRO Quotes API error: ${quotesResponse.status}`);
+          const quotesResponse = await fetch(quotesUrl.toString(), { headers });
+          if (!quotesResponse.ok) {
+            const errorText = await quotesResponse.text();
+            console.error(`[FORECAST] Quotes API error (status=${status}):`, errorText);
+            throw new Error(`Facturation.PRO Quotes API error: ${quotesResponse.status}`);
+          }
+
+          const quotesData = await quotesResponse.json();
+          const pageQuotes: FacturationProQuote[] = Array.isArray(quotesData)
+            ? quotesData
+            : (quotesData?.quotes || quotesData?.data || []);
+
+          if (expectedPageSize === null) expectedPageSize = pageQuotes.length;
+
+          if (page > 1 && pageQuotes.length > 0 && lastFirstId !== null && pageQuotes[0]?.id === lastFirstId) {
+            console.warn(`[FORECAST] Pagination repeats for status=${status}; stopping.`);
+            break;
+          }
+          if (pageQuotes.length > 0) lastFirstId = pageQuotes[0].id;
+
+          pageQuotes.forEach((quote) => quotesById.set(quote.id, quote));
+
+          if (pageQuotes.length === 0) break;
+          if (expectedPageSize && pageQuotes.length < expectedPageSize) break;
         }
-
-        const quotesData = await quotesResponse.json();
-        const pageQuotes: FacturationProQuote[] = Array.isArray(quotesData)
-          ? quotesData
-          : (quotesData?.quotes || quotesData?.data || []);
-
-        if (expectedPageSize === null) expectedPageSize = pageQuotes.length;
-
-        // Stop if pagination is not supported and we keep getting the same page.
-        if (page > 1 && pageQuotes.length > 0 && lastFirstId !== null && pageQuotes[0]?.id === lastFirstId) {
-          console.warn('[FORECAST] Pagination appears to repeat the same page; stopping.');
-          break;
-        }
-        if (pageQuotes.length > 0) lastFirstId = pageQuotes[0].id;
-
-        allQuotesToInvoice.push(...pageQuotes);
-
-        if (pageQuotes.length === 0) break;
-        if (expectedPageSize && pageQuotes.length < expectedPageSize) break;
       }
 
-      console.log(`[FORECAST] Quotes "À facturer" (status=to_invoice): ${allQuotesToInvoice.length}`);
+      const eligibleQuotes = [...quotesById.values()].filter((quote) => {
+        const total = parseFloat(String(quote.total ?? '0')) || 0;
+        const invoiced = parseFloat(String(quote.amount_invoiced ?? '0')) || 0;
+        const remaining = Math.max(total - invoiced, 0);
+        return !quote.ignore_quote && quote.fully_invoiced !== true && remaining > 0;
+      });
 
-      for (const quote of allQuotesToInvoice) {
+      console.log(`[FORECAST] Unique quotes « À facturer » or with HT remaining: ${eligibleQuotes.length}`);
+
+      for (const quote of eligibleQuotes) {
         const quoteTotal = parseFloat(String(quote.total ?? '0')) || 0;
         const alreadyInvoiced = parseFloat(String(quote.amount_invoiced ?? '0')) || 0;
         const amount = Math.max(quoteTotal - alreadyInvoiced, 0);
@@ -403,19 +415,14 @@ Deno.serve(async (req) => {
         // Date d'échéance: priorité term_on (date d'échéance)
         const validityStr = (quote as any).term_on;
 
-        if (!validityStr) {
-          console.log(`[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": skipped (no term_on date)`);
-          continue;
-        }
+        const parsedValidityDate = validityStr ? new Date(validityStr) : null;
+        const validityDate = parsedValidityDate && !Number.isNaN(parsedValidityDate.getTime())
+          ? parsedValidityDate
+          : month1Start;
 
-        const validityDate = new Date(validityStr);
-        if (Number.isNaN(validityDate.getTime())) {
-          console.log(`[FORECAST] Quote ${quote.id}: invalid date ${validityStr}`);
-          continue;
-        }
-
+        // An overdue/no-date quote still represents future billable revenue: place it in M+1.
         const bucket = getMonthBucket(
-          validityDate,
+          validityDate < month1Start ? month1Start : validityDate,
           month1Start,
           month1End,
           month2Start,
