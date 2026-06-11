@@ -407,6 +407,38 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_line_supplier_overrides: {
+        Row: {
+          created_at: string
+          display_name: string
+          line_id: string
+          supplier_key: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          line_id: string
+          supplier_key: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          line_id?: string
+          supplier_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_line_supplier_overrides_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: true
+            referencedRelation: "bank_statement_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_statement_lines: {
         Row: {
           amount: number | null
