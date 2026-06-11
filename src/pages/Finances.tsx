@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MonthlyComparisonTable } from '@/components/finances/MonthlyComparisonTable';
 import { CashflowChart } from '@/components/finances/CashflowChart';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { PageHeader } from '@/components/layout';
 
 type ForecastAuditItem = {
   id: number;
