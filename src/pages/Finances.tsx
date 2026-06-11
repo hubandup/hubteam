@@ -136,9 +136,7 @@ export default function Finances() {
       const [clientsResult, invoicesResult, fiscalInvoicesResult, lastSyncedClientResult, syncLogResult] = await Promise.all([
         supabase
           .from('clients')
-          .select('revenue_current_year, company, first_name, last_name')
-          .eq('active', true)
-          .order('revenue_current_year', { ascending: false }),
+          .select('id, company, first_name, last_name'),
         supabase
           .from('invoices')
           .select('invoice_date, amount, amount_ht')
@@ -147,7 +145,7 @@ export default function Finances() {
           .order('invoice_date', { ascending: true }),
         supabase
           .from('invoices')
-          .select('amount, amount_ht')
+          .select('client_id, amount, amount_ht')
           .gte('invoice_date', fyStart)
           .lte('invoice_date', fyEnd + 'T23:59:59'),
         supabase
@@ -177,7 +175,18 @@ export default function Finances() {
         (sum: number, inv: any) => sum + Number(inv.amount_ht ?? inv.amount ?? 0), 0
       );
       setTotalRevenue(currentYearRevenue);
-      setTopClients(clients.slice(0, 5));
+      const fiscalRevenueByClient = fiscalInvoices.reduce((acc: Record<string, number>, inv: any) => {
+        if (!inv.client_id) return acc;
+        acc[inv.client_id] = (acc[inv.client_id] || 0) + Number(inv.amount_ht ?? inv.amount ?? 0);
+        return acc;
+      }, {});
+      setTopClients(
+        clients
+          .map(client => ({ ...client, revenue_current_year: fiscalRevenueByClient[client.id] || 0 }))
+          .filter(client => client.revenue_current_year !== 0)
+          .sort((a, b) => b.revenue_current_year - a.revenue_current_year)
+          .slice(0, 5),
+      );
 
       const revenueTotalsByMonth = invoices.reduce((acc: Record<string, number>, invoice: any) => {
         if (!invoice.invoice_date) return acc;

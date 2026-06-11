@@ -121,10 +121,6 @@ Deno.serve(async (req) => {
 
       if (pageQuotes.length === 0) break;
       if (expectedPageSize && pageQuotes.length < expectedPageSize) break;
-
-      // Optimization: if we already have plenty of accepted quotes, we can stop early.
-      const acceptedSoFar = allQuotes.reduce((acc, q) => acc + (q.quote_status === 1 ? 1 : 0), 0);
-      if (acceptedSoFar >= 80) break;
     }
 
     console.log(`Found ${allQuotes.length} total quotes (across pages)`);

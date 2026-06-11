@@ -190,6 +190,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         total: totalAdhesions,
+        amountBasis: 'HT',
         count: invoicesDetails.length,
         invoices: invoicesDetails,
         fiscalYearStart: fiscalYearStart.toISOString(),
