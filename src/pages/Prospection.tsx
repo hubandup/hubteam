@@ -1190,15 +1190,14 @@ export default function Prospection() {
               <AddContactDialog onAdd={handleCreate} />
             ) : (
               <>
-                <Button variant="outline" size="sm" className="gap-2" onClick={handleEnrich}>
+                <Button variant="outline" className="gap-2" onClick={handleEnrich}>
                   <Sparkles className="h-4 w-4" /> Enrichir
                 </Button>
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => handleExport()}>
+                <Button variant="outline" className="gap-2" onClick={() => handleExport()}>
                   <Download className="h-4 w-4" /> Exporter
                 </Button>
                 <Button
                   variant="outline"
-                  size="sm"
                   className="gap-2"
                   onClick={() => setShowEmailDialog(true)}
                   disabled={filtered.length === 0}
