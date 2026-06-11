@@ -374,7 +374,7 @@ export function ImportClientsValidationDialog({ onClientsImported }: ImportClien
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline">
           <FileSpreadsheet className="h-4 w-4 mr-2" />
           Importer
         </Button>

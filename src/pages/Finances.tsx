@@ -676,7 +676,7 @@ export default function Finances() {
         subtitle={lastSyncTimestamp ? `Dernière sync: ${format(new Date(lastSyncTimestamp), 'dd/MM/yyyy à HH:mm', { locale: fr })}` : undefined}
         actions={
           <>
-            <Button onClick={handleExportPDF} variant="default" size="sm" className="gap-2">
+            <Button onClick={handleExportPDF} variant="default" className="gap-2">
               <FileDown className="h-4 w-4" />
               PDF
             </Button>
@@ -684,7 +684,6 @@ export default function Finances() {
               onClick={handleManualSync}
               disabled={isSyncing}
               variant="outline"
-              size="sm"
               className="gap-2"
             >
               <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
@@ -692,7 +691,6 @@ export default function Finances() {
             </Button>
             <Button
               asChild
-              size="sm"
               className="gap-2 text-background hover:opacity-90"
               style={{ background: 'linear-gradient(135deg, #456c34 0%, #54833e 100%)' }}
             >

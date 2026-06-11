@@ -90,7 +90,7 @@ export function ExportButton({ data, columns, filename, label = 'Exporter' }: Ex
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" disabled={isExporting} className="gap-2">
+        <Button variant="outline" disabled={isExporting} className="gap-2">
           <Download className="h-4 w-4" />
           {label}
         </Button>
