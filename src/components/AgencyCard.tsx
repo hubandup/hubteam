@@ -1,19 +1,7 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Building2, Mail, Phone, FolderCheck } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { FolderCheck } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-
-// Generate consistent color based on tag name
-const getTagColor = (tag: string): string => {
-  let hash = 0;
-  for (let i = 0; i < tag.length; i++) {
-    hash = tag.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = Math.abs(hash % 360);
-  return `${hue} 70% 50%`;
-};
+import { EntityCard } from '@/components/layout';
 
 interface AgencyCardProps {
   agency: {
@@ -47,14 +35,12 @@ export function AgencyCard({ agency, onClick }: AgencyCardProps) {
         setMainContact(null);
         return;
       }
-
       try {
         const { data, error } = await supabase
           .from('agency_contacts')
           .select('first_name, last_name, email, phone')
           .eq('id', agency.main_contact_id)
           .single();
-
         if (error) throw error;
         setMainContact(data);
       } catch (error) {
@@ -62,76 +48,33 @@ export function AgencyCard({ agency, onClick }: AgencyCardProps) {
         setMainContact(null);
       }
     };
-
     fetchMainContact();
   }, [agency.main_contact_id]);
 
+  const contactName = mainContact
+    ? `${mainContact.first_name} ${mainContact.last_name}`.trim()
+    : 'Agence partenaire';
+  const email = mainContact?.email || agency.contact_email || undefined;
+  const phone = mainContact?.phone || agency.contact_phone || undefined;
+
+  const status = agency.active
+    ? { label: 'Actif', bg: '#ECFDF5', text: '#047857', dot: '#059669' }
+    : { label: 'Inactif', bg: '#F1F5F9', text: '#475569', dot: '#94A3B8' };
+
   return (
-    <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={onClick}>
-      <CardHeader>
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3 flex-1 min-w-0">
-            {agency.logo_url ? (
-              <Avatar className="h-12 w-12 flex-shrink-0">
-                <AvatarImage src={agency.logo_url} alt={agency.name} />
-                <AvatarFallback>{agency.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-            ) : (
-              <Building2 className="h-12 w-12 text-primary flex-shrink-0" />
-            )}
-            <div className="min-w-0 flex-1">
-              <CardTitle className="text-lg truncate flex items-center gap-2">
-                {agency.name}
-                {agency.kdrive_drive_id && agency.kdrive_folder_id && (
-                  <FolderCheck className="h-4 w-4 text-success flex-shrink-0" />
-                )}
-              </CardTitle>
-              <CardDescription className="mt-1">
-                Agence partenaire
-              </CardDescription>
-            </div>
-          </div>
-          <Badge variant={agency.active ? 'default' : 'secondary'} className="flex-shrink-0">
-            {agency.active ? 'Actif' : 'Inactif'}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {mainContact ? (
-          <>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="font-medium">
-                {mainContact.first_name} {mainContact.last_name}
-              </span>
-            </div>
-            {mainContact.phone && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Phone className="h-4 w-4" />
-                <span>{mainContact.phone}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Mail className="h-4 w-4" />
-              <span className="truncate">{mainContact.email}</span>
-            </div>
-          </>
-        ) : (
-          <>
-            {agency.contact_email && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Mail className="h-4 w-4" />
-                <span className="truncate">{agency.contact_email}</span>
-              </div>
-            )}
-            {agency.contact_phone && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Phone className="h-4 w-4" />
-                <span>{agency.contact_phone}</span>
-              </div>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+    <EntityCard
+      title={agency.name}
+      subtitle={contactName}
+      logoUrl={agency.logo_url}
+      logoTitleAdornment={
+        agency.kdrive_drive_id && agency.kdrive_folder_id ? (
+          <FolderCheck className="h-3.5 w-3.5 text-success flex-shrink-0" />
+        ) : undefined
+      }
+      status={status}
+      email={email}
+      phone={phone}
+      onClick={onClick}
+    />
   );
 }

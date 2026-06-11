@@ -1,9 +1,6 @@
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Building2, Mail, Phone, Euro, Calendar, BellRing, FolderOpen, Star } from 'lucide-react';
+import { Star, FolderOpen, Clock } from 'lucide-react';
 import { format, isPast } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useTargets, useToggleTarget } from '@/hooks/useTargets';
 import { cn } from '@/lib/utils';
@@ -17,6 +14,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { EntityCard } from '@/components/layout';
+import {
+  getUrgency,
+  getStatusBucket,
+  getStatusStyle,
+  formatShortFrDate,
+  formatCa,
+  type UrgencyBucket,
+} from '@/components/targets/targetUtils';
 
 interface ClientCardProps {
   client: {
@@ -43,6 +49,13 @@ interface ClientCardProps {
   onMouseEnter?: () => void;
 }
 
+const URGENCY_TEXT_COLOR: Record<UrgencyBucket, string> = {
+  late: '#DC2626',
+  week: '#EA580C',
+  month: '#65748B',
+  none: '',
+};
+
 export function ClientCard({ client, onClick, onMouseEnter }: ClientCardProps) {
   const { isAgency, loading: roleLoading } = useUserRole();
   const showRevenue = !roleLoading && !isAgency;
@@ -61,134 +74,103 @@ export function ClientCard({ client, onClick, onMouseEnter }: ClientCardProps) {
     }
   };
 
-  const confirmAndRemove = () => {
-    toggleTarget.mutate({ clientId: client.id, starred: true });
-    setConfirmRemove(false);
-  };
+  const urgency = getUrgency(client.follow_up_date);
+  const statusBucket = getStatusBucket(client.kanban_stage, client.follow_up_date);
+  const statusStyle = getStatusStyle(statusBucket);
+
+  const ca = client.revenue_current_year ?? client.revenue ?? 0;
+  const showCa = showRevenue && Number(ca) > 0;
+  const contactName = `${client.first_name || ''} ${client.last_name || ''}`.trim();
 
   return (
     <>
-    <Card className="cursor-pointer hover:shadow-lg transition-shadow relative" onClick={onClick} onMouseEnter={onMouseEnter}>
-      <button
-        type="button"
-        onClick={handleStarClick}
-        onPointerDown={(e) => e.stopPropagation()}
-        className="absolute top-2 right-2 z-10 p-1 rounded hover:bg-accent transition-colors"
-        title={isStarred ? 'Retirer des Targets' : 'Ajouter aux Targets'}
-        aria-label="Toggle target"
-      >
-        <Star
-          className={cn(
-            'h-4 w-4 transition-colors',
-            isStarred ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
-          )}
-        />
-      </button>
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-start gap-2 flex-1 min-w-0">
-            {client.logo_url && (
-              <img 
-                src={client.logo_url} 
-                alt={`${client.company} logo`}
-                className="w-10 h-10 md:w-12 md:h-12 rounded-lg object-cover flex-shrink-0"
-              />
+      <div className="relative">
+        <button
+          type="button"
+          onClick={handleStarClick}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="absolute top-2 right-2 z-10 p-1 rounded-button hover:bg-accent transition-colors"
+          title={isStarred ? 'Retirer des Targets' : 'Ajouter aux Targets'}
+          aria-label="Toggle target"
+        >
+          <Star
+            className={cn(
+              'h-4 w-4 transition-colors',
+              isStarred ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground',
             )}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <CardTitle className="text-base md:text-lg uppercase truncate">
-                  {client.company}
-                </CardTitle>
-                {client.kdrive_folder_id && (
-                  <div title="Connecté à kDrive">
-                    <FolderOpen className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                  </div>
-                )}
-              </div>
-              <CardDescription className="mt-0.5 truncate text-xs md:text-sm">
-                {client.first_name} {client.last_name}
-              </CardDescription>
-              {(client.action_name || client.action) && (
-                <Badge 
-                  className="mt-1.5 text-xs"
-                  style={client.action_color ? {
-                    backgroundColor: client.action_color,
-                    color: 'white',
-                  } : undefined}
-                >
-                  {client.action_name || client.action}
-                </Badge>
-              )}
-            </div>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-1.5 pb-16 md:pb-20">
-        <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
-          <Mail className="h-3.5 w-3.5 md:h-4 md:w-4 flex-shrink-0" />
-          <span className="truncate">{client.email}</span>
-        </div>
-        {client.phone && (
-          <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
-            <Phone className="h-3.5 w-3.5 md:h-4 md:w-4 flex-shrink-0" />
-            <span>{client.phone}</span>
-          </div>
-        )}
-        {showRevenue && (
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-2 text-xs md:text-sm font-medium text-success">
-              <Euro className="h-3.5 w-3.5 md:h-4 md:w-4 flex-shrink-0" />
-              <span>
-                {client.revenue_current_year !== undefined && client.revenue_current_year !== null 
-                  ? client.revenue_current_year.toLocaleString('fr-FR')
-                  : client.revenue.toLocaleString('fr-FR')
-                } €
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground ml-5 md:ml-6">
-              <span>Année fiscale</span>
-            </div>
-          </div>
-        )}
-      </CardContent>
-      
-      <div className="absolute bottom-2 md:bottom-3 left-3 md:left-6 right-3 md:right-6 space-y-1">
-        {client.last_contact && (
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Calendar className="h-3 w-3 flex-shrink-0" />
-            <span className="font-medium">Dernier contact:</span>
-            <span className="truncate">{format(new Date(client.last_contact), 'dd/MM/yyyy')}</span>
-          </div>
-        )}
-        {client.follow_up_date && (
-          <div className={cn(
-            'flex items-center gap-1.5 text-xs',
-            isPast(new Date(client.follow_up_date))
-              ? 'text-destructive'
-              : 'text-muted-foreground'
-          )}>
-            <BellRing className={`h-3 w-3 flex-shrink-0 ${isPast(new Date(client.follow_up_date)) ? 'animate-pulse' : ''}`} />
-            <span className="font-medium">Prochaine échéance:</span>
-            <span className="truncate">{format(new Date(client.follow_up_date), 'dd/MM/yyyy')}</span>
-          </div>
-        )}
-      </div>
-    </Card>
+          />
+        </button>
 
-    <AlertDialog open={confirmRemove} onOpenChange={setConfirmRemove}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Retirer des Targets ?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Voulez-vous vraiment retirer <strong>{client.company}</strong> de votre liste Targets ?
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Annuler</AlertDialogCancel>
-          <AlertDialogAction onClick={confirmAndRemove}>Retirer</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        <EntityCard
+          title={client.company}
+          subtitle={contactName || undefined}
+          logoUrl={client.logo_url}
+          logoTitleAdornment={
+            client.kdrive_folder_id ? (
+              <div title="Connecté à kDrive">
+                <FolderOpen className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+              </div>
+            ) : undefined
+          }
+          alert={
+            urgency.bucket !== 'none'
+              ? { label: urgency.label, color: URGENCY_TEXT_COLOR[urgency.bucket] }
+              : undefined
+          }
+          status={statusStyle}
+          email={client.email}
+          phone={client.phone}
+          onClick={onClick}
+          onMouseEnter={onMouseEnter}
+          footerLeft={
+            client.last_contact ? (
+              <>
+                <Clock size={10} className="text-muted-foreground shrink-0 opacity-70" />
+                <span className="text-muted-foreground">Contact</span>
+                <span className="font-semibold text-foreground truncate">
+                  {formatShortFrDate(client.last_contact)}
+                </span>
+              </>
+            ) : (
+              <span className="italic text-muted-foreground">Jamais contacté</span>
+            )
+          }
+          footerRight={
+            showCa ? (
+              <>
+                <span className="font-semibold text-foreground">{formatCa(Number(ca))}</span>
+                <span className="text-muted-foreground font-normal">CA</span>
+              </>
+            ) : client.follow_up_date && isPast(new Date(client.follow_up_date)) ? (
+              <span className="text-destructive font-semibold">
+                Échéance {format(new Date(client.follow_up_date), 'dd/MM')}
+              </span>
+            ) : undefined
+          }
+        />
+      </div>
+
+      <AlertDialog open={confirmRemove} onOpenChange={setConfirmRemove}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Retirer des Targets ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Voulez-vous vraiment retirer <strong>{client.company}</strong> de votre liste Targets ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                toggleTarget.mutate({ clientId: client.id, starred: true });
+                setConfirmRemove(false);
+              }}
+            >
+              Retirer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
