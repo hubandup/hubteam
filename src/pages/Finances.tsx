@@ -147,7 +147,7 @@ export default function Finances() {
           .from('invoices')
           .select('client_id, amount, amount_ht')
           .gte('invoice_date', fyStart)
-          .lte('invoice_date', fyEnd + 'T23:59:59'),
+          .lte('invoice_date', fyEnd + 'T23:59:59.999Z'),
         supabase
           .from('clients')
           .select('facturation_pro_synced_at')
@@ -757,7 +757,7 @@ export default function Finances() {
           <CardContent>
             <div className="text-2xl font-bold">{totalRevenue.toLocaleString('fr-FR')} € <span className="text-base font-normal text-muted-foreground">HT</span></div>
             <p className="text-xs text-muted-foreground">
-              Somme HT des factures Facturation.pro sur l'exercice (1er avril → 31 mars)
+              Somme HT de toutes les factures Facturation.pro, avoirs inclus (1er avril → 31 mars)
 
             </p>
           </CardContent>
