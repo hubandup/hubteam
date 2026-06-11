@@ -792,7 +792,7 @@ export default function Finances() {
               {validatedQuotes.length > 0 ? `${averageMargin.toFixed(1)}%` : '-'}
             </div>
             <p className="text-xs text-muted-foreground">
-              Soit {totalMargeApportsAffaires.toLocaleString('fr-FR')} € HT sur les 50 derniers projets validés
+              Soit {totalMargeApportsAffaires.toLocaleString('fr-FR')} € HT sur les 30 derniers projets validés de l'exercice
             </p>
           </CardContent>
         </Card>
@@ -1002,10 +1002,10 @@ export default function Finances() {
         </CardContent>
       </Card>
 
-      {/* 50 Derniers Projets Validés */}
+      {/* 30 Derniers Projets Validés de l'exercice */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>50 Derniers Projets Validés</CardTitle>
+          <CardTitle>30 Derniers Projets Validés de l'exercice</CardTitle>
           {validatedQuotes.length > 0 && (
             <Button
               onClick={handleExportXLS}
