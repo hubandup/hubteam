@@ -1,7 +1,7 @@
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { EntityCard } from '@/components/layout';
 import { Prospect, PROSPECT_STATUSES } from '@/hooks/useProspects';
-import { Building2, User, Phone, Mail, Calendar, AlertTriangle, Euro } from 'lucide-react';
+import { AlertTriangle, Euro, Calendar } from 'lucide-react';
 import { format, isToday, isPast, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { generateColorFromString } from '@/lib/utils';
@@ -98,96 +98,95 @@ export function ProspectCard({ prospect, onClick, compact = false }: ProspectCar
     );
   }
 
-  return (
-    <Card 
-      className={`cursor-pointer hover:shadow-md transition-shadow ${isFollowupDue ? 'ring-2 ring-orange-400' : ''}`}
-      onClick={onClick}
-    >
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{prospect.company_name}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <User className="h-3 w-3" />
-              <span>{prospect.contact_name}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${priorityColors[prospect.priority]}`} title={`Priorité ${prospect.priority}`} />
-            <Badge variant="outline" className={statusConfig?.color}>
-              {prospect.status}
-            </Badge>
-          </div>
-        </div>
+  const statusColor = (statusConfig?.color || '').includes('green')
+    ? { bg: '#ECFDF5', text: '#047857', dot: '#059669' }
+    : (statusConfig?.color || '').includes('red')
+    ? { bg: '#FEF2F2', text: '#B91C1C', dot: '#DC2626' }
+    : (statusConfig?.color || '').includes('yellow') || (statusConfig?.color || '').includes('orange')
+    ? { bg: '#FFF7ED', text: '#C2410C', dot: '#EA580C' }
+    : { bg: '#EFF6FF', text: '#1D4ED8', dot: '#2563EB' };
 
-        <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mb-3">
-          {prospect.phone && (
-            <div className="flex items-center gap-1">
-              <Phone className="h-3 w-3" />
-              <span className="truncate">{prospect.phone}</span>
+  return (
+    <EntityCard
+      title={prospect.company_name}
+      subtitle={prospect.contact_name}
+      onClick={onClick}
+      className={isFollowupDue ? 'ring-2 ring-orange-400' : ''}
+      status={{ ...statusColor, label: prospect.status }}
+      alert={
+        isFollowupDue
+          ? { label: needsPlanning ? 'Action à planifier' : 'Relance due', color: '#EA580C' }
+          : needsPlanning
+          ? { label: 'Action à planifier', color: '#EA580C' }
+          : undefined
+      }
+      email={prospect.email}
+      phone={prospect.phone || undefined}
+      extraInfo={
+        <>
+          {offerTags.length > 0 && (
+            <div className="flex flex-wrap gap-1 pt-1">
+              {offerTags.map((tag) => {
+                const tagColor = generateColorFromString(tag);
+                return (
+                  <span
+                    key={tag}
+                    className="inline-block px-1.5 py-0.5 text-[10px] font-medium rounded-badge border"
+                    style={{
+                      backgroundColor: `${tagColor}15`.replace('hsl', 'hsla').replace(')', ', 0.1)'),
+                      borderColor: tagColor,
+                      color: tagColor,
+                    }}
+                  >
+                    {tag}
+                  </span>
+                );
+              })}
             </div>
           )}
-          <div className="flex items-center gap-1">
-            <Mail className="h-3 w-3" />
-            <span className="truncate">{prospect.email}</span>
+          <div className="flex items-center gap-1.5 pt-1">
+            <span
+              className={`w-2 h-2 rounded-full ${priorityColors[prospect.priority]}`}
+              title={`Priorité ${prospect.priority}`}
+            />
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+              Priorité {prospect.priority}
+            </span>
           </div>
-        </div>
-
-        {/* Expertise tags - full view */}
-        {offerTags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            {offerTags.map((tag) => {
-              const tagColor = generateColorFromString(tag);
-              return (
-                <Badge
-                  key={tag}
-                  variant="outline"
-                  className="text-[10px] px-1.5 py-0"
-                  style={{
-                    backgroundColor: `${tagColor}15`.replace('hsl', 'hsla').replace(')', ', 0.1)'),
-                    borderColor: tagColor,
-                    color: tagColor,
-                  }}
-                >
-                  {tag}
-                </Badge>
-              );
-            })}
-          </div>
-        )}
-
-        {prospect.estimated_amount > 0 && (
-          <div className="flex items-center justify-between text-sm mb-3 bg-muted/50 rounded px-2 py-1">
-            <span>Montant: {prospect.estimated_amount.toLocaleString('fr-FR')} €</span>
-            <span className="text-muted-foreground">({Math.round(prospect.probability * 100)}%)</span>
-            <span className="font-medium text-primary">{weightedRevenue.toLocaleString('fr-FR')} €</span>
-          </div>
-        )}
-
-        {prospect.next_action && (
-          <div className="text-sm bg-primary/10 rounded px-2 py-1 mb-2">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-3 w-3" />
-              <span className="font-medium">{prospect.next_action}</span>
-            </div>
+        </>
+      }
+      footerLeft={
+        prospect.next_action ? (
+          <>
+            <Calendar size={10} className="text-muted-foreground shrink-0 opacity-70" />
+            <span className="font-semibold text-foreground truncate">{prospect.next_action}</span>
             {prospect.next_action_at && (
-              <div className="text-xs text-muted-foreground mt-1">
-                {format(parseISO(prospect.next_action_at), 'EEEE d MMMM', { locale: fr })}
-              </div>
+              <span className="text-muted-foreground">
+                · {format(parseISO(prospect.next_action_at), 'd MMM', { locale: fr })}
+              </span>
             )}
-          </div>
-        )}
-
-        {(isFollowupDue || needsPlanning) && (
-          <div className="flex items-center gap-1 text-sm text-orange-600 dark:text-orange-400">
-            <AlertTriangle className="h-4 w-4" />
-            <span>{needsPlanning ? 'Action à planifier' : 'Relance due'}</span>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          </>
+        ) : prospect.estimated_amount > 0 ? (
+          <>
+            <span className="text-muted-foreground">Pondéré</span>
+            <span className="font-semibold text-foreground">
+              {weightedRevenue.toLocaleString('fr-FR')} €
+            </span>
+          </>
+        ) : undefined
+      }
+      footerRight={
+        prospect.estimated_amount > 0 && prospect.next_action ? (
+          <>
+            <span className="font-semibold text-foreground">
+              {weightedRevenue.toLocaleString('fr-FR')} €
+            </span>
+            <span className="text-muted-foreground font-normal">
+              ({Math.round(prospect.probability * 100)}%)
+            </span>
+          </>
+        ) : undefined
+      }
+    />
   );
 }
