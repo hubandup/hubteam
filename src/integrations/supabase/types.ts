@@ -3933,6 +3933,7 @@ export type Database = {
           invoice_number: string
           kdrive_file_id: string | null
           kdrive_folder: string | null
+          payment_date: string | null
           payment_detail: string | null
           payment_terms: string | null
           remark: string | null
@@ -3953,6 +3954,7 @@ export type Database = {
           invoice_number: string
           kdrive_file_id?: string | null
           kdrive_folder?: string | null
+          payment_date?: string | null
           payment_detail?: string | null
           payment_terms?: string | null
           remark?: string | null
@@ -3973,6 +3975,7 @@ export type Database = {
           invoice_number?: string
           kdrive_file_id?: string | null
           kdrive_folder?: string | null
+          payment_date?: string | null
           payment_detail?: string | null
           payment_terms?: string | null
           remark?: string | null
