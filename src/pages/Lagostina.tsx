@@ -89,25 +89,22 @@ export default function Lagostina() {
   return (
     <div className="bg-card dark:bg-[#0a0e1a]">
       {/* Header */}
-      <div className="px-6 pt-6 pb-2 flex items-start justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground font-['Instrument_Sans'] tracking-tight">
-            Lagostina
-          </h1>
-          <p className="text-[hsl(var(--muted-foreground))] font-['Roboto'] text-sm mt-1">
-            Dashboard de pilotage — Groupe SEB
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {exportCfg && (
-            <LagostinaExportButtons
-              tabName={exportCfg.tabName}
-              showPdf={exportCfg.showPdf}
-              chartsContainerId={exportCfg.chartsId}
-            />
-          )}
-        </div>
+      <div className="px-6 pt-6 pb-2">
+        <PageHeader
+          title="Lagostina"
+          subtitle="Dashboard de pilotage — Groupe SEB"
+          actions={
+            exportCfg ? (
+              <LagostinaExportButtons
+                tabName={exportCfg.tabName}
+                showPdf={exportCfg.showPdf}
+                chartsContainerId={exportCfg.chartsId}
+              />
+            ) : null
+          }
+        />
       </div>
+
 
       {/* Tabs */}
       <div className="px-6 border-b border-black/10 dark:border-white/10">
