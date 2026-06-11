@@ -61,6 +61,17 @@ interface MonthlyForecast {
   total: number;
 }
 
+interface ForecastAuditItem {
+  id: number;
+  type: 'devis' | 'facture_recurrente';
+  label: string;
+  amount: number;
+  date: string | null;
+  month: number | null;
+  included: boolean;
+  reason: string;
+}
+
 function getInvoiceDueDate(invoice: any): Date | null {
   const dueStr = invoice?.due_date || invoice?.term_on || invoice?.due_on;
   if (dueStr) {
@@ -263,6 +274,7 @@ Deno.serve(async (req) => {
     ];
 
     let totalDevisAFacturer = 0;
+    const auditItems: ForecastAuditItem[] = [];
 
     // =========================================
     // 1. Fetch recurring invoices (CA HT récurrent) for all 3 months
@@ -290,11 +302,15 @@ Deno.serve(async (req) => {
 
         for (const recInvoice of recurringInvoices) {
           if (recInvoice.active === false || recInvoice.status === 'inactive' || recInvoice.status === 'suspended') {
+            auditItems.push({ id: recInvoice.id, type: 'facture_recurrente', label: `Facture récurrente #${recInvoice.id}`, amount: parseFloat(String(recInvoice.total || recInvoice.amount || '0')) || 0, date: null, month: null, included: false, reason: 'Récurrence inactive ou suspendue' });
             continue;
           }
 
           const amount = parseFloat(String(recInvoice.total || recInvoice.amount || '0')) || 0;
-          if (amount === 0) continue;
+          if (amount === 0) {
+            auditItems.push({ id: recInvoice.id, type: 'facture_recurrente', label: `Facture récurrente #${recInvoice.id}`, amount, date: null, month: null, included: false, reason: 'Montant HT nul' });
+            continue;
+          }
 
           const frequency = (recInvoice as any).frequency ?? (recInvoice as any).period ?? 'monthly';
           const nextDateStr =
@@ -303,7 +319,10 @@ Deno.serve(async (req) => {
             (recInvoice as any).next_invoice_date;
           const endDateStr = (recInvoice as any).term_on || (recInvoice as any).end_date;
 
-          if (!nextDateStr) continue;
+          if (!nextDateStr) {
+            auditItems.push({ id: recInvoice.id, type: 'facture_recurrente', label: `Facture récurrente #${recInvoice.id}`, amount, date: null, month: null, included: false, reason: 'Aucune prochaine échéance' });
+            continue;
+          }
 
           const nextDate = new Date(nextDateStr);
           const endDate = endDateStr ? new Date(endDateStr) : null;
@@ -311,8 +330,10 @@ Deno.serve(async (req) => {
           const sixtyDaysAgo = new Date();
           sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
-          if (nextDate < sixtyDaysAgo) continue;
-          if (endDate && endDate < now) continue;
+          if (nextDate < sixtyDaysAgo || (endDate && endDate < now)) {
+            auditItems.push({ id: recInvoice.id, type: 'facture_recurrente', label: `Facture récurrente #${recInvoice.id}`, amount, date: nextDateStr, month: null, included: false, reason: 'Récurrence échue' });
+            continue;
+          }
 
           // Calculate occurrences for all 3 months
           const occurrences = getOccurrencesInPeriod(nextDate, frequency, endDate, month1Start, month3End);
@@ -329,10 +350,14 @@ Deno.serve(async (req) => {
             );
             if (bucket !== null) {
               monthlyForecasts[bucket].recurrent += amount;
+              auditItems.push({ id: recInvoice.id, type: 'facture_recurrente', label: `Facture récurrente #${recInvoice.id}`, amount, date: occDate.toISOString().split('T')[0], month: bucket + 1, included: true, reason: `Échéance récurrente prévue en M+${bucket + 1}` });
               console.log(
                 `[FORECAST] Recurring ${recInvoice.id}: +${amount}€ → month +${bucket + 1} (occurrence: ${occDate.toISOString().split('T')[0]})`,
               );
             }
+          }
+          if (occurrences.length === 0) {
+            auditItems.push({ id: recInvoice.id, type: 'facture_recurrente', label: `Facture récurrente #${recInvoice.id}`, amount, date: nextDateStr, month: null, included: false, reason: 'Aucune échéance dans M+1 à M+3' });
           }
         }
     } catch (recurringError) {
@@ -398,7 +423,16 @@ Deno.serve(async (req) => {
         const total = parseFloat(String(quote.total ?? '0')) || 0;
         const invoiced = parseFloat(String(quote.amount_invoiced ?? '0')) || 0;
         const remaining = Math.max(total - invoiced, 0);
-        return !quote.ignore_quote && quote.fully_invoiced !== true && remaining > 0;
+        const eligible = !quote.ignore_quote && quote.fully_invoiced !== true && remaining > 0;
+        if (!eligible) {
+          const reason = quote.ignore_quote
+            ? 'Devis marqué comme ignoré'
+            : quote.fully_invoiced === true
+              ? 'Devis entièrement facturé'
+              : 'Aucun montant HT restant à facturer';
+          auditItems.push({ id: quote.id, type: 'devis', label: quote.title || `Devis #${quote.id}`, amount: remaining, date: quote.term_on || null, month: null, included: false, reason });
+        }
+        return eligible;
       });
 
       console.log(`[FORECAST] Unique quotes « À facturer » or with HT remaining: ${eligibleQuotes.length}`);
@@ -416,12 +450,14 @@ Deno.serve(async (req) => {
         const validityStr = (quote as any).term_on;
 
         if (!validityStr) {
+          auditItems.push({ id: quote.id, type: 'devis', label: quote.title || `Devis #${quote.id}`, amount, date: null, month: null, included: false, reason: 'Date term_on absente' });
           console.log(`[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": excluded (no term_on date)`);
           continue;
         }
 
         const validityDate = new Date(validityStr);
         if (Number.isNaN(validityDate.getTime())) {
+          auditItems.push({ id: quote.id, type: 'devis', label: quote.title || `Devis #${quote.id}`, amount, date: validityStr, month: null, included: false, reason: 'Date term_on invalide' });
           console.log(`[FORECAST] Quote ${quote.id}: excluded (invalid term_on: ${validityStr})`);
           continue;
         }
@@ -438,12 +474,14 @@ Deno.serve(async (req) => {
         );
 
         if (bucket === null) {
+          auditItems.push({ id: quote.id, type: 'devis', label: quote.title || `Devis #${quote.id}`, amount, date: validityDate.toISOString().split('T')[0], month: null, included: false, reason: validityDate < month1Start ? 'Devis échu' : 'Échéance hors M+1 à M+3' });
           console.log(`[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": ${amount}€ excluded (expired or outside M+1–M+3, term_on: ${validityDate.toISOString().split('T')[0]})`);
           continue;
         }
 
         monthlyForecasts[bucket].devisAFacturer += amount;
         totalDevisAFacturer += amount;
+        auditItems.push({ id: quote.id, type: 'devis', label: quote.title || `Devis #${quote.id}`, amount, date: validityDate.toISOString().split('T')[0], month: bucket + 1, included: true, reason: `Devis éligible avec solde HT prévu en M+${bucket + 1}` });
 
         console.log(
           `[FORECAST] Quote ${quote.id} "${quote.title || 'N/A'}": +${amount}€ → month +${bucket + 1} (term_on: ${validityDate.toISOString().split('T')[0]})`,
@@ -488,6 +526,7 @@ Deno.serve(async (req) => {
           recurrent: totalRecurrent,
           devisAFacturer: totalDevisAFacturer,
         },
+        auditItems,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
