@@ -33,6 +33,8 @@ export function Sidebar() {
   const [clientId, setClientId] = useState<string | null>(null);
   const [smashOpen, setSmashOpen] = useState(false);
   const { t } = useTranslation();
+  const normalizedEmail = (user?.email ?? '').trim().toLowerCase();
+  const hasAccountingAccess = ['compta@hubandup.com', 'charles@hubandup.com'].includes(normalizedEmail);
 
   useEffect(() => {
     const fetchClientId = async () => {
@@ -68,7 +70,7 @@ export function Sidebar() {
     { title: t('nav.home'), url: '/', icon: Home, module: 'dashboard' as const },
     ...(role === 'client' && clientId ? [{ title: t('nav.myClientFile'), url: `/client/${clientId}`, icon: Users, module: 'crm' as const, matchParent: true, isClientItem: true }] : []),
     { title: t('nav.activity'), url: '/dashboard', icon: LayoutDashboard, module: 'dashboard' as const },
-    ...(['compta@hubandup.com', 'charles@hubandup.com'].includes((user?.email ?? '').toLowerCase()) ? [{ title: t('nav.accounting'), url: '/comptabilite', icon: Receipt, module: 'dashboard' as const }] : []),
+    ...(hasAccountingAccess ? [{ title: t('nav.accounting'), url: '/comptabilite', icon: Receipt, module: 'dashboard' as const, hasDedicatedAccess: true }] : []),
     { title: t('nav.finances'), url: '/finances', icon: Euro, module: 'dashboard' as const, adminOnly: true },
     { title: t('nav.crm'), url: '/crm', icon: Users, module: 'crm' as const, matchParent: true },
     { title: 'Targets', url: '/targets', icon: Star, module: 'crm' as const, hideForClient: true, hideForAgency: true },
@@ -95,12 +97,12 @@ export function Sidebar() {
             <SidebarMenu>
               {mainItems
                 .filter(item => item.title !== t('nav.activity') || role === 'admin')
-                .filter(item => !(item as any).adminOnly || role === 'admin')
+                .filter(item => !('adminOnly' in item) || !item.adminOnly || role === 'admin')
                 .filter(item => item.title !== t('nav.crm') || role !== 'client')
-                .filter(item => !(item as any).hideForAgency || role !== 'agency')
-                .filter(item => !(item as any).hideForClient || role !== 'client')
+                .filter(item => !('hideForAgency' in item) || !item.hideForAgency || role !== 'agency')
+                .filter(item => !('hideForClient' in item) || !item.hideForClient || role !== 'client')
                 .map((item) =>
-                  canRead(item.module) ? (
+                  ((item as { hasDedicatedAccess?: boolean }).hasDedicatedAccess || canRead(item.module)) ? (
                     <SidebarMenuItem key={item.url}>
                       <SidebarMenuButton asChild>
                         <NavLink 
@@ -113,7 +115,7 @@ export function Sidebar() {
                         >
                           <item.icon className="mr-2.5 h-4 w-4" />
                           <span>{item.title}</span>
-                          {(item as any).isClientItem && (
+                          {'isClientItem' in item && item.isClientItem && (
                             <span className="ml-auto">
                               <span className="inline-flex items-center justify-center w-1.5 h-1.5 rounded-full bg-sidebar-primary" />
                             </span>
