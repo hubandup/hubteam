@@ -86,6 +86,13 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        // Semantic radius tokens — use these in components instead of hardcoded values
+        pill: "var(--radius-pill)",
+        button: "var(--radius-button)",
+        badge: "var(--radius-badge)",
+        card: "var(--radius-card)",
+        input: "var(--radius-input)",
+        control: "var(--radius-control)",
       },
       keyframes: {
         "accordion-down": {
