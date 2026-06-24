@@ -161,7 +161,7 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
     );
   }
 
-  if (!budgetData?.length) {
+  if (!budgetData?.length && !synthesisData?.length) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
         <Database className="h-16 w-16 text-muted-foreground" />
