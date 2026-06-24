@@ -294,17 +294,27 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                           : 0;
                         return (
                           <tr key={r.id} className="border-b border-border/10 hover:bg-muted/30">
-                            <td className="px-4 py-3 text-foreground font-['Instrument_Sans'] font-bold text-sm flex items-center gap-2">
-                              <div className="w-1.5 h-5" style={{ backgroundColor: color }} />
-                              {r.levier}
+                            <td className="px-4 py-3 text-foreground font-['Instrument_Sans'] font-bold text-sm">
+                              <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-5" style={{ backgroundColor: color }} />
+                                {r.levier}
+                              </div>
                             </td>
-                            <td className="px-3 py-3 text-right text-foreground tabular-nums">{Number(r.s1_planned).toLocaleString('fr-FR')} €</td>
-                            <td className="px-3 py-3 text-right text-foreground tabular-nums font-medium">{Number(r.s1_spent).toLocaleString('fr-FR')} €</td>
-                            <td className="px-3 py-3 text-right text-muted-foreground tabular-nums">
+                            <NoteableCell levier={r.levier} kpiName="S1 Prévu" week="synthese" notesMap={cellNotesMap} levierColor={color} className="px-3 py-3 text-right text-foreground tabular-nums">
+                              {Number(r.s1_planned).toLocaleString('fr-FR')} €
+                            </NoteableCell>
+                            <NoteableCell levier={r.levier} kpiName="S1 Dépensé" week="synthese" notesMap={cellNotesMap} levierColor={color} className="px-3 py-3 text-right text-foreground tabular-nums font-medium">
+                              {Number(r.s1_spent).toLocaleString('fr-FR')} €
+                            </NoteableCell>
+                            <NoteableCell levier={r.levier} kpiName="S1 Avoir" week="synthese" notesMap={cellNotesMap} levierColor={color} className="px-3 py-3 text-right text-muted-foreground tabular-nums">
                               {r.s1_credit != null ? `${Number(r.s1_credit).toLocaleString('fr-FR')} €` : '—'}
-                            </td>
-                            <td className="px-3 py-3 text-right text-foreground tabular-nums">{Number(r.s2_budget).toLocaleString('fr-FR')} €</td>
-                            <td className="px-3 py-3 text-right text-foreground tabular-nums font-semibold">{Number(r.total_year).toLocaleString('fr-FR')} €</td>
+                            </NoteableCell>
+                            <NoteableCell levier={r.levier} kpiName="S2 Budget" week="synthese" notesMap={cellNotesMap} levierColor={color} className="px-3 py-3 text-right text-foreground tabular-nums">
+                              {Number(r.s2_budget).toLocaleString('fr-FR')} €
+                            </NoteableCell>
+                            <NoteableCell levier={r.levier} kpiName="Total Année" week="synthese" notesMap={cellNotesMap} levierColor={color} className="px-3 py-3 text-right text-foreground tabular-nums font-semibold">
+                              {Number(r.total_year).toLocaleString('fr-FR')} €
+                            </NoteableCell>
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
                                 <div className="flex-1 h-1.5 bg-muted">
