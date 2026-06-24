@@ -67,6 +67,29 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
     },
   });
 
+  const { data: synthesisData } = useQuery({
+    queryKey: ['lagostina-budget-synthesis'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lagostina_budget_synthesis')
+        .select('*')
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const synthesisTotals = useMemo(() => {
+    const rows = synthesisData || [];
+    return {
+      s1Planned: rows.reduce((s, r) => s + Number(r.s1_planned || 0), 0),
+      s1Spent: rows.reduce((s, r) => s + Number(r.s1_spent || 0), 0),
+      s1Credit: rows.reduce((s, r) => s + Number(r.s1_credit || 0), 0),
+      s2Budget: rows.reduce((s, r) => s + Number(r.s2_budget || 0), 0),
+      totalYear: rows.reduce((s, r) => s + Number(r.total_year || 0), 0),
+    };
+  }, [synthesisData]);
+
 
   const totalPlanned = useMemo(() => budgetData?.reduce((s, b) => s + (Number(b.planned) || 0), 0) || 0, [budgetData]);
   const totalEngaged = useMemo(() => budgetData?.reduce((s, b) => s + (Number(b.engaged) || 0), 0) || 0, [budgetData]);
