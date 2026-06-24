@@ -67,6 +67,29 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
     },
   });
 
+  const { data: synthesisData } = useQuery({
+    queryKey: ['lagostina-budget-synthesis'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lagostina_budget_synthesis')
+        .select('*')
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const synthesisTotals = useMemo(() => {
+    const rows = synthesisData || [];
+    return {
+      s1Planned: rows.reduce((s, r) => s + Number(r.s1_planned || 0), 0),
+      s1Spent: rows.reduce((s, r) => s + Number(r.s1_spent || 0), 0),
+      s1Credit: rows.reduce((s, r) => s + Number(r.s1_credit || 0), 0),
+      s2Budget: rows.reduce((s, r) => s + Number(r.s2_budget || 0), 0),
+      totalYear: rows.reduce((s, r) => s + Number(r.total_year || 0), 0),
+    };
+  }, [synthesisData]);
+
 
   const totalPlanned = useMemo(() => budgetData?.reduce((s, b) => s + (Number(b.planned) || 0), 0) || 0, [budgetData]);
   const totalEngaged = useMemo(() => budgetData?.reduce((s, b) => s + (Number(b.engaged) || 0), 0) || 0, [budgetData]);
@@ -138,7 +161,7 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
     );
   }
 
-  if (!budgetData?.length) {
+  if (!budgetData?.length && !synthesisData?.length) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
         <Database className="h-16 w-16 text-muted-foreground" />
@@ -152,183 +175,162 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
     <LagostinaSubTabs tabs={SUB_TABS} rightAction={learningsButton} belowTabs={learningsPanel}>
       {(activeTab) => (
         <>
-          {activeTab === 'global' && (
-            <>
-              {/* Budget consommé global + mois en cours — 2 colonnes */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">Budget consommé</p>
-                    <p className="text-foreground text-2xl font-bold font-['Instrument_Sans']">
-                      {totalEngaged >= 1000 ? `€${(totalEngaged / 1000).toFixed(0)}K` : `€${totalEngaged}`}
-                      <span className="text-muted-foreground text-base font-normal"> / {totalPlanned >= 1000 ? `€${(totalPlanned / 1000).toFixed(0)}K` : `€${totalPlanned}`}</span>
-                      <span className="text-muted-foreground text-sm font-normal ml-2">— {pct.toFixed(0)}%</span>
-                    </p>
-                  </div>
-                  {isOverBudget && (
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#ef4444]/20 text-[#ef4444] text-xs font-['Roboto'] font-medium">
-                      <AlertTriangle className="h-3.5 w-3.5" />
-                      Dépassement prévisionnel
-                    </div>
-                  )}
-                </div>
-                <div className="w-full h-3 bg-muted">
-                  <div
-                    className="h-full transition-all"
-                    style={{
-                      width: `${Math.min(pct, 100)}%`,
-                      background: pct >= 100 ? '#ef4444' : pct >= yearProgress ? `linear-gradient(90deg, #22c55e, #fbbf24, #ef4444)` : `linear-gradient(90deg, #22c55e, #fbbf24)`,
-                    }}
-                  />
-                </div>
-                <div className="flex justify-between mt-1">
-                  <span className="text-muted-foreground text-xs font-['Roboto']">0%</span>
-                  <span className="text-muted-foreground text-xs font-['Roboto']">Progression année : {yearProgress.toFixed(0)}%</span>
-                  <span className="text-muted-foreground text-xs font-['Roboto']">100%</span>
-                </div>
-              </div>
+          {activeTab === 'global' && (() => {
+            const rows = synthesisData || [];
+            const globalPct = synthesisTotals.totalYear > 0
+              ? (synthesisTotals.s1Spent / synthesisTotals.totalYear) * 100
+              : 0;
+            const s1Pct = synthesisTotals.s1Planned > 0
+              ? (synthesisTotals.s1Spent / synthesisTotals.s1Planned) * 100
+              : 0;
+            const isOver = globalPct > yearProgress;
+            const fmt = (v: number) =>
+              v >= 1000 ? `€${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}K` : `€${v.toLocaleString('fr-FR')}`;
 
-              {/* Budget consommé du mois en cours */}
-              {(() => {
-                const currentMonthLabel = MONTHS[now.getMonth()];
-                const monthPlanned = budgetData?.filter(b => b.month === currentMonthLabel).reduce((s, b) => s + (Number(b.planned) || 0), 0) || 0;
-                const monthEngaged = budgetData?.filter(b => b.month === currentMonthLabel).reduce((s, b) => s + (Number(b.engaged) || 0), 0) || 0;
-                const monthInvoiced = budgetData?.filter(b => b.month === currentMonthLabel).reduce((s, b) => s + (Number(b.invoiced) || 0), 0) || 0;
-                const monthPct = monthPlanned > 0 ? (monthEngaged / monthPlanned) * 100 : 0;
-                const dayProgress = (now.getDate() / new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()) * 100;
-
-                return (
+            return (
+              <>
+                {/* KPIs globaux — 2 colonnes */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Budget consommé année */}
                   <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-6">
-                    <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-2">
-                      Budget consommé — {currentMonthLabel} {now.getFullYear()}
-                    </p>
-                    <div className="grid grid-cols-3 gap-6 mb-4">
+                    <div className="flex items-center justify-between mb-3">
                       <div>
-                        <p className="text-muted-foreground text-xs font-['Roboto']">Prévu</p>
-                        <p className="text-foreground text-xl font-bold font-['Instrument_Sans']">
-                          {monthPlanned >= 1000 ? `€${(monthPlanned / 1000).toFixed(1)}K` : `€${monthPlanned}`}
+                        <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">Budget consommé (S1)</p>
+                        <p className="text-foreground text-2xl font-bold font-['Instrument_Sans']">
+                          {fmt(synthesisTotals.s1Spent)}
+                          <span className="text-muted-foreground text-base font-normal"> / {fmt(synthesisTotals.totalYear)}</span>
+                          <span className="text-muted-foreground text-sm font-normal ml-2">— {globalPct.toFixed(0)}%</span>
                         </p>
                       </div>
-                      <div>
-                        <p className="text-muted-foreground text-xs font-['Roboto']">Engagé</p>
-                        <p className="text-foreground text-xl font-bold font-['Instrument_Sans']">
-                          {monthEngaged >= 1000 ? `€${(monthEngaged / 1000).toFixed(1)}K` : `€${monthEngaged}`}
-                          <span className="text-sm font-normal text-muted-foreground ml-1">({monthPct.toFixed(0)}%)</span>
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground text-xs font-['Roboto']">Facturé</p>
-                        <p className="text-foreground text-xl font-bold font-['Instrument_Sans']">
-                          {monthInvoiced >= 1000 ? `€${(monthInvoiced / 1000).toFixed(1)}K` : `€${monthInvoiced}`}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="w-full h-2 bg-muted relative">
-                      <div
-                        className="h-full transition-all"
-                        style={{
-                          width: `${Math.min(monthPct, 100)}%`,
-                          background: monthPct > dayProgress * 1.2 ? '#ef4444' : '#22c55e',
-                        }}
-                      />
-                      {/* Day progress marker */}
-                      <div
-                        className="absolute top-0 h-full w-0.5 bg-foreground/60"
-                        style={{ left: `${dayProgress}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between mt-1">
-                      <span className="text-muted-foreground text-xs font-['Roboto']">
-                        Consommé : {monthPct.toFixed(0)}%
-                      </span>
-                      <span className="text-muted-foreground text-xs font-['Roboto'] whitespace-nowrap">
-                        {`Jour ${now.getDate()} / ${new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()} (${dayProgress.toFixed(0)}%)`}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })()}
-              </div>
-
-              
-
-              {/* Détail par levier — basé sur Détail mensuel */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {leviers.filter(l => {
-                  const planned = MONTHS.reduce((s, m) => s + getMonthVal(l, m, 'planned'), 0);
-                  const engaged = MONTHS.reduce((s, m) => s + getMonthVal(l, m, 'engaged'), 0);
-                  return planned > 0 || engaged > 0;
-                }).map((levier, idx) => {
-                  const planned = MONTHS.reduce((s, m) => s + getMonthVal(levier, m, 'planned'), 0);
-                  const engaged = MONTHS.reduce((s, m) => s + getMonthVal(levier, m, 'engaged'), 0);
-                  const invoiced = MONTHS.reduce((s, m) => s + getMonthVal(levier, m, 'invoiced'), 0);
-                  const remaining = planned - engaged;
-                  const budgetPct = planned > 0 ? (engaged / planned) * 100 : 0;
-                  const color = getLevierColor(levier, idx);
-
-                  // Monthly engaged for sparkline
-                  const monthlyEngaged = MONTHS.map(m => getMonthVal(levier, m, 'engaged'));
-                  const hasMonthlyData = monthlyEngaged.some(v => v > 0);
-
-                  return (
-                    <div key={levier} className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-5">
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-2 h-6" style={{ backgroundColor: color }} />
-                        <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold capitalize">{levier.replace(/_/g, ' ')}</h3>
-                      </div>
-
-                      {/* Budget KPIs */}
-                      <div className="grid grid-cols-2 gap-3 mb-4">
-                        <div>
-                          <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">Prévu</p>
-                          <p className="text-foreground text-lg font-bold font-['Instrument_Sans']">
-                            {planned >= 1000 ? `€${(planned / 1000).toFixed(0)}K` : `€${planned}`}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">Engagé</p>
-                          <p className="text-foreground text-lg font-bold font-['Instrument_Sans']">
-                            {engaged >= 1000 ? `€${(engaged / 1000).toFixed(0)}K` : `€${engaged}`}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">Facturé</p>
-                          <p className="text-foreground text-sm font-medium font-['Instrument_Sans']">
-                            {invoiced >= 1000 ? `€${(invoiced / 1000).toFixed(0)}K` : `€${invoiced}`}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">Reste</p>
-                          <p className={`text-sm font-medium font-['Instrument_Sans'] ${remaining < 0 ? 'text-[#ef4444]' : 'text-foreground'}`}>
-                            {remaining >= 1000 ? `€${(remaining / 1000).toFixed(0)}K` : remaining <= -1000 ? `-€${(Math.abs(remaining) / 1000).toFixed(0)}K` : `€${remaining}`}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Progress bar */}
-                      <div className="w-full h-1.5 bg-muted mb-2">
-                        <div className="h-full transition-all" style={{ width: `${Math.min(budgetPct, 100)}%`, backgroundColor: budgetPct > 100 ? '#ef4444' : color }} />
-                      </div>
-                      <p className="text-muted-foreground text-[10px] font-['Roboto'] text-right">{budgetPct.toFixed(0)}% consommé</p>
-
-                      {/* Mini monthly chart */}
-                      {hasMonthlyData && (
-                        <div className="mt-3 h-16">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={MONTHS.map((m, i) => ({ month: m, engaged: monthlyEngaged[i] }))} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
-                              <Area type="monotone" dataKey="engaged" stroke={color} strokeWidth={1.5} fill={color} fillOpacity={0.15} />
-                              <XAxis dataKey="month" tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} interval={2} />
-                            </AreaChart>
-                          </ResponsiveContainer>
+                      {isOver && (
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-[#ef4444]/20 text-[#ef4444] text-xs font-['Roboto'] font-medium">
+                          <AlertTriangle className="h-3.5 w-3.5" />
+                          Dépassement prévisionnel
                         </div>
                       )}
                     </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
+                    <div className="w-full h-3 bg-muted">
+                      <div
+                        className="h-full transition-all"
+                        style={{
+                          width: `${Math.min(globalPct, 100)}%`,
+                          background: globalPct >= 100 ? '#ef4444' : globalPct >= yearProgress ? `linear-gradient(90deg, #22c55e, #fbbf24, #ef4444)` : `linear-gradient(90deg, #22c55e, #fbbf24)`,
+                        }}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-muted-foreground text-xs font-['Roboto']">0%</span>
+                      <span className="text-muted-foreground text-xs font-['Roboto']">Progression année : {yearProgress.toFixed(0)}%</span>
+                      <span className="text-muted-foreground text-xs font-['Roboto']">100%</span>
+                    </div>
+                  </div>
+
+                  {/* Synthèse semestrielle */}
+                  <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-6">
+                    <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-3">Synthèse semestrielle</p>
+                    <div className="grid grid-cols-4 gap-4 mb-4">
+                      <div>
+                        <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">S1 Prévu</p>
+                        <p className="text-foreground text-lg font-bold font-['Instrument_Sans']">{fmt(synthesisTotals.s1Planned)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">S1 Dépensé</p>
+                        <p className="text-foreground text-lg font-bold font-['Instrument_Sans']">
+                          {fmt(synthesisTotals.s1Spent)}
+                          <span className="text-xs font-normal text-muted-foreground ml-1">({s1Pct.toFixed(0)}%)</span>
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">S1 Avoir</p>
+                        <p className="text-foreground text-lg font-bold font-['Instrument_Sans']">{fmt(synthesisTotals.s1Credit)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">S2 Budget</p>
+                        <p className="text-foreground text-lg font-bold font-['Instrument_Sans']">{fmt(synthesisTotals.s2Budget)}</p>
+                      </div>
+                    </div>
+                    <div className="w-full h-2 bg-muted flex overflow-hidden">
+                      <div
+                        className="h-full"
+                        style={{
+                          width: `${synthesisTotals.totalYear > 0 ? (synthesisTotals.s1Spent / synthesisTotals.totalYear) * 100 : 0}%`,
+                          backgroundColor: 'hsl(var(--brand-ink))',
+                        }}
+                      />
+                      <div
+                        className="h-full"
+                        style={{
+                          width: `${synthesisTotals.totalYear > 0 ? (synthesisTotals.s2Budget / synthesisTotals.totalYear) * 100 : 0}%`,
+                          backgroundColor: 'hsl(var(--brand-yellow))',
+                        }}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-muted-foreground text-xs font-['Roboto']">S1 dépensé</span>
+                      <span className="text-muted-foreground text-xs font-['Roboto']">S2 budget restant</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Détail par levier — synthèse S1/S2 */}
+                <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
+                  <table className="w-full text-sm font-['Roboto']">
+                    <thead>
+                      <tr className="border-b border-border/40">
+                        <th className="text-left px-4 py-3 text-muted-foreground font-medium uppercase tracking-wider text-xs">Levier</th>
+                        <th className="text-right px-3 py-3 text-muted-foreground font-medium uppercase tracking-wider text-xs">S1 Prévu</th>
+                        <th className="text-right px-3 py-3 text-muted-foreground font-medium uppercase tracking-wider text-xs">S1 Dépensé</th>
+                        <th className="text-right px-3 py-3 text-muted-foreground font-medium uppercase tracking-wider text-xs">S1 Avoir</th>
+                        <th className="text-right px-3 py-3 text-muted-foreground font-medium uppercase tracking-wider text-xs">S2 Budget</th>
+                        <th className="text-right px-3 py-3 text-muted-foreground font-medium uppercase tracking-wider text-xs">Total Année</th>
+                        <th className="px-4 py-3 text-muted-foreground font-medium uppercase tracking-wider text-xs w-32">% S1</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((r, idx) => {
+                        const color = getLevierColor(r.levier.toLowerCase().replace(/[^a-z]/g, '_'), idx);
+                        const pctS1 = Number(r.s1_planned) > 0
+                          ? (Number(r.s1_spent) / Number(r.s1_planned)) * 100
+                          : 0;
+                        return (
+                          <tr key={r.id} className="border-b border-border/10 hover:bg-muted/30">
+                            <td className="px-4 py-3 text-foreground font-['Instrument_Sans'] font-bold text-sm flex items-center gap-2">
+                              <div className="w-1.5 h-5" style={{ backgroundColor: color }} />
+                              {r.levier}
+                            </td>
+                            <td className="px-3 py-3 text-right text-foreground tabular-nums">{Number(r.s1_planned).toLocaleString('fr-FR')} €</td>
+                            <td className="px-3 py-3 text-right text-foreground tabular-nums font-medium">{Number(r.s1_spent).toLocaleString('fr-FR')} €</td>
+                            <td className="px-3 py-3 text-right text-muted-foreground tabular-nums">
+                              {r.s1_credit != null ? `${Number(r.s1_credit).toLocaleString('fr-FR')} €` : '—'}
+                            </td>
+                            <td className="px-3 py-3 text-right text-foreground tabular-nums">{Number(r.s2_budget).toLocaleString('fr-FR')} €</td>
+                            <td className="px-3 py-3 text-right text-foreground tabular-nums font-semibold">{Number(r.total_year).toLocaleString('fr-FR')} €</td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 h-1.5 bg-muted">
+                                  <div className="h-full transition-all" style={{ width: `${Math.min(pctS1, 100)}%`, backgroundColor: pctS1 > 100 ? '#ef4444' : color }} />
+                                </div>
+                                <span className="text-muted-foreground text-[11px] tabular-nums w-9 text-right">{pctS1.toFixed(0)}%</span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      <tr className="border-t-2 border-foreground/20 bg-muted/20">
+                        <td className="px-4 py-3 text-foreground font-['Instrument_Sans'] font-bold text-sm">TOTAL</td>
+                        <td className="px-3 py-3 text-right text-foreground tabular-nums font-bold">{synthesisTotals.s1Planned.toLocaleString('fr-FR')} €</td>
+                        <td className="px-3 py-3 text-right text-foreground tabular-nums font-bold">{synthesisTotals.s1Spent.toLocaleString('fr-FR')} €</td>
+                        <td className="px-3 py-3 text-right text-foreground tabular-nums font-bold">{synthesisTotals.s1Credit.toLocaleString('fr-FR')} €</td>
+                        <td className="px-3 py-3 text-right text-foreground tabular-nums font-bold">{synthesisTotals.s2Budget.toLocaleString('fr-FR')} €</td>
+                        <td className="px-3 py-3 text-right text-foreground tabular-nums font-bold">{synthesisTotals.totalYear.toLocaleString('fr-FR')} €</td>
+                        <td className="px-4 py-3 text-right text-muted-foreground text-xs">{s1Pct.toFixed(0)}% S1</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            );
+          })()}
 
           {activeTab === 'repartition' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

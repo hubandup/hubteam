@@ -2011,6 +2011,45 @@ export type Database = {
         }
         Relationships: []
       }
+      lagostina_budget_synthesis: {
+        Row: {
+          created_at: string
+          id: string
+          levier: string
+          s1_credit: number | null
+          s1_planned: number
+          s1_spent: number
+          s2_budget: number
+          sort_order: number
+          total_year: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          levier: string
+          s1_credit?: number | null
+          s1_planned?: number
+          s1_spent?: number
+          s2_budget?: number
+          sort_order?: number
+          total_year?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          levier?: string
+          s1_credit?: number | null
+          s1_planned?: number
+          s1_spent?: number
+          s2_budget?: number
+          sort_order?: number
+          total_year?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lagostina_category_status: {
         Row: {
           axis: string
