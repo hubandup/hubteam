@@ -919,22 +919,18 @@ export async function parseMetaCsvFile(csvText: string): Promise<number> {
   const uniqueEnds = colEnd >= 0 ? new Set(dataRows.map(v => v[colEnd]?.trim())) : new Set(['']);
   const isPeriodExport = uniqueStarts.size === 1 && uniqueEnds.size === 1;
 
-  const isoWeek = (dateStr: string): string => {
-    const dt = new Date(dateStr + 'T00:00:00');
-    const dayOfYear = Math.floor((dt.getTime() - new Date(dt.getFullYear(), 0, 1).getTime()) / 86400000);
-    const weekDay = dt.getDay() || 7;
-    const weekNum = Math.ceil((dayOfYear + (new Date(dt.getFullYear(), 0, 1).getDay() || 7) - weekDay + 10) / 7);
-    return `S${String(weekNum).padStart(2, '0')}`;
+  // Bucket by month: use YYYY-MM (scorecard interprets this as a monthly period)
+  const monthKey = (dateStr: string): string => {
+    const [y, m] = dateStr.split('-');
+    return `${y}-${m}`;
   };
 
-  const periodLabel = isPeriodExport && colEnd >= 0
-    ? `${isoWeek(dataRows[0][colStart].trim())}-${isoWeek(dataRows[0][colEnd].trim())}`
-    : 'Période';
+  const periodLabel = 'Période';
 
   const agg: Record<string, { spend: number; impressions: number; reach: number; views3s: number; videoPlays: number; clicks: number; landing: number; purchases: number; roas_weighted: number }> = {};
 
   for (const vals of dataRows) {
-    const wk = isPeriodExport ? periodLabel : isoWeek(vals[colStart].trim());
+    const wk = isPeriodExport ? periodLabel : monthKey(vals[colStart].trim());
     if (!agg[wk]) agg[wk] = { spend: 0, impressions: 0, reach: 0, views3s: 0, videoPlays: 0, clicks: 0, landing: 0, purchases: 0, roas_weighted: 0 };
     const a = agg[wk];
     const rowSpend = num(vals, colSpend);
