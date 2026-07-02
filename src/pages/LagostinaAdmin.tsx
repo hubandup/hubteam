@@ -84,7 +84,11 @@ export default function LagostinaAdmin() {
     setUploading(true);
 
     try {
-      const filePath = `${selectedType}/${Date.now()}_${file.name}`;
+      const safeName = file.name
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9._-]/g, '_');
+      const filePath = `${selectedType}/${Date.now()}_${safeName}`;
       const { error: uploadError } = await supabase.storage
         .from('lagostina-files')
         .upload(filePath, file);
