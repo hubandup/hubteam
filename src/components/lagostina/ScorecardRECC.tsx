@@ -447,15 +447,8 @@ export function ScorecardRECC({
     return { matrix: m, weeklyMatrix: w, monthWeeks: monthWeeksOut };
   }, [influence, affiliation, press, media]);
 
-  // Visible months
-  const visibleMonths = useMemo(() => {
-    const monthsWithData = new Set<number>();
-    Object.values(matrix).forEach((row) => {
-      Object.keys(row).forEach((mi) => monthsWithData.add(Number(mi)));
-    });
-    monthsWithData.add(currentMonthIdx);
-    return MONTHS.filter((m) => monthsWithData.has(m.idx));
-  }, [matrix, currentMonthIdx]);
+  // Visible months — always show all 12 months for a full month-by-month view
+  const visibleMonths = useMemo(() => MONTHS, []);
 
   // Toggle state
   const [openLeviers, setOpenLeviers] = useState<Record<string, boolean>>(() =>
