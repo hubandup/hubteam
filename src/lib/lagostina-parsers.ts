@@ -930,7 +930,7 @@ export async function parseMetaCsvFile(csvText: string): Promise<number> {
   const agg: Record<string, { spend: number; impressions: number; reach: number; views3s: number; videoPlays: number; clicks: number; landing: number; purchases: number; roas_weighted: number }> = {};
 
   for (const vals of dataRows) {
-    const wk = isPeriodExport ? periodLabel : isoWeek(vals[colStart].trim());
+    const wk = isPeriodExport ? periodLabel : monthKey(vals[colStart].trim());
     if (!agg[wk]) agg[wk] = { spend: 0, impressions: 0, reach: 0, views3s: 0, videoPlays: 0, clicks: 0, landing: 0, purchases: 0, roas_weighted: 0 };
     const a = agg[wk];
     const rowSpend = num(vals, colSpend);
