@@ -879,11 +879,12 @@ export async function parseMetaCsvFile(csvText: string): Promise<number> {
 
   const col = (search: string) => headers.findIndex(h => h.includes(search));
   const colStart = col('Début des rapports');
+  const colEnd = col('Fin des rapports');
   const colSpend = col('Montant dépensé');
   const colImpressions = col('Impressions');
   const colReach = col('Couverture');
   const colViews3s = col('Lectures de vidéo de 3 secondes');
-  const colVideoPlays = col('Lectures de vidéo');
+  const colVideoPlays = headers.findIndex(h => h.includes('Lectures de vidéo') && !h.includes('3 secondes'));
   const colClicks = col('Clics sur un lien');
   const colLanding = headers.findIndex(h => h.includes('Vues de la page de destination'));
   const colPurchases = col('Achats');
@@ -902,22 +903,38 @@ export async function parseMetaCsvFile(csvText: string): Promise<number> {
     return Number.isFinite(n) ? n : 0;
   };
 
-  // Aggregate by ISO week
-  const agg: Record<string, { spend: number; impressions: number; reach: number; views3s: number; videoPlays: number; clicks: number; landing: number; purchases: number; roas_weighted: number }> = {};
-
+  // Detect export mode: if every row shares the same start & end date, treat as an
+  // aggregated period export (per-ad totals over the whole period). Otherwise bucket by ISO week.
+  const dataRows: string[][] = [];
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line) continue;
     const vals = parseRow(line);
     const dateStr = vals[colStart]?.trim();
     if (!dateStr || !dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) continue;
+    dataRows.push(vals);
+  }
 
+  const uniqueStarts = new Set(dataRows.map(v => v[colStart]?.trim()));
+  const uniqueEnds = colEnd >= 0 ? new Set(dataRows.map(v => v[colEnd]?.trim())) : new Set(['']);
+  const isPeriodExport = uniqueStarts.size === 1 && uniqueEnds.size === 1;
+
+  const isoWeek = (dateStr: string): string => {
     const dt = new Date(dateStr + 'T00:00:00');
     const dayOfYear = Math.floor((dt.getTime() - new Date(dt.getFullYear(), 0, 1).getTime()) / 86400000);
     const weekDay = dt.getDay() || 7;
     const weekNum = Math.ceil((dayOfYear + (new Date(dt.getFullYear(), 0, 1).getDay() || 7) - weekDay + 10) / 7);
-    const wk = `S${String(weekNum).padStart(2, '0')}`;
+    return `S${String(weekNum).padStart(2, '0')}`;
+  };
 
+  const periodLabel = isPeriodExport && colEnd >= 0
+    ? `${isoWeek(dataRows[0][colStart].trim())}-${isoWeek(dataRows[0][colEnd].trim())}`
+    : 'Période';
+
+  const agg: Record<string, { spend: number; impressions: number; reach: number; views3s: number; videoPlays: number; clicks: number; landing: number; purchases: number; roas_weighted: number }> = {};
+
+  for (const vals of dataRows) {
+    const wk = isPeriodExport ? periodLabel : isoWeek(vals[colStart].trim());
     if (!agg[wk]) agg[wk] = { spend: 0, impressions: 0, reach: 0, views3s: 0, videoPlays: 0, clicks: 0, landing: 0, purchases: 0, roas_weighted: 0 };
     const a = agg[wk];
     const rowSpend = num(vals, colSpend);
@@ -930,7 +947,7 @@ export async function parseMetaCsvFile(csvText: string): Promise<number> {
     a.landing += num(vals, colLanding);
     a.purchases += num(vals, colPurchases);
     a.roas_weighted += colRoas >= 0 ? num(vals, colRoas) * rowSpend : 0;
-  };
+  }
 
   const records: Array<{ channel: string; kpi_name: string; week: string; actual: number | null; objective: number | null; budget_spent: number | null; budget_allocated: number | null }> = [];
 
