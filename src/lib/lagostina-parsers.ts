@@ -884,7 +884,7 @@ export async function parseMetaCsvFile(csvText: string): Promise<number> {
   const colImpressions = col('Impressions');
   const colReach = col('Couverture');
   const colViews3s = col('Lectures de vidéo de 3 secondes');
-  const colVideoPlays = col('Lectures de vidéo');
+  const colVideoPlays = headers.findIndex(h => h.includes('Lectures de vidéo') && !h.includes('3 secondes'));
   const colClicks = col('Clics sur un lien');
   const colLanding = headers.findIndex(h => h.includes('Vues de la page de destination'));
   const colPurchases = col('Achats');
