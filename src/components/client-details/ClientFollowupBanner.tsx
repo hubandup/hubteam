@@ -278,7 +278,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
                   {sourcesList.map((s, i) => (
                     <li key={i} className="text-xs text-background/70 flex items-center gap-2">
                       <span
-                        className="uppercase font-semibold tracking-wider"
+                        className="uppercase font-semibold tracking-wider rounded-badge"
                         style={{ background: 'rgba(232,255,76,0.15)', color: 'hsl(var(--brand-yellow))', padding: '1px 6px', fontSize: 9 }}
                       >
                         {s.kind}
