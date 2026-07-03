@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Building2, Mail, Phone, Euro, FolderOpen } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
+import { PROJECT_STATUS_LABELS, PROJECT_STATUS_BADGE_CLASSES, type ProjectStatusKey } from '@/lib/project-status';
 
 interface ClientListViewProps {
   clients: any[];
@@ -89,9 +90,19 @@ export function ClientListView({ clients, onClientClick, onClientHover }: Client
               </div>
             )}
 
-            <Badge className={`flex-shrink-0 ${stageColor}`}>
-              {stageLabel}
-            </Badge>
+            <div className="flex items-center gap-1 flex-wrap justify-end flex-shrink-0 max-w-[280px]">
+              {(client.projectStatuses as ProjectStatusKey[] | undefined)?.map((s) => (
+                <span
+                  key={s}
+                  className={`inline-flex items-center px-2 py-0.5 rounded-badge border text-[10px] font-medium leading-none ${PROJECT_STATUS_BADGE_CLASSES[s]}`}
+                >
+                  {PROJECT_STATUS_LABELS[s]}
+                </span>
+              ))}
+              <Badge className={`${stageColor}`}>
+                {stageLabel}
+              </Badge>
+            </div>
           </div>
         );
       })}
