@@ -193,7 +193,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
                   type="button"
                   onClick={copy}
                   disabled={!plainBody}
-                  className="inline-flex items-center gap-1 font-semibold text-xs disabled:opacity-50"
+                  className="inline-flex items-center gap-1 font-semibold text-xs disabled:opacity-50 rounded-button"
                   style={{ background: 'hsl(var(--brand-yellow))', color: 'hsl(var(--brand-ink))', padding: '6px 12px' }}
                 >
                   <Copy size={12} /> Copier
@@ -201,7 +201,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
                 <button
                   type="button"
                   onClick={sendMail}
-                  className="inline-flex items-center gap-1 text-xs text-background hover:bg-card/10"
+                  className="inline-flex items-center gap-1 text-xs text-background hover:bg-card/10 rounded-button"
                   style={{ border: '1px solid rgba(255,255,255,0.2)', padding: '6px 12px' }}
                 >
                   <Send size={12} /> Envoyer par email
