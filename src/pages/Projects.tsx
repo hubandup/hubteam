@@ -439,7 +439,8 @@ export default function Projects() {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
                     <ProtectedAction module="projects" action="update">
                       <button
-                        onClick={() => navigate(`/project/${project.id}`)}
+                        onClick={() => navigate(buildProjectNavPath(project))}
+
                         style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Instrument Sans', sans-serif", fontWeight: 600, fontSize: 12, color: 'hsl(var(--foreground))', padding: '6px 12px', border: '1px solid hsl(var(--border))', background: 'transparent', cursor: 'pointer' }}
                       >
                         <Edit size={11} /> {t('common.edit')}
@@ -486,22 +487,29 @@ export default function Projects() {
               <ProjectCard
                 key={project.id}
                 project={project}
-                onClick={() => navigate(`/project/${project.id}`)}
+                onClick={() => navigate(buildProjectNavPath(project))}
               />
             ))}
           </div>
         ) : viewMode === 'kanban' ? (
           <ProjectKanbanView
             projects={filteredProjects}
-            onProjectClick={(id) => navigate(`/project/${id}`)}
+            onProjectClick={(id) => {
+              const p = filteredProjects.find((x: any) => x.id === id);
+              navigate(buildProjectNavPath(p));
+            }}
             onStatusChange={handleStatusChange}
           />
         ) : (
           <ProjectListView
             projects={filteredProjects}
-            onProjectClick={(id) => navigate(`/project/${id}`)}
+            onProjectClick={(id) => {
+              const p = filteredProjects.find((x: any) => x.id === id);
+              navigate(buildProjectNavPath(p));
+            }}
           />
         )}
+
       </div>
 
       {/* ── Dialog suppression ────────────────────────────────────────── */}
