@@ -17,6 +17,11 @@ import {
 import { EntityCard } from '@/components/layout';
 import { URGENCY_TOKENS } from '@/lib/design-tokens';
 import {
+  PROJECT_STATUS_LABELS,
+  PROJECT_STATUS_BADGE_CLASSES,
+  type ProjectStatusKey,
+} from '@/lib/project-status';
+import {
   getUrgency,
   getStatusBucket,
   getStatusStyle,
@@ -44,6 +49,7 @@ interface ClientCardProps {
     action_name?: string;
     action_color?: string;
     kdrive_folder_id?: string;
+    projectStatuses?: ProjectStatusKey[];
   };
   onClick: () => void;
   onMouseEnter?: () => void;
