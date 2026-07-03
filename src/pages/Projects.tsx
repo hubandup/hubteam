@@ -340,7 +340,7 @@ export default function Projects() {
               paddingBottom: 8,
               border: '1px solid hsl(var(--border))',
               background: 'hsl(var(--muted))',
-              fontFamily: 'Roboto, sans-serif',
+              fontFamily: 'Instrument Sans, sans-serif',
               fontSize: 13,
               color: 'hsl(var(--foreground))',
               outline: 'none',
@@ -519,7 +519,7 @@ export default function Projects() {
             <AlertDialogTitle style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 16, color: 'hsl(var(--foreground))' }}>
               {t('projects.confirmDelete')}
             </AlertDialogTitle>
-            <AlertDialogDescription style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, color: 'hsl(var(--muted-foreground))' }}>
+            <AlertDialogDescription style={{ fontFamily: 'Instrument Sans, sans-serif', fontSize: 13, color: 'hsl(var(--muted-foreground))' }}>
               {t('projects.confirmDeleteDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>

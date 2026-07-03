@@ -1189,7 +1189,7 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
       </div>
       <div
         className="prose prose-sm max-w-none p-5 bg-background"
-        style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', lineHeight: 1.6 }}
+        style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Instrument Sans, sans-serif', lineHeight: 1.6 }}
         dangerouslySetInnerHTML={{ __html: html }}
       />
     </div>
