@@ -27,6 +27,8 @@ import { useProjects, useArchivedProjects } from '@/hooks/useProjects';
 import { PageLoader } from '@/components/PageLoader';
 import { PendingQuoteActionsBanner } from '@/components/PendingQuoteActionsBanner';
 import { cn } from '@/lib/utils';
+import { buildProjectNavPath } from '@/lib/project-nav';
+
 
 type ViewMode = 'grid' | 'list' | 'kanban';
 
