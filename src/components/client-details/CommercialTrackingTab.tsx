@@ -1495,7 +1495,7 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-medium truncate">{h.subject || '(sans objet)'}</p>
                       {h.action_key && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-badge text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">
                           {actionBadgeLabel(h.action_key)}
                         </span>
                       )}
