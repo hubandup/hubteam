@@ -14,8 +14,8 @@
   }
 
   :root {
-    /* Fonts - Inter for ultra-modern feel */
-    --font-heading: 'Inter', 'Instrument Sans', system-ui, sans-serif;
+    /* Fonts - Instrument Sans everywhere */
+    --font-heading: 'Instrument Sans', system-ui, sans-serif;
     --font-heading-weight: 700;
     --font-heading-size: 2.25rem;
     --font-body: 'Inter', 'Instrument Sans', system-ui, sans-serif;
