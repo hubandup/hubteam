@@ -149,6 +149,20 @@ export default function ClientDetails() {
       setMeetingNotesCount(notes || 0);
       const { count: projects } = await supabase.from('project_clients').select('*', { count: 'exact', head: true }).eq('client_id', id);
       setProjectsCount(projects || 0);
+
+      // Tasks across all projects of this client
+      const { data: pc } = await supabase.from('project_clients').select('project_id').eq('client_id', id);
+      const projectIds = (pc || []).map((r: any) => r.project_id).filter(Boolean);
+      if (projectIds.length > 0) {
+        const { count: tCount } = await supabase
+          .from('tasks')
+          .select('*', { count: 'exact', head: true })
+          .in('project_id', projectIds);
+        setTasksCount(tCount || 0);
+      } else {
+        setTasksCount(0);
+      }
+
       const { data: clientData } = await supabase.from('clients').select('kdrive_folder_id, kdrive_drive_id').eq('id', id).single();
       if (clientData?.kdrive_folder_id && clientData?.kdrive_drive_id) {
         try {
@@ -160,6 +174,7 @@ export default function ClientDetails() {
       }
     } catch (error) { console.error('Error fetching badge counts:', error); }
   };
+
 
   const fetchClientDetails = async () => {
     try {
