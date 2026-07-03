@@ -251,7 +251,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
       <div className="flex flex-col items-center justify-center py-24 gap-4">
         <Database className="h-16 w-16 text-muted-foreground" />
         <p className="text-foreground font-['Instrument_Sans'] text-lg font-bold">Données Influence & RP non disponibles</p>
-        <p className="text-muted-foreground font-['Roboto'] text-sm">Importez un fichier Influence & RP depuis l'admin</p>
+        <p className="text-muted-foreground font-['Instrument Sans'] text-sm">Importez un fichier Influence & RP depuis l'admin</p>
       </div>
     );
   }
@@ -324,13 +324,13 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {kpis.map((kpi) => (
               <div key={kpi.label} className={`bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
-                <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-1">{kpi.label}</p>
+                <p className="text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider mb-1">{kpi.label}</p>
                 <div className="flex items-end gap-2">
                   <span className={`text-xl font-bold font-['Instrument_Sans'] ${getCondColor(kpi.actual, kpi.obj) || 'text-foreground'}`}>
                     {kpi.actual != null ? kpi.actual.toLocaleString('fr-FR') : '—'}
                   </span>
                   {kpi.obj != null && (
-                    <span className="text-muted-foreground text-xs font-['Roboto'] mb-0.5">/ {kpi.obj.toLocaleString('fr-FR')}</span>
+                    <span className="text-muted-foreground text-xs font-['Instrument Sans'] mb-0.5">/ {kpi.obj.toLocaleString('fr-FR')}</span>
                   )}
                 </div>
                 <Sparkline data={kpi.vals} />
@@ -349,8 +349,8 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
                     <XAxis dataKey="label" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
                     <YAxis yAxisId="left" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} label={{ value: 'Reach (M)', angle: -90, position: 'insideLeft', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
                     <YAxis yAxisId="right" orientation="right" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} label={{ value: 'Engagement (%)', angle: 90, position: 'insideRight', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
-                    <Tooltip contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 12, fontFamily: 'Roboto' }} formatter={(value: any, name: string) => [value != null ? Number(value).toLocaleString('fr-FR', { maximumFractionDigits: 2 }) : '—', name]} />
-                    <Legend wrapperStyle={{ fontSize: 11, fontFamily: 'Roboto' }} />
+                    <Tooltip contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 12, fontFamily: 'Instrument Sans' }} formatter={(value: any, name: string) => [value != null ? Number(value).toLocaleString('fr-FR', { maximumFractionDigits: 2 }) : '—', name]} />
+                    <Legend wrapperStyle={{ fontSize: 11, fontFamily: 'Instrument Sans' }} />
                     <Line yAxisId="left" type="monotone" dataKey="reach" name="Reach (M)" stroke={CHART_COLORS[0]} strokeWidth={2} dot={{ r: 3 }} connectNulls />
                     <Line yAxisId="right" type="monotone" dataKey="engagement" name="Engagement (%)" stroke={CHART_COLORS[1]} strokeWidth={2} dot={{ r: 3 }} connectNulls />
                   </LineChart>
@@ -367,8 +367,8 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
                     <XAxis dataKey="label" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
                     <YAxis yAxisId="left" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} label={{ value: 'Budget (€)', angle: -90, position: 'insideLeft', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
                     <YAxis yAxisId="right" orientation="right" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} label={{ value: 'CPM', angle: 90, position: 'insideRight', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
-                    <Tooltip contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 12, fontFamily: 'Roboto' }} formatter={(value: any, name: string) => [value != null ? Number(value).toLocaleString('fr-FR', { maximumFractionDigits: 2 }) : '—', name]} />
-                    <Legend wrapperStyle={{ fontSize: 11, fontFamily: 'Roboto' }} />
+                    <Tooltip contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 12, fontFamily: 'Instrument Sans' }} formatter={(value: any, name: string) => [value != null ? Number(value).toLocaleString('fr-FR', { maximumFractionDigits: 2 }) : '—', name]} />
+                    <Legend wrapperStyle={{ fontSize: 11, fontFamily: 'Instrument Sans' }} />
                     <Bar yAxisId="left" dataKey="budget" name="Budget" fill={CHART_COLORS[2]} />
                     <Bar yAxisId="right" dataKey="cpm" name="CPM" fill={CHART_COLORS[3]} />
                   </BarChart>
@@ -382,7 +382,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
             <div className="px-4 py-3 border-b border-border/40">
               <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Détail mensuel</h3>
             </div>
-            <table className="w-full text-sm font-['Roboto']">
+            <table className="w-full text-sm font-['Instrument Sans']">
               <thead>
                 <tr className="border-b border-border/40">
                   <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-card dark:bg-[hsl(var(--brand-ink))] z-10 min-w-[140px]">KPI</th>
@@ -422,7 +422,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <Database className="h-16 w-16 text-muted-foreground" />
               <p className="text-foreground font-['Instrument_Sans'] text-lg font-bold">Données Affiliation non disponibles</p>
-              <p className="text-muted-foreground font-['Roboto'] text-sm">Importez un fichier Influence & RP avec un onglet Affiliation</p>
+              <p className="text-muted-foreground font-['Instrument Sans'] text-sm">Importez un fichier Influence & RP avec un onglet Affiliation</p>
             </div>
           );
         }
@@ -499,7 +499,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {affKpis.map((kpi) => (
                 <div key={kpi.label} className={`bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
-                  <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-1">{kpi.label}</p>
+                  <p className="text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider mb-1">{kpi.label}</p>
                   <div className="flex items-end gap-2">
                     <span className={`text-xl font-bold font-['Instrument_Sans'] ${getCondColor(kpi.actual, kpi.obj) || 'text-foreground'}`}>
                       {kpi.actual != null ? kpi.actual.toLocaleString('fr-FR') : '—'}
@@ -521,8 +521,8 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
                       <XAxis dataKey="label" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
                       <YAxis yAxisId="left" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} label={{ value: 'Reach (M)', angle: -90, position: 'insideLeft', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
                       <YAxis yAxisId="right" orientation="right" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} label={{ value: 'Engagement (%)', angle: 90, position: 'insideRight', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
-                      <Tooltip contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 12, fontFamily: 'Roboto' }} formatter={(value: any, name: string) => [value != null ? Number(value).toLocaleString('fr-FR', { maximumFractionDigits: 2 }) : '—', name]} />
-                      <Legend wrapperStyle={{ fontSize: 11, fontFamily: 'Roboto' }} />
+                      <Tooltip contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 12, fontFamily: 'Instrument Sans' }} formatter={(value: any, name: string) => [value != null ? Number(value).toLocaleString('fr-FR', { maximumFractionDigits: 2 }) : '—', name]} />
+                      <Legend wrapperStyle={{ fontSize: 11, fontFamily: 'Instrument Sans' }} />
                       <Line yAxisId="left" type="monotone" dataKey="reach" name="Reach (M)" stroke={CHART_COLORS[0]} strokeWidth={2} dot={{ r: 3 }} connectNulls />
                       <Line yAxisId="right" type="monotone" dataKey="engagement" name="Engagement (%)" stroke={CHART_COLORS[1]} strokeWidth={2} dot={{ r: 3 }} connectNulls />
                     </LineChart>
@@ -539,8 +539,8 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
                       <XAxis dataKey="label" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
                       <YAxis yAxisId="left" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} label={{ value: 'Budget (€)', angle: -90, position: 'insideLeft', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
                       <YAxis yAxisId="right" orientation="right" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} label={{ value: 'CPM', angle: 90, position: 'insideRight', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
-                      <Tooltip contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 12, fontFamily: 'Roboto' }} formatter={(value: any, name: string) => [value != null ? Number(value).toLocaleString('fr-FR', { maximumFractionDigits: 2 }) : '—', name]} />
-                      <Legend wrapperStyle={{ fontSize: 11, fontFamily: 'Roboto' }} />
+                      <Tooltip contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 12, fontFamily: 'Instrument Sans' }} formatter={(value: any, name: string) => [value != null ? Number(value).toLocaleString('fr-FR', { maximumFractionDigits: 2 }) : '—', name]} />
+                      <Legend wrapperStyle={{ fontSize: 11, fontFamily: 'Instrument Sans' }} />
                       <Bar yAxisId="left" dataKey="budget" name="Budget" fill={CHART_COLORS[2]} />
                       <Bar yAxisId="right" dataKey="cpm" name="CPM" fill={CHART_COLORS[3]} />
                     </BarChart>
@@ -554,7 +554,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
               <div className="px-4 py-3 border-b border-border/40">
                 <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Détail mensuel</h3>
               </div>
-              <table className="w-full text-sm font-['Roboto']">
+              <table className="w-full text-sm font-['Instrument Sans']">
                 <thead>
                   <tr className="border-b border-border/40">
                     <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-card dark:bg-[hsl(var(--brand-ink))] z-10 min-w-[140px]">KPI</th>
@@ -595,20 +595,20 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
             <div className="flex flex-col gap-4 shrink-0 w-full md:w-60">
               {/* Pie chart - count */}
               <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-5 flex flex-col items-center w-full">
-                <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-3">Retombées par tonalité</p>
+                <p className="text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider mb-3">Retombées par tonalité</p>
                 <div className="w-40 h-40">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie data={tonalityPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={35} strokeWidth={2} stroke="var(--background)">
                         {tonalityPieData.map((entry, idx) => <Cell key={idx} fill={entry.color} />)}
                       </Pie>
-                      <Tooltip formatter={(value: number, name: string) => [`${value} retombées`, name]} contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 13, fontFamily: 'Roboto' }} />
+                      <Tooltip formatter={(value: number, name: string) => [`${value} retombées`, name]} contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 13, fontFamily: 'Instrument Sans' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
                 <div className="flex flex-wrap gap-3 mt-2 justify-center">
                   {tonalityPieData.map((entry) => (
-                    <div key={entry.name} className="flex items-center gap-1.5 text-xs font-['Roboto']">
+                    <div key={entry.name} className="flex items-center gap-1.5 text-xs font-['Instrument Sans']">
                       <span className="w-2.5 h-2.5 inline-block" style={{ backgroundColor: entry.color }} />
                       <span className="text-foreground">{entry.name}</span>
                       <span className="text-muted-foreground">({entry.value})</span>
@@ -619,20 +619,20 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
 
               {/* Pie chart - reach */}
               <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-5 flex flex-col items-center w-full">
-                <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-3">Reach par tonalité</p>
+                <p className="text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider mb-3">Reach par tonalité</p>
                 <div className="w-40 h-40">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie data={tonalityReachPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={35} strokeWidth={2} stroke="var(--background)">
                         {tonalityReachPieData.map((entry, idx) => <Cell key={idx} fill={entry.color} />)}
                       </Pie>
-                      <Tooltip formatter={(value: number, name: string) => [`${value >= 1000000 ? `${(value / 1000000).toFixed(1)}M` : value >= 1000 ? `${(value / 1000).toFixed(0)}K` : value}`, name]} contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 13, fontFamily: 'Roboto' }} />
+                      <Tooltip formatter={(value: number, name: string) => [`${value >= 1000000 ? `${(value / 1000000).toFixed(1)}M` : value >= 1000 ? `${(value / 1000).toFixed(0)}K` : value}`, name]} contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', fontSize: 13, fontFamily: 'Instrument Sans' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
                 <div className="flex flex-wrap gap-3 mt-2 justify-center">
                   {tonalityReachPieData.map((entry) => (
-                    <div key={entry.name} className="flex items-center gap-1.5 text-xs font-['Roboto']">
+                    <div key={entry.name} className="flex items-center gap-1.5 text-xs font-['Instrument Sans']">
                       <span className="w-2.5 h-2.5 inline-block" style={{ backgroundColor: entry.color }} />
                       <span className="text-foreground">{entry.name}</span>
                       <span className="text-muted-foreground">({entry.value >= 1000000 ? `${(entry.value / 1000000).toFixed(1)}M` : entry.value >= 1000 ? `${(entry.value / 1000).toFixed(0)}K` : entry.value})</span>
@@ -652,7 +652,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
                     <button
                       key={t}
                       onClick={() => { setTonalityFilter(t); setPage(0); }}
-                      className={`px-3 py-1.5 text-xs font-['Roboto'] transition-colors ${
+                      className={`px-3 py-1.5 text-xs font-['Instrument Sans'] transition-colors ${
                         tonalityFilter === t ? 'bg-foreground dark:bg-[hsl(var(--brand-yellow))] text-background font-medium' : 'bg-muted dark:bg-[#1a1f2e] text-muted-foreground hover:text-foreground'
                       }`}
                     >
@@ -664,20 +664,20 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
 
               {/* Counters */}
               <div className="flex gap-6">
-                <div className="text-muted-foreground text-xs font-['Roboto']">
+                <div className="text-muted-foreground text-xs font-['Instrument Sans']">
                   <span className="text-foreground font-bold text-sm">{filteredPress.length}</span> retombées
                 </div>
-                <div className="text-muted-foreground text-xs font-['Roboto']">
+                <div className="text-muted-foreground text-xs font-['Instrument Sans']">
                   <span className="text-foreground font-bold text-sm">{uniqueJournalists}</span> journalistes
                 </div>
-                <div className="text-muted-foreground text-xs font-['Roboto']">
+                <div className="text-muted-foreground text-xs font-['Instrument Sans']">
                   Reach cumulé : <span className="text-foreground font-bold text-sm">{totalReach >= 1000000 ? `${(totalReach / 1000000).toFixed(1)}M` : totalReach >= 1000 ? `${(totalReach / 1000).toFixed(0)}K` : totalReach}</span>
                 </div>
               </div>
 
               {/* Table */}
               <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
-                <table className="w-full text-sm font-['Roboto']">
+                <table className="w-full text-sm font-['Instrument Sans']">
                   <thead>
                     <tr className="border-b border-border/40">
                       <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider">Date</th>
@@ -730,7 +730,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
-                  <span className="text-muted-foreground text-xs font-['Roboto']">
+                  <span className="text-muted-foreground text-xs font-['Instrument Sans']">
                     {page + 1} / {totalPages}
                   </span>
                   <button

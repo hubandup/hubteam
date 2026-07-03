@@ -83,55 +83,55 @@ export function GoogleAdsSeaConfig() {
     <div className="bg-card border border-border/30">
       <div className="px-4 py-3 border-b border-border/40">
         <h2 className="text-foreground font-['Instrument_Sans'] font-bold text-sm">Google Ads SEA</h2>
-        <p className="text-muted-foreground font-['Roboto'] text-xs mt-1">
+        <p className="text-muted-foreground font-['Instrument Sans'] text-xs mt-1">
           Synchronisation auto quotidienne (6h Paris) depuis un Google Sheet alimenté par Google Ads.
         </p>
       </div>
       <div className="p-4 space-y-3">
         <div>
-          <label className="text-xs text-muted-foreground font-['Roboto'] uppercase tracking-wider">URL du Google Sheet</label>
+          <label className="text-xs text-muted-foreground font-['Instrument Sans'] uppercase tracking-wider">URL du Google Sheet</label>
           <input
             type="text"
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
             placeholder="https://docs.google.com/spreadsheets/d/..."
-            className="w-full mt-1 px-3 py-2 bg-background border border-border/40 text-foreground font-['Roboto'] text-sm"
+            className="w-full mt-1 px-3 py-2 bg-background border border-border/40 text-foreground font-['Instrument Sans'] text-sm"
           />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-muted-foreground font-['Roboto'] uppercase tracking-wider">Onglet</label>
+            <label className="text-xs text-muted-foreground font-['Instrument Sans'] uppercase tracking-wider">Onglet</label>
             <input
               type="text" value={sheetName} onChange={(e) => setSheetName(e.target.value)}
-              className="w-full mt-1 px-3 py-2 bg-background border border-border/40 text-foreground font-['Roboto'] text-sm"
+              className="w-full mt-1 px-3 py-2 bg-background border border-border/40 text-foreground font-['Instrument Sans'] text-sm"
             />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground font-['Roboto'] uppercase tracking-wider">Plage</label>
+            <label className="text-xs text-muted-foreground font-['Instrument Sans'] uppercase tracking-wider">Plage</label>
             <input
               type="text" value={cellRange} onChange={(e) => setCellRange(e.target.value)}
-              className="w-full mt-1 px-3 py-2 bg-background border border-border/40 text-foreground font-['Roboto'] text-sm"
+              className="w-full mt-1 px-3 py-2 bg-background border border-border/40 text-foreground font-['Instrument Sans'] text-sm"
             />
           </div>
         </div>
         <div className="flex items-center gap-2 pt-2">
           <button
             onClick={handleSave} disabled={saving || isLoading}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground border border-border/40 font-['Roboto'] text-sm hover:opacity-90 disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground border border-border/40 font-['Instrument Sans'] text-sm hover:opacity-90 disabled:opacity-50"
           >
             <Save className="h-4 w-4" />
             {saving ? 'Enregistrement…' : 'Enregistrer'}
           </button>
           <button
             onClick={handleSync} disabled={syncing || !cfg}
-            className="flex items-center gap-2 px-4 py-2 bg-muted text-foreground border border-border/40 font-['Roboto'] text-sm hover:bg-muted/80 disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-muted text-foreground border border-border/40 font-['Instrument Sans'] text-sm hover:bg-muted/80 disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
             {syncing ? 'Synchronisation…' : 'Synchroniser maintenant'}
           </button>
         </div>
         {cfg?.last_synced_at && (
-          <div className="flex items-center gap-2 text-xs font-['Roboto'] pt-2 border-t border-border/30">
+          <div className="flex items-center gap-2 text-xs font-['Instrument Sans'] pt-2 border-t border-border/30">
             {cfg.last_sync_status === 'success' ? (
               <CheckCircle2 className="h-4 w-4 text-[#22c55e]" />
             ) : (

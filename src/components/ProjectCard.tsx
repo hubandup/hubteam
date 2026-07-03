@@ -46,7 +46,7 @@ function TaskBar({ completed, total }: { completed: number; total: number }) {
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-[11px] text-muted-foreground font-roboto">
+      <span className="text-[11px] text-muted-foreground font-display">
         {completed}/{total}
       </span>
     </div>
@@ -78,7 +78,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
         endDate ? (
           <span
             className={cn(
-              'inline-flex items-center gap-1 font-roboto',
+              'inline-flex items-center gap-1 font-display',
               isOverdue ? 'text-destructive font-semibold' : 'text-muted-foreground',
             )}
           >

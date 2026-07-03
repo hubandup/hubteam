@@ -46,7 +46,7 @@ export function SearchFilterBar({
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={searchPlaceholder}
-          className="flex-1 text-sm outline-none bg-transparent font-roboto text-foreground placeholder:text-muted-foreground"
+          className="flex-1 text-sm outline-none bg-transparent font-display text-foreground placeholder:text-muted-foreground"
         />
       </div>
 

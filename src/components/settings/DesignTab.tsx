@@ -23,7 +23,7 @@ const HEADING_FONTS = [
 ];
 
 const BODY_FONTS = [
-  'Roboto',
+  'Instrument Sans',
   'Poppins',
   'Open Sans',
   'Lato',
@@ -182,7 +182,7 @@ export function DesignTab() {
     heading_font: 'Instrument Sans',
     heading_font_weight: '700',
     heading_font_size: '2.5rem',
-    body_font: 'Roboto',
+    body_font: 'Instrument Sans',
     body_font_weight: '400',
     body_font_size: '1rem',
     light_primary: '210 100% 30%',

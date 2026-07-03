@@ -38,7 +38,7 @@ function getLevierColor(levier: string, index: number): string {
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border border-black dark:border-white px-3 py-2 font-['Roboto'] text-xs">
+    <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border border-black dark:border-white px-3 py-2 font-['Instrument Sans'] text-xs">
       <p className="text-foreground font-medium mb-1">{label}</p>
       {payload.map((p: any) => (
         <p key={p.dataKey} style={{ color: p.color }}>
@@ -166,7 +166,7 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
       <div className="flex flex-col items-center justify-center py-24 gap-4">
         <Database className="h-16 w-16 text-muted-foreground" />
         <p className="text-foreground font-['Instrument_Sans'] text-lg font-bold">Données Budget non disponibles</p>
-        <p className="text-muted-foreground font-['Roboto'] text-sm">Importez un fichier Budget depuis l'admin</p>
+        <p className="text-muted-foreground font-['Instrument Sans'] text-sm">Importez un fichier Budget depuis l'admin</p>
       </div>
     );
   }
@@ -195,7 +195,7 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                   <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-6">
                     <div className="flex items-center justify-between mb-3">
                       <div>
-                        <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">Budget consommé (S1)</p>
+                        <p className="text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider">Budget consommé (S1)</p>
                         <p className="text-foreground text-2xl font-bold font-['Instrument_Sans']">
                           {fmt(synthesisTotals.s1Spent)}
                           <span className="text-muted-foreground text-base font-normal"> / {fmt(synthesisTotals.totalYear)}</span>
@@ -203,7 +203,7 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                         </p>
                       </div>
                       {isOver && (
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-[#ef4444]/20 text-[#ef4444] text-xs font-['Roboto'] font-medium">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-[#ef4444]/20 text-[#ef4444] text-xs font-['Instrument Sans'] font-medium">
                           <AlertTriangle className="h-3.5 w-3.5" />
                           Dépassement prévisionnel
                         </div>
@@ -219,33 +219,33 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                       />
                     </div>
                     <div className="flex justify-between mt-1">
-                      <span className="text-muted-foreground text-xs font-['Roboto']">0%</span>
-                      <span className="text-muted-foreground text-xs font-['Roboto']">Progression année : {yearProgress.toFixed(0)}%</span>
-                      <span className="text-muted-foreground text-xs font-['Roboto']">100%</span>
+                      <span className="text-muted-foreground text-xs font-['Instrument Sans']">0%</span>
+                      <span className="text-muted-foreground text-xs font-['Instrument Sans']">Progression année : {yearProgress.toFixed(0)}%</span>
+                      <span className="text-muted-foreground text-xs font-['Instrument Sans']">100%</span>
                     </div>
                   </div>
 
                   {/* Synthèse semestrielle */}
                   <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-6">
-                    <p className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider mb-3">Synthèse semestrielle</p>
+                    <p className="text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider mb-3">Synthèse semestrielle</p>
                     <div className="grid grid-cols-4 gap-4 mb-4">
                       <div>
-                        <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">S1 Prévu</p>
+                        <p className="text-muted-foreground text-[10px] font-['Instrument Sans'] uppercase tracking-wider">S1 Prévu</p>
                         <p className="text-foreground text-lg font-bold font-['Instrument_Sans']">{fmt(synthesisTotals.s1Planned)}</p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">S1 Dépensé</p>
+                        <p className="text-muted-foreground text-[10px] font-['Instrument Sans'] uppercase tracking-wider">S1 Dépensé</p>
                         <p className="text-foreground text-lg font-bold font-['Instrument_Sans']">
                           {fmt(synthesisTotals.s1Spent)}
                           <span className="text-xs font-normal text-muted-foreground ml-1">({s1Pct.toFixed(0)}%)</span>
                         </p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">S1 Avoir</p>
+                        <p className="text-muted-foreground text-[10px] font-['Instrument Sans'] uppercase tracking-wider">S1 Avoir</p>
                         <p className="text-foreground text-lg font-bold font-['Instrument_Sans']">{fmt(synthesisTotals.s1Credit)}</p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider">S2 Budget</p>
+                        <p className="text-muted-foreground text-[10px] font-['Instrument Sans'] uppercase tracking-wider">S2 Budget</p>
                         <p className="text-foreground text-lg font-bold font-['Instrument_Sans']">{fmt(synthesisTotals.s2Budget)}</p>
                       </div>
                     </div>
@@ -266,15 +266,15 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                       />
                     </div>
                     <div className="flex justify-between mt-1">
-                      <span className="text-muted-foreground text-xs font-['Roboto']">S1 dépensé</span>
-                      <span className="text-muted-foreground text-xs font-['Roboto']">S2 budget restant</span>
+                      <span className="text-muted-foreground text-xs font-['Instrument Sans']">S1 dépensé</span>
+                      <span className="text-muted-foreground text-xs font-['Instrument Sans']">S2 budget restant</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Détail par levier — synthèse S1/S2 */}
                 <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
-                  <table className="w-full text-sm font-['Roboto']">
+                  <table className="w-full text-sm font-['Instrument Sans']">
                     <thead>
                       <tr className="border-b border-border/40">
                         <th className="text-left px-4 py-3 text-muted-foreground font-medium uppercase tracking-wider text-xs">Levier</th>
@@ -358,13 +358,13 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                         content={({ active, payload }) => {
                           if (!active || !payload?.length) return null;
                           return (
-                            <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border border-black dark:border-white px-3 py-2 font-['Roboto'] text-xs">
+                            <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border border-black dark:border-white px-3 py-2 font-['Instrument Sans'] text-xs">
                               <p className="text-foreground">{payload[0].name}: {Number(payload[0].value).toLocaleString('fr-FR')}€</p>
                             </div>
                           );
                         }}
                       />
-                      <Legend layout="vertical" align="right" verticalAlign="middle" formatter={(value: string) => <span className="text-muted-foreground text-xs font-['Roboto']">{value}</span>} />
+                      <Legend layout="vertical" align="right" verticalAlign="middle" formatter={(value: string) => <span className="text-muted-foreground text-xs font-['Instrument Sans']">{value}</span>} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -385,7 +385,7 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                   </ResponsiveContainer>
                 </div>
                 {projectionText && (
-                  <p className="text-muted-foreground text-xs font-['Roboto'] mt-2 text-center">{projectionText}</p>
+                  <p className="text-muted-foreground text-xs font-['Instrument Sans'] mt-2 text-center">{projectionText}</p>
                 )}
               </div>
             </div>
@@ -393,7 +393,7 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
 
           {activeTab === 'detail' && (
             <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
-              <table className="w-full text-sm font-['Roboto']">
+              <table className="w-full text-sm font-['Instrument Sans']">
                 <thead>
                   <tr className="border-b border-border/40">
                     <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 z-10 min-w-[120px]">Levier</th>

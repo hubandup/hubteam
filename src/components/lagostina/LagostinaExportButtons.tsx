@@ -247,7 +247,7 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
       <button
         onClick={() => syncFromKDrive()}
         disabled={syncing}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-['Roboto'] font-medium text-foreground dark:text-[hsl(var(--brand-yellow))] border border-black dark:border-[hsl(var(--brand-yellow))] bg-transparent hover:bg-foreground hover:text-background dark:hover:bg-[hsl(var(--brand-yellow))] dark:hover:text-foreground transition-colors disabled:opacity-50"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-['Instrument Sans'] font-medium text-foreground dark:text-[hsl(var(--brand-yellow))] border border-black dark:border-[hsl(var(--brand-yellow))] bg-transparent hover:bg-foreground hover:text-background dark:hover:bg-[hsl(var(--brand-yellow))] dark:hover:text-foreground transition-colors disabled:opacity-50"
 
       >
         <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
@@ -257,7 +257,7 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
       <Tooltip>
         <TooltipTrigger asChild>
           <button onClick={exportExcel} disabled={exporting} className={btnClass} aria-label="Exporter Excel">
-            <span className="text-[10px] font-bold font-['Roboto'] leading-none">XLS</span>
+            <span className="text-[10px] font-bold font-['Instrument Sans'] leading-none">XLS</span>
           </button>
         </TooltipTrigger>
         <TooltipContent>Exporter Excel</TooltipContent>
@@ -267,7 +267,7 @@ export function LagostinaExportButtons({ tabName, showPdf = false, chartsContain
         <Tooltip>
           <TooltipTrigger asChild>
             <button onClick={exportPdf} disabled={exporting} className={btnClass} aria-label="Exporter PDF">
-              <span className="text-[10px] font-bold font-['Roboto'] leading-none">PDF</span>
+              <span className="text-[10px] font-bold font-['Instrument Sans'] leading-none">PDF</span>
             </button>
           </TooltipTrigger>
           <TooltipContent>Exporter PDF (vue active)</TooltipContent>
