@@ -31,6 +31,8 @@ import { ClientCommercialSidebar } from '@/components/client-details/ClientComme
 import { EditClientDialog } from '@/components/EditClientDialog';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { useUserRole } from '@/hooks/useUserRole';
+import { usePermissions } from '@/hooks/usePermissions';
+
 
 interface TabDef {
   value: string;
