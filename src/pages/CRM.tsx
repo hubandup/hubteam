@@ -89,7 +89,16 @@ export default function CRM() {
     if (filterWithProjects) {
       result = result.filter(client => client.hasActiveProjects === true);
     }
-    
+
+    // Apply project state filter (multi-projects: keep client if ANY project matches)
+    if (projectStatusFilter !== 'all') {
+      result = result.filter((client) => {
+        const statuses = client.projectStatuses || [];
+        if (projectStatusFilter === 'none') return statuses.length === 0;
+        return statuses.includes(projectStatusFilter as ProjectStatusKey);
+      });
+    }
+
     // Apply sorting
     if (sortBy === 'revenue_current_year') {
       result = [...result].sort((a, b) => {
@@ -106,7 +115,7 @@ export default function CRM() {
     }
     
     return result;
-  }, [clients, searchQuery, sortBy, filterWithProjects, showArchived]);
+  }, [clients, searchQuery, sortBy, filterWithProjects, showArchived, projectStatusFilter]);
 
   const archivedCount = useMemo(() => {
     return clients.filter(client => client.active === false).length;
