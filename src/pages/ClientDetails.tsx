@@ -45,6 +45,8 @@ export default function ClientDetails() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { role } = useUserRole();
+  const { canRead } = usePermissions();
+
   const [client, setClient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [meetingNotesCount, setMeetingNotesCount] = useState(0);
