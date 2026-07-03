@@ -80,11 +80,11 @@ export function LagostinaContenus() {
               {!hasContenus ? (
                 <div className="flex flex-col items-center py-8 gap-2">
                   <Clock className="h-8 w-8 text-muted-foreground" />
-                  <p className="text-muted-foreground text-xs font-['Roboto']">Données non disponibles</p>
+                  <p className="text-muted-foreground text-xs font-['Instrument Sans']">Données non disponibles</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-[13px] font-['Roboto']">
+                  <table className="w-full text-[13px] font-['Instrument Sans']">
                     <thead>
                       <tr className="border-b border-border/40">
                         <th className="text-left py-2 px-3 text-muted-foreground uppercase">Type</th>
@@ -128,13 +128,13 @@ export function LagostinaContenus() {
                   <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Mix social</h3>
                 </div>
                 {!hasSocial ? (
-                  <div className="text-muted-foreground text-xs font-['Roboto'] py-8 text-center">Données non disponibles</div>
+                  <div className="text-muted-foreground text-xs font-['Instrument Sans'] py-8 text-center">Données non disponibles</div>
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     {(socialMix || []).map((s) => (
                       <div key={s.id} className="bg-card dark:bg-[hsl(var(--brand-ink))] p-4 flex flex-col items-center gap-1">
                         <span className="text-foreground text-2xl font-bold font-['Instrument_Sans']">{s.count}</span>
-                        <span className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">
+                        <span className="text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider">
                           {SOCIAL_CATEGORY_LABELS[s.category] || s.category}
                         </span>
                       </div>
@@ -149,10 +149,10 @@ export function LagostinaContenus() {
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="bg-muted dark:bg-[#141928]">
                       <div className="aspect-square bg-card dark:bg-[#141928] flex items-center justify-center">
-                        <span className="text-muted-foreground text-xs font-['Roboto']">#{i}</span>
+                        <span className="text-muted-foreground text-xs font-['Instrument Sans']">#{i}</span>
                       </div>
                       <div className="p-2">
-                        <div className="text-muted-foreground text-xs font-['Roboto']">Données non disponibles</div>
+                        <div className="text-muted-foreground text-xs font-['Instrument Sans']">Données non disponibles</div>
                       </div>
                     </div>
                   ))}
@@ -168,10 +168,10 @@ export function LagostinaContenus() {
                 <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Learnings contenus</h3>
               </div>
               {!hasLearnings ? (
-                <div className="text-muted-foreground text-xs font-['Roboto'] py-8 text-center">Aucun learning enregistré</div>
+                <div className="text-muted-foreground text-xs font-['Instrument Sans'] py-8 text-center">Aucun learning enregistré</div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-[13px] font-['Roboto']">
+                  <table className="w-full text-[13px] font-['Instrument Sans']">
                     <thead>
                       <tr className="border-b border-border/40">
                         <th className="text-left py-2 px-3 text-muted-foreground uppercase">Learning</th>

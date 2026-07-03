@@ -24,7 +24,7 @@ export function LagostinaSubTabs({ tabs, defaultTab, children, rightAction, belo
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id)}
-              className={`px-5 py-2.5 text-sm font-['Roboto'] transition-colors ${
+              className={`px-5 py-2.5 text-sm font-['Instrument Sans'] transition-colors ${
                 activeTab === t.id
                   ? 'bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] font-medium'
                   : 'text-muted-foreground hover:text-foreground'

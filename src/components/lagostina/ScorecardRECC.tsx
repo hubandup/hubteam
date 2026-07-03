@@ -487,7 +487,7 @@ export function ScorecardRECC({
       <div className="flex flex-col items-center justify-center py-24 gap-4">
         <Database className="h-16 w-16 text-muted-foreground" />
         <p className="text-foreground font-['Instrument_Sans'] text-lg font-bold">Données Scorecard non disponibles</p>
-        <p className="text-muted-foreground font-['Roboto'] text-sm">
+        <p className="text-muted-foreground font-['Instrument Sans'] text-sm">
           Aucune donnée trouvée dans Influence, Affiliation, Presse ou Médiatisation.
         </p>
       </div>
@@ -498,7 +498,7 @@ export function ScorecardRECC({
     <div className="space-y-4">
       {/* Header: current week badge + learnings */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] font-['Roboto'] text-sm font-medium">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] font-['Instrument Sans'] text-sm font-medium">
           <CalendarClock className="h-4 w-4" />
           <span>Semaine en cours&nbsp;: <strong>S{currentWeek}</strong></span>
           <span className="opacity-60">·</span>
@@ -511,7 +511,7 @@ export function ScorecardRECC({
 
       {/* Scorecard table */}
       <div ref={tableRef} className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
-        <table className="w-full text-sm font-['Roboto'] border-collapse">
+        <table className="w-full text-sm font-['Instrument Sans'] border-collapse">
           <thead>
             <tr className="border-b border-border/40 bg-foreground/[0.02]/[0.02]">
               <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-card dark:bg-[hsl(var(--brand-ink))] z-20 min-w-[220px] border-r border-border/30 text-[11px]">
@@ -609,7 +609,7 @@ export function ScorecardRECC({
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-3 text-xs font-['Roboto'] text-muted-foreground pt-2">
+      <div className="flex flex-wrap gap-3 text-xs font-['Instrument Sans'] text-muted-foreground pt-2">
         {LEVIERS.map((l) => (
           <div key={l.id} className="inline-flex items-center gap-1.5">
             <span className="inline-block w-3 h-3" style={{ background: l.color }} />

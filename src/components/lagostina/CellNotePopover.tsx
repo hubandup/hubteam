@@ -202,13 +202,13 @@ function NoteTooltip({ note, noteColor, onEdit }: { note: CellNote; noteColor: s
               {note.author.first_name?.[0]}{note.author.last_name?.[0]}
             </AvatarFallback>
           </Avatar>
-          <span className="text-[11px] font-medium text-foreground font-['Roboto']">
+          <span className="text-[11px] font-medium text-foreground font-['Instrument Sans']">
             {note.author.first_name} {note.author.last_name}
           </span>
         </div>
       )}
       <div
-        className="text-xs text-foreground font-['Roboto'] prose prose-sm dark:prose-invert max-w-none"
+        className="text-xs text-foreground font-['Instrument Sans'] prose prose-sm dark:prose-invert max-w-none"
         dangerouslySetInnerHTML={createSafeHtml(note.content)}
       />
       {isAuthor && (
@@ -295,7 +295,7 @@ function NoteEditor({
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-muted-foreground font-['Roboto'] font-medium">
+        <span className="text-xs text-muted-foreground font-['Instrument Sans'] font-medium">
           {existingNote ? 'Modifier la note' : 'Ajouter une note'}
         </span>
         <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
@@ -306,7 +306,7 @@ function NoteEditor({
       <div
         ref={editorRef}
         contentEditable
-        className="min-h-[60px] max-h-[120px] overflow-y-auto text-xs text-foreground font-['Roboto'] p-2 border border-border/30 focus:outline-none bg-transparent"
+        className="min-h-[60px] max-h-[120px] overflow-y-auto text-xs text-foreground font-['Instrument Sans'] p-2 border border-border/30 focus:outline-none bg-transparent"
         style={{ boxShadow: `0 0 0 1px ${noteColor}` }}
         suppressContentEditableWarning
       />
@@ -314,7 +314,7 @@ function NoteEditor({
         <button
           onClick={handleSave}
           disabled={saveMutation.isPending}
-          className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] font-['Roboto'] font-medium hover:opacity-80 transition-opacity disabled:opacity-50"
+          className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] font-['Instrument Sans'] font-medium hover:opacity-80 transition-opacity disabled:opacity-50"
         >
           <Check className="h-3 w-3" />
           {saveMutation.isPending ? '...' : 'Valider'}

@@ -246,7 +246,7 @@ export default function Targets() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="bg-card border border-border p-12 text-center">
-            <p className="text-sm text-muted-foreground font-roboto">
+            <p className="text-sm text-muted-foreground font-display">
               Aucun target ne correspond à ces filtres.
             </p>
           </div>

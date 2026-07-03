@@ -202,7 +202,7 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
         {/* Learnings wrapper (2 columns + validate) */}
         <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border/30">
           <div className="p-4 space-y-2">
-            <h3 className="text-xs font-['Roboto'] font-semibold uppercase tracking-wider text-[#22c55e]">
+            <h3 className="text-xs font-['Instrument Sans'] font-semibold uppercase tracking-wider text-[#22c55e]">
               Ce qui fonctionne ✅
             </h3>
             <div className="bg-green-50 dark:bg-green-900/20 p-3">
@@ -210,14 +210,14 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
                 value={local.works}
                 onChange={(e) => handleLearningChange('works', e.target.value)}
                 readOnly={!canEdit}
-                className="w-full bg-transparent text-foreground font-['Roboto'] text-sm resize-none min-h-[60px] focus:outline-none placeholder:text-foreground/20"
+                className="w-full bg-transparent text-foreground font-['Instrument Sans'] text-sm resize-none min-h-[60px] focus:outline-none placeholder:text-foreground/20"
                 placeholder={canEdit ? 'Ajouter…' : '—'}
               />
             </div>
           </div>
 
           <div className="p-4 space-y-2">
-            <h3 className="text-xs font-['Roboto'] font-semibold uppercase tracking-wider text-[#ef4444]">
+            <h3 className="text-xs font-['Instrument Sans'] font-semibold uppercase tracking-wider text-[#ef4444]">
               Ce qui ne fonctionne pas ❌
             </h3>
             <div className="bg-red-50 dark:bg-red-900/20 p-3">
@@ -225,7 +225,7 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
                 value={local.does_not_work}
                 onChange={(e) => handleLearningChange('does_not_work', e.target.value)}
                 readOnly={!canEdit}
-                className="w-full bg-transparent text-foreground font-['Roboto'] text-sm resize-none min-h-[60px] focus:outline-none placeholder:text-foreground/20"
+                className="w-full bg-transparent text-foreground font-['Instrument Sans'] text-sm resize-none min-h-[60px] focus:outline-none placeholder:text-foreground/20"
                 placeholder={canEdit ? 'Ajouter…' : '—'}
               />
             </div>
@@ -251,7 +251,7 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Ajouter un commentaire…"
-              className="flex-1 bg-muted/50 border border-border/30 text-foreground font-['Roboto'] text-sm p-2 resize-none min-h-[40px] focus:outline-none focus:ring-1 focus:ring-primary/30"
+              className="flex-1 bg-muted/50 border border-border/30 text-foreground font-['Instrument Sans'] text-sm p-2 resize-none min-h-[40px] focus:outline-none focus:ring-1 focus:ring-primary/30"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey && newComment.trim()) {
                   e.preventDefault();
@@ -273,7 +273,7 @@ export function LagostinaLearningsPanel({ activeTab }: Props) {
             {filteredComments.length === 0 && (
               <div className="flex items-center justify-center py-3 gap-2">
                 <MessageSquare className="h-5 w-5 text-muted-foreground/40" />
-                <p className="text-muted-foreground font-['Roboto'] text-xs">Aucun commentaire</p>
+                <p className="text-muted-foreground font-['Instrument Sans'] text-xs">Aucun commentaire</p>
               </div>
             )}
             {filteredComments.map((c) => (
@@ -327,10 +327,10 @@ function CommentItem({
             {comment.author?.first_name?.[0]}{comment.author?.last_name?.[0]}
           </AvatarFallback>
         </Avatar>
-        <span className="text-sm font-['Roboto'] font-medium text-foreground">
+        <span className="text-sm font-['Instrument Sans'] font-medium text-foreground">
           {comment.author?.first_name} {comment.author?.last_name}
         </span>
-        <span className="text-xs text-muted-foreground font-['Roboto']">
+        <span className="text-xs text-muted-foreground font-['Instrument Sans']">
           {timeAgo}
         </span>
         <div className="ml-auto flex gap-1">
@@ -354,7 +354,7 @@ function CommentItem({
           )}
         </div>
       </div>
-      <p className="text-sm font-['Roboto'] text-foreground/80 whitespace-pre-wrap">{comment.content}</p>
+      <p className="text-sm font-['Instrument Sans'] text-foreground/80 whitespace-pre-wrap">{comment.content}</p>
 
       {/* Replies */}
       {comment.replies && comment.replies.length > 0 && (
@@ -379,7 +379,7 @@ function CommentItem({
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
             placeholder="Répondre…"
-            className="flex-1 bg-muted/50 border border-border/30 text-foreground font-['Roboto'] text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/30 rounded"
+            className="flex-1 bg-muted/50 border border-border/30 text-foreground font-['Instrument Sans'] text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/30 rounded"
             onKeyDown={(e) => { if (e.key === 'Enter' && replyText.trim()) { e.preventDefault(); handleReply(); } }}
             autoFocus
           />

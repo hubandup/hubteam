@@ -77,7 +77,7 @@ export function ProjectListView({ projects, onProjectClick }: ProjectListViewPro
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                <span className="text-[11px] text-muted-foreground font-[Roboto,sans-serif]">
+                <span className="text-[11px] text-muted-foreground font-[Instrument Sans,sans-serif]">
                   {tasksCompleted}/{tasksTotal}
                 </span>
               </div>

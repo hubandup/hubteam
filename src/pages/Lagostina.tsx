@@ -46,14 +46,14 @@ function EmptyState({ section, role }: { section: string; role: string | null })
   return (
     <div className="flex flex-col items-center justify-center py-24 gap-4">
       <Database className="h-12 w-12 text-[hsl(var(--muted-foreground))]" />
-      <p className="text-foreground font-['Roboto'] text-sm">Données {section} non disponibles</p>
-      <p className="text-[hsl(var(--muted-foreground))] font-['Roboto'] text-xs">En attente de synchronisation</p>
+      <p className="text-foreground font-['Instrument Sans'] text-sm">Données {section} non disponibles</p>
+      <p className="text-[hsl(var(--muted-foreground))] font-['Instrument Sans'] text-xs">En attente de synchronisation</p>
       {(role === 'admin' || role === 'team') ? (
-        <a href="/admin/lagostina" className="px-4 py-2 border border-black dark:border-[hsl(var(--brand-yellow))] text-foreground dark:text-[hsl(var(--brand-yellow))] font-['Roboto'] text-sm hover:bg-foreground hover:text-background dark:hover:bg-[hsl(var(--brand-yellow))] dark:hover:text-foreground transition-colors">
+        <a href="/admin/lagostina" className="px-4 py-2 border border-black dark:border-[hsl(var(--brand-yellow))] text-foreground dark:text-[hsl(var(--brand-yellow))] font-['Instrument Sans'] text-sm hover:bg-foreground hover:text-background dark:hover:bg-[hsl(var(--brand-yellow))] dark:hover:text-foreground transition-colors">
           Synchroniser
         </a>
       ) : (
-        <p className="text-[hsl(var(--muted-foreground))] font-['Roboto'] text-xs">Contactez l'équipe Hub & Up</p>
+        <p className="text-[hsl(var(--muted-foreground))] font-['Instrument Sans'] text-xs">Contactez l'équipe Hub & Up</p>
       )}
     </div>
   );
@@ -75,7 +75,7 @@ export default function Lagostina() {
   const learningsButton = (
     <button
       onClick={() => setShowLearnings(!showLearnings)}
-      className={`flex items-center gap-2 px-5 py-2.5 text-sm font-['Roboto'] font-medium transition-colors border ${
+      className={`flex items-center gap-2 px-5 py-2.5 text-sm font-['Instrument Sans'] font-medium transition-colors border ${
         showLearnings
           ? 'bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] border-black dark:border-[hsl(var(--brand-yellow))]'
           : 'bg-card dark:bg-[hsl(var(--brand-ink))] text-foreground border-border/50 hover:bg-muted/50'
@@ -114,7 +114,7 @@ export default function Lagostina() {
               key={tab.id}
               onClick={() => { setActiveTab(tab.id); setShowLearnings(false); }}
               className={`
-                px-4 py-3 text-sm font-['Roboto'] whitespace-nowrap transition-all duration-150 border-b-2
+                px-4 py-3 text-sm font-['Instrument Sans'] whitespace-nowrap transition-all duration-150 border-b-2
                 ${activeTab === tab.id
                   ? 'text-foreground dark:text-[hsl(var(--brand-yellow))] border-black dark:border-[hsl(var(--brand-yellow))] font-medium'
                   : 'text-[hsl(var(--muted-foreground))] border-transparent hover:text-[hsl(var(--muted-foreground))]'}

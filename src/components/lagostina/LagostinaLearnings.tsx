@@ -126,9 +126,9 @@ export function LagostinaLearnings() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border/40">
-              <th className="text-left px-4 py-3 text-muted-foreground font-['Roboto'] font-medium text-xs uppercase w-[160px]">Levier</th>
-              <th className="text-left px-4 py-3 text-[#22c55e] font-['Roboto'] font-medium text-xs uppercase">Ce qui fonctionne ✅</th>
-              <th className="text-left px-4 py-3 text-[#ef4444] font-['Roboto'] font-medium text-xs uppercase">Ce qui ne fonctionne pas ❌</th>
+              <th className="text-left px-4 py-3 text-muted-foreground font-['Instrument Sans'] font-medium text-xs uppercase w-[160px]">Levier</th>
+              <th className="text-left px-4 py-3 text-[#22c55e] font-['Instrument Sans'] font-medium text-xs uppercase">Ce qui fonctionne ✅</th>
+              <th className="text-left px-4 py-3 text-[#ef4444] font-['Instrument Sans'] font-medium text-xs uppercase">Ce qui ne fonctionne pas ❌</th>
             </tr>
           </thead>
           <tbody>
@@ -144,11 +144,11 @@ export function LagostinaLearnings() {
                         value={row.works}
                         onChange={(e) => handleChange(l.key, 'works', e.target.value)}
                         readOnly={!canEdit}
-                        className="w-full bg-transparent text-foreground font-['Roboto'] text-sm resize-none min-h-[60px] focus:outline-none placeholder:text-foreground/20"
+                        className="w-full bg-transparent text-foreground font-['Instrument Sans'] text-sm resize-none min-h-[60px] focus:outline-none placeholder:text-foreground/20"
                         placeholder={canEdit ? 'Ajouter…' : '—'}
                         rows={3}
                       />
-                      {info && <p className="text-muted-foreground text-xs font-['Roboto'] mt-1">{info}</p>}
+                      {info && <p className="text-muted-foreground text-xs font-['Instrument Sans'] mt-1">{info}</p>}
                     </div>
                   </td>
                   <td className="px-2 py-2">
@@ -157,11 +157,11 @@ export function LagostinaLearnings() {
                         value={row.does_not_work}
                         onChange={(e) => handleChange(l.key, 'does_not_work', e.target.value)}
                         readOnly={!canEdit}
-                        className="w-full bg-transparent text-foreground font-['Roboto'] text-sm resize-none min-h-[60px] focus:outline-none placeholder:text-foreground/20"
+                        className="w-full bg-transparent text-foreground font-['Instrument Sans'] text-sm resize-none min-h-[60px] focus:outline-none placeholder:text-foreground/20"
                         placeholder={canEdit ? 'Ajouter…' : '—'}
                         rows={3}
                       />
-                      {info && <p className="text-muted-foreground text-xs font-['Roboto'] mt-1">{info}</p>}
+                      {info && <p className="text-muted-foreground text-xs font-['Instrument Sans'] mt-1">{info}</p>}
                     </div>
                   </td>
                 </tr>
@@ -174,8 +174,8 @@ export function LagostinaLearnings() {
       {!learnings?.length && (
         <div className="flex flex-col items-center justify-center py-12 gap-3">
           <BookOpen className="h-10 w-10 text-muted-foreground" />
-          <p className="text-muted-foreground font-['Roboto'] text-sm">Aucun learning enregistré</p>
-          {canEdit && <p className="text-muted-foreground font-['Roboto'] text-xs">Cliquez sur les cellules pour ajouter vos premiers learnings</p>}
+          <p className="text-muted-foreground font-['Instrument Sans'] text-sm">Aucun learning enregistré</p>
+          {canEdit && <p className="text-muted-foreground font-['Instrument Sans'] text-xs">Cliquez sur les cellules pour ajouter vos premiers learnings</p>}
         </div>
       )}
     </div>

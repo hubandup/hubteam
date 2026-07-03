@@ -31,7 +31,7 @@ function MediaBadges({ mediaStr }: { mediaStr: string }) {
       {parts.map((m) => {
         const info = MEDIA_ICONS[m] || { icon: '📡', color: 'hsl(var(--muted-foreground))' };
         return (
-          <span key={m} className="inline-flex items-center gap-1 px-2 py-0.5 bg-foreground/5/10 text-xs font-['Roboto']">
+          <span key={m} className="inline-flex items-center gap-1 px-2 py-0.5 bg-foreground/5/10 text-xs font-['Instrument Sans']">
             <span>{info.icon}</span>
             <span className="text-foreground capitalize">{m}</span>
           </span>
@@ -152,7 +152,7 @@ export function ActivationPersonas() {
       <div className="flex flex-col items-center justify-center py-24 gap-4">
         <Database className="h-16 w-16 text-muted-foreground" />
         <p className="text-foreground font-['Instrument_Sans'] text-lg font-bold">Données Activation non disponibles</p>
-        <p className="text-muted-foreground font-['Roboto'] text-sm">Importez un fichier Activation depuis l'admin</p>
+        <p className="text-muted-foreground font-['Instrument Sans'] text-sm">Importez un fichier Activation depuis l'admin</p>
       </div>
     );
   }
@@ -175,7 +175,7 @@ export function ActivationPersonas() {
           <button
             key={p}
             onClick={() => setSelectedPriority(p)}
-            className={`px-4 py-2 text-sm font-['Roboto'] transition-colors ${
+            className={`px-4 py-2 text-sm font-['Instrument Sans'] transition-colors ${
               selectedPriority === p
                 ? 'bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] font-medium'
                 : 'bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 text-muted-foreground hover:text-foreground'
@@ -189,7 +189,7 @@ export function ActivationPersonas() {
               <button
                 key={p}
                 onClick={() => setSelectedPriority(p)}
-                className={`px-4 py-2 text-sm font-['Roboto'] transition-colors ${
+                className={`px-4 py-2 text-sm font-['Instrument Sans'] transition-colors ${
                   selectedPriority === p
                     ? 'bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] font-medium'
                     : 'bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 text-muted-foreground hover:text-foreground'
@@ -205,7 +205,7 @@ export function ActivationPersonas() {
       {/* Status bar */}
       {filteredStatus.length > 0 && (
         <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
-          <table className="w-full text-xs font-['Roboto']">
+          <table className="w-full text-xs font-['Instrument Sans']">
             <thead>
               <tr className="border-b border-border/40">
                 {AXES.map((axis) => (
@@ -244,7 +244,7 @@ export function ActivationPersonas() {
                   <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">Personas</h3>
                 </div>
                 {filteredPersonas.length === 0 ? (
-                  <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-6 text-center text-muted-foreground font-['Roboto'] text-sm">
+                  <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-6 text-center text-muted-foreground font-['Instrument Sans'] text-sm">
                     Aucun persona défini pour cette priorité
                   </div>
                 ) : (
@@ -264,13 +264,13 @@ export function ActivationPersonas() {
                               />
                               <div>
                                 <h4 className="text-foreground font-['Instrument_Sans'] font-bold text-lg">{persona.persona_name}</h4>
-                                <p className="text-muted-foreground font-['Roboto'] text-xs">
+                                <p className="text-muted-foreground font-['Instrument Sans'] text-xs">
                                   {[persona.persona_type, persona.age_range, persona.has_children].filter(Boolean).join(' • ')}
                                 </p>
                               </div>
                             </div>
                             {persona.market_weight && (
-                              <span className="bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] px-2 py-0.5 text-xs font-['Roboto'] font-bold flex-shrink-0">
+                              <span className="bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] px-2 py-0.5 text-xs font-['Instrument Sans'] font-bold flex-shrink-0">
                                 {persona.market_weight}
                               </span>
                             )}
@@ -278,10 +278,10 @@ export function ActivationPersonas() {
 
                           {jsonToArray(persona.motivators).length > 0 && (
                             <div>
-                              <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Motivations</p>
+                              <p className="text-muted-foreground text-[10px] font-['Instrument Sans'] uppercase tracking-wider mb-1">Motivations</p>
                               <ol className="space-y-0.5">
                                 {jsonToArray(persona.motivators).map((m, i) => (
-                                  <li key={i} className="text-foreground text-xs font-['Roboto'] flex gap-1.5">
+                                  <li key={i} className="text-foreground text-xs font-['Instrument Sans'] flex gap-1.5">
                                     <span className="text-foreground font-semibold font-bold">{i + 1}.</span> {m}
                                   </li>
                                 ))}
@@ -291,10 +291,10 @@ export function ActivationPersonas() {
 
                           {jsonToArray(persona.barriers).length > 0 && (
                             <div>
-                              <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Freins</p>
+                              <p className="text-muted-foreground text-[10px] font-['Instrument Sans'] uppercase tracking-wider mb-1">Freins</p>
                               <ol className="space-y-0.5">
                                 {jsonToArray(persona.barriers).map((b, i) => (
-                                  <li key={i} className="text-[#fca5a5] text-xs font-['Roboto'] flex gap-1.5">
+                                  <li key={i} className="text-[#fca5a5] text-xs font-['Instrument Sans'] flex gap-1.5">
                                     <span className="font-bold">{i + 1}.</span> {b}
                                   </li>
                                 ))}
@@ -304,7 +304,7 @@ export function ActivationPersonas() {
 
                           {persona.preferred_media && (
                             <div className="border-t border-border/20 pt-2">
-                              <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Médias préférés</p>
+                              <p className="text-muted-foreground text-[10px] font-['Instrument Sans'] uppercase tracking-wider mb-1">Médias préférés</p>
                               <MediaBadges mediaStr={persona.preferred_media} />
                             </div>
                           )}
@@ -321,7 +321,7 @@ export function ActivationPersonas() {
                 {/* Product section */}
                 {(() => {
                   const productData = getActivation('product');
-                  if (!productData) return <div className="text-muted-foreground text-xs font-['Roboto'] py-8 text-center">Aucune donnée produit</div>;
+                  if (!productData) return <div className="text-muted-foreground text-xs font-['Instrument Sans'] py-8 text-center">Aucune donnée produit</div>;
                   const d = jsonToRecord(productData.data);
                   return (
                     <div>
@@ -333,44 +333,44 @@ export function ActivationPersonas() {
                         <div className="grid grid-cols-2 gap-4">
                           {d.flagship && (
                             <div className="col-span-2">
-                              <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Flagship</p>
-                              <p className="text-foreground text-sm font-['Roboto']">{String(d.flagship)}</p>
+                              <p className="text-muted-foreground text-[10px] font-['Instrument Sans'] uppercase tracking-wider mb-1">Flagship</p>
+                              <p className="text-foreground text-sm font-['Instrument Sans']">{String(d.flagship)}</p>
                             </div>
                           )}
                           {d.benefit_1 && (
                             <div>
-                              <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Key Consumer Benefit 1</p>
-                              <p className="text-foreground text-sm font-['Roboto']">{String(d.benefit_1)}</p>
+                              <p className="text-muted-foreground text-[10px] font-['Instrument Sans'] uppercase tracking-wider mb-1">Key Consumer Benefit 1</p>
+                              <p className="text-foreground text-sm font-['Instrument Sans']">{String(d.benefit_1)}</p>
                             </div>
                           )}
                           {d.benefit_2 && (
                             <div>
-                              <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Key Consumer Benefit 2</p>
-                              <p className="text-foreground text-sm font-['Roboto']">{String(d.benefit_2)}</p>
+                              <p className="text-muted-foreground text-[10px] font-['Instrument Sans'] uppercase tracking-wider mb-1">Key Consumer Benefit 2</p>
+                              <p className="text-foreground text-sm font-['Instrument Sans']">{String(d.benefit_2)}</p>
                             </div>
                           )}
                           {d.rtb && (
                             <div>
-                              <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">RTB</p>
-                              <p className="text-foreground text-sm font-['Roboto']">{String(d.rtb)}</p>
+                              <p className="text-muted-foreground text-[10px] font-['Instrument Sans'] uppercase tracking-wider mb-1">RTB</p>
+                              <p className="text-foreground text-sm font-['Instrument Sans']">{String(d.rtb)}</p>
                             </div>
                           )}
                           {d.claims && (
                             <div>
-                              <p className="text-muted-foreground text-[10px] font-['Roboto'] uppercase tracking-wider mb-1">Claims</p>
-                              <p className="text-foreground text-sm font-['Roboto']">{String(d.claims)}</p>
+                              <p className="text-muted-foreground text-[10px] font-['Instrument Sans'] uppercase tracking-wider mb-1">Claims</p>
+                              <p className="text-foreground text-sm font-['Instrument Sans']">{String(d.claims)}</p>
                             </div>
                           )}
                         </div>
                         {(d.marge_std || d.prix_conso) && (
                           <div className="flex gap-3 mt-4 pt-3 border-t border-border/40">
                             {d.marge_std && (
-                              <span className="bg-foreground/20/20 text-foreground font-semibold px-3 py-1 text-xs font-['Roboto'] font-medium">
+                              <span className="bg-foreground/20/20 text-foreground font-semibold px-3 py-1 text-xs font-['Instrument Sans'] font-medium">
                                 Marge std: {String(d.marge_std)}
                               </span>
                             )}
                             {d.prix_conso && (
-                              <span className="bg-foreground/20/20 text-foreground font-semibold px-3 py-1 text-xs font-['Roboto'] font-medium">
+                              <span className="bg-foreground/20/20 text-foreground font-semibold px-3 py-1 text-xs font-['Instrument Sans'] font-medium">
                                 Prix conso: {String(d.prix_conso)}
                               </span>
                             )}
@@ -395,7 +395,7 @@ export function ActivationPersonas() {
                       </div>
                       <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
                         {channels && channels.length > 0 ? (
-                          <table className="w-full text-xs font-['Roboto']">
+                          <table className="w-full text-xs font-['Instrument Sans']">
                             <thead>
                               <tr className="border-b border-border/40">
                                 <th className="text-left px-3 py-2 text-muted-foreground font-medium" />
@@ -449,7 +449,7 @@ export function ActivationPersonas() {
                       </div>
                       <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
                         {rows && rows.length > 0 ? (
-                          <table className="w-full text-xs font-['Roboto']">
+                          <table className="w-full text-xs font-['Instrument Sans']">
                             <thead>
                               <tr className="border-b border-border/40">
                                 <th className="text-left px-3 py-2 text-muted-foreground font-medium min-w-[160px]">Indicateur</th>
@@ -502,7 +502,7 @@ export function ActivationPersonas() {
                   );
                 })}
                 {!getActivation('sell_in') && !getActivation('sell_out') && (
-                  <div className="text-muted-foreground text-xs font-['Roboto'] py-8 text-center">Aucune donnée Sell-in / Sell-out disponible</div>
+                  <div className="text-muted-foreground text-xs font-['Instrument Sans'] py-8 text-center">Aucune donnée Sell-in / Sell-out disponible</div>
                 )}
               </div>
             )}

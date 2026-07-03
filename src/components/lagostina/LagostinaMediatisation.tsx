@@ -73,7 +73,7 @@ function sortWeeksNumerically(weeks: { week: string; actual: number | null; obje
 }
 
 const chartTooltipStyle = {
-  contentStyle: { background: 'hsl(var(--brand-ink))', border: '1px solid currentColor', borderRadius: 0, fontSize: 12, fontFamily: 'Roboto' },
+  contentStyle: { background: 'hsl(var(--brand-ink))', border: '1px solid currentColor', borderRadius: 0, fontSize: 12, fontFamily: 'Instrument Sans' },
   labelStyle: { color: 'hsl(var(--muted-foreground))' },
 };
 
@@ -177,13 +177,13 @@ function KpiCard({ data }: { data: KpiData }) {
 
   return (
     <div className={`bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border-l-[3px] ${cond || 'border-foreground'} p-4 flex flex-col gap-1`}>
-      <div className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">{KPI_LABELS[data.kpi_name] || data.kpi_name}</div>
+      <div className="text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider">{KPI_LABELS[data.kpi_name] || data.kpi_name}</div>
       <div className="text-foreground text-xl font-bold font-['Instrument_Sans']">{formatFn(data.latestActual)}</div>
       {data.latestObjective != null && (
-        <div className="text-muted-foreground text-xs font-['Roboto']">Obj: {formatFn(data.latestObjective)}</div>
+        <div className="text-muted-foreground text-xs font-['Instrument Sans']">Obj: {formatFn(data.latestObjective)}</div>
       )}
       {data.kpi_name === 'budget_ratio' && latestWeek?.budget_spent != null && latestWeek?.budget_allocated != null && (
-        <div className="text-muted-foreground text-xs font-['Roboto']">
+        <div className="text-muted-foreground text-xs font-['Instrument Sans']">
           €{Number(latestWeek.budget_spent).toLocaleString('fr-FR')} / €{Number(latestWeek.budget_allocated).toLocaleString('fr-FR')}
         </div>
       )}
@@ -269,8 +269,8 @@ function SEATab({ rows }: { rows: MediaKpiRow[] }) {
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={roasData.weeks}>
                 <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
-                <XAxis dataKey="week" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontFamily: 'Roboto' }} />
-                <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontFamily: 'Roboto' }} />
+                <XAxis dataKey="week" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontFamily: 'Instrument Sans' }} />
+                <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontFamily: 'Instrument Sans' }} />
                 <Tooltip {...chartTooltipStyle} />
                 <Line type="monotone" dataKey="actual" stroke={getChartAccent()} strokeWidth={2} dot={false} name="Actuals" />
                 <Line type="monotone" dataKey="objective" stroke="hsl(var(--muted-foreground))" strokeWidth={1.5} strokeDasharray="5 5" dot={false} name="Objectifs" />
@@ -282,11 +282,11 @@ function SEATab({ rows }: { rows: MediaKpiRow[] }) {
           <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Top Keywords SEA</h3>
           {!hasKeywords ? (
             <div className="flex items-center justify-center py-8">
-              <span className="text-muted-foreground text-sm font-['Roboto']">Données non disponibles</span>
+              <span className="text-muted-foreground text-sm font-['Instrument Sans']">Données non disponibles</span>
             </div>
           ) : (
             <div className="overflow-x-auto max-h-[260px] overflow-y-auto">
-              <table className="w-full text-[12px] font-['Roboto']">
+              <table className="w-full text-[12px] font-['Instrument Sans']">
                 <thead className="sticky top-0 bg-card dark:bg-[hsl(var(--brand-ink))]">
                   <tr className="border-b border-border/40">
                     <th className="text-left py-1.5 px-2 text-muted-foreground uppercase">Keyword</th>
@@ -321,18 +321,18 @@ function SEATab({ rows }: { rows: MediaKpiRow[] }) {
         <div className="flex items-baseline justify-between mb-3">
           <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Campagnes en cours</h3>
           {hasCampaigns && (
-            <span className="text-muted-foreground text-xs font-['Roboto']">
+            <span className="text-muted-foreground text-xs font-['Instrument Sans']">
               {new Date(currentCampaigns[0].date).toLocaleDateString('fr-FR')}
             </span>
           )}
         </div>
         {!hasCampaigns ? (
           <div className="flex items-center justify-center py-8">
-            <span className="text-muted-foreground text-sm font-['Roboto']">Données non disponibles</span>
+            <span className="text-muted-foreground text-sm font-['Instrument Sans']">Données non disponibles</span>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-[12px] font-['Roboto']">
+            <table className="w-full text-[12px] font-['Instrument Sans']">
               <thead>
                 <tr className="border-b border-border/40">
                   <th className="text-left py-1.5 px-2 text-muted-foreground uppercase">Campagne</th>
@@ -371,11 +371,11 @@ function FunnelStep({ label, value, color, ratio, widthPercent }: { label: strin
   const isDark = color === getChartAccent() || color.toLowerCase().includes('0f1422');
   return (
     <div className="flex flex-col items-center gap-2" style={{ width: `${widthPercent}%` }}>
-      <div className="text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">{label}</div>
+      <div className="text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider">{label}</div>
       <div className="w-full py-6 flex items-center justify-center rounded-sm" style={{ background: color }}>
         <span className={`text-lg font-bold font-['Instrument_Sans'] ${isDark ? 'text-background' : 'text-foreground'}`}>{value}</span>
       </div>
-      <div className="text-muted-foreground text-xs font-['Roboto'] h-4">{ratio ? `→ ${ratio}` : '\u00A0'}</div>
+      <div className="text-muted-foreground text-xs font-['Instrument Sans'] h-4">{ratio ? `→ ${ratio}` : '\u00A0'}</div>
     </div>
   );
 }
@@ -407,7 +407,7 @@ function SMATab({ rows }: { rows: MediaKpiRow[] }) {
       {kpis[0]?.weeks.length > 1 && (
         <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4 overflow-x-auto">
           <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Détail par semaine</h3>
-          <table className="w-full text-[12px] font-['Roboto'] border-collapse">
+          <table className="w-full text-[12px] font-['Instrument Sans'] border-collapse">
             <thead className="sticky top-0 bg-card dark:bg-[hsl(var(--brand-ink))] z-10">
               <tr>
                 <th className="text-left py-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 border-b border-border/40">KPI</th>
@@ -491,15 +491,15 @@ function TikTokTab({ rows }: { rows: MediaKpiRow[] }) {
       <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4">
         <div className="flex items-baseline justify-between mb-3">
           <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Top contenus publicitaires</h3>
-          <span className="text-muted-foreground text-xs font-['Roboto']">Trié par impressions · valeurs en $</span>
+          <span className="text-muted-foreground text-xs font-['Instrument Sans']">Trié par impressions · valeurs en $</span>
         </div>
         {!hasAds ? (
           <div className="flex items-center justify-center py-8">
-            <span className="text-muted-foreground text-sm font-['Roboto']">Données non disponibles</span>
+            <span className="text-muted-foreground text-sm font-['Instrument Sans']">Données non disponibles</span>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-[12px] font-['Roboto']">
+            <table className="w-full text-[12px] font-['Instrument Sans']">
               <thead>
                 <tr className="border-b border-border/40">
                   <th className="text-left py-1.5 px-2 text-muted-foreground uppercase">Contenu</th>
@@ -571,7 +571,7 @@ export function LagostinaMediatisation({ learningsButton, learningsPanel }: { le
         return rows.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Clock className="h-10 w-10 text-muted-foreground" />
-            <p className="text-muted-foreground font-['Roboto'] text-sm">Données non disponibles — en attente d'import</p>
+            <p className="text-muted-foreground font-['Instrument Sans'] text-sm">Données non disponibles — en attente d'import</p>
           </div>
         ) : (
           <>

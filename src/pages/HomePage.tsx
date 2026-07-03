@@ -147,7 +147,7 @@ const LateProjectsWidget = () => {
               }}>
                 {p.name}
               </div>
-              <div style={{ fontSize: 11, color: "hsl(var(--muted-foreground))", fontFamily: "Roboto, sans-serif", marginTop: 1 }}>
+              <div style={{ fontSize: 11, color: "hsl(var(--muted-foreground))", fontFamily: "Instrument Sans, sans-serif", marginTop: 1 }}>
                 {p.client}
               </div>
             </div>
@@ -174,7 +174,7 @@ const DeadlinesWidget = () => (
       justifyContent: "center",
       padding: "24px 0",
     }}>
-      <span style={{ fontSize: 12, color: "hsl(var(--muted-foreground))", fontFamily: "Roboto, sans-serif" }}>
+      <span style={{ fontSize: 12, color: "hsl(var(--muted-foreground))", fontFamily: "Instrument Sans, sans-serif" }}>
         Aucune échéance cette semaine
       </span>
     </div>
@@ -244,10 +244,10 @@ const ActivityWidget = () => {
               borderBottom: i < visible.length - 1 ? "1px solid hsl(var(--muted))" : "none",
             }}
           >
-            <span style={{ fontSize: 13, color: "hsl(var(--muted-foreground))", fontFamily: "Roboto, sans-serif" }}>
+            <span style={{ fontSize: 13, color: "hsl(var(--muted-foreground))", fontFamily: "Instrument Sans, sans-serif" }}>
               {a}
             </span>
-            <span style={{ fontSize: 11, color: "hsl(var(--muted-foreground))", fontFamily: "Roboto, sans-serif", flexShrink: 0 }}>
+            <span style={{ fontSize: 11, color: "hsl(var(--muted-foreground))", fontFamily: "Instrument Sans, sans-serif", flexShrink: 0 }}>
               13:07
             </span>
           </div>
@@ -299,7 +299,7 @@ const TodoWidget = () => {
             background: "transparent",
             padding: "8px 12px",
             fontSize: 12,
-            fontFamily: "Roboto, sans-serif",
+            fontFamily: "Instrument Sans, sans-serif",
             color: "hsl(var(--foreground))",
             outline: "none",
           }}
@@ -383,7 +383,7 @@ const NotesWidget = () => {
           border: "1px solid hsl(var(--border))",
           background: "hsl(var(--muted))",
           padding: "10px 12px",
-          fontFamily: "Roboto, sans-serif",
+          fontFamily: "Instrument Sans, sans-serif",
           fontSize: 12,
           color: "hsl(var(--foreground))",
           outline: "none",
@@ -409,7 +409,7 @@ const NotesWidget = () => {
         Ajouter la note
       </button>
       {saved.length === 0 && (
-        <div style={{ marginTop: 12, fontSize: 12, color: "hsl(var(--muted-foreground))", fontFamily: "Roboto, sans-serif" }}>
+        <div style={{ marginTop: 12, fontSize: 12, color: "hsl(var(--muted-foreground))", fontFamily: "Instrument Sans, sans-serif" }}>
           Aucune note
         </div>
       )}
@@ -419,7 +419,7 @@ const NotesWidget = () => {
           padding: "8px 10px",
           background: "hsl(var(--muted))",
           fontSize: 12,
-          fontFamily: "Roboto, sans-serif",
+          fontFamily: "Instrument Sans, sans-serif",
           color: "#333",
           borderLeft: "3px solid hsl(var(--brand-yellow))",
         }}>
@@ -507,7 +507,7 @@ const TasksWidget = () => {
                 </span>
               </div>
               {t.project && (
-                <div style={{ fontSize: 11, color: "hsl(var(--muted-foreground))", fontFamily: "Roboto, sans-serif", marginTop: 3 }}>
+                <div style={{ fontSize: 11, color: "hsl(var(--muted-foreground))", fontFamily: "Instrument Sans, sans-serif", marginTop: 3 }}>
                   {t.project}
                 </div>
               )}
@@ -560,7 +560,7 @@ const WeekWidget = () => (
               </span>
             )}
           </div>
-          <div style={{ fontSize: 11, color: "hsl(var(--muted-foreground))", fontFamily: "Roboto, sans-serif" }}>
+          <div style={{ fontSize: 11, color: "hsl(var(--muted-foreground))", fontFamily: "Instrument Sans, sans-serif" }}>
             {day.tasks.length === 0 ? "Aucune tâche" : day.tasks.join(", ")}
           </div>
         </div>
@@ -573,7 +573,7 @@ const WeekWidget = () => (
 
 export default function HomePage() {
   return (
-    <div style={{ fontFamily: "Roboto, sans-serif", background: "hsl(var(--card))", minHeight: "100vh" }}>
+    <div style={{ fontFamily: "Instrument Sans, sans-serif", background: "hsl(var(--card))", minHeight: "100vh" }}>
       <div style={{ padding: "32px 28px", maxWidth: 1280 }}>
 
         {/* Header */}
@@ -589,7 +589,7 @@ export default function HomePage() {
           }}>
             Bonjour Charles
           </h1>
-          <p style={{ fontSize: 13, color: "hsl(var(--muted-foreground))", fontFamily: "Roboto, sans-serif" }}>
+          <p style={{ fontSize: 13, color: "hsl(var(--muted-foreground))", fontFamily: "Instrument Sans, sans-serif" }}>
             Lundi 16 Mars 2026
           </p>
         </div>

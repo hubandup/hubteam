@@ -203,11 +203,11 @@ export default function LagostinaAdmin() {
 
         <div className="bg-card border border-border/30 p-6 space-y-4">
           <div className="flex items-center gap-4 flex-wrap">
-            <label className="text-muted-foreground text-sm font-['Roboto']">Type de fichier :</label>
+            <label className="text-muted-foreground text-sm font-['Instrument Sans']">Type de fichier :</label>
             <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              className="bg-card text-foreground border border-border/40 px-3 py-1.5 text-sm font-['Roboto'] focus:outline-none focus:border-black"
+              className="bg-card text-foreground border border-border/40 px-3 py-1.5 text-sm font-['Instrument Sans'] focus:outline-none focus:border-black"
             >
               {FILE_TYPES.map((ft) => (
                 <option key={ft.value} value={ft.value}>{ft.label}</option>
@@ -236,15 +236,15 @@ export default function LagostinaAdmin() {
             {uploading ? (
               <div className="flex flex-col items-center gap-3">
                 <RefreshCw className="h-8 w-8 text-foreground font-semibold animate-spin" />
-                <p className="text-foreground font-['Roboto'] text-sm">Traitement en cours…</p>
+                <p className="text-foreground font-['Instrument Sans'] text-sm">Traitement en cours…</p>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3">
                 <Upload className="h-8 w-8 text-muted-foreground" />
-                <p className="text-foreground font-['Roboto'] text-sm">
+                <p className="text-foreground font-['Instrument Sans'] text-sm">
                   Glissez un fichier {selectedType === 'meta_csv' ? '.csv' : '.xlsx'} ici ou <span className="text-foreground font-semibold underline">parcourir</span>
                 </p>
-                <p className="text-muted-foreground font-['Roboto'] text-xs">
+                <p className="text-muted-foreground font-['Instrument Sans'] text-xs">
                   Format attendu : {selectedType === 'meta_csv' ? 'export CSV Meta Ads Manager' : `fichier Excel Lagostina (${FILE_TYPES.find(f => f.value === selectedType)?.label})`}
                 </p>
               </div>
@@ -252,7 +252,7 @@ export default function LagostinaAdmin() {
           </div>
 
           <button
-            className="flex items-center gap-2 px-4 py-2 bg-muted text-foreground border border-border/40 font-['Roboto'] text-sm hover:bg-muted transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-muted text-foreground border border-border/40 font-['Instrument Sans'] text-sm hover:bg-muted transition-colors disabled:opacity-50"
             onClick={syncFromKDrive}
             disabled={syncing || uploading}
           >
@@ -274,28 +274,28 @@ export default function LagostinaAdmin() {
               ))}
             </div>
           ) : !files?.length ? (
-            <div className="p-8 text-center text-muted-foreground font-['Roboto'] text-sm">
+            <div className="p-8 text-center text-muted-foreground font-['Instrument Sans'] text-sm">
               Aucun fichier importé
             </div>
           ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/40">
-                  <th className="text-left px-4 py-2 text-muted-foreground font-['Roboto'] font-medium text-xs uppercase">Fichier</th>
-                  <th className="text-left px-4 py-2 text-muted-foreground font-['Roboto'] font-medium text-xs uppercase">Type</th>
-                  <th className="text-left px-4 py-2 text-muted-foreground font-['Roboto'] font-medium text-xs uppercase">Dernière synchro</th>
-                  <th className="text-center px-4 py-2 text-muted-foreground font-['Roboto'] font-medium text-xs uppercase">Statut</th>
+                  <th className="text-left px-4 py-2 text-muted-foreground font-['Instrument Sans'] font-medium text-xs uppercase">Fichier</th>
+                  <th className="text-left px-4 py-2 text-muted-foreground font-['Instrument Sans'] font-medium text-xs uppercase">Type</th>
+                  <th className="text-left px-4 py-2 text-muted-foreground font-['Instrument Sans'] font-medium text-xs uppercase">Dernière synchro</th>
+                  <th className="text-center px-4 py-2 text-muted-foreground font-['Instrument Sans'] font-medium text-xs uppercase">Statut</th>
                 </tr>
               </thead>
               <tbody>
                 {files.map((f) => (
                   <tr key={f.id} className="border-b border-border/20 hover:bg-muted">
-                    <td className="px-4 py-3 text-foreground font-['Roboto'] flex items-center gap-2">
+                    <td className="px-4 py-3 text-foreground font-['Instrument Sans'] flex items-center gap-2">
                       <FileSpreadsheet className="h-4 w-4 text-[#22c55e]" />
                       {f.filename}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground font-['Roboto'] capitalize">{f.file_type}</td>
-                    <td className="px-4 py-3 text-muted-foreground font-['Roboto']">
+                    <td className="px-4 py-3 text-muted-foreground font-['Instrument Sans'] capitalize">{f.file_type}</td>
+                    <td className="px-4 py-3 text-muted-foreground font-['Instrument Sans']">
                       {f.last_synced
                         ? new Date(f.last_synced).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
                         : '—'}
@@ -303,7 +303,7 @@ export default function LagostinaAdmin() {
                     <td className="px-4 py-3 text-center">
                       <span className="inline-flex items-center gap-1.5">
                         {STATUS_ICONS[f.status] || STATUS_ICONS.pending}
-                        <span className={`font-['Roboto'] text-xs capitalize ${
+                        <span className={`font-['Instrument Sans'] text-xs capitalize ${
                           f.status === 'synced' ? 'text-[#22c55e]' : f.status === 'error' ? 'text-[#ef4444]' : 'text-foreground font-semibold'
                         }`}>
                           {f.status}

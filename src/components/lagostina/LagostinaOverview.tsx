@@ -30,13 +30,13 @@ interface KpiCardProps {
 function KpiCard({ label, value, icon, trend }: KpiCardProps) {
   return (
     <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border-l-[3px] border-black dark:border-white p-5 flex flex-col gap-1">
-      <div className="flex items-center gap-2 text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">
+      <div className="flex items-center gap-2 text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider">
         {icon}
         {label}
       </div>
       <div className="text-foreground text-2xl font-bold font-['Instrument_Sans']">{value}</div>
       {trend && (
-        <div className={`flex items-center gap-1 text-xs font-['Roboto'] ${trend.direction === 'up' ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
+        <div className={`flex items-center gap-1 text-xs font-['Instrument Sans'] ${trend.direction === 'up' ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
           {trend.direction === 'up' ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
           {trend.label}
         </div>
@@ -65,7 +65,7 @@ function StatusBadge({ status }: { status: string }) {
   const style = STATUS_STYLES[status] || { bg: 'bg-muted', text: 'text-muted-foreground' };
   const displayText = status === 'ok' ? 'OK' : status === 'alert' ? 'Alerte' : status === 'blocked' ? 'Bloqué' : status;
   return (
-    <span className={`inline-block px-2 py-0.5 text-xs font-['Roboto'] font-medium ${style.bg} ${style.text}`}>
+    <span className={`inline-block px-2 py-0.5 text-xs font-['Instrument Sans'] font-medium ${style.bg} ${style.text}`}>
       {displayText}
     </span>
   );
@@ -146,11 +146,11 @@ export function LagostinaOverview() {
       <div className="flex flex-col items-center justify-center py-24 gap-4">
         <Database className="h-16 w-16 text-muted-foreground" />
         <p className="text-foreground font-['Instrument_Sans'] text-lg font-bold">Données non disponibles</p>
-        <p className="text-muted-foreground font-['Roboto'] text-sm">En attente de la première synchronisation</p>
+        <p className="text-muted-foreground font-['Instrument Sans'] text-sm">En attente de la première synchronisation</p>
         {(role === 'admin' || role === 'team') && (
           <button
             onClick={() => navigate('/admin/lagostina')}
-            className="mt-2 px-4 py-2 bg-foreground text-[hsl(var(--brand-ink))] font-['Roboto'] font-medium text-sm hover:bg-[#d4eb3d] transition-colors"
+            className="mt-2 px-4 py-2 bg-foreground text-[hsl(var(--brand-ink))] font-['Instrument Sans'] font-medium text-sm hover:bg-[#d4eb3d] transition-colors"
           >
             Aller à l'admin
           </button>
@@ -195,7 +195,7 @@ export function LagostinaOverview() {
                     icon={<DollarSign className="h-3.5 w-3.5" />}
                   />
                   <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border-l-[3px] border-black dark:border-white p-5 flex flex-col gap-1">
-                    <div className="flex items-center gap-2 text-muted-foreground text-xs font-['Roboto'] uppercase tracking-wider">
+                    <div className="flex items-center gap-2 text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider">
                       <PieChart className="h-3.5 w-3.5" />
                       Budget engagé
                     </div>
@@ -209,7 +209,7 @@ export function LagostinaOverview() {
                         }}
                       />
                     </div>
-                    <div className="text-muted-foreground text-xs font-['Roboto'] mt-0.5">
+                    <div className="text-muted-foreground text-xs font-['Instrument Sans'] mt-0.5">
                       {totalEngaged.toLocaleString('fr-FR')}€ / {totalPlanned.toLocaleString('fr-FR')}€
                     </div>
                   </div>
@@ -217,7 +217,7 @@ export function LagostinaOverview() {
               )}
 
               {lastSync && (
-                <div className="text-muted-foreground text-xs font-['Roboto'] flex items-center gap-1">
+                <div className="text-muted-foreground text-xs font-['Instrument Sans'] flex items-center gap-1">
                   Dernière mise à jour : {new Date(lastSync.last_synced).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} — Source : {lastSync.filename}
                 </div>
               )}
@@ -235,9 +235,9 @@ export function LagostinaOverview() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border/40">
-                        <th className="text-left px-4 py-3 text-muted-foreground font-['Roboto'] font-medium text-xs uppercase tracking-wider">Priorité</th>
+                        <th className="text-left px-4 py-3 text-muted-foreground font-['Instrument Sans'] font-medium text-xs uppercase tracking-wider">Priorité</th>
                         {AXES.map((axis) => (
-                          <th key={axis.key} className="text-center px-3 py-3 text-muted-foreground font-['Roboto'] font-medium text-xs uppercase tracking-wider">
+                          <th key={axis.key} className="text-center px-3 py-3 text-muted-foreground font-['Instrument Sans'] font-medium text-xs uppercase tracking-wider">
                             {axis.label}
                           </th>
                         ))}
@@ -248,7 +248,7 @@ export function LagostinaOverview() {
                         <tr key={priority} className="border-b border-border/20 hover:bg-muted dark:bg-[#141928]">
                           <td className="px-4 py-3">
                             <div className="text-foreground font-['Instrument_Sans'] font-medium text-sm">{group.label}</div>
-                            <div className="text-muted-foreground font-['Roboto'] text-xs">{priority}</div>
+                            <div className="text-muted-foreground font-['Instrument Sans'] text-xs">{priority}</div>
                           </td>
                           {AXES.map((axis) => (
                             <td key={axis.key} className="text-center px-3 py-3">
@@ -265,11 +265,11 @@ export function LagostinaOverview() {
                   </table>
                 </div>
               ) : (
-                <div className="text-muted-foreground text-xs font-['Roboto'] py-8 text-center">Aucune donnée de statut disponible</div>
+                <div className="text-muted-foreground text-xs font-['Instrument Sans'] py-8 text-center">Aucune donnée de statut disponible</div>
               )}
 
               {lastSync && (
-                <div className="text-muted-foreground text-xs font-['Roboto'] flex items-center gap-1">
+                <div className="text-muted-foreground text-xs font-['Instrument Sans'] flex items-center gap-1">
                   Dernière mise à jour : {new Date(lastSync.last_synced).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} — Source : {lastSync.filename}
                 </div>
               )}

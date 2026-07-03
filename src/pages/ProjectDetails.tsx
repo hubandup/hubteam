@@ -314,7 +314,7 @@ export default function ProjectDetails() {
 
           {/* Client */}
           {client ? (
-            <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, color: 'hsl(var(--muted-foreground))', margin: 0 }}>
+            <p style={{ fontFamily: 'Instrument Sans, sans-serif', fontSize: 13, color: 'hsl(var(--muted-foreground))', margin: 0 }}>
               <span className="uppercase">{client.company}</span> – {client.first_name} {client.last_name}
             </p>
           ) : (
@@ -384,10 +384,10 @@ export default function ProjectDetails() {
                 }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
+                <span style={{ fontFamily: 'Instrument Sans, sans-serif', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
                   {projectProgress.completed} tâche{projectProgress.completed !== 1 ? 's' : ''} terminée{projectProgress.completed !== 1 ? 's' : ''}
                 </span>
-                <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
+                <span style={{ fontFamily: 'Instrument Sans, sans-serif', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
                   {projectProgress.total} tâche{projectProgress.total !== 1 ? 's' : ''} au total
                 </span>
               </div>
@@ -445,14 +445,14 @@ export default function ProjectDetails() {
                     <div className="space-y-4">
                       {client ? (
                         <div>
-                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 4 }}>Client</p>
+                          <p style={{ fontFamily: 'Instrument Sans, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 4 }}>Client</p>
                           <p style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: 'hsl(var(--foreground))' }}>
                             <span className="uppercase">{client.company}</span> – {client.first_name} {client.last_name}
                           </p>
                         </div>
                       ) : (
                         <div>
-                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 8 }}>Client</p>
+                          <p style={{ fontFamily: 'Instrument Sans, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 8 }}>Client</p>
                           <button
                             onClick={() => setShowSelectClientDialog(true)}
                             style={{
@@ -468,7 +468,7 @@ export default function ProjectDetails() {
                       )}
 
                       <div>
-                        <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 4 }}>Nom du projet</p>
+                        <p style={{ fontFamily: 'Instrument Sans, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 4 }}>Nom du projet</p>
                         <p style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: 'hsl(var(--foreground))' }}>
                           {project.name}
                         </p>
@@ -476,8 +476,8 @@ export default function ProjectDetails() {
 
                       {project.description && (
                         <div>
-                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 4 }}>Description</p>
-                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, color: 'hsl(var(--foreground))', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                          <p style={{ fontFamily: 'Instrument Sans, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 4 }}>Description</p>
+                          <p style={{ fontFamily: 'Instrument Sans, sans-serif', fontSize: 13, color: 'hsl(var(--foreground))', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
                             {project.description}
                           </p>
                         </div>
@@ -493,7 +493,7 @@ export default function ProjectDetails() {
                     <div className="space-y-4">
                       {project.start_date && (
                         <div>
-                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 4 }}>Date de début</p>
+                          <p style={{ fontFamily: 'Instrument Sans, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 4 }}>Date de début</p>
                           <p style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: 'hsl(var(--foreground))' }}>
                             {format(new Date(project.start_date), 'dd MMMM yyyy', { locale: fr })}
                           </p>
@@ -501,14 +501,14 @@ export default function ProjectDetails() {
                       )}
                       {project.end_date && (
                         <div>
-                          <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 4 }}>Date de fin</p>
+                          <p style={{ fontFamily: 'Instrument Sans, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 4 }}>Date de fin</p>
                           <p style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 14, color: 'hsl(var(--foreground))' }}>
                             {format(new Date(project.end_date), 'dd MMMM yyyy', { locale: fr })}
                           </p>
                         </div>
                       )}
                       <div>
-                        <p style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 8 }}>Statut</p>
+                        <p style={{ fontFamily: 'Instrument Sans, sans-serif', fontSize: 12, color: 'hsl(var(--muted-foreground))', marginBottom: 8 }}>Statut</p>
                         <StatusBadge />
                       </div>
                     </div>
@@ -542,7 +542,7 @@ export default function ProjectDetails() {
                   <AlertDialogTitle style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 16, color: 'hsl(var(--foreground))' }}>
                     Confirmer la suppression
                   </AlertDialogTitle>
-                  <AlertDialogDescription style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, color: 'hsl(var(--muted-foreground))' }}>
+                  <AlertDialogDescription style={{ fontFamily: 'Instrument Sans, sans-serif', fontSize: 13, color: 'hsl(var(--muted-foreground))' }}>
                     Êtes-vous sûr de vouloir supprimer le projet "{project.name}" ?
                     Cette action est irréversible et supprimera également toutes les tâches,
                     membres d'équipe et pièces jointes associés.
