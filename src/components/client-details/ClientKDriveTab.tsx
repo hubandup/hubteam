@@ -695,7 +695,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
     >
       {/* Drag overlay */}
       {isDragging && currentFolder && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg border-2 border-dashed border-primary bg-primary/10 backdrop-blur-sm">
+        <div className="absolute inset-0 z-50 flex items-center justify-center rounded-card border-2 border-dashed border-primary bg-primary/10 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-2 text-primary">
             <Upload className="h-12 w-12" />
             <p className="text-lg font-medium">Déposez vos fichiers ici</p>
@@ -704,7 +704,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
       )}
 
       {!client?.kdrive_folder_id && (
-        <div className="rounded-md border border-warning/50 bg-warning/20 p-3 text-sm flex items-center justify-between gap-2">
+        <div className="rounded-card border border-warning/50 bg-warning/20 p-3 text-sm flex items-center justify-between gap-2">
           <span className="text-muted-foreground">Le drive kDrive n'est pas attribué pour ce dossier.</span>
           {isAdmin && (
             <KDriveFolderSelector
@@ -793,7 +793,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
         <div
           onDragOver={handleDragOver}
           onDrop={handleDrop}
-          className="rounded-lg border-2 border-dashed border-primary bg-primary/5 p-8 text-center cursor-pointer transition-all"
+          className="rounded-card border-2 border-dashed border-primary bg-primary/5 p-8 text-center cursor-pointer transition-all"
           onClick={(e) => {
             e.stopPropagation();
             
@@ -836,7 +836,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
       <div className="space-y-2">
 
         {files.length > 0 && (
-          <div className="flex items-center justify-between p-3 bg-muted/30 border rounded-lg mb-2">
+          <div className="flex items-center justify-between p-3 bg-muted/30 border rounded-card mb-2">
             <div className="flex items-center gap-3">
               <Checkbox
                 checked={selectedIds.length === files.length && files.length > 0}
@@ -867,7 +867,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
         {files.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">Aucun fichier ou dossier</p>
         ) : (
-          <div className="border rounded-lg divide-y">
+          <div className="border rounded-card divide-y">
             {[...files].sort((a, b) => {
               const compareResult = a.name.localeCompare(b.name);
               return sortOrder === "asc" ? compareResult : -compareResult;
@@ -1077,7 +1077,7 @@ export function ClientKDriveTab({ clientId }: ClientKDriveTabProps) {
             {pdfUrl && (
               <iframe
                 src={pdfUrl}
-                className="w-full h-full rounded-md border"
+                className="w-full h-full rounded-card border"
                 title={pdfFileName}
               />
             )}

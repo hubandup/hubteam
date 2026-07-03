@@ -130,7 +130,7 @@ export function FilePreviewPane({ file, onClose, onGetFileUrl }: FilePreviewPane
         ) : fileUrl ? (
           <div className="space-y-4">
             {isImage && (
-              <div className="rounded-lg overflow-hidden border">
+              <div className="rounded-card overflow-hidden border">
                 <img
                   src={fileUrl}
                   alt={file.name}
@@ -140,7 +140,7 @@ export function FilePreviewPane({ file, onClose, onGetFileUrl }: FilePreviewPane
             )}
 
             {isPdf && (
-              <div className="rounded-lg overflow-hidden border bg-muted">
+              <div className="rounded-card overflow-hidden border bg-muted">
                 <iframe
                   src={fileUrl}
                   className="w-full h-96"

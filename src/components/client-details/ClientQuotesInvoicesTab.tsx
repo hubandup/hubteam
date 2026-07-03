@@ -220,7 +220,7 @@ export function ClientQuotesInvoicesTab({ clientId }: ClientQuotesInvoicesTabPro
         onDragOver={(e) => handleDragOver(e, item.id)}
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e, item.id, type)}
-        className={`border-2 border-dashed rounded-lg p-3 text-center transition-colors ${
+        className={`border-2 border-dashed rounded-card p-3 text-center transition-colors ${
           isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
         }`}
       >
@@ -277,7 +277,7 @@ export function ClientQuotesInvoicesTab({ clientId }: ClientQuotesInvoicesTabPro
               {quotes.map((quote) => (
                 <div
                   key={quote.id}
-                  className="border rounded-lg p-4 space-y-3 hover:bg-muted/50 transition-colors"
+                  className="border rounded-card p-4 space-y-3 hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-start justify-between">
                     <div>
@@ -318,7 +318,7 @@ export function ClientQuotesInvoicesTab({ clientId }: ClientQuotesInvoicesTabPro
               {invoices.map((invoice) => (
                 <div
                   key={invoice.id}
-                  className="border rounded-lg p-4 space-y-3 hover:bg-muted/50 transition-colors"
+                  className="border rounded-card p-4 space-y-3 hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-start justify-between">
                     <div>

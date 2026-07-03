@@ -339,9 +339,9 @@ function HeaderSection({ tracking, client }: { tracking: any; client: any }) {
       <CardContent className="pt-6 space-y-4">
         <div className="flex items-start gap-4">
           <div className="relative">
-            <Avatar className="h-20 w-20 rounded-lg">
+            <Avatar className="h-20 w-20 rounded-card">
               <AvatarImage src={logoUrl || client.logo_url || undefined} className="object-cover" />
-              <AvatarFallback className="rounded-lg">{client.company?.[0]}</AvatarFallback>
+              <AvatarFallback className="rounded-card">{client.company?.[0]}</AvatarFallback>
             </Avatar>
             <label className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-1 cursor-pointer hover:bg-primary/90">
               {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
@@ -682,7 +682,7 @@ function NotesSection({ trackingId, tracking, client }: { trackingId: string; tr
               </Button>
             )}
             {adding && (
-              <div className="space-y-2 border rounded-lg p-3">
+              <div className="space-y-2 border rounded-card p-3">
                 <Textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
@@ -698,7 +698,7 @@ function NotesSection({ trackingId, tracking, client }: { trackingId: string; tr
             )}
             <div className="space-y-3">
               {notes.map((n: any) => (
-                <div key={n.id} className="border rounded-lg p-3 space-y-2">
+                <div key={n.id} className="border rounded-card p-3 space-y-2">
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={n.author?.avatar_url} />
@@ -790,7 +790,7 @@ function MeetingsSection({ trackingId, tracking, client }: { trackingId: string;
               if (isRdv) rdvIdx += 1;
               const displayLabel = isRdv ? `RDV ${rdvIdx}` : m.label;
               return (
-                <div key={m.id} className="border rounded-lg p-3 space-y-3">
+                <div key={m.id} className="border rounded-card p-3 space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-medium">{displayLabel}</p>
                     {isRdv && (
@@ -1181,7 +1181,7 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
   const senderEmail = 'contact@hubandup.org';
 
   const EmailPreview = ({ to, toName, subject, html }: { to?: string | null; toName?: string | null; subject: string; html: string }) => (
-    <div className="border rounded-md overflow-hidden bg-background shadow-sm">
+    <div className="border rounded-card overflow-hidden bg-background shadow-sm">
       <div className="bg-muted/50 border-b px-4 py-3 space-y-1 text-xs">
         <div className="flex gap-2"><span className="text-muted-foreground w-16 shrink-0">De</span><span className="font-medium">{senderName} &lt;{senderEmail}&gt;</span></div>
         <div className="flex gap-2"><span className="text-muted-foreground w-16 shrink-0">À</span><span className="font-medium">{toName ? `${toName} ` : ''}{to ? `<${to}>` : <span className="text-muted-foreground italic">(non renseigné)</span>}</span></div>
@@ -1292,7 +1292,7 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
 
         <div className="space-y-2">
           {urls.map((u: any) => (
-            <div key={u.id} className="border rounded-lg p-3 space-y-2">
+            <div key={u.id} className="border rounded-card p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <div className="flex-1 min-w-0">
                   {u.label && <p className="text-sm font-medium">{u.label}</p>}
@@ -1339,7 +1339,7 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
 
         {/* === Générateur d'excuse de relance === */}
         {urls.some((u: any) => u.last_scrape_status === 'success') && (
-          <div className="border rounded-lg p-4 space-y-3 bg-muted/20">
+          <div className="border rounded-card p-4 space-y-3 bg-muted/20">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
               <h4 className="font-semibold text-sm">Générer une excuse de relance</h4>
@@ -1460,7 +1460,7 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
 
         {/* === Historique des suggestions === */}
         {history.length > 0 && (
-          <div className="border rounded-lg p-4 space-y-3">
+          <div className="border rounded-card p-4 space-y-3">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-2">
                 <History className="h-4 w-4 text-muted-foreground" />
@@ -1490,7 +1490,7 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
               {filteredHistory.length === 0 ? (
                 <p className="text-xs text-muted-foreground italic py-2">Aucune suggestion pour ce filtre.</p>
               ) : filteredHistory.map((h: any) => (
-                <div key={h.id} className="flex items-start gap-2 border rounded-md p-2.5">
+                <div key={h.id} className="flex items-start gap-2 border rounded-card p-2.5">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-medium truncate">{h.subject || '(sans objet)'}</p>
@@ -1590,7 +1590,7 @@ function ScrapeUrlsSection({ trackingId }: { trackingId: string }) {
                   const total = urls.length + internalNotes.length + meetingNotes.length + meetings.length;
                   if (total === 0) return null;
                   return (
-                    <div className="border rounded-md p-3 bg-muted/30 space-y-3">
+                    <div className="border rounded-card p-3 bg-muted/30 space-y-3">
                       <p className="text-xs font-semibold uppercase text-muted-foreground">
                         Sources utilisées ({total})
                       </p>

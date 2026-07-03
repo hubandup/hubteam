@@ -457,7 +457,7 @@ export function ClientInfoTab({ client, onUpdate }: ClientInfoTabProps) {
                 ) : (
                   <div className="space-y-3">
                     {clientProjects.map((project) => (
-                      <div key={project.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                      <div key={project.id} className="flex items-center justify-between p-3 rounded-card border bg-muted/30">
                         <div className="flex items-center gap-3">
                           <FolderKanban className="h-4 w-4 text-primary" />
                           <Link 
