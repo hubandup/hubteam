@@ -329,11 +329,12 @@ export function useProjects() {
 
 export function useArchivedProjects() {
   const { user } = useAuth();
+  const { role } = useUserRole();
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: ['archived-projects', user?.id],
-    queryFn: () => fetchArchivedProjects(user?.id || null),
+    queryKey: ['archived-projects', user?.id, role],
+    queryFn: () => fetchArchivedProjects(user?.id || null, role),
     enabled: !!user,
   });
 
