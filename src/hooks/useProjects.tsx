@@ -73,9 +73,30 @@ async function addTaskCounts(projects: Project[]): Promise<Project[]> {
   }));
 }
 
-export async function fetchProjects(userId: string | null) {
+export async function fetchProjects(userId: string | null, role?: string | null) {
   if (!userId) return [];
 
+  // Profile users (admin / team) see ALL non-archived projects.
+  if (role === 'admin' || role === 'team') {
+    const { data, error } = await supabase
+      .from('projects')
+      .select(`
+        *,
+        project_clients (
+          clients (
+            company,
+            logo_url
+          )
+        )
+      `)
+      .eq('archived', false)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return await addTaskCounts((data || []) as Project[]);
+  }
+
+  // Client / agency: keep membership-scoped fetching.
   // Path 1: Projects where user is a profile member in project_team_members
   const { data: teamRows, error: teamError } = await supabase
     .from('project_team_members')
