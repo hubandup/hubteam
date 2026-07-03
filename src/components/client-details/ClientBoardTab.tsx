@@ -243,7 +243,7 @@ export function ClientBoardTab({ clientId, clientEmailDomain }: ClientBoardTabPr
                   <Tooltip
                     formatter={(value: number, name: string) => [formatEuro(value), name]}
                     contentStyle={{
-                      borderRadius: '8px',
+                      borderRadius: 'var(--radius-card)',
                       border: '1px solid hsl(var(--border))',
                       backgroundColor: 'hsl(var(--popover))',
                       color: 'hsl(var(--popover-foreground))',

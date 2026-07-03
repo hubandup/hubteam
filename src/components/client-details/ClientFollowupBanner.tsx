@@ -126,7 +126,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
   return (
     <>
       <div
-        className="relative"
+        className="relative rounded-card overflow-hidden"
         style={{ background: 'hsl(var(--brand-ink))', border: '2px solid hsl(var(--brand-ink))', marginBottom: 20 }}
       >
         {/* Header */}
@@ -136,7 +136,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
         >
           <div className="flex items-center gap-3 min-w-0">
             <div
-              className="flex items-center justify-center flex-shrink-0"
+              className="flex items-center justify-center flex-shrink-0 rounded-button"
               style={{ width: 28, height: 28, background: 'hsl(var(--brand-yellow))' }}
             >
               <Sparkles size={14} style={{ color: 'hsl(var(--brand-ink))' }} />
@@ -193,7 +193,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
                   type="button"
                   onClick={copy}
                   disabled={!plainBody}
-                  className="inline-flex items-center gap-1 font-semibold text-xs disabled:opacity-50"
+                  className="inline-flex items-center gap-1 font-semibold text-xs disabled:opacity-50 rounded-button"
                   style={{ background: 'hsl(var(--brand-yellow))', color: 'hsl(var(--brand-ink))', padding: '6px 12px' }}
                 >
                   <Copy size={12} /> Copier
@@ -201,7 +201,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
                 <button
                   type="button"
                   onClick={sendMail}
-                  className="inline-flex items-center gap-1 text-xs text-background hover:bg-card/10"
+                  className="inline-flex items-center gap-1 text-xs text-background hover:bg-card/10 rounded-button"
                   style={{ border: '1px solid rgba(255,255,255,0.2)', padding: '6px 12px' }}
                 >
                   <Send size={12} /> Envoyer par email
@@ -231,7 +231,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
                 type="button"
                 onClick={copy}
                 disabled={!plainBody}
-                className="inline-flex items-center gap-1.5 font-semibold text-sm disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 font-semibold text-sm disabled:opacity-50 rounded-button"
                 style={{ background: 'hsl(var(--brand-yellow))', color: 'hsl(var(--brand-ink))', padding: '8px 16px' }}
               >
                 <Copy size={14} /> Copier
@@ -240,7 +240,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
                 type="button"
                 onClick={sendMail}
                 disabled={!latest}
-                className="inline-flex items-center gap-1.5 text-sm text-background hover:bg-card/10 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 text-sm text-background hover:bg-card/10 disabled:opacity-50 rounded-button"
                 style={{ border: '1px solid rgba(255,255,255,0.2)', padding: '8px 16px' }}
               >
                 <Send size={14} /> Envoyer par email
@@ -278,7 +278,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
                   {sourcesList.map((s, i) => (
                     <li key={i} className="text-xs text-background/70 flex items-center gap-2">
                       <span
-                        className="uppercase font-semibold tracking-wider"
+                        className="uppercase font-semibold tracking-wider rounded-badge"
                         style={{ background: 'rgba(232,255,76,0.15)', color: 'hsl(var(--brand-yellow))', padding: '1px 6px', fontSize: 9 }}
                       >
                         {s.kind}

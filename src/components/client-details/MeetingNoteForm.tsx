@@ -119,7 +119,7 @@ export function MeetingNoteForm({ clientId, onNoteAdded }: MeetingNoteFormProps)
         </Label>
       </div>
       
-      <div className="flex items-start gap-2 p-4 border border-input rounded-lg bg-background">
+      <div className="flex items-start gap-2 p-4 border border-input rounded-card bg-background">
         <Textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -142,7 +142,7 @@ export function MeetingNoteForm({ clientId, onNoteAdded }: MeetingNoteFormProps)
             type="submit"
             size="icon"
             disabled={loading || !content.trim()}
-            className="h-10 w-10 shrink-0 rounded-lg bg-primary hover:bg-primary/90"
+            className="h-10 w-10 shrink-0 rounded-card bg-primary hover:bg-primary/90"
           >
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -159,11 +159,11 @@ export function MeetingNoteForm({ clientId, onNoteAdded }: MeetingNoteFormProps)
             <input
               type="file"
               onChange={handleFileChange}
-              className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer"
+              className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded-button file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer"
             />
           </div>
           {attachmentFile && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-md w-fit">
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-card w-fit">
               <Paperclip className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm">{attachmentFile.name}</span>
               <Button

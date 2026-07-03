@@ -325,7 +325,7 @@ export function ClientContactsManager({ clientId }: ClientContactsManagerProps) 
             {contacts.map((contact) => (
               <div
                 key={contact.id}
-                className="flex items-start justify-between p-3 border rounded-lg"
+                className="flex items-start justify-between p-3 border rounded-card"
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
