@@ -243,11 +243,12 @@ async function fetchArchivedProjects(userId: string | null, role?: string | null
 
 export function useProjects() {
   const { user } = useAuth();
+  const { role } = useUserRole();
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: ['projects', user?.id],
-    queryFn: () => fetchProjects(user?.id || null),
+    queryKey: ['projects', user?.id, role],
+    queryFn: () => fetchProjects(user?.id || null, role),
     enabled: !!user,
   });
 
