@@ -157,8 +157,28 @@ export async function fetchProjects(userId: string | null, role?: string | null)
   return await addTaskCounts(allProjects);
 }
 
-async function fetchArchivedProjects(userId: string | null) {
+async function fetchArchivedProjects(userId: string | null, role?: string | null) {
   if (!userId) return [];
+
+  if (role === 'admin' || role === 'team') {
+    const { data, error } = await supabase
+      .from('projects')
+      .select(`
+        *,
+        project_clients (
+          clients (
+            company,
+            logo_url
+          )
+        )
+      `)
+      .eq('archived', true)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return await addTaskCounts((data || []) as Project[]);
+  }
+
 
   // Path 1: Archived projects where user is a profile member
   const { data: teamRows, error: teamError } = await supabase
