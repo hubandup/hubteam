@@ -21,10 +21,12 @@ interface Project {
   date_restitution: string | null;
   project_clients?: Array<{
     clients: {
+      id: string;
       company: string;
       logo_url: string | null;
     };
   }>;
+
   tasks_total?: number;
   tasks_completed?: number;
 }
