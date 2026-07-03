@@ -85,6 +85,7 @@ export async function fetchProjects(userId: string | null, role?: string | null)
         *,
         project_clients (
           clients (
+            id,
             company,
             logo_url
           )
@@ -106,6 +107,7 @@ export async function fetchProjects(userId: string | null, role?: string | null)
         *,
         project_clients (
           clients (
+            id,
             company,
             logo_url
           )
@@ -137,6 +139,7 @@ export async function fetchProjects(userId: string | null, role?: string | null)
           *,
           project_clients (
             clients (
+              id,
               company,
               logo_url
             )
@@ -168,6 +171,7 @@ async function fetchArchivedProjects(userId: string | null, role?: string | null
         *,
         project_clients (
           clients (
+            id,
             company,
             logo_url
           )
@@ -189,6 +193,7 @@ async function fetchArchivedProjects(userId: string | null, role?: string | null
         *,
         project_clients (
           clients (
+            id,
             company,
             logo_url
           )
@@ -220,6 +225,7 @@ async function fetchArchivedProjects(userId: string | null, role?: string | null
           *,
           project_clients (
             clients (
+              id,
               company,
               logo_url
             )
