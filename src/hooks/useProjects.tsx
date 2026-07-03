@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
 import { useAuth } from './useAuth';
+import { useUserRole } from './useUserRole';
 
 interface Project {
   id: string;
@@ -73,9 +74,30 @@ async function addTaskCounts(projects: Project[]): Promise<Project[]> {
   }));
 }
 
-export async function fetchProjects(userId: string | null) {
+export async function fetchProjects(userId: string | null, role?: string | null) {
   if (!userId) return [];
 
+  // Profile users (admin / team) see ALL non-archived projects.
+  if (role === 'admin' || role === 'team') {
+    const { data, error } = await supabase
+      .from('projects')
+      .select(`
+        *,
+        project_clients (
+          clients (
+            company,
+            logo_url
+          )
+        )
+      `)
+      .eq('archived', false)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return await addTaskCounts((data || []) as Project[]);
+  }
+
+  // Client / agency: keep membership-scoped fetching.
   // Path 1: Projects where user is a profile member in project_team_members
   const { data: teamRows, error: teamError } = await supabase
     .from('project_team_members')
@@ -136,8 +158,28 @@ export async function fetchProjects(userId: string | null) {
   return await addTaskCounts(allProjects);
 }
 
-async function fetchArchivedProjects(userId: string | null) {
+async function fetchArchivedProjects(userId: string | null, role?: string | null) {
   if (!userId) return [];
+
+  if (role === 'admin' || role === 'team') {
+    const { data, error } = await supabase
+      .from('projects')
+      .select(`
+        *,
+        project_clients (
+          clients (
+            company,
+            logo_url
+          )
+        )
+      `)
+      .eq('archived', true)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return await addTaskCounts((data || []) as Project[]);
+  }
+
 
   // Path 1: Archived projects where user is a profile member
   const { data: teamRows, error: teamError } = await supabase
@@ -201,11 +243,12 @@ async function fetchArchivedProjects(userId: string | null) {
 
 export function useProjects() {
   const { user } = useAuth();
+  const { role } = useUserRole();
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: ['projects', user?.id],
-    queryFn: () => fetchProjects(user?.id || null),
+    queryKey: ['projects', user?.id, role],
+    queryFn: () => fetchProjects(user?.id || null, role),
     enabled: !!user,
   });
 
@@ -286,11 +329,12 @@ export function useProjects() {
 
 export function useArchivedProjects() {
   const { user } = useAuth();
+  const { role } = useUserRole();
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: ['archived-projects', user?.id],
-    queryFn: () => fetchArchivedProjects(user?.id || null),
+    queryKey: ['archived-projects', user?.id, role],
+    queryFn: () => fetchArchivedProjects(user?.id || null, role),
     enabled: !!user,
   });
 

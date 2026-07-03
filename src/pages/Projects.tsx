@@ -154,7 +154,10 @@ export default function Projects() {
 
   const filteredProjects = useMemo(() => {
     let filtered = activeTab === 'archived' ? archivedProjects : projects;
-    if (activeTab !== 'all' && activeTab !== 'archived') {
+    if (activeTab === 'active') {
+      // "En cours" regroupe les projets actifs ET ceux en Reco
+      filtered = filtered.filter(project => project.status === 'active' || project.status === 'reco_in_progress');
+    } else if (activeTab !== 'all' && activeTab !== 'archived') {
       filtered = filtered.filter(project => project.status === activeTab);
     }
     if (searchQuery.trim()) {
@@ -172,7 +175,7 @@ export default function Projects() {
     all: projects.length,
     planning: projects.filter(p => p.status === 'planning').length,
     reco_in_progress: projects.filter(p => p.status === 'reco_in_progress').length,
-    active: projects.filter(p => p.status === 'active').length,
+    active: projects.filter(p => p.status === 'active' || p.status === 'reco_in_progress').length,
     completed: projects.filter(p => p.status === 'completed').length,
     lost: projects.filter(p => p.status === 'lost').length,
     archived: archivedProjects.length,
