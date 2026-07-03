@@ -126,7 +126,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
   return (
     <>
       <div
-        className="relative"
+        className="relative rounded-card overflow-hidden"
         style={{ background: 'hsl(var(--brand-ink))', border: '2px solid hsl(var(--brand-ink))', marginBottom: 20 }}
       >
         {/* Header */}
@@ -136,7 +136,7 @@ export function ClientFollowupBanner({ clientId }: Props) {
         >
           <div className="flex items-center gap-3 min-w-0">
             <div
-              className="flex items-center justify-center flex-shrink-0"
+              className="flex items-center justify-center flex-shrink-0 rounded-button"
               style={{ width: 28, height: 28, background: 'hsl(var(--brand-yellow))' }}
             >
               <Sparkles size={14} style={{ color: 'hsl(var(--brand-ink))' }} />
