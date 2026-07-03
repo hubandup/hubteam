@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
 import { useAuth } from './useAuth';
+import { useUserRole } from './useUserRole';
 
 interface Project {
   id: string;
