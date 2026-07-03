@@ -120,6 +120,23 @@ export function ClientCard({ client, onClick, onMouseEnter }: ClientCardProps) {
           status={statusStyle}
           email={client.email}
           phone={client.phone}
+          extraInfo={
+            client.projectStatuses && client.projectStatuses.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {client.projectStatuses.map((s) => (
+                  <span
+                    key={s}
+                    className={cn(
+                      'inline-flex items-center px-2 py-0.5 rounded-badge border text-[10px] font-medium leading-none',
+                      PROJECT_STATUS_BADGE_CLASSES[s],
+                    )}
+                  >
+                    {PROJECT_STATUS_LABELS[s]}
+                  </span>
+                ))}
+              </div>
+            ) : undefined
+          }
           onClick={onClick}
           onMouseEnter={onMouseEnter}
           footerLeft={
