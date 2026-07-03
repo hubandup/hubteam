@@ -218,20 +218,32 @@ export default function ClientDetails() {
   const hasBoardTab = hasBoardDomain && canManageBoard;
   const canDelete = role === 'admin' || role === 'team';
 
+  const projectsTabContent = embeddedProjectId ? (
+    <EmbeddedProjectView
+      projectId={embeddedProjectId}
+      subtab={subtab}
+      onSubtabChange={setSubtab}
+      onBack={closeEmbeddedProject}
+    />
+  ) : (
+    <ClientProjectsTab clientId={client.id} />
+  );
+
   const allTabs: TabDef[] = [
     ...(role === 'admin' ? [{
       value: 'commercial', label: 'Commercial', icon: <Briefcase className="h-4 w-4" />,
       content: <CommercialTrackingTab clientId={client.id} client={client} />,
     }] : []),
     { value: 'info', label: 'Infos', icon: <FileText className="h-4 w-4" />, content: <ClientInfoTab client={client} onUpdate={fetchClientDetails} /> },
-    
-    { value: 'projects', label: 'Projets', icon: <FolderKanban className="h-4 w-4" />, badge: projectsCount, content: <ClientProjectsTab clientId={client.id} /> },
-    { value: 'kdrive', label: 'Documents', icon: <FolderKanban className="h-4 w-4" />, badge: kdriveFilesCount, content: <ClientKDriveTab clientId={client.id} /> },
+    { value: 'projects', label: 'Projets', icon: <FolderKanban className="h-4 w-4" />, badge: projectsCount, content: projectsTabContent },
+    { value: 'tasks', label: 'Tâches', icon: <CheckSquare className="h-4 w-4" />, badge: tasksCount, content: <ClientTasksTab clientId={client.id} /> },
+    { value: 'documents', label: 'Documents', icon: <FolderKanban className="h-4 w-4" />, badge: kdriveFilesCount, content: <ClientKDriveTab clientId={client.id} /> },
     { value: 'invoices', label: 'Factures', icon: <Receipt className="h-4 w-4" />, badge: invoicesCount, content: <ClientInvoicesTab clientId={client.id} /> },
     ...(hasBoardTab ? [{ value: 'board', label: 'Board', icon: <BarChart3 className="h-4 w-4" />, content: <ClientBoardTab clientId={client.id} clientEmailDomain={clientEmailDomain} /> }] : []),
   ];
   const tabs = allTabs.filter(tab => role !== 'agency' || tab.value !== 'invoices');
   const currentTab = tabs.find(t => t.value === activeTab) ?? tabs[0];
+
 
   const handleDeleteClient = async () => {
     if (!id) return;
