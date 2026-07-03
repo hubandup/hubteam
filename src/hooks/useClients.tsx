@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
+import { computeClientProjectStatuses, type ProjectStatusKey } from '@/lib/project-status';
 
 interface Client {
   id: string;
@@ -28,11 +29,14 @@ interface Client {
     projects?: {
       id: string;
       status: string;
+      archived?: boolean | null;
     };
   }>;
   action_name?: string;
   action_color?: string;
   hasActiveProjects?: boolean;
+  projectStatuses?: ProjectStatusKey[];
+  projectsCount?: number;
 }
 
 export async function fetchClients() {
@@ -43,7 +47,7 @@ export async function fetchClients() {
       *,
       project_clients(
         project_id,
-        projects(id, status)
+        projects(id, status, archived)
       )
     `)
     .order('created_at', { ascending: false });
@@ -65,12 +69,15 @@ export async function fetchClients() {
     const activeProjects = c.project_clients?.filter(
       (pc: any) => pc.projects?.status === 'active'
     ) || [];
-    
+    const projectStatuses = computeClientProjectStatuses(c.project_clients as any);
+
     return {
       ...c,
       action_name: c.status_id ? statusById[c.status_id]?.name : undefined,
       action_color: c.status_id ? statusById[c.status_id]?.color : undefined,
       hasActiveProjects: activeProjects.length > 0,
+      projectStatuses,
+      projectsCount: (c.project_clients || []).filter((pc: any) => pc.projects).length,
     };
   });
 

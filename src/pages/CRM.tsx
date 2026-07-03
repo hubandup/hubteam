@@ -22,6 +22,12 @@ import { prefetchClientDetails } from '@/hooks/usePrefetchAppData';
 import { useUserRole } from '@/hooks/useUserRole';
 import { PageLoader } from '@/components/PageLoader';
 import { PageHeader, ViewToggle } from '@/components/layout';
+import {
+  PROJECT_STATUS_LABELS,
+  PROJECT_STATUS_ORDER,
+  type ClientProjectFilterKey,
+  type ProjectStatusKey,
+} from '@/lib/project-status';
 
 
 export default function CRM() {
@@ -47,12 +53,16 @@ export default function CRM() {
   const [showArchived, setShowArchived] = useState(() => {
     return localStorage.getItem('crm-show-archived') === 'true';
   });
+  const [projectStatusFilter, setProjectStatusFilter] = useState<ClientProjectFilterKey>(() => {
+    return (localStorage.getItem('crm-project-status-filter') as ClientProjectFilterKey) || 'all';
+  });
 
   // Persist preferences to localStorage
   useEffect(() => { localStorage.setItem('crm-view-mode', viewMode); }, [viewMode]);
   useEffect(() => { localStorage.setItem('crm-sort-by', sortBy); }, [sortBy]);
   useEffect(() => { localStorage.setItem('crm-filter-projects', String(filterWithProjects)); }, [filterWithProjects]);
   useEffect(() => { localStorage.setItem('crm-show-archived', String(showArchived)); }, [showArchived]);
+  useEffect(() => { localStorage.setItem('crm-project-status-filter', projectStatusFilter); }, [projectStatusFilter]);
 
   const filteredClients = useMemo(() => {
     let result = clients;
@@ -79,7 +89,16 @@ export default function CRM() {
     if (filterWithProjects) {
       result = result.filter(client => client.hasActiveProjects === true);
     }
-    
+
+    // Apply project state filter (multi-projects: keep client if ANY project matches)
+    if (projectStatusFilter !== 'all') {
+      result = result.filter((client) => {
+        const statuses = client.projectStatuses || [];
+        if (projectStatusFilter === 'none') return statuses.length === 0;
+        return statuses.includes(projectStatusFilter as ProjectStatusKey);
+      });
+    }
+
     // Apply sorting
     if (sortBy === 'revenue_current_year') {
       result = [...result].sort((a, b) => {
@@ -96,7 +115,7 @@ export default function CRM() {
     }
     
     return result;
-  }, [clients, searchQuery, sortBy, filterWithProjects, showArchived]);
+  }, [clients, searchQuery, sortBy, filterWithProjects, showArchived, projectStatusFilter]);
 
   const archivedCount = useMemo(() => {
     return clients.filter(client => client.active === false).length;
@@ -234,9 +253,34 @@ export default function CRM() {
             )}
           </div>
           {!isMobile && !showArchived && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap items-center">
               <Button
-                variant={filterWithProjects ? "default" : "outline"}
+                variant={projectStatusFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setProjectStatusFilter('all')}
+              >
+                Tous
+              </Button>
+              {PROJECT_STATUS_ORDER.map((key) => (
+                <Button
+                  key={key}
+                  variant={projectStatusFilter === key ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setProjectStatusFilter(key)}
+                >
+                  {PROJECT_STATUS_LABELS[key]}
+                </Button>
+              ))}
+              <Button
+                variant={projectStatusFilter === 'none' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setProjectStatusFilter('none')}
+              >
+                Sans projet
+              </Button>
+              <div className="mx-1 h-5 w-px bg-border" aria-hidden />
+              <Button
+                variant={filterWithProjects ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setFilterWithProjects(!filterWithProjects)}
               >

@@ -17,6 +17,11 @@ import {
 import { EntityCard } from '@/components/layout';
 import { URGENCY_TOKENS } from '@/lib/design-tokens';
 import {
+  PROJECT_STATUS_LABELS,
+  PROJECT_STATUS_BADGE_CLASSES,
+  type ProjectStatusKey,
+} from '@/lib/project-status';
+import {
   getUrgency,
   getStatusBucket,
   getStatusStyle,
@@ -44,6 +49,7 @@ interface ClientCardProps {
     action_name?: string;
     action_color?: string;
     kdrive_folder_id?: string;
+    projectStatuses?: ProjectStatusKey[];
   };
   onClick: () => void;
   onMouseEnter?: () => void;
@@ -114,6 +120,23 @@ export function ClientCard({ client, onClick, onMouseEnter }: ClientCardProps) {
           status={statusStyle}
           email={client.email}
           phone={client.phone}
+          extraInfo={
+            client.projectStatuses && client.projectStatuses.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {client.projectStatuses.map((s) => (
+                  <span
+                    key={s}
+                    className={cn(
+                      'inline-flex items-center px-2 py-0.5 rounded-badge border text-[10px] font-medium leading-none',
+                      PROJECT_STATUS_BADGE_CLASSES[s],
+                    )}
+                  >
+                    {PROJECT_STATUS_LABELS[s]}
+                  </span>
+                ))}
+              </div>
+            ) : undefined
+          }
           onClick={onClick}
           onMouseEnter={onMouseEnter}
           footerLeft={
