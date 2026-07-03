@@ -21,10 +21,12 @@ interface Project {
   date_restitution: string | null;
   project_clients?: Array<{
     clients: {
+      id: string;
       company: string;
       logo_url: string | null;
     };
   }>;
+
   tasks_total?: number;
   tasks_completed?: number;
 }
@@ -85,6 +87,7 @@ export async function fetchProjects(userId: string | null, role?: string | null)
         *,
         project_clients (
           clients (
+            id,
             company,
             logo_url
           )
@@ -106,6 +109,7 @@ export async function fetchProjects(userId: string | null, role?: string | null)
         *,
         project_clients (
           clients (
+            id,
             company,
             logo_url
           )
@@ -137,6 +141,7 @@ export async function fetchProjects(userId: string | null, role?: string | null)
           *,
           project_clients (
             clients (
+              id,
               company,
               logo_url
             )
@@ -168,6 +173,7 @@ async function fetchArchivedProjects(userId: string | null, role?: string | null
         *,
         project_clients (
           clients (
+            id,
             company,
             logo_url
           )
@@ -189,6 +195,7 @@ async function fetchArchivedProjects(userId: string | null, role?: string | null
         *,
         project_clients (
           clients (
+            id,
             company,
             logo_url
           )
@@ -220,6 +227,7 @@ async function fetchArchivedProjects(userId: string | null, role?: string | null
           *,
           project_clients (
             clients (
+              id,
               company,
               logo_url
             )

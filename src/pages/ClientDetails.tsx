@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   ArrowLeft, Loader2, FileText, Receipt, Users, FolderKanban, Trash2,
-  BarChart3, Briefcase, MoreHorizontal, User as UserIcon, Mail, Phone, Clock, Pencil,
+  BarChart3, Briefcase, MoreHorizontal, User as UserIcon, Mail, Phone, Clock, Pencil, CheckSquare,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -23,6 +23,8 @@ import { ClientProjectsTab } from '@/components/client-details/ClientProjectsTab
 import { ClientKDriveTab } from '@/components/client-details/ClientKDriveTab';
 import { ClientInvoicesTab } from '@/components/client-details/ClientInvoicesTab';
 import { ClientBoardTab } from '@/components/client-details/ClientBoardTab';
+import { ClientTasksTab } from '@/components/client-details/ClientTasksTab';
+import { EmbeddedProjectView } from '@/components/client-details/EmbeddedProjectView';
 import { CommercialTrackingTab } from '@/components/client-details/CommercialTrackingTab';
 import { ClientFollowupBanner } from '@/components/client-details/ClientFollowupBanner';
 import { ClientCommercialSidebar } from '@/components/client-details/ClientCommercialSidebar';
@@ -41,6 +43,7 @@ interface TabDef {
 export default function ClientDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { role } = useUserRole();
   const [client, setClient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -48,12 +51,56 @@ export default function ClientDetails() {
   const [projectsCount, setProjectsCount] = useState(0);
   const [kdriveFilesCount, setKdriveFilesCount] = useState(0);
   const [invoicesCount, setInvoicesCount] = useState(0);
+  const [tasksCount, setTasksCount] = useState(0);
   const [sectorName, setSectorName] = useState<string>('');
   const [statusName, setStatusName] = useState<string>('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [sourceName, setSourceName] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<string>('commercial');
   const [hubOwner, setHubOwner] = useState<{ first_name: string | null; last_name: string | null; avatar_url: string | null } | null>(null);
+
+  // Tab + embedded-project state driven by URL (?tab=... & project=... & subtab=...)
+  const rawTab = searchParams.get('tab') || 'commercial';
+  // Backwards compat: old links used ?tab=kdrive → new key is "documents"
+  const activeTab = rawTab === 'kdrive' ? 'documents' : rawTab;
+  const embeddedProjectId = searchParams.get('project');
+  const rawSubtab = searchParams.get('subtab');
+  const subtab: 'tasks' | 'notes' = rawSubtab === 'notes' ? 'notes' : 'tasks';
+
+  const setActiveTab = (value: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', value);
+    // Leaving the projects tab clears the embedded project context
+    if (value !== 'projects') {
+      next.delete('project');
+      next.delete('subtab');
+    }
+    setSearchParams(next, { replace: true });
+  };
+
+  const setSubtab = (v: 'tasks' | 'notes') => {
+    const next = new URLSearchParams(searchParams);
+    next.set('subtab', v);
+    setSearchParams(next, { replace: true });
+  };
+
+  const closeEmbeddedProject = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('project');
+    next.delete('subtab');
+    next.set('tab', 'projects');
+    setSearchParams(next, { replace: true });
+  };
+
+  // Rewrite legacy ?tab=kdrive to ?tab=documents (preserve other params)
+  useEffect(() => {
+    if (rawTab === 'kdrive') {
+      const next = new URLSearchParams(searchParams);
+      next.set('tab', 'documents');
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawTab]);
+
 
   useEffect(() => {
     if (id) {
@@ -102,6 +149,20 @@ export default function ClientDetails() {
       setMeetingNotesCount(notes || 0);
       const { count: projects } = await supabase.from('project_clients').select('*', { count: 'exact', head: true }).eq('client_id', id);
       setProjectsCount(projects || 0);
+
+      // Tasks across all projects of this client
+      const { data: pc } = await supabase.from('project_clients').select('project_id').eq('client_id', id);
+      const projectIds = (pc || []).map((r: any) => r.project_id).filter(Boolean);
+      if (projectIds.length > 0) {
+        const { count: tCount } = await supabase
+          .from('tasks')
+          .select('*', { count: 'exact', head: true })
+          .in('project_id', projectIds);
+        setTasksCount(tCount || 0);
+      } else {
+        setTasksCount(0);
+      }
+
       const { data: clientData } = await supabase.from('clients').select('kdrive_folder_id, kdrive_drive_id').eq('id', id).single();
       if (clientData?.kdrive_folder_id && clientData?.kdrive_drive_id) {
         try {
@@ -113,6 +174,7 @@ export default function ClientDetails() {
       }
     } catch (error) { console.error('Error fetching badge counts:', error); }
   };
+
 
   const fetchClientDetails = async () => {
     try {
@@ -156,20 +218,32 @@ export default function ClientDetails() {
   const hasBoardTab = hasBoardDomain && canManageBoard;
   const canDelete = role === 'admin' || role === 'team';
 
+  const projectsTabContent = embeddedProjectId ? (
+    <EmbeddedProjectView
+      projectId={embeddedProjectId}
+      subtab={subtab}
+      onSubtabChange={setSubtab}
+      onBack={closeEmbeddedProject}
+    />
+  ) : (
+    <ClientProjectsTab clientId={client.id} />
+  );
+
   const allTabs: TabDef[] = [
     ...(role === 'admin' ? [{
       value: 'commercial', label: 'Commercial', icon: <Briefcase className="h-4 w-4" />,
       content: <CommercialTrackingTab clientId={client.id} client={client} />,
     }] : []),
     { value: 'info', label: 'Infos', icon: <FileText className="h-4 w-4" />, content: <ClientInfoTab client={client} onUpdate={fetchClientDetails} /> },
-    
-    { value: 'projects', label: 'Projets', icon: <FolderKanban className="h-4 w-4" />, badge: projectsCount, content: <ClientProjectsTab clientId={client.id} /> },
-    { value: 'kdrive', label: 'Documents', icon: <FolderKanban className="h-4 w-4" />, badge: kdriveFilesCount, content: <ClientKDriveTab clientId={client.id} /> },
+    { value: 'projects', label: 'Projets', icon: <FolderKanban className="h-4 w-4" />, badge: projectsCount, content: projectsTabContent },
+    { value: 'tasks', label: 'Tâches', icon: <CheckSquare className="h-4 w-4" />, badge: tasksCount, content: <ClientTasksTab clientId={client.id} /> },
+    { value: 'documents', label: 'Documents', icon: <FolderKanban className="h-4 w-4" />, badge: kdriveFilesCount, content: <ClientKDriveTab clientId={client.id} /> },
     { value: 'invoices', label: 'Factures', icon: <Receipt className="h-4 w-4" />, badge: invoicesCount, content: <ClientInvoicesTab clientId={client.id} /> },
     ...(hasBoardTab ? [{ value: 'board', label: 'Board', icon: <BarChart3 className="h-4 w-4" />, content: <ClientBoardTab clientId={client.id} clientEmailDomain={clientEmailDomain} /> }] : []),
   ];
   const tabs = allTabs.filter(tab => role !== 'agency' || tab.value !== 'invoices');
   const currentTab = tabs.find(t => t.value === activeTab) ?? tabs[0];
+
 
   const handleDeleteClient = async () => {
     if (!id) return;

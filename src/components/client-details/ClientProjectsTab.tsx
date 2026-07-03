@@ -205,7 +205,7 @@ export function ClientProjectsTab({ clientId }: ClientProjectsTabProps) {
               <Card 
                 key={project.id} 
                 className="hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => navigate(`/project/${project.id}`)}
+                onClick={() => navigate(`/client/${clientId}?tab=projects&project=${project.id}&subtab=tasks`)}
               >
                 <CardHeader>
                   <div className="flex items-start justify-between gap-2">
