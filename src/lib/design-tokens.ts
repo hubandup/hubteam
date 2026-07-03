@@ -57,15 +57,15 @@ export type UrgencyKey = keyof typeof URGENCY_TOKENS;
 
 /** Logo box sizes used by EntityCard (Tailwind classes). */
 export const LOGO_SIZE = {
-  md: "w-14 h-14", // 56px — CRM / Agences / Targets
-  xl: "w-16 h-16", // 64px — Projects
+  md: "w-16 h-16", // 64px — CRM / Agences / Targets
+  xl: "w-20 h-20", // 80px — Projects
 } as const;
 
 /** Card internal spacing (Tailwind classes) — keep aligned with EntityCard. */
 export const CARD_SPACING = {
-  padX: "px-4",
-  padY: "pb-4",
-  padTop: "pt-3",
-  gapStack: "mb-3",
-  footerPad: "pt-3",
+  padX: "px-6",
+  padY: "pb-6",
+  padTop: "pt-5",
+  gapStack: "mb-4",
+  footerPad: "pt-4",
 } as const;
