@@ -253,9 +253,34 @@ export default function CRM() {
             )}
           </div>
           {!isMobile && !showArchived && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap items-center">
               <Button
-                variant={filterWithProjects ? "default" : "outline"}
+                variant={projectStatusFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setProjectStatusFilter('all')}
+              >
+                Tous
+              </Button>
+              {PROJECT_STATUS_ORDER.map((key) => (
+                <Button
+                  key={key}
+                  variant={projectStatusFilter === key ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setProjectStatusFilter(key)}
+                >
+                  {PROJECT_STATUS_LABELS[key]}
+                </Button>
+              ))}
+              <Button
+                variant={projectStatusFilter === 'none' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setProjectStatusFilter('none')}
+              >
+                Sans projet
+              </Button>
+              <div className="mx-1 h-5 w-px bg-border" aria-hidden />
+              <Button
+                variant={filterWithProjects ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setFilterWithProjects(!filterWithProjects)}
               >
