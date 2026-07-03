@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   ArrowLeft, Loader2, FileText, Receipt, Users, FolderKanban, Trash2,
-  BarChart3, Briefcase, MoreHorizontal, User as UserIcon, Mail, Phone, Clock, Pencil,
+  BarChart3, Briefcase, MoreHorizontal, User as UserIcon, Mail, Phone, Clock, Pencil, CheckSquare,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -23,6 +23,8 @@ import { ClientProjectsTab } from '@/components/client-details/ClientProjectsTab
 import { ClientKDriveTab } from '@/components/client-details/ClientKDriveTab';
 import { ClientInvoicesTab } from '@/components/client-details/ClientInvoicesTab';
 import { ClientBoardTab } from '@/components/client-details/ClientBoardTab';
+import { ClientTasksTab } from '@/components/client-details/ClientTasksTab';
+import { EmbeddedProjectView } from '@/components/client-details/EmbeddedProjectView';
 import { CommercialTrackingTab } from '@/components/client-details/CommercialTrackingTab';
 import { ClientFollowupBanner } from '@/components/client-details/ClientFollowupBanner';
 import { ClientCommercialSidebar } from '@/components/client-details/ClientCommercialSidebar';
@@ -41,6 +43,7 @@ interface TabDef {
 export default function ClientDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { role } = useUserRole();
   const [client, setClient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -48,12 +51,56 @@ export default function ClientDetails() {
   const [projectsCount, setProjectsCount] = useState(0);
   const [kdriveFilesCount, setKdriveFilesCount] = useState(0);
   const [invoicesCount, setInvoicesCount] = useState(0);
+  const [tasksCount, setTasksCount] = useState(0);
   const [sectorName, setSectorName] = useState<string>('');
   const [statusName, setStatusName] = useState<string>('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [sourceName, setSourceName] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<string>('commercial');
   const [hubOwner, setHubOwner] = useState<{ first_name: string | null; last_name: string | null; avatar_url: string | null } | null>(null);
+
+  // Tab + embedded-project state driven by URL (?tab=... & project=... & subtab=...)
+  const rawTab = searchParams.get('tab') || 'commercial';
+  // Backwards compat: old links used ?tab=kdrive → new key is "documents"
+  const activeTab = rawTab === 'kdrive' ? 'documents' : rawTab;
+  const embeddedProjectId = searchParams.get('project');
+  const rawSubtab = searchParams.get('subtab');
+  const subtab: 'tasks' | 'notes' = rawSubtab === 'notes' ? 'notes' : 'tasks';
+
+  const setActiveTab = (value: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', value);
+    // Leaving the projects tab clears the embedded project context
+    if (value !== 'projects') {
+      next.delete('project');
+      next.delete('subtab');
+    }
+    setSearchParams(next, { replace: true });
+  };
+
+  const setSubtab = (v: 'tasks' | 'notes') => {
+    const next = new URLSearchParams(searchParams);
+    next.set('subtab', v);
+    setSearchParams(next, { replace: true });
+  };
+
+  const closeEmbeddedProject = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('project');
+    next.delete('subtab');
+    next.set('tab', 'projects');
+    setSearchParams(next, { replace: true });
+  };
+
+  // Rewrite legacy ?tab=kdrive to ?tab=documents (preserve other params)
+  useEffect(() => {
+    if (rawTab === 'kdrive') {
+      const next = new URLSearchParams(searchParams);
+      next.set('tab', 'documents');
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawTab]);
+
 
   useEffect(() => {
     if (id) {
