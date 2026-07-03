@@ -101,22 +101,22 @@ export function EntityCard({
     >
       {alert && (
         <div
-          className="px-4 pt-3 pb-2 flex items-center gap-1.5 text-[11px] font-semibold font-roboto"
+          className="px-6 pt-5 pb-2 flex items-center gap-1.5 text-[12px] font-semibold font-display"
           style={{ color: alert.color }}
         >
-          <AlertCircle size={12} strokeWidth={2.5} />
+          <AlertCircle size={13} strokeWidth={2.5} />
           <span>{alert.label}</span>
         </div>
       )}
 
-      <div className={cn("px-4 pb-4", !alert && "pt-3")}>
+      <div className={cn("px-6 pb-6", !alert && "pt-5")}>
         {/* Header */}
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-2 mb-4">
+          <div className="flex items-center gap-4 min-w-0 flex-1">
             <div
               className={cn(
                 logoBox,
-                "shrink-0 border border-border bg-card p-1.5 flex items-center justify-center overflow-hidden rounded-card",
+                "shrink-0 border border-border bg-card p-2 flex items-center justify-center overflow-hidden rounded-card",
               )}
               style={
                 !logoUrl || logoError
@@ -134,7 +134,7 @@ export function EntityCard({
                 />
               ) : (
                 <span
-                  className="font-display font-bold text-base"
+                  className="font-display font-bold text-lg"
                   style={{ color: fallback.text }}
                 >
                   {fallback.initials}
@@ -145,7 +145,7 @@ export function EntityCard({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 min-w-0">
                 <div
-                  className="font-display font-bold text-sm leading-tight truncate text-foreground"
+                  className="font-display font-bold text-base leading-tight truncate text-foreground"
                   title={title}
                 >
                   {title}
@@ -153,7 +153,7 @@ export function EntityCard({
                 {logoTitleAdornment}
               </div>
               {subtitle && (
-                <div className="text-xs text-muted-foreground truncate mt-0.5 font-roboto">
+                <div className="text-sm text-muted-foreground truncate mt-1 font-display">
                   {subtitle}
                 </div>
               )}
@@ -168,10 +168,10 @@ export function EntityCard({
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-1 hover:bg-muted rounded-button"
+                    className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-1.5 hover:bg-muted rounded-button"
                     aria-label="Actions"
                   >
-                    <MoreHorizontal size={14} className="text-muted-foreground" />
+                    <MoreHorizontal size={16} className="text-muted-foreground" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">{actions}</DropdownMenuContent>
@@ -182,9 +182,9 @@ export function EntityCard({
 
         {/* Status pill */}
         {status && (
-          <div className="mb-3">
+          <div className="mb-4">
             <span
-              className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider font-roboto rounded-badge"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider font-display rounded-badge"
               style={{ background: status.bg, color: status.text }}
             >
               <span
@@ -198,16 +198,16 @@ export function EntityCard({
 
         {/* Contact infos */}
         {(email || phone || extraInfo) && (
-          <div className="space-y-1 text-xs text-muted-foreground mb-3 font-roboto">
+          <div className="space-y-1.5 text-sm text-muted-foreground mb-4 font-display">
             {email && (
               <div className="flex items-center gap-2">
-                <Mail size={11} className="text-muted-foreground shrink-0 opacity-70" />
+                <Mail size={13} className="text-muted-foreground shrink-0 opacity-70" />
                 <span className="truncate">{email}</span>
               </div>
             )}
             {phone && (
               <div className="flex items-center gap-2">
-                <Phone size={11} className="text-muted-foreground shrink-0 opacity-70" />
+                <Phone size={13} className="text-muted-foreground shrink-0 opacity-70" />
                 <span className="truncate">{phone}</span>
               </div>
             )}
@@ -216,7 +216,7 @@ export function EntityCard({
         )}
 
         {hasFooter && (
-          <div className="pt-3 border-t border-border flex items-center justify-between text-[11px] font-roboto gap-2">
+          <div className="pt-4 border-t border-border flex items-center justify-between text-[12px] font-display gap-2">
             <div className="flex items-center gap-1.5 min-w-0">{footerLeft}</div>
             {footerRight && (
               <div className="flex items-center gap-1 shrink-0">{footerRight}</div>
