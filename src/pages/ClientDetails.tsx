@@ -229,20 +229,53 @@ export default function ClientDetails() {
     <ClientProjectsTab clientId={client.id} />
   );
 
-  const allTabs: TabDef[] = [
-    ...(role === 'admin' ? [{
+  // Tab visibility is driven by the Permissions matrix (Settings → Permissions).
+  // A tab is only rendered when the user role has at least the "read" permission
+  // on the corresponding module. Factures reste réservé à l'admin.
+  const rawTabs: (TabDef & { visible: boolean })[] = [
+    {
       value: 'commercial', label: 'Commercial', icon: <Briefcase className="h-4 w-4" />,
       content: <CommercialTrackingTab clientId={client.id} client={client} />,
-    }] : []),
-    { value: 'info', label: 'Infos', icon: <FileText className="h-4 w-4" />, content: <ClientInfoTab client={client} onUpdate={fetchClientDetails} /> },
-    { value: 'projects', label: 'Projets', icon: <FolderKanban className="h-4 w-4" />, badge: projectsCount, content: projectsTabContent },
-    { value: 'tasks', label: 'Tâches', icon: <CheckSquare className="h-4 w-4" />, badge: tasksCount, content: <ClientTasksTab clientId={client.id} /> },
-    { value: 'documents', label: 'Documents', icon: <FolderKanban className="h-4 w-4" />, badge: kdriveFilesCount, content: <ClientKDriveTab clientId={client.id} /> },
-    { value: 'invoices', label: 'Factures', icon: <Receipt className="h-4 w-4" />, badge: invoicesCount, content: <ClientInvoicesTab clientId={client.id} /> },
-    ...(hasBoardTab ? [{ value: 'board', label: 'Board', icon: <BarChart3 className="h-4 w-4" />, content: <ClientBoardTab clientId={client.id} clientEmailDomain={clientEmailDomain} /> }] : []),
+      // Commercial data is admin-only (contient scoring, excuses, suivi).
+      visible: role === 'admin',
+    },
+    {
+      value: 'info', label: 'Infos', icon: <FileText className="h-4 w-4" />,
+      content: <ClientInfoTab client={client} onUpdate={fetchClientDetails} />,
+      visible: canRead('crm'),
+    },
+    {
+      value: 'projects', label: 'Projets', icon: <FolderKanban className="h-4 w-4" />,
+      badge: projectsCount, content: projectsTabContent,
+      visible: canRead('projects'),
+    },
+    {
+      value: 'tasks', label: 'Tâches', icon: <CheckSquare className="h-4 w-4" />,
+      badge: tasksCount, content: <ClientTasksTab clientId={client.id} />,
+      visible: canRead('tasks'),
+    },
+    {
+      value: 'documents', label: 'Documents', icon: <FolderKanban className="h-4 w-4" />,
+      badge: kdriveFilesCount, content: <ClientKDriveTab clientId={client.id} />,
+      // Pas de module dédié Documents dans la matrice → on hérite du droit CRM
+      // (l'accès physique aux fichiers est de toute façon protégé côté kDrive).
+      visible: canRead('crm'),
+    },
+    {
+      value: 'invoices', label: 'Factures', icon: <Receipt className="h-4 w-4" />,
+      badge: invoicesCount, content: <ClientInvoicesTab clientId={client.id} />,
+      // Factures : administrateur uniquement, conformément à la règle métier.
+      visible: role === 'admin',
+    },
+    {
+      value: 'board', label: 'Board', icon: <BarChart3 className="h-4 w-4" />,
+      content: <ClientBoardTab clientId={client.id} clientEmailDomain={clientEmailDomain} />,
+      visible: hasBoardTab,
+    },
   ];
-  const tabs = allTabs.filter(tab => role !== 'agency' || tab.value !== 'invoices');
+  const tabs: TabDef[] = rawTabs.filter(t => t.visible).map(({ visible: _v, ...t }) => t);
   const currentTab = tabs.find(t => t.value === activeTab) ?? tabs[0];
+
 
 
   const handleDeleteClient = async () => {
