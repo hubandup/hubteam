@@ -214,7 +214,7 @@ async function loadTargets(supabase: any): Promise<TargetData[]> {
 
 // ----- AI generation -----
 async function generateRelanceIdeas(target: TargetData, hubandupContext: string): Promise<string[]> {
-  if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY missing');
+  if (!ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY missing');
 
   const notesBlock = target.notes.length
     ? target.notes.map((n, i) => `CR ${i + 1}:\n${n.slice(0, 2000)}`).join('\n\n')
