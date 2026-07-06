@@ -289,7 +289,6 @@ function ClientSummaryCard({
         className="w-full min-w-0 max-w-full bg-white p-3 text-left active:bg-black/[0.02] transition-colors overflow-hidden"
         style={{ border: `1px solid ${CARD_BORDER}`, borderRadius: 16 }}
       >
-        {/* Row 1 */}
         <div className="flex items-center gap-3 min-h-[44px]">
           <span
             className="h-10 w-10 rounded-full flex items-center justify-center shrink-0 text-[12px] font-bold"
@@ -322,34 +321,11 @@ function ClientSummaryCard({
           </button>
           <ChevronRight className="h-4 w-4 shrink-0" style={{ color: MUTED }} />
         </div>
-
-        {/* Row 2 */}
-        <div
-          className="mt-3 pt-3 flex items-center justify-between gap-2"
-          style={{ borderTop: `1px solid ${CARD_BORDER}` }}
-        >
-          <span className="flex items-center gap-2 min-w-0">
-            <span
-              className="h-2 w-2 rounded-full shrink-0"
-              style={{ backgroundColor: status.color }}
-            />
-            <span className="text-[12.5px] font-medium truncate" style={{ color: status.color }}>
-              {status.label}
-            </span>
-          </span>
-          {meta && (
-            <span
-              className="text-[12.5px] font-semibold shrink-0"
-              style={{ color: meta.color }}
-            >
-              {meta.text}
-            </span>
-          )}
-        </div>
       </button>
     </li>
   );
 }
+
 
 /* -------------------- Detail sheet content -------------------- */
 
