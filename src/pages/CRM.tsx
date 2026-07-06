@@ -21,7 +21,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { prefetchClientDetails } from '@/hooks/usePrefetchAppData';
 import { useUserRole } from '@/hooks/useUserRole';
 import { PageLoader } from '@/components/PageLoader';
-import { PageHeader, ViewToggle } from '@/components/layout';
+import { PageHeader } from '@/components/layout';
+import { PillButton, PillCounter, ToolbarSeparator } from '@/components/ui/pill-button';
+import { PillSegmented } from '@/components/ui/pill-segmented';
 import {
   PROJECT_STATUS_LABELS,
   PROJECT_STATUS_ORDER,
