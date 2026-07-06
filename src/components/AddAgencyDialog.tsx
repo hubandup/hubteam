@@ -74,6 +74,7 @@ export function AddAgencyDialog({ onAgencyAdded, open: openProp, onOpenChange, h
     setOpen(isOpen);
   };
 
+
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
