@@ -1,5 +1,10 @@
 import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, HelpCircle, Euro, ArrowUpFromLine, CookingPot, Flame, Megaphone, Star, Receipt } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { NavLink } from './NavLink';
+
+
+
+
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -33,6 +38,10 @@ export function Sidebar() {
   const [clientId, setClientId] = useState<string | null>(null);
   const [smashOpen, setSmashOpen] = useState(false);
   const { t } = useTranslation();
+  const location = useLocation();
+
+
+
   const normalizedEmail = (user?.email ?? '').trim().toLowerCase();
   const hasAccountingAccess = ['compta@hubandup.com', 'charles@hubandup.com'].includes(normalizedEmail);
 
@@ -84,7 +93,19 @@ export function Sidebar() {
 
   const showSettings = role === 'admin' || role === 'team' || role === 'agency';
 
+  const isActiveRoute = (item: typeof mainItems[number]) => {
+    const pathname = location.pathname;
+    if (pathname === item.url) return true;
+    if (item.matchParent && item.url !== '/' && pathname.startsWith(item.url)) return true;
+    const activePatterns = item.url === '/crm' ? ['/client'] : item.url === '/projects' ? ['/project'] : item.url === '/agencies' ? ['/agency'] : [];
+    if (activePatterns.some(p => pathname.startsWith(p))) return true;
+    return false;
+  };
+
   return (
+
+
+
     <ShadcnSidebar className="border-r border-sidebar-border/20">
       <SidebarHeader className="border-b border-sidebar-border/20 p-5">
         <div className="flex items-center justify-center">
@@ -104,13 +125,13 @@ export function Sidebar() {
                 .map((item) =>
                   ((item as { hasDedicatedAccess?: boolean }).hasDedicatedAccess || canRead(item.module)) ? (
                     <SidebarMenuItem key={item.url}>
-                      <SidebarMenuButton asChild>
-                        <NavLink 
+                      <SidebarMenuButton asChild notch={isActiveRoute(item)}>
+                        <NavLink
                           to={item.url} 
                           end={item.url === '/' || item.url === '/dashboard'} 
                           matchParent={item.matchParent}
                           activePatterns={item.url === '/crm' ? ['/client'] : item.url === '/projects' ? ['/project'] : item.url === '/agencies' ? ['/agency'] : []}
-                         className="text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground transition-all duration-150 rounded-lg text-[13px]" 
+                          className="text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground transition-all duration-150 rounded-lg text-[13px]" 
                           activeClassName="bg-sidebar-primary text-sidebar-primary-foreground font-medium"
                         >
                           <item.icon className="mr-2.5 h-4 w-4" />
@@ -138,8 +159,8 @@ export function Sidebar() {
               </SidebarMenuItem>
               {role === 'admin' && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
+                  <SidebarMenuButton asChild notch={location.pathname === '/announcements'}>
+                    <NavLink
                       to="/announcements" 
                       className="text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground transition-all duration-150 rounded-lg text-[13px]" 
                       activeClassName="bg-sidebar-primary text-sidebar-primary-foreground font-medium"
@@ -152,8 +173,8 @@ export function Sidebar() {
               )}
               {showSettings && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
+                  <SidebarMenuButton asChild notch={location.pathname === '/settings'}>
+                    <NavLink
                       to="/settings" 
                       className="text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground transition-all duration-150 rounded-lg text-[13px]" 
                       activeClassName="bg-sidebar-primary text-sidebar-primary-foreground font-medium"
