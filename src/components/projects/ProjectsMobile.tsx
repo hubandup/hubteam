@@ -9,7 +9,7 @@ import { ProtectedAction } from '@/components/ProtectedAction';
 import { useProjects } from '@/hooks/useProjects';
 import { useQueryClient } from '@tanstack/react-query';
 import { buildProjectNavPath } from '@/lib/project-nav';
-import { getLogoFallback } from '@/components/targets/targetUtils';
+import { LogoAvatar } from '@/components/targets/LogoAvatar';
 
 const NAVY = '#0C1320';
 const LIME = '#DDF247';
@@ -222,7 +222,8 @@ export function ProjectsMobile({ addProjectOpen, onAddProjectOpenChange }: Props
 function ProjectSummaryCard({ project, onOpen }: { project: any; onOpen: () => void }) {
   const client = project.project_clients?.[0]?.clients;
   const clientName = client?.company || 'Sans client';
-  const fallback = getLogoFallback(clientName);
+  const logoUrl = project.logo_url || client?.logo_url || null;
+  const logoName = clientName || project.name || 'Projet';
   const status = STATUS_META[project.status] || STATUS_META.active;
 
   const endDate = project.date_restitution || project.end_date;
@@ -241,12 +242,7 @@ function ProjectSummaryCard({ project, onOpen }: { project: any; onOpen: () => v
       >
         {/* Row 1: logo + title + badge + chevron */}
         <div className="flex items-center gap-3">
-          <span
-            className="h-10 w-10 rounded-full flex items-center justify-center shrink-0 text-[12px] font-bold"
-            style={{ backgroundColor: fallback.bg, color: fallback.text }}
-          >
-            {fallback.initials}
-          </span>
+          <LogoAvatar url={logoUrl} name={logoName} size={40} />
           <div className="flex-1 min-w-0 flex items-center gap-2">
             <p className="text-[14.5px] font-semibold truncate min-w-0" style={{ color: TITLE }}>
               {project.name}

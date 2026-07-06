@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { MobileBottomSheet } from '@/components/MobileBottomSheet';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { AddAgencyDialog } from '@/components/AddAgencyDialog';
-import { getLogoFallback } from '@/components/targets/targetUtils';
+import { LogoAvatar } from '@/components/targets/LogoAvatar';
 
 const NAVY = '#0C1320';
 const LIME = '#DDF247';
@@ -184,7 +184,6 @@ export function AgenciesMobile({ agencies, onAgencyAdded, addAgencyOpen, onAddAg
 
 function AgencySummaryCard({ agency, onOpen }: { agency: Agency; onOpen: () => void }) {
   const contact = getPrimaryContact(agency);
-  const fallback = getLogoFallback(agency.name || '?');
 
   return (
     <li className="w-full min-w-0">
@@ -196,12 +195,7 @@ function AgencySummaryCard({ agency, onOpen }: { agency: Agency; onOpen: () => v
       >
         {/* Row 1: logo + name + badge + chevron */}
         <div className="flex items-center gap-3">
-          <span
-            className="h-10 w-10 rounded-full flex items-center justify-center shrink-0 text-[12px] font-bold"
-            style={{ backgroundColor: fallback.bg, color: fallback.text }}
-          >
-            {fallback.initials}
-          </span>
+          <LogoAvatar url={agency.logo_url} name={agency.name || '?'} size={40} />
           <div className="flex-1 min-w-0 flex items-center gap-2">
             <p className="text-[14.5px] font-semibold truncate min-w-0" style={{ color: TITLE }}>
               {agency.name}
@@ -243,7 +237,6 @@ function AgencySummaryCard({ agency, onOpen }: { agency: Agency; onOpen: () => v
 
 function AgencyDetailContent({ agency, onOpenFull }: { agency: Agency; onOpenFull: () => void }) {
   const contact = getPrimaryContact(agency);
-  const fallback = getLogoFallback(agency.name || '?');
 
   const rows: Array<{ icon: any; label: string; value: string; href?: string }> = [];
   if (contact.email) {
@@ -257,12 +250,12 @@ function AgencyDetailContent({ agency, onOpenFull }: { agency: Agency; onOpenFul
     <div className="pt-2 pb-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <span
-          className="h-16 w-16 rounded-2xl flex items-center justify-center shrink-0 text-[18px] font-bold"
-          style={{ backgroundColor: fallback.bg, color: fallback.text }}
-        >
-          {fallback.initials}
-        </span>
+        <LogoAvatar
+          url={agency.logo_url}
+          name={agency.name || '?'}
+          size={64}
+          className="rounded-2xl"
+        />
         <div className="min-w-0 flex-1">
           <h2
             className="text-[22px] leading-tight truncate"
