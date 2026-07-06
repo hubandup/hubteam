@@ -37,9 +37,11 @@ interface Agency {
 
 interface Props {
   agencies: Agency[];
+  onAgencyAdded: () => void;
   addAgencyOpen: boolean;
   onAddAgencyOpenChange: (open: boolean) => void;
 }
+
 
 function getPrimaryContact(agency: Agency): { name: string; email?: string; phone?: string } {
   const contacts = agency.agency_contacts || [];
