@@ -314,9 +314,11 @@ export default function CRM() {
                     <Plus size={18} strokeWidth={1.8} />
                     Nouveau client
                   </button>
-                </ProtectedAction>
+                  </ProtectedAction>
+                </div>
               </div>
             )
+
           }
         />
       </div>
