@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
  *   action={{ label: "Ajouter", onClick: openModal }}
  * />
  */
-export interface EmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface EmptyStateProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
   icon?: React.ReactNode;
   title: React.ReactNode;
   description?: React.ReactNode;
