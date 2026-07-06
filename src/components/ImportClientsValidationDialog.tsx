@@ -65,8 +65,10 @@ interface ParsedClient {
   selected: boolean;
 }
 
-export function ImportClientsValidationDialog({ onClientsImported }: ImportClientsValidationDialogProps) {
-  const [open, setOpen] = useState(false);
+export function ImportClientsValidationDialog({ onClientsImported, open: openProp, onOpenChange, hideTrigger }: ImportClientsValidationDialogProps) {
+  const [openState, setOpenState] = useState(false);
+  const open = openProp !== undefined ? openProp : openState;
+  const setOpen = (v: boolean) => { onOpenChange ? onOpenChange(v) : setOpenState(v); };
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [parsedClients, setParsedClients] = useState<ParsedClient[]>([]);
