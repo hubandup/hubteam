@@ -9,7 +9,7 @@ import { ProtectedAction } from '@/components/ProtectedAction';
 import { useProjects } from '@/hooks/useProjects';
 import { useQueryClient } from '@tanstack/react-query';
 import { buildProjectNavPath } from '@/lib/project-nav';
-import { getLogoFallback } from '@/components/targets/targetUtils';
+import { LogoAvatar } from '@/components/targets/LogoAvatar';
 
 const NAVY = '#0C1320';
 const LIME = '#DDF247';
