@@ -30,6 +30,9 @@ import {
   type ClientProjectFilterKey,
   type ProjectStatusKey,
 } from '@/lib/project-status';
+import { CRMMobile } from '@/components/crm/CRMMobile';
+
+
 
 
 export default function CRM() {
