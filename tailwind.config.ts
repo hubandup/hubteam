@@ -71,6 +71,34 @@ export default {
           urgent: "hsl(var(--status-urgent))",
           "urgent-foreground": "hsl(var(--status-urgent-foreground))",
         },
+        // Hub+Up Design System tokens
+        ink: {
+          DEFAULT: "hsl(var(--ink))",
+          foreground: "hsl(var(--ink-foreground))",
+        },
+        navy: {
+          DEFAULT: "hsl(var(--navy))",
+          hover: "hsl(var(--navy-hover))",
+          foreground: "hsl(var(--navy-foreground))",
+        },
+        lime: {
+          DEFAULT: "hsl(var(--lime))",
+          foreground: "hsl(var(--lime-foreground))",
+        },
+        label: "hsl(var(--label))",
+        field: "hsl(var(--field-border))",
+        "app-bg": "hsl(var(--app-bg))",
+        pill: {
+          success: "hsl(var(--status-success))",
+          "success-bg": "hsl(var(--status-success-bg))",
+          warning: "hsl(var(--status-warning-fg))",
+          "warning-bg": "hsl(var(--status-warning-bg))",
+          danger: "hsl(var(--status-danger))",
+          "danger-bg": "hsl(var(--status-danger-bg))",
+          info: "hsl(var(--status-info))",
+          "info-bg": "hsl(var(--status-info-bg))",
+        },
+
       },
       fontFamily: {
         'heading': ['var(--font-heading)', 'sans-serif'],
