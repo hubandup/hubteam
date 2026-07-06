@@ -298,7 +298,16 @@ Deno.serve(async (req) => {
       }
       return { owner: null, email: '', url: '' };
     };
-    const calendly = await pickCalendlyAttribution();
+    const defaultCalendly = await pickCalendlyAttribution();
+    // Override éventuel fourni par l'utilisateur dans la modale
+    const overrideUrl = typeof body.calendly_url_override === 'string' ? body.calendly_url_override.trim() : '';
+    const calendly = overrideUrl
+      ? (overrideUrl === defaultCalendly.url
+          ? defaultCalendly
+          : { owner: null as 'charles'|'amandine'|null, email: '', url: overrideUrl })
+      : (body.calendly_url_override === null || body.calendly_url_override === ''
+          ? { owner: null as 'charles'|'amandine'|null, email: '', url: '' }
+          : defaultCalendly);
 
 
     const tone = body.tone || 'friendly';
