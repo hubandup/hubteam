@@ -346,10 +346,11 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                 >
                   <span
                     className="inline-flex items-center justify-center flex-shrink-0"
-                    style={{ width: 32, height: 32, border: '1px solid #e5e5e5', fontSize: 16 }}
+                    style={{ width: 36, height: 36, background: 'hsl(var(--muted))', borderRadius: 10, fontSize: 16 }}
                   >
-                    {isProject ? <FolderKanban size={14} /> : TYPE_EMOJI(plainContent)}
+                    {isProject ? <FolderKanban size={16} className="text-muted-foreground" /> : TYPE_EMOJI(plainContent)}
                   </span>
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold" style={{ fontSize: 14, color: 'hsl(var(--brand-ink))' }}>
