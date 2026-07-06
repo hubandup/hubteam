@@ -222,12 +222,14 @@ export function AddProjectDialog({ onProjectAdded, open: openProp, onOpenChange,
       if (!nextOpen && addClientOpen) return;
       setOpen(nextOpen);
     }}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouveau projet
-        </Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Nouveau projet
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[600px]" onInteractOutside={(e) => { if (addClientOpen) e.preventDefault(); }}>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
