@@ -49,6 +49,7 @@ interface RecentActivity {
 }
 
 export default function Home() {
+  const isMobile = useIsMobile();
   const [userName, setUserName] = useState('');
   const [activeProjects, setActiveProjects] = useState<ActiveProject[]>([]);
   const [upcomingDeadlines, setUpcomingDeadlines] = useState<UpcomingDeadline[]>([]);
@@ -62,10 +63,11 @@ export default function Home() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
+    if (user && !isMobile) {
       fetchHomeData();
     }
-  }, [user]);
+  }, [user, isMobile]);
+
 
   const fetchHomeData = async () => {
     if (!user) return;
