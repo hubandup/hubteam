@@ -91,10 +91,14 @@ export function ExportButton({ data, columns, filename, label = 'Exporter', rend
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" disabled={isExporting} className="gap-2">
-          <Download className="h-4 w-4" />
-          {label}
-        </Button>
+        {renderTrigger ? (
+          renderTrigger({ isExporting })
+        ) : (
+          <Button variant="outline" disabled={isExporting} className="gap-2">
+            <Download className="h-4 w-4" />
+            {label}
+          </Button>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={exportCSV}>
