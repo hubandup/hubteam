@@ -18,6 +18,11 @@ import { SkipToContent } from './common/SkipToContent';
 import { ArrowUpFromLine, Search } from 'lucide-react';
 import { Button } from './ui/button';
 import { IconButton } from './ui/icon-button';
+import { useAuth } from '@/hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useNavigate } from 'react-router-dom';
 
 import logo from '@/assets/logo-hubandup.svg';
 import { usePrefetchAppData } from '@/hooks/usePrefetchAppData';
@@ -26,52 +31,92 @@ interface LayoutProps {
   children: ReactNode;
 }
 
+const MOBILE_BG = '#F4F4F3';
+const MOBILE_NAVY = '#0C1320';
+
+function MobileAvatar() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+  const initials = profile
+    ? `${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}`.toUpperCase()
+    : (user?.email?.[0]?.toUpperCase() || 'U');
+  return (
+    <button
+      type="button"
+      onClick={() => navigate('/settings')}
+      aria-label="Mon profil"
+      className="h-9 w-9 rounded-full overflow-hidden flex items-center justify-center min-w-[44px] min-h-[44px]"
+    >
+      <Avatar className="h-9 w-9">
+        <AvatarImage src={profile?.avatar_url || undefined} alt={initials} className="object-cover" />
+        <AvatarFallback style={{ backgroundColor: '#DDF247', color: MOBILE_NAVY }} className="text-[12px] font-bold">
+          {initials || 'CB'}
+        </AvatarFallback>
+      </Avatar>
+    </button>
+  );
+}
+
 export function Layout({ children }: LayoutProps) {
   const isMobile = useIsMobile();
   const { isNative } = useCapacitor();
   const [smashOpen, setSmashOpen] = useState(false);
-  // Précharge en arrière-plan les données des pages clés (CRM, Projets, Tâches)
   usePrefetchAppData();
 
-  // Sur mobile/PWA, layout simplifié sans sidebar
+  // Mobile shell (<768px) or native app — no sidebar, bottom nav, safe-areas
   if (isMobile || isNative) {
     return (
-      <div className="min-h-screen flex flex-col w-full bg-sidebar">
+      <div className="min-h-screen flex flex-col w-full" style={{ backgroundColor: MOBILE_NAVY }}>
         <SkipToContent />
         <OfflineBanner />
-        {/* Header mobile simplifié - fond continu avec la status bar */}
-        <header className="sticky top-0 z-50 bg-sidebar px-4 pt-[env(safe-area-inset-top)] pb-3 flex items-center justify-between">
-          <img src={logo} alt="Hub & Up" className="h-8 [filter:brightness(0)_invert(1)]" />
-          <div className="flex items-center gap-1 [&_button]:text-background [&_svg]:text-background">
+        {/* Header mobile compact — logo left, actions right */}
+        <header
+          className="sticky top-0 z-40 flex items-center justify-between px-3 pb-2"
+          style={{
+            backgroundColor: MOBILE_NAVY,
+            paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
+          }}
+        >
+          <img src={logo} alt="Hub & Up" className="h-7 [filter:brightness(0)_invert(1)]" />
+          <div className="flex items-center gap-1 [&_button]:text-white [&_svg]:text-white">
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setSmashOpen(true)}
-              className="h-9 w-9"
-              aria-label="Smash"
+              onClick={() => {
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
+              }}
+              className="h-11 w-11 min-w-[44px] min-h-[44px]"
+              aria-label="Rechercher"
             >
-              <ArrowUpFromLine className="h-5 w-5" />
+              <Search className="h-5 w-5" />
             </Button>
-            <LanguageSelector />
-            <ThemeToggle />
             <NotificationBell />
+            <MobileAvatar />
           </div>
         </header>
-        
-        {/* Annonces */}
+
         <AnnouncementBanner />
-        
-        {/* Contenu principal */}
-        <main id="main-content" className="flex-1 overflow-auto bg-background rounded-t-2xl transition-opacity duration-150">
-          <div className="px-4 py-4 pb-24">
+
+        <main
+          id="main-content"
+          className="flex-1 overflow-auto rounded-t-[22px] transition-opacity duration-150"
+          style={{ backgroundColor: MOBILE_BG }}
+        >
+          <div className="px-4 py-4 pb-28">
             {children}
           </div>
         </main>
-        
-        {/* Navigation bas */}
+
         <MobileBottomNav />
-        
-        {/* Bannière d'installation PWA */}
         <PWAInstallBanner />
 
         <SmashDialog open={smashOpen} onOpenChange={setSmashOpen} />
@@ -79,6 +124,7 @@ export function Layout({ children }: LayoutProps) {
       </div>
     );
   }
+
 
   // Version desktop avec Sidebar
   return (
