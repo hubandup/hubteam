@@ -359,19 +359,20 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                       {n.is_private && (
                         <span
                           className="inline-flex items-center gap-1 text-foreground"
-                          style={{ background: '#f3f4f6', padding: '2px 6px', fontSize: 10, fontWeight: 600 }}
+                          style={{ background: 'hsl(var(--muted))', padding: '3px 10px', fontSize: 10, fontWeight: 600, borderRadius: 999 }}
                         >
                           <Lock size={10} /> Privé
                         </span>
                       )}
                       {isProject && (
                         <span
-                          className="inline-flex items-center gap-1 text-foreground"
-                          style={{ background: 'hsl(var(--brand-yellow))', padding: '2px 6px', fontSize: 10, fontWeight: 600 }}
+                          className="inline-flex items-center gap-1"
+                          style={{ background: 'hsl(var(--brand-yellow))', color: 'hsl(var(--brand-ink))', padding: '3px 10px', fontSize: 10, fontWeight: 600, borderRadius: 999 }}
                         >
                           <FolderKanban size={10} /> Projet
                         </span>
                       )}
+
                     </div>
                     <p className="text-muted-foreground" style={{ fontSize: 12 }}>
                       {authorName}
