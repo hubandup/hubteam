@@ -216,24 +216,29 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
         ) : items.map((m: any) => {
           const hasDate = !!m.meeting_date;
           return (
-            <div key={m.id} className="flex items-center gap-2 text-xs py-1">
-              <span className="font-semibold text-foreground shrink-0">
-                {m._displayLabel}
-              </span>
-              <span
-                className={`truncate flex-1 ${hasDate ? 'text-foreground' : 'text-muted-foreground italic'}`}
+            <div key={m.id} className="group flex items-center gap-2 py-1">
+              <button
+                type="button"
+                onClick={() => setEditingId(m.id)}
+                className="flex-1 min-w-0 text-left"
+                title="Modifier"
               >
-                {hasDate
-                  ? format(new Date(m.meeting_date), 'd MMM yyyy', { locale: fr })
-                  : 'Date à définir'}
-              </span>
+                <div className="font-semibold text-foreground truncate" style={{ fontSize: 13 }}>
+                  {m._displayLabel}
+                </div>
+                <div className={`truncate ${hasDate ? 'text-muted-foreground' : 'text-muted-foreground italic'}`} style={{ fontSize: 12 }}>
+                  {hasDate
+                    ? format(new Date(m.meeting_date), 'd MMM yyyy', { locale: fr })
+                    : 'Date à définir'}
+                </div>
+              </button>
               <span
-                className={`shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 border ${
+                className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 border ${
                   hasDate
                     ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                     : 'border-border bg-muted text-muted-foreground'
                 }`}
-                style={{ fontSize: 9, lineHeight: 1, letterSpacing: '0.02em' }}
+                style={{ fontSize: 10, lineHeight: 1.4, letterSpacing: '0.01em', borderRadius: 999 }}
                 title={hasDate ? 'Date renseignée' : 'Date à définir'}
               >
                 <span
@@ -241,31 +246,11 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
                 />
                 {hasDate ? 'renseignée' : 'à définir'}
               </span>
-              <button
-                type="button"
-                onClick={() => setEditingId(m.id)}
-                className="shrink-0 text-muted-foreground hover:text-foreground"
-                title="Modifier"
-                aria-label="Modifier"
-              >
-                <Edit size={12} />
-              </button>
-              {hasDate && (
-                <button
-                  type="button"
-                  onClick={() => exportICS(m, m._displayLabel)}
-                  className="shrink-0 text-muted-foreground hover:text-foreground"
-                  title="Télécharger .ics"
-                  aria-label="Télécharger .ics"
-                >
-                  <Download size={12} />
-                </button>
-              )}
               {m._isOptional && (
                 <button
                   type="button"
                   onClick={() => setConfirmDeleteId(m.id)}
-                  className="shrink-0 text-muted-foreground hover:text-red-500"
+                  className="shrink-0 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
                   title="Supprimer"
                   aria-label="Supprimer"
                 >
@@ -275,6 +260,7 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
             </div>
           );
         })}
+
       </div>
 
       {/* Edit modal */}
