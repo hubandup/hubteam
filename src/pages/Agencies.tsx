@@ -2,8 +2,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { AgencyCard } from '@/components/AgencyCard';
 import { AddAgencyDialog } from '@/components/AddAgencyDialog';
+import { AgenciesMobile } from '@/components/agencies/AgenciesMobile';
 import { toast } from 'sonner';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -16,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PageLoader } from '@/components/PageLoader';
 import { useSilentTagsReconciliation } from '@/hooks/useSilentTagsReconciliation';
 import { PageHeader } from '@/components/layout';
+
 
 export default function Agencies() {
   const navigate = useNavigate();
