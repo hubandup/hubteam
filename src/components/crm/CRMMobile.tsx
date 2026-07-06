@@ -22,7 +22,9 @@ import { prefetchClientDetails } from '@/hooks/usePrefetchAppData';
 import { AddClientDialog } from '@/components/AddClientDialog';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { MobileBottomSheet } from '@/components/MobileBottomSheet';
+import { LogoAvatar } from '@/components/targets/LogoAvatar';
 import { getUrgency, getStatusBucket, getLogoFallback, formatCa, formatShortFrDate } from '@/components/targets/targetUtils';
+
 import {
   PROJECT_STATUS_LABELS,
   type ClientProjectFilterKey,
