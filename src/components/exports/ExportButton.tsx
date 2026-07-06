@@ -17,9 +17,10 @@ interface ExportButtonProps {
   columns: ExportColumn[];
   filename: string;
   label?: string;
+  renderTrigger?: (opts: { isExporting: boolean }) => React.ReactNode;
 }
 
-export function ExportButton({ data, columns, filename, label = 'Exporter' }: ExportButtonProps) {
+export function ExportButton({ data, columns, filename, label = 'Exporter', renderTrigger }: ExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
 
   const formatData = () => {
@@ -90,10 +91,14 @@ export function ExportButton({ data, columns, filename, label = 'Exporter' }: Ex
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" disabled={isExporting} className="gap-2">
-          <Download className="h-4 w-4" />
-          {label}
-        </Button>
+        {renderTrigger ? (
+          renderTrigger({ isExporting })
+        ) : (
+          <Button variant="outline" disabled={isExporting} className="gap-2">
+            <Download className="h-4 w-4" />
+            {label}
+          </Button>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={exportCSV}>

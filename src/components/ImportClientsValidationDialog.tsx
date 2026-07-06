@@ -33,6 +33,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 interface ImportClientsValidationDialogProps {
   onClientsImported: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }
 
 type ImportAction = 'skip' | 'update' | 'import';
@@ -62,8 +65,10 @@ interface ParsedClient {
   selected: boolean;
 }
 
-export function ImportClientsValidationDialog({ onClientsImported }: ImportClientsValidationDialogProps) {
-  const [open, setOpen] = useState(false);
+export function ImportClientsValidationDialog({ onClientsImported, open: openProp, onOpenChange, hideTrigger }: ImportClientsValidationDialogProps) {
+  const [openState, setOpenState] = useState(false);
+  const open = openProp !== undefined ? openProp : openState;
+  const setOpen = (v: boolean) => { onOpenChange ? onOpenChange(v) : setOpenState(v); };
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [parsedClients, setParsedClients] = useState<ParsedClient[]>([]);
@@ -373,12 +378,14 @@ export function ImportClientsValidationDialog({ onClientsImported }: ImportClien
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <FileSpreadsheet className="h-4 w-4 mr-2" />
-          Importer
-        </Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button variant="outline">
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            Importer
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Import de clients avec validation</DialogTitle>
