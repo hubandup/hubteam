@@ -2,8 +2,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { AgencyCard } from '@/components/AgencyCard';
 import { AddAgencyDialog } from '@/components/AddAgencyDialog';
+import { AgenciesMobile } from '@/components/agencies/AgenciesMobile';
 import { toast } from 'sonner';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -17,16 +19,20 @@ import { PageLoader } from '@/components/PageLoader';
 import { useSilentTagsReconciliation } from '@/hooks/useSilentTagsReconciliation';
 import { PageHeader } from '@/components/layout';
 
+
 export default function Agencies() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { canRead, loading: permissionsLoading } = usePermissions();
+  const isMobile = useIsMobile();
   useSilentTagsReconciliation();
   const [agencies, setAgencies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagSearchOpen, setTagSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [addAgencyOpen, setAddAgencyOpen] = useState(false);
+
 
   useEffect(() => {
     fetchAgencies();
@@ -47,8 +53,9 @@ export default function Agencies() {
         (agenciesData || []).map(async (agency) => {
           const { data: contacts } = await supabase
             .from('agency_contacts')
-            .select('id, first_name, last_name, email')
+            .select('id, first_name, last_name, email, phone')
             .eq('agency_id', agency.id);
+
           
           return {
             ...agency,
@@ -179,8 +186,22 @@ export default function Agencies() {
     );
   }
 
+  if (isMobile) {
+    return (
+      <div className="p-3 pb-6">
+        <AgenciesMobile
+          agencies={agencies}
+          onAgencyAdded={fetchAgencies}
+          addAgencyOpen={addAgencyOpen}
+          onAddAgencyOpenChange={setAddAgencyOpen}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
+
       <PageHeader
         title={t('agencies.title')}
         subtitle={t('agencies.subtitle')}

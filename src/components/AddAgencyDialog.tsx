@@ -36,10 +36,16 @@ type AgencyFormData = z.infer<typeof agencySchema>;
 
 interface AddAgencyDialogProps {
   onAgencyAdded: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }
 
-export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
-  const [open, setOpen] = useState(false);
+
+export function AddAgencyDialog({ onAgencyAdded, open: openProp, onOpenChange, hideTrigger }: AddAgencyDialogProps) {
+  const [openState, setOpenState] = useState(false);
+  const open = openProp !== undefined ? openProp : openState;
+  const setOpen = (v: boolean) => { onOpenChange ? onOpenChange(v) : setOpenState(v); };
   const [loading, setLoading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -63,9 +69,11 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
 
   const active = watch('active');
 
+
   const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
   };
+
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -149,12 +157,15 @@ export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Nouvelle agence
-        </Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Nouvelle agence
+          </Button>
+        </DialogTrigger>
+      )}
+
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Ajouter une nouvelle agence</DialogTitle>
