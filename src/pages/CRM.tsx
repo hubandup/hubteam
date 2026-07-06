@@ -297,11 +297,10 @@ export default function CRM() {
                     </span>
                   )}
                 </button>
+                {/* Bouton primaire (à droite) */}
+                <div className="ml-auto">
+                  <ProtectedAction module="crm" action="create">
 
-                {/* Spacer + primaire */}
-                <div className="flex-1 min-w-4" />
-
-                <ProtectedAction module="crm" action="create">
                   <AddClientDialog
                     open={addClientOpen}
                     onOpenChange={setAddClientOpen}
