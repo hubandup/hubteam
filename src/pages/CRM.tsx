@@ -10,7 +10,7 @@ import { ImportClientsValidationDialog } from '@/components/ImportClientsValidat
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, LayoutGrid, Columns3, ArrowDownUp, List, Archive } from 'lucide-react';
+import { Search, LayoutGrid, Columns3, ArrowDownUp, List, Archive, Plus, Download, Upload } from 'lucide-react';
 import { ExportButton } from '@/components/exports/ExportButton';
 import { toast } from 'sonner';
 import { ProtectedAction } from '@/components/ProtectedAction';
