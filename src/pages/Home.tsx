@@ -3,6 +3,8 @@ import { TodoList } from '@/components/home/TodoList';
 import { QuickNotes } from '@/components/home/QuickNotes';
 import { TodayTasks } from '@/components/home/TodayTasks';
 import { MyWeeklySchedule } from '@/components/home/MyWeeklySchedule';
+import { HomeMobile } from '@/components/home/HomeMobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { format, isPast, isFuture, addDays } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
@@ -14,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Bell, Calendar, Clock, Activity, Users, FolderKanban } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
 
 interface ActiveProject {
   id: string;
@@ -46,6 +49,7 @@ interface RecentActivity {
 }
 
 export default function Home() {
+  const isMobile = useIsMobile();
   const [userName, setUserName] = useState('');
   const [activeProjects, setActiveProjects] = useState<ActiveProject[]>([]);
   const [upcomingDeadlines, setUpcomingDeadlines] = useState<UpcomingDeadline[]>([]);
@@ -59,10 +63,11 @@ export default function Home() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
+    if (user && !isMobile) {
       fetchHomeData();
     }
-  }, [user]);
+  }, [user, isMobile]);
+
 
   const fetchHomeData = async () => {
     if (!user) return;
@@ -224,8 +229,13 @@ export default function Home() {
     comment: 'un commentaire',
   };
 
+  if (isMobile) {
+    return <HomeMobile />;
+  }
+
   return (
     <div className="space-y-6">
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-bold text-foreground" style={{ fontSize: '4rem', lineHeight: '3.5rem', marginBottom: '8px' }}>
