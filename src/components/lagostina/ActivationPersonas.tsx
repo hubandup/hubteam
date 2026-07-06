@@ -189,10 +189,10 @@ export function ActivationPersonas() {
               <button
                 key={p}
                 onClick={() => setSelectedPriority(p)}
-                className={`px-4 py-2 text-sm font-['Instrument Sans'] transition-colors ${
+                className={`px-4 py-2 text-sm font-['Instrument Sans'] transition-colors rounded-xl ${
                   selectedPriority === p
                     ? 'bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] font-medium'
-                    : 'bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-xl text-muted-foreground hover:text-foreground'
+                    : 'bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {p.replace('_', ' ').toUpperCase()}
