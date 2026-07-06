@@ -172,6 +172,7 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
           action_key: action,
           action_label: actionLabel,
           address_form: address,
+          model_id: modelId,
         },
       });
       if (error) throw error;
