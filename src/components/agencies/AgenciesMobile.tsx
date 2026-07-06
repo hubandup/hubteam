@@ -237,7 +237,6 @@ function AgencySummaryCard({ agency, onOpen }: { agency: Agency; onOpen: () => v
 
 function AgencyDetailContent({ agency, onOpenFull }: { agency: Agency; onOpenFull: () => void }) {
   const contact = getPrimaryContact(agency);
-  const fallback = getLogoFallback(agency.name || '?');
 
   const rows: Array<{ icon: any; label: string; value: string; href?: string }> = [];
   if (contact.email) {
@@ -251,12 +250,12 @@ function AgencyDetailContent({ agency, onOpenFull }: { agency: Agency; onOpenFul
     <div className="pt-2 pb-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <span
-          className="h-16 w-16 rounded-2xl flex items-center justify-center shrink-0 text-[18px] font-bold"
-          style={{ backgroundColor: fallback.bg, color: fallback.text }}
-        >
-          {fallback.initials}
-        </span>
+        <LogoAvatar
+          url={agency.logo_url}
+          name={agency.name || '?'}
+          size={64}
+          className="rounded-2xl"
+        />
         <div className="min-w-0 flex-1">
           <h2
             className="text-[22px] leading-tight truncate"
