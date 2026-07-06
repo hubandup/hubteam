@@ -263,8 +263,13 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
           </span>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {/* Filter */}
-          <div className="inline-flex border border-border" role="group" aria-label="Filtrer par confidentialité">
+          {/* Filter — segmented pill */}
+          <div
+            className="inline-flex items-center gap-1 p-1"
+            role="group"
+            aria-label="Filtrer par confidentialité"
+            style={{ background: 'hsl(var(--muted))', borderRadius: 999 }}
+          >
             {([
               { value: 'all', label: 'Tous' },
               { value: 'public', label: 'Publics' },
@@ -276,12 +281,15 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                   key={opt.value}
                   type="button"
                   onClick={() => { setPrivacyFilter(opt.value); setShowAll(false); }}
-                  className={`leading-none transition-colors ${active ? 'text-background' : 'text-foreground hover:bg-muted'}`}
+                  className="leading-none transition-all"
                   style={{
-                    background: active ? 'hsl(var(--brand-ink))' : 'transparent',
-                    padding: '6px 10px',
-                    fontSize: 11,
+                    background: active ? 'hsl(var(--card))' : 'transparent',
+                    color: active ? 'hsl(var(--brand-ink))' : 'hsl(var(--muted-foreground))',
+                    border: active ? '1px solid hsl(var(--brand-ink))' : '1px solid transparent',
+                    padding: '6px 14px',
+                    fontSize: 12,
                     fontWeight: 600,
+                    borderRadius: 999,
                   }}
                   aria-pressed={active}
                 >
@@ -293,12 +301,20 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
           <button
             type="button"
             onClick={() => setOpenAdd(true)}
-            className="inline-flex items-center gap-1 font-semibold text-background shrink-0"
-            style={{ background: 'hsl(var(--brand-ink))', padding: '6px 12px', fontSize: 12 }}
+            className="inline-flex items-center gap-1.5 font-semibold shrink-0 transition-opacity hover:opacity-90"
+            style={{
+              background: 'hsl(var(--brand-ink))',
+              color: 'hsl(var(--card))',
+              padding: '8px 16px',
+              fontSize: 12.5,
+              borderRadius: 999,
+            }}
           >
-            <Plus size={12} /> Ajouter un CR
+            <Plus size={14} style={{ color: 'hsl(var(--brand-yellow))' }} strokeWidth={2.5} />
+            Ajouter un CR
           </button>
         </div>
+
       </div>
 
       {/* List */}
@@ -330,10 +346,11 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                 >
                   <span
                     className="inline-flex items-center justify-center flex-shrink-0"
-                    style={{ width: 32, height: 32, border: '1px solid #e5e5e5', fontSize: 16 }}
+                    style={{ width: 36, height: 36, background: 'hsl(var(--muted))', borderRadius: 10, fontSize: 16 }}
                   >
-                    {isProject ? <FolderKanban size={14} /> : TYPE_EMOJI(plainContent)}
+                    {isProject ? <FolderKanban size={16} className="text-muted-foreground" /> : TYPE_EMOJI(plainContent)}
                   </span>
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold" style={{ fontSize: 14, color: 'hsl(var(--brand-ink))' }}>
@@ -342,19 +359,20 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                       {n.is_private && (
                         <span
                           className="inline-flex items-center gap-1 text-foreground"
-                          style={{ background: '#f3f4f6', padding: '2px 6px', fontSize: 10, fontWeight: 600 }}
+                          style={{ background: 'hsl(var(--muted))', padding: '3px 10px', fontSize: 10, fontWeight: 600, borderRadius: 999 }}
                         >
                           <Lock size={10} /> Privé
                         </span>
                       )}
                       {isProject && (
                         <span
-                          className="inline-flex items-center gap-1 text-foreground"
-                          style={{ background: 'hsl(var(--brand-yellow))', padding: '2px 6px', fontSize: 10, fontWeight: 600 }}
+                          className="inline-flex items-center gap-1"
+                          style={{ background: 'hsl(var(--brand-yellow))', color: 'hsl(var(--brand-ink))', padding: '3px 10px', fontSize: 10, fontWeight: 600, borderRadius: 999 }}
                         >
                           <FolderKanban size={10} /> Projet
                         </span>
                       )}
+
                     </div>
                     <p className="text-muted-foreground" style={{ fontSize: 12 }}>
                       {authorName}
