@@ -273,7 +273,7 @@ export default function FAQ() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      <div className="border-b px-6 py-4 bg-card">
+      <div className="border-b px-6 py-4 bg-background">
         <PageHeader
           className="mb-0"
           title={
