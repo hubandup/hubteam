@@ -733,12 +733,12 @@
   }
 
   /* Sidebar active item notch effect */
-  .sidebar-menu-button-notch {
+  .sidebar-menu-button {
     position: relative;
   }
 
-  .sidebar-menu-button-notch::before,
-  .sidebar-menu-button-notch::after {
+  .sidebar-menu-button::before,
+  .sidebar-menu-button::after {
     content: '';
     position: absolute;
     right: -8px;
@@ -749,18 +749,28 @@
     z-index: 10;
     pointer-events: none;
     box-shadow: -4px 0 10px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transform: scale(0);
+    transition: opacity 0.25s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  .sidebar-menu-button-notch::before {
+  .sidebar-menu-button::before {
     top: -16px;
     clip-path: inset(0 50% 50% 0);
   }
 
-  .sidebar-menu-button-notch::after {
+  .sidebar-menu-button::after {
     bottom: -16px;
     clip-path: inset(50% 50% 0 0);
   }
+
+  .sidebar-menu-button-notch::before,
+  .sidebar-menu-button-notch::after {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
+
 
 
 
