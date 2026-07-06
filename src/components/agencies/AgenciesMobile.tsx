@@ -194,33 +194,37 @@ function AgencySummaryCard({ agency, onOpen }: { agency: Agency; onOpen: () => v
         className="w-full min-w-0 max-w-full bg-white p-3 text-left active:bg-black/[0.02] transition-colors overflow-hidden flex flex-col items-stretch justify-start"
         style={{ border: `1px solid ${CARD_BORDER}`, borderRadius: 16 }}
       >
-        {/* Row 1 */}
-        <div className="flex items-center gap-3 min-h-[44px]">
+        {/* Row 1: logo + name + badge + chevron */}
+        <div className="flex items-center gap-3">
           <span
             className="h-10 w-10 rounded-full flex items-center justify-center shrink-0 text-[12px] font-bold"
             style={{ backgroundColor: fallback.bg, color: fallback.text }}
           >
             {fallback.initials}
           </span>
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 flex items-center gap-2">
             <p className="text-[14.5px] font-semibold truncate min-w-0" style={{ color: TITLE }}>
               {agency.name}
             </p>
-            <p className="text-[12px] truncate min-w-0" style={{ color: MUTED }}>
-              {contact.name}
-            </p>
+            <span
+              className="inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full text-[11px] font-semibold shrink-0"
+              style={{ backgroundColor: `${ACTIVE}1A`, color: ACTIVE }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: ACTIVE }} />
+              Actif
+            </span>
           </div>
-          <span
-            className="inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full text-[11px] font-semibold shrink-0"
-            style={{ backgroundColor: `${ACTIVE}1A`, color: ACTIVE }}
-          >
-            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: ACTIVE }} />
-            Actif
-          </span>
           <ChevronRight className="h-4 w-4 shrink-0" style={{ color: MUTED }} />
         </div>
 
-        {/* Row 2 */}
+        {/* Row 2: contact name */}
+        <div className="mt-0.5 pl-[52px]">
+          <p className="text-[12px] truncate min-w-0" style={{ color: MUTED }}>
+            {contact.name}
+          </p>
+        </div>
+
+        {/* Row 3: email */}
         <div
           className="mt-3 pt-3 flex items-center gap-2"
           style={{ borderTop: `1px solid ${CARD_BORDER}` }}
