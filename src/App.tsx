@@ -87,10 +87,10 @@ function AppInner() {
         <Route path="/auth" element={<Suspense fallback={<AppSkeleton />}><Auth /></Suspense>} />
         <Route path="/auth/set-password" element={<Suspense fallback={<AppSkeleton />}><SetPassword /></Suspense>} />
         <Route path="/reset-password" element={<Suspense fallback={<AppSkeleton />}><ResetPassword /></Suspense>} />
-        <Route path="/" element={<ProtectedRoute><Layout><PageSuspense><PWARedirect><Home /></PWARedirect></PageSuspense></Layout></ProtectedRoute>} />
-        <Route path="/home" element={<ProtectedRoute><Layout><PageSuspense><PWARedirect><Home /></PWARedirect></PageSuspense></Layout></ProtectedRoute>} />
-        <Route path="/dashboard" element={<ProtectedRoute><Layout><PageSuspense><PWARedirect><Dashboard /></PWARedirect></PageSuspense></Layout></ProtectedRoute>} />
-        <Route path="/finances" element={<ProtectedRoute><Layout><PageSuspense><PWARedirect><Finances /></PWARedirect></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/" element={<ProtectedRoute><Layout><PageSuspense><Home /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/home" element={<ProtectedRoute><Layout><PageSuspense><Home /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><Layout><PageSuspense><Dashboard /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/finances" element={<ProtectedRoute><Layout><PageSuspense><Finances /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="/feed" element={<ProtectedRoute><Layout><PageSuspense><Feed /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="/notes" element={<ProtectedRoute><Layout><PageSuspense><Notes /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="/crm" element={<ProtectedRoute><Layout><PageSuspense><CRM /></PageSuspense></Layout></ProtectedRoute>} />

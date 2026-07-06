@@ -179,7 +179,7 @@ export function ProjectsMobile({ addProjectOpen, onAddProjectOpenChange }: Props
           Aucun projet
         </div>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-2 w-full min-w-0">
           {filtered.map((p: any) => (
             <ProjectSummaryCard key={p.id} project={p} onOpen={() => setSelectedId(p.id)} />
           ))}
@@ -232,11 +232,11 @@ function ProjectSummaryCard({ project, onOpen }: { project: any; onOpen: () => v
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
   return (
-    <li>
+    <li className="w-full min-w-0">
       <button
         type="button"
         onClick={onOpen}
-        className="w-full bg-white p-3 text-left active:bg-black/[0.02] transition-colors"
+        className="w-full min-w-0 max-w-full bg-white p-3 text-left active:bg-black/[0.02] transition-colors overflow-hidden"
         style={{ border: `1px solid ${CARD_BORDER}`, borderRadius: 16 }}
       >
         {/* Row 1 */}
