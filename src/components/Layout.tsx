@@ -17,6 +17,8 @@ import { OfflineBanner } from './common/OfflineBanner';
 import { SkipToContent } from './common/SkipToContent';
 import { ArrowUpFromLine, Search } from 'lucide-react';
 import { Button } from './ui/button';
+import { IconButton } from './ui/icon-button';
+
 import logo from '@/assets/logo-hubandup.svg';
 import { usePrefetchAppData } from '@/hooks/usePrefetchAppData';
 
