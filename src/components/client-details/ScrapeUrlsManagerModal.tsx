@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Loader2, Plus, RefreshCw, Trash2, Link2 } from 'lucide-react';
+import { Loader2, Plus, RefreshCw, Trash2, Link2, Pencil, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,34 @@ export function ScrapeUrlsManagerModal({ open, onOpenChange, trackingId }: Props
   const [label, setLabel] = useState('');
   const [scrapingId, setScrapingId] = useState<string | null>(null);
   const [scrapingAll, setScrapingAll] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editUrl, setEditUrl] = useState('');
+  const [editLabel, setEditLabel] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const startEdit = (u: any) => {
+    setEditingId(u.id);
+    setEditUrl(u.url || '');
+    setEditLabel(u.label || '');
+  };
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditUrl('');
+    setEditLabel('');
+  };
+  const saveEdit = async (id: string) => {
+    if (!editUrl.trim()) return toast.error('URL requise');
+    setSavingEdit(true);
+    const { error } = await supabase
+      .from('commercial_scrape_urls')
+      .update({ url: editUrl.trim(), label: editLabel.trim() || null })
+      .eq('id', id);
+    setSavingEdit(false);
+    if (error) return toast.error('Erreur de mise à jour');
+    toast.success('URL modifiée');
+    cancelEdit();
+    qc.invalidateQueries({ queryKey: ['commercial-scrape-urls', trackingId] });
+  };
 
   const { data: urls = [], isLoading } = useQuery({
     queryKey: ['commercial-scrape-urls', trackingId],
@@ -190,43 +218,97 @@ export function ScrapeUrlsManagerModal({ open, onOpenChange, trackingId }: Props
               {urls.map((u: any) => (
                 <li key={u.id} className="border border-border p-3 flex items-start gap-2">
                   <div className="flex-1 min-w-0">
-                    {u.label && <p className="text-sm font-medium" style={{ color: 'hsl(var(--brand-ink))' }}>{u.label}</p>}
-                    <a
-                      href={u.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-foreground hover:underline truncate block"
-                    >
-                      {u.url}
-                    </a>
-                    {u.last_scraped_at && (
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        Dernier scrape : {format(new Date(u.last_scraped_at), 'd MMM yyyy HH:mm', { locale: fr })}
-                        {u.last_scrape_status === 'failed' && (
-                          <span className="text-red-600 ml-1">· échec</span>
+                    {editingId === u.id ? (
+                      <div className="flex flex-col gap-2">
+                        <Input
+                          value={editLabel}
+                          onChange={(e) => setEditLabel(e.target.value)}
+                          placeholder="Libellé (optionnel)"
+                          className="h-8 text-sm"
+                        />
+                        <Input
+                          value={editUrl}
+                          onChange={(e) => setEditUrl(e.target.value)}
+                          placeholder="https://..."
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        {u.label && <p className="text-sm font-medium" style={{ color: 'hsl(var(--brand-ink))' }}>{u.label}</p>}
+                        <a
+                          href={u.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-foreground hover:underline truncate block"
+                        >
+                          {u.url}
+                        </a>
+                        {u.last_scraped_at && (
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            Dernier scrape : {format(new Date(u.last_scraped_at), 'd MMM yyyy HH:mm', { locale: fr })}
+                            {u.last_scrape_status === 'failed' && (
+                              <span className="text-red-600 ml-1">· échec</span>
+                            )}
+                          </p>
                         )}
-                      </p>
+                      </>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => scrapeOne(u.id)}
-                    disabled={scrapingId === u.id}
-                    className="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-50"
-                    title="Rescraper"
-                    aria-label="Rescraper"
-                  >
-                    {scrapingId === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => remove(u.id)}
-                    className="p-1.5 text-muted-foreground hover:text-red-600"
-                    title="Supprimer"
-                    aria-label="Supprimer"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  {editingId === u.id ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => saveEdit(u.id)}
+                        disabled={savingEdit}
+                        className="p-1.5 text-muted-foreground hover:text-green-600 disabled:opacity-50"
+                        title="Enregistrer"
+                        aria-label="Enregistrer"
+                      >
+                        {savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelEdit}
+                        className="p-1.5 text-muted-foreground hover:text-foreground"
+                        title="Annuler"
+                        aria-label="Annuler"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => startEdit(u)}
+                        className="p-1.5 text-muted-foreground hover:text-foreground"
+                        title="Modifier"
+                        aria-label="Modifier"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => scrapeOne(u.id)}
+                        disabled={scrapingId === u.id}
+                        className="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-50"
+                        title="Rescraper"
+                        aria-label="Rescraper"
+                      >
+                        {scrapingId === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => remove(u.id)}
+                        className="p-1.5 text-muted-foreground hover:text-red-600"
+                        title="Supprimer"
+                        aria-label="Supprimer"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </>
+                  )}
                 </li>
               ))}
             </ul>
