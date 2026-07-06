@@ -176,7 +176,7 @@ function KpiCard({ data }: { data: KpiData }) {
     : (v: number | null | undefined) => formatVal(v, data.kpi_name);
 
   return (
-    <div className={`bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border-l-[3px] ${cond || 'border-foreground'} p-4 flex flex-col gap-1`}>
+    <div className={`bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl border-l-[3px] ${cond || 'border-foreground'} p-4 flex flex-col gap-1`}>
       <div className="text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider">{KPI_LABELS[data.kpi_name] || data.kpi_name}</div>
       <div className="text-foreground text-xl font-bold font-['Instrument_Sans']">{formatFn(data.latestActual)}</div>
       {data.latestObjective != null && (
@@ -264,7 +264,7 @@ function SEATab({ rows }: { rows: MediaKpiRow[] }) {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {roasData && roasData.weeks.length > 1 && (
-          <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4">
+          <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-4">
             <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Évolution ROAS</h3>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={roasData.weeks}>
@@ -278,7 +278,7 @@ function SEATab({ rows }: { rows: MediaKpiRow[] }) {
             </ResponsiveContainer>
           </div>
         )}
-        <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4">
+        <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-4">
           <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Top Keywords SEA</h3>
           {!hasKeywords ? (
             <div className="flex items-center justify-center py-8">
@@ -317,7 +317,7 @@ function SEATab({ rows }: { rows: MediaKpiRow[] }) {
         </div>
       </div>
 
-      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4">
+      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-4">
         <div className="flex items-baseline justify-between mb-3">
           <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Campagnes en cours</h3>
           {hasCampaigns && (
@@ -396,7 +396,7 @@ function SMATab({ rows }: { rows: MediaKpiRow[] }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {kpis.map((k) => <KpiCard key={k.kpi_name} data={k} />)}
       </div>
-      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-6">
+      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-6">
         <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Funnel SMA</h3>
         <div className="flex items-end justify-center gap-0">
           <FunnelStep label="Awareness" value={formatVal(reach, 'reach_3s_views')} color={getChartAccent()} ratio={awarenessToConsid} widthPercent={100} />
@@ -405,7 +405,8 @@ function SMATab({ rows }: { rows: MediaKpiRow[] }) {
         </div>
       </div>
       {kpis[0]?.weeks.length > 1 && (
-        <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4 overflow-x-auto">
+        <div className="rounded-2xl border border-border/30 overflow-hidden">
+          <div className="bg-card dark:bg-[hsl(var(--brand-ink))] overflow-x-auto">
           <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-3">Détail par semaine</h3>
           <table className="w-full text-[12px] font-['Instrument Sans'] border-collapse">
             <thead className="sticky top-0 bg-card dark:bg-[hsl(var(--brand-ink))] z-10">
@@ -442,6 +443,7 @@ function SMATab({ rows }: { rows: MediaKpiRow[] }) {
               })}
             </tbody>
           </table>
+        </div>
         </div>
       )}
     </div>
@@ -488,7 +490,7 @@ function TikTokTab({ rows }: { rows: MediaKpiRow[] }) {
         {kpis.map((k) => <KpiCard key={k.kpi_name} data={k} />)}
       </div>
 
-      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4">
+      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-4">
         <div className="flex items-baseline justify-between mb-3">
           <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Top contenus publicitaires</h3>
           <span className="text-muted-foreground text-xs font-['Instrument Sans']">Trié par impressions · valeurs en $</span>
@@ -556,7 +558,7 @@ export function LagostinaMediatisation({ learningsButton, learningsPanel }: { le
     return (
       <div className="space-y-4">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-20 bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 animate-pulse" />
+          <div key={i} className="h-20 bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl animate-pulse" />
         ))}
       </div>
     );

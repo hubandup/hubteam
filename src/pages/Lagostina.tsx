@@ -75,7 +75,7 @@ export default function Lagostina() {
   const learningsButton = (
     <button
       onClick={() => setShowLearnings(!showLearnings)}
-      className={`flex items-center gap-2 px-5 py-2.5 text-sm font-['Instrument Sans'] font-medium transition-colors border ${
+      className={`flex items-center gap-2 px-5 py-2.5 text-sm font-['Instrument Sans'] font-medium transition-colors border rounded-full ${
         showLearnings
           ? 'bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] border-black dark:border-[hsl(var(--brand-yellow))]'
           : 'bg-card dark:bg-[hsl(var(--brand-ink))] text-foreground border-border/50 hover:bg-muted/50'
@@ -87,7 +87,7 @@ export default function Lagostina() {
   );
 
   return (
-    <div className="bg-card dark:bg-[#0a0e1a]">
+    <div className="bg-card dark:bg-[#0a0e1a] rounded-3xl border border-border shadow-sm overflow-hidden">
       {/* Header */}
       <div className="px-6 pt-6 pb-2">
         <PageHeader

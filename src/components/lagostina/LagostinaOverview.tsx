@@ -12,7 +12,7 @@ function getChartAccent(): string {
 
 function KpiCardSkeleton() {
   return (
-    <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border-l-[3px] border-black dark:border-white p-5 animate-pulse">
+    <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl border-l-[3px] border-black dark:border-white p-5 animate-pulse">
       <div className="h-3 w-20 bg-muted mb-3" />
       <div className="h-8 w-32 bg-muted mb-2" />
       <div className="h-3 w-16 bg-muted" />
@@ -29,7 +29,7 @@ interface KpiCardProps {
 
 function KpiCard({ label, value, icon, trend }: KpiCardProps) {
   return (
-    <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border-l-[3px] border-black dark:border-white p-5 flex flex-col gap-1">
+    <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl border-l-[3px] border-black dark:border-white p-5 flex flex-col gap-1">
       <div className="flex items-center gap-2 text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider">
         {icon}
         {label}
@@ -194,7 +194,7 @@ export function LagostinaOverview() {
                     value={roasMoyen.toFixed(2)}
                     icon={<DollarSign className="h-3.5 w-3.5" />}
                   />
-                  <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border-l-[3px] border-black dark:border-white p-5 flex flex-col gap-1">
+                  <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl border-l-[3px] border-black dark:border-white p-5 flex flex-col gap-1">
                     <div className="flex items-center gap-2 text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider">
                       <PieChart className="h-3.5 w-3.5" />
                       Budget engagé
@@ -227,11 +227,12 @@ export function LagostinaOverview() {
           {activeTab === 'status' && (
             <div className="space-y-6">
               {loadingCategory ? (
-                <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4 animate-pulse">
+                <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-4 animate-pulse">
                   {Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-10 bg-muted mb-2" />)}
                 </div>
               ) : Object.keys(priorityGroups).length > 0 ? (
-                <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
+                <div className="rounded-2xl border border-border/30 overflow-hidden">
+                  <div className="bg-card dark:bg-[hsl(var(--brand-ink))] overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border/40">
@@ -263,6 +264,7 @@ export function LagostinaOverview() {
                       ))}
                     </tbody>
                   </table>
+                </div>
                 </div>
               ) : (
                 <div className="text-muted-foreground text-xs font-['Instrument Sans'] py-8 text-center">Aucune donnée de statut disponible</div>

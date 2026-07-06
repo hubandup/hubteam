@@ -175,7 +175,7 @@ export function ActivationPersonas() {
           <button
             key={p}
             onClick={() => setSelectedPriority(p)}
-            className={`px-4 py-2 text-sm font-['Instrument Sans'] transition-colors ${
+            className={`px-4 py-2 text-sm font-['Instrument Sans'] transition-colors rounded-xl ${
               selectedPriority === p
                 ? 'bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] font-medium'
                 : 'bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 text-muted-foreground hover:text-foreground'
@@ -189,7 +189,7 @@ export function ActivationPersonas() {
               <button
                 key={p}
                 onClick={() => setSelectedPriority(p)}
-                className={`px-4 py-2 text-sm font-['Instrument Sans'] transition-colors ${
+                className={`px-4 py-2 text-sm font-['Instrument Sans'] transition-colors rounded-xl ${
                   selectedPriority === p
                     ? 'bg-foreground text-background dark:bg-[hsl(var(--brand-yellow))] font-medium'
                     : 'bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 text-muted-foreground hover:text-foreground'
@@ -204,7 +204,8 @@ export function ActivationPersonas() {
 
       {/* Status bar */}
       {filteredStatus.length > 0 && (
-        <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
+        <div className="rounded-2xl border border-border/30 overflow-hidden">
+          <div className="bg-card dark:bg-[hsl(var(--brand-ink))] overflow-x-auto">
           <table className="w-full text-xs font-['Instrument Sans']">
             <thead>
               <tr className="border-b border-border/40">
@@ -232,6 +233,7 @@ export function ActivationPersonas() {
             </tbody>
           </table>
         </div>
+        </div>
       )}
 
       <LagostinaSubTabs tabs={SUB_TABS}>
@@ -244,7 +246,7 @@ export function ActivationPersonas() {
                   <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">Personas</h3>
                 </div>
                 {filteredPersonas.length === 0 ? (
-                  <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-6 text-center text-muted-foreground font-['Instrument Sans'] text-sm">
+                  <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-6 text-center text-muted-foreground font-['Instrument Sans'] text-sm">
                     Aucun persona défini pour cette priorité
                   </div>
                 ) : (
@@ -329,7 +331,7 @@ export function ActivationPersonas() {
                         <Package className="h-4 w-4 text-foreground font-semibold" />
                         <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">Produit</h3>
                       </div>
-                      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4">
+                      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-4">
                         <div className="grid grid-cols-2 gap-4">
                           {d.flagship && (
                             <div className="col-span-2">
@@ -393,7 +395,8 @@ export function ActivationPersonas() {
                         <Store className="h-4 w-4 text-foreground font-semibold" />
                         <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold uppercase tracking-wider">Distribution</h3>
                       </div>
-                      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
+                      <div className="rounded-2xl border border-border/30 overflow-hidden">
+                        <div className="bg-card dark:bg-[hsl(var(--brand-ink))] overflow-x-auto">
                         {channels && channels.length > 0 ? (
                           <table className="w-full text-xs font-['Instrument Sans']">
                             <thead>
@@ -423,6 +426,7 @@ export function ActivationPersonas() {
                           <div className="p-4 text-muted-foreground text-sm">Aucune donnée de distribution</div>
                         )}
                       </div>
+                      </div>
                     </div>
                   );
                 })()}
@@ -447,7 +451,8 @@ export function ActivationPersonas() {
                           {section === 'sell_in' ? 'Sell-in' : 'Sell-out'}
                         </h3>
                       </div>
-                      <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
+                      <div className="rounded-2xl border border-border/30 overflow-hidden">
+                        <div className="bg-card dark:bg-[hsl(var(--brand-ink))] overflow-x-auto">
                         {rows && rows.length > 0 ? (
                           <table className="w-full text-xs font-['Instrument Sans']">
                             <thead>
@@ -497,6 +502,7 @@ export function ActivationPersonas() {
                         ) : (
                           <div className="p-4 text-muted-foreground text-sm">Aucune donnée</div>
                         )}
+                      </div>
                       </div>
                     </div>
                   );

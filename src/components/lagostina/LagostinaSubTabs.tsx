@@ -19,7 +19,7 @@ export function LagostinaSubTabs({ tabs, defaultTab, children, rightAction, belo
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex gap-0 bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 inline-flex">
+        <div className="flex gap-0 bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-xl inline-flex">
           {tabs.map((t) => (
             <button
               key={t.id}
