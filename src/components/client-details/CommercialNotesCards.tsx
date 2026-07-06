@@ -114,23 +114,67 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
         .order('created_at', { ascending: false });
       if (error) throw error;
       const ids = Array.from(new Set((data || []).map((n: any) => n.author_id)));
-      if (ids.length === 0) return data || [];
+      if (ids.length === 0) return (data || []).map((n: any) => ({ ...n, source: 'commercial' }));
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, avatar_url')
         .in('id', ids);
       return (data || []).map((n: any) => ({
         ...n,
+        source: 'commercial',
         author: profiles?.find((p: any) => p.id === n.author_id),
       }));
     },
   });
 
+  // Project notes attached to any project of this client
+  const { data: projectNotes = [] } = useQuery({
+    queryKey: ['client-project-notes', client?.id],
+    enabled: !!client?.id,
+    queryFn: async () => {
+      const { data: links } = await supabase
+        .from('project_clients')
+        .select('project_id')
+        .eq('client_id', client.id);
+      const projectIds = (links || []).map((l: any) => l.project_id);
+      if (projectIds.length === 0) return [];
+      const { data: pNotes, error } = await supabase
+        .from('project_notes')
+        .select('*')
+        .in('project_id', projectIds)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      if (!pNotes || pNotes.length === 0) return [];
+      const authorIds = Array.from(new Set(pNotes.map((n: any) => n.created_by).filter(Boolean)));
+      const { data: profiles } = authorIds.length
+        ? await supabase.from('profiles').select('id, first_name, last_name, avatar_url').in('id', authorIds)
+        : { data: [] as any[] };
+      const { data: projects } = await supabase
+        .from('projects')
+        .select('id, name')
+        .in('id', projectIds);
+      return pNotes.map((n: any) => ({
+        ...n,
+        source: 'project',
+        author_id: n.created_by,
+        author: profiles?.find((p: any) => p.id === n.created_by),
+        project: projects?.find((p: any) => p.id === n.project_id),
+      }));
+    },
+  });
+
+  const allNotes = useMemo(() => {
+    return [...notes, ...projectNotes].sort(
+      (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+  }, [notes, projectNotes]);
+
   const filteredNotes = useMemo(() => {
-    if (privacyFilter === 'public') return notes.filter((n: any) => !n.is_private);
-    if (privacyFilter === 'private') return notes.filter((n: any) => n.is_private);
-    return notes;
-  }, [notes, privacyFilter]);
+    if (privacyFilter === 'public') return allNotes.filter((n: any) => !n.is_private);
+    if (privacyFilter === 'private') return allNotes.filter((n: any) => n.is_private);
+    return allNotes;
+  }, [allNotes, privacyFilter]);
+
 
   const visible = useMemo(
     () => (showAll ? filteredNotes : filteredNotes.slice(0, 3)),
