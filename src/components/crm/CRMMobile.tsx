@@ -268,12 +268,14 @@ function ClientSummaryCard({
         style={{ border: `1px solid ${CARD_BORDER}`, borderRadius: 16 }}
       >
         <div className="flex items-center gap-3 min-h-[44px]">
+          <LogoAvatar url={client.logo_url} name={client.company || `${client.first_name || ''} ${client.last_name || ''}`.trim() || '?'} size={40} />
           <span
             className="flex-1 min-w-0 truncate text-[15px] font-semibold uppercase"
             style={{ color: TITLE }}
           >
             {client.company || `${client.first_name || ''} ${client.last_name || ''}`.trim()}
           </span>
+
           <button
             type="button"
             onClick={(e) => {
