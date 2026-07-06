@@ -20,10 +20,15 @@ import { AddClientDialog, type AddedClientPayload } from './AddClientDialog';
 
 interface AddProjectDialogProps {
   onProjectAdded: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }
 
-export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
-  const [open, setOpen] = useState(false);
+export function AddProjectDialog({ onProjectAdded, open: openProp, onOpenChange, hideTrigger }: AddProjectDialogProps) {
+  const [openState, setOpenState] = useState(false);
+  const open = openProp !== undefined ? openProp : openState;
+  const setOpen = (v: boolean) => { onOpenChange ? onOpenChange(v) : setOpenState(v); };
   const [loading, setLoading] = useState(false);
   const [addClientOpen, setAddClientOpen] = useState(false);
   const [clients, setClients] = useState<AddedClientPayload[]>([]);
