@@ -13,6 +13,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { AddEditFaqDialog } from '@/components/faq/AddEditFaqDialog';
+import { PillButton } from '@/components/ui/pill-button';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole, type UserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
@@ -284,10 +285,10 @@ export default function FAQ() {
           subtitle={t('faq.subtitle')}
           actions={
             isAdmin ? (
-              <Button onClick={() => setIsDialogOpen(true)} className="flex-shrink-0">
-                <Plus className="h-4 w-4 mr-2" />
+              <PillButton variant="primary" onClick={() => setIsDialogOpen(true)} className="flex-shrink-0">
+                <Plus size={16} strokeWidth={1.8} />
                 {t('faq.addQuestion')}
-              </Button>
+              </PillButton>
             ) : undefined
           }
         />

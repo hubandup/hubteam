@@ -12,8 +12,9 @@ import { toast } from 'sonner';
 import { TargetCard } from '@/components/targets/TargetCard';
 import { getUrgency, getStatusBucket, type UrgencyBucket } from '@/components/targets/targetUtils';
 import { AddClientDialog } from '@/components/AddClientDialog';
-import { PageHeader, ViewToggle, SearchFilterBar, SectionHeader } from '@/components/layout';
-import { Button } from '@/components/ui/button';
+import { PageHeader, SearchFilterBar, SectionHeader } from '@/components/layout';
+import { PillButton } from '@/components/ui/pill-button';
+import { PillSegmented } from '@/components/ui/pill-segmented';
 import { cn } from '@/lib/utils';
 
 
@@ -179,7 +180,7 @@ export default function Targets() {
         subtitle={`Vos prospects et clients prioritaires (${totalAfterFilters})`}
         actions={
           <>
-            <ViewToggle
+            <PillSegmented
               options={[
                 { value: 'list', icon: List, label: 'Vue liste' },
                 { value: 'kanban', icon: Columns3, label: 'Vue kanban' },
@@ -188,10 +189,10 @@ export default function Targets() {
               value={viewMode}
               onChange={handleViewChange}
             />
-            <Button onClick={() => setAddOpen(true)}>
-              <Plus className="h-4 w-4" />
+            <PillButton variant="primary" onClick={() => setAddOpen(true)}>
+              <Plus size={16} strokeWidth={1.8} />
               Ajouter un target
-            </Button>
+            </PillButton>
           </>
         }
       />

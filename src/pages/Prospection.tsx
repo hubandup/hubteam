@@ -37,7 +37,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { PageLoader } from '@/components/PageLoader';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
-import { PageHeader, ViewToggle } from '@/components/layout';
+import { PageHeader } from '@/components/layout';
+import { PillButton } from '@/components/ui/pill-button';
+import { PillSegmented } from '@/components/ui/pill-segmented';
 
 type SortKey = 'company' | 'first_name' | 'last_name' | 'contact_name' | 'job_title' | 'email' | 'phone' | 'stage';
 type SortDir = 'asc' | 'desc';
@@ -64,9 +66,9 @@ function AddContactDialog({ onAdd }: { onAdd: (c: Partial<ProspectionContact>) =
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-2">
-          <Plus className="h-4 w-4" /> Ajouter
-        </Button>
+        <PillButton variant="primary">
+          <Plus size={16} strokeWidth={1.8} /> Ajouter
+        </PillButton>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -344,9 +346,9 @@ function ImportDialog({ onImport }: { onImport: (contacts: Partial<ProspectionCo
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Upload className="h-4 w-4" /> Importer
-        </Button>
+        <PillButton variant="outline">
+          <Upload size={16} strokeWidth={1.8} /> Importer
+        </PillButton>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
@@ -1190,22 +1192,21 @@ export default function Prospection() {
               <AddContactDialog onAdd={handleCreate} />
             ) : (
               <>
-                <Button variant="outline" className="gap-2" onClick={handleEnrich}>
-                  <Sparkles className="h-4 w-4" /> Enrichir
-                </Button>
-                <Button variant="outline" className="gap-2" onClick={() => handleExport()}>
-                  <Download className="h-4 w-4" /> Exporter
-                </Button>
-                <Button
+                <PillButton variant="outline" onClick={handleEnrich}>
+                  <Sparkles size={16} strokeWidth={1.8} /> Enrichir
+                </PillButton>
+                <PillButton variant="outline" onClick={() => handleExport()}>
+                  <Download size={16} strokeWidth={1.8} /> Exporter
+                </PillButton>
+                <PillButton
                   variant="outline"
-                  className="gap-2"
                   onClick={() => setShowEmailDialog(true)}
                   disabled={filtered.length === 0}
                 >
-                  <Mail className="h-4 w-4" /> Envoyer un email
-                </Button>
+                  <Mail size={16} strokeWidth={1.8} /> Envoyer un email
+                </PillButton>
                 <ImportDialog onImport={handleImport} />
-                <ViewToggle<'table' | 'kanban'>
+                <PillSegmented<'table' | 'kanban'>
                   options={[
                     { value: 'table', icon: List, label: 'Vue liste' },
                     { value: 'kanban', icon: Columns3, label: 'Vue kanban' },
