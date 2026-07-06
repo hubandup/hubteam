@@ -105,21 +105,33 @@ export function QualificationCollapsible({ trackingId }: Props) {
         updateAnswer(q.id, next.join(','));
       };
       return (
-        <div className="flex gap-2 flex-wrap">
-          {def.options!.map((opt) => (
-            <Button
-              key={opt}
-              type="button"
-              size="sm"
-              variant={selected.includes(opt) ? 'default' : 'outline'}
-              onClick={() => toggle(opt)}
-            >
-              {opt}
-            </Button>
-          ))}
+        <div className="flex gap-1.5 flex-wrap">
+          {def.options!.map((opt) => {
+            const on = selected.includes(opt);
+            return (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => toggle(opt)}
+                className="transition-colors"
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: 999,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  background: on ? 'hsl(var(--brand-ink))' : 'transparent',
+                  color: on ? 'hsl(0 0% 100%)' : 'hsl(var(--foreground))',
+                  border: on ? '1px solid hsl(var(--brand-ink))' : '1px solid hsl(var(--border))',
+                }}
+              >
+                {opt}
+              </button>
+            );
+          })}
         </div>
       );
     }
+
     if (type === 'textarea') {
       return <Textarea defaultValue={q.answer || ''} onBlur={(e) => updateAnswer(q.id, e.target.value)} rows={3} />;
     }
