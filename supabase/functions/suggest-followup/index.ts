@@ -5,6 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+type ModelChoice = 'gemini' | 'claude' | 'gpt5mini';
+
 interface Payload {
   tracking_id: string;
   tone?: 'friendly' | 'formal' | 'direct';
@@ -14,7 +16,57 @@ interface Payload {
   action_key?: string; // ex: 'propose_slot', 'send_quote', 'schedule_call', 'custom'
   action_label?: string; // libellé humain de l'action à proposer
   address_form?: 'vous' | 'tu'; // forme d'adresse : vouvoiement (par défaut) ou tutoiement
+  model_id?: ModelChoice; // choix du modèle IA (défaut: claude)
   save?: boolean; // persist to history (default true)
+}
+
+/** Appel unifié aux modèles IA. Retourne le texte brut généré. */
+async function callAI(
+  modelChoice: ModelChoice,
+  systemPrompt: string,
+  userPrompt: string,
+  opts: { anthropicKey?: string; lovableKey?: string },
+): Promise<{ ok: true; text: string } | { ok: false; status: number; body: string; provider: 'anthropic' | 'lovable' }> {
+  if (modelChoice === 'claude') {
+    if (!opts.anthropicKey) return { ok: false, status: 500, body: 'ANTHROPIC_API_KEY missing', provider: 'anthropic' };
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': opts.anthropicKey,
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 2048,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
+      }),
+    });
+    if (!r.ok) return { ok: false, status: r.status, body: await r.text(), provider: 'anthropic' };
+    const j = await r.json();
+    return { ok: true, text: j?.content?.[0]?.text || '' };
+  }
+  // Lovable AI Gateway (OpenAI-compatible)
+  if (!opts.lovableKey) return { ok: false, status: 500, body: 'LOVABLE_API_KEY missing', provider: 'lovable' };
+  const model = modelChoice === 'gemini' ? 'google/gemini-3-flash-preview' : 'openai/gpt-5-mini';
+  const r = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Lovable-API-Key': opts.lovableKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+    }),
+  });
+  if (!r.ok) return { ok: false, status: r.status, body: await r.text(), provider: 'lovable' };
+  const j = await r.json();
+  return { ok: true, text: j?.choices?.[0]?.message?.content || '' };
 }
 
 /** Strip markdown leftovers (>, **, ##, ---, leading bullets) and convert to safe HTML. */
