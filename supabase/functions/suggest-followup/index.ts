@@ -516,48 +516,40 @@ ${sourcesText}
 
 Génère le JSON.`;
 
-    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
-        max_tokens: 2048,
-        system: systemPrompt,
-        messages: [
-          { role: 'user', content: `${userPrompt}\n\nRéponds UNIQUEMENT avec le JSON demandé, sans markdown ni backticks.` },
-        ],
-      }),
+    const modelChoice: ModelChoice =
+      body.model_id === 'gemini' || body.model_id === 'gpt5mini' ? body.model_id : 'claude';
+
+    const fullUserPrompt = `${userPrompt}\n\nRéponds UNIQUEMENT avec le JSON demandé, sans markdown ni backticks.`;
+    const aiCall = await callAI(modelChoice, systemPrompt, fullUserPrompt, {
+      anthropicKey: ANTHROPIC_API_KEY,
+      lovableKey: LOVABLE_API_KEY,
     });
 
-    if (!aiRes.ok) {
-      if (aiRes.status === 429 || aiRes.status === 529) {
-        return new Response(JSON.stringify({ error: 'rate_limited', message: 'Anthropic surchargé, réessayez dans un instant.' }), {
+    if (!aiCall.ok) {
+      const providerLabel = aiCall.provider === 'anthropic' ? 'Anthropic' : 'Lovable AI';
+      if (aiCall.status === 429 || aiCall.status === 529) {
+        return new Response(JSON.stringify({ error: 'rate_limited', message: `${providerLabel} surchargé, réessayez dans un instant.` }), {
           status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
         });
       }
-      if (aiRes.status === 401) {
-        return new Response(JSON.stringify({ error: 'unauthorized', message: 'Clé ANTHROPIC_API_KEY invalide.' }), {
+      if (aiCall.status === 401) {
+        return new Response(JSON.stringify({ error: 'unauthorized', message: `Clé ${providerLabel} invalide ou manquante.` }), {
           status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
         });
       }
-      if (aiRes.status === 402 || aiRes.status === 403) {
-        return new Response(JSON.stringify({ error: 'payment_required', message: 'Crédits Anthropic épuisés — voir console.anthropic.com/billing.' }), {
+      if (aiCall.status === 402 || aiCall.status === 403) {
+        return new Response(JSON.stringify({ error: 'payment_required', message: `Crédits ${providerLabel} épuisés.` }), {
           status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
         });
       }
-      const t = await aiRes.text();
-      console.error('Anthropic error', aiRes.status, t);
+      console.error(`${providerLabel} error`, aiCall.status, aiCall.body);
       return new Response(JSON.stringify({ error: 'ai_error', message: 'Erreur du modèle IA.' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
       });
     }
 
-    const aiJson = await aiRes.json();
-    const raw = aiJson?.content?.[0]?.text || '';
+    const raw = aiCall.text;
+
 
     let parsed: { angles?: Array<{ title?: string; description?: string; source?: string }>; subject?: string; body_plain?: string } = {};
     try {
