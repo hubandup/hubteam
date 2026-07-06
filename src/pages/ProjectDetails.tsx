@@ -164,7 +164,7 @@ export default function ProjectDetails() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-card">
+      <div className="flex items-center justify-center h-screen bg-background">
         <Loader2 className="h-6 w-6 animate-spin text-foreground" />
       </div>
     );
