@@ -3,6 +3,8 @@ import { TodoList } from '@/components/home/TodoList';
 import { QuickNotes } from '@/components/home/QuickNotes';
 import { TodayTasks } from '@/components/home/TodayTasks';
 import { MyWeeklySchedule } from '@/components/home/MyWeeklySchedule';
+import { HomeMobile } from '@/components/home/HomeMobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { format, isPast, isFuture, addDays } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
@@ -14,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Bell, Calendar, Clock, Activity, Users, FolderKanban } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
 
 interface ActiveProject {
   id: string;
