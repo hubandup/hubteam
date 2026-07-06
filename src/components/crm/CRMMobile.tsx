@@ -286,7 +286,7 @@ function ClientSummaryCard({
       <button
         type="button"
         onClick={onOpen}
-        className="w-full min-w-0 max-w-full bg-white p-3 text-left active:bg-black/[0.02] transition-colors overflow-hidden"
+        className="w-full min-w-0 max-w-full bg-white p-3 text-left active:bg-black/[0.02] transition-colors overflow-hidden flex flex-col items-stretch justify-start"
         style={{ border: `1px solid ${CARD_BORDER}`, borderRadius: 16 }}
       >
         <div className="flex items-center gap-3 min-h-[44px]">
