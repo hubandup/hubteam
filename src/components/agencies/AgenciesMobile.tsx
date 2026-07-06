@@ -184,7 +184,6 @@ export function AgenciesMobile({ agencies, onAgencyAdded, addAgencyOpen, onAddAg
 
 function AgencySummaryCard({ agency, onOpen }: { agency: Agency; onOpen: () => void }) {
   const contact = getPrimaryContact(agency);
-  const fallback = getLogoFallback(agency.name || '?');
 
   return (
     <li className="w-full min-w-0">
@@ -196,12 +195,7 @@ function AgencySummaryCard({ agency, onOpen }: { agency: Agency; onOpen: () => v
       >
         {/* Row 1: logo + name + badge + chevron */}
         <div className="flex items-center gap-3">
-          <span
-            className="h-10 w-10 rounded-full flex items-center justify-center shrink-0 text-[12px] font-bold"
-            style={{ backgroundColor: fallback.bg, color: fallback.text }}
-          >
-            {fallback.initials}
-          </span>
+          <LogoAvatar url={agency.logo_url} name={agency.name || '?'} size={40} />
           <div className="flex-1 min-w-0 flex items-center gap-2">
             <p className="text-[14.5px] font-semibold truncate min-w-0" style={{ color: TITLE }}>
               {agency.name}
