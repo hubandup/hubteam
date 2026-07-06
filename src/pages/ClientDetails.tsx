@@ -341,10 +341,11 @@ export default function ClientDetails() {
                 {statusName && (
                   <span
                     className="font-semibold tracking-wider uppercase"
-                    style={{ background: 'hsl(var(--brand-yellow))', color: 'hsl(var(--brand-ink))', padding: '2px 8px', fontSize: 10 }}
+                    style={{ background: 'hsl(var(--brand-yellow) / 0.35)', color: 'hsl(var(--brand-ink))', padding: '4px 10px', fontSize: 10, borderRadius: 999 }}
                   >
                     {statusName}
                   </span>
+
                 )}
               </div>
 
