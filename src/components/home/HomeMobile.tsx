@@ -4,7 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { format, addDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Calendar, FolderKanban, ListTodo, StickyNote, CalendarClock } from 'lucide-react';
+import { Calendar, FolderKanban, ListTodo, StickyNote } from 'lucide-react';
+
 import { TodoList } from './TodoList';
 import { QuickNotes } from './QuickNotes';
 
