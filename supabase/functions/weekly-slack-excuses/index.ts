@@ -7,7 +7,7 @@ const corsHeaders = {
 
 const SLACK_BOT_TOKEN = Deno.env.get('SLACK_BOT_TOKEN');
 const SLACK_CHANNEL = '#hubteam_sales';
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const FIRECRAWL_API_KEY = Deno.env.get('FIRECRAWL_API_KEY');
 const CRON_SECRET = Deno.env.get('CRON_SECRET');
 
