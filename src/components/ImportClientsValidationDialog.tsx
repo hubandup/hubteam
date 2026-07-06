@@ -33,6 +33,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 interface ImportClientsValidationDialogProps {
   onClientsImported: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }
 
 type ImportAction = 'skip' | 'update' | 'import';
