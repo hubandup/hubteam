@@ -1,82 +1,79 @@
-# Basculer les « Excuses de relance » sur Claude (Anthropic)
-
 ## Objectif
-Remplacer Gemini par Claude d'Anthropic dans les deux surfaces qui génèrent des idées de relance commerciale :
-1. **Fiche client → onglet Commercial → « Excuses de relance »** (edge function `suggest-followup`, actuellement `google/gemini-3-flash-preview`)
-2. **Paramètres → Test Slack + cron hebdo #hubteam_sales** (edge function `weekly-slack-excuses`, actuellement `google/gemini-2.5-flash`)
+Refondre la page `src/pages/ClientDetails.tsx` et ses sous-composants pour livrer l'UI décrite : cartes aérées radius 16–18, palette lime/navy, bloc IA "Assistant de relance" repensé, rail droit pipeline/RDV/URLs, onglets Infos & Projets alignés. Aucune modification du back / des données.
 
-Aucune autre fonction IA de l'app n'est modifiée (scraping, notifications, etc. restent sur leurs modèles actuels).
+## 1. Design tokens (index.css + tailwind.config.ts)
+Ajouter/aligner les variables sémantiques HSL :
+- `--ink 222 22% 10%` (#0F1420)
+- `--navy 222 32% 8%` + `--navy-hover 222 40% 18%`
+- `--lime 74 87% 58%` (#CDF03A) — `--lime-foreground` = navy
+- `--bg 220 15% 97%`, `--card 0 0% 100%`, `--card-border 220 12% 92%` (#E8EAEE)
+- `--muted-fg 222 8% 58%`, `--label 222 10% 40%`
+- `--success-fg 154 76% 36%`, `--success-bg 145 55% 93%`
+- `--field-border 220 13% 90%`, `--danger 8 58% 51%`
+- Radius : `--radius-card: 18px`, `--radius-button: 999px` (déjà pill), `--radius-chip: 999px`, `--radius-field: 12px`
 
-## Pré-requis à votre charge
-Il faut créer une clé API chez Anthropic (Claude n'est pas dans le catalogue Lovable AI Gateway, donc pas d'accès « sans clé » possible) :
+Exposer dans `tailwind.config.ts` : `colors.ink/navy/lime/success`, `borderRadius.card`. Body déjà en Instrument Sans (confirmé mémoire).
 
-1. Aller sur https://console.anthropic.com/
-2. Créer un compte / se connecter
-3. Onglet **API Keys** → **Create Key**
-4. Ajouter du crédit dans **Billing** (min ~5 €)
-5. Copier la clé (`sk-ant-...`)
+## 2. Nouvel en-tête client (`ClientDetails.tsx`)
+- Carte blanche unique radius-card, padding 28.
+- Logo 56×56 radius 14, bord `--card-border`. Fallback initiale.
+- Titre 26/700, badge statut lime (navy text) au lieu du fond jaune actuel.
+- Ligne infos avec icônes 14px `text-muted-fg`, gap 20.
+- Tags gris pill radius-chip padding 4/10.
+- Onglets intégrés en bas de la même carte, border-top ; onglet actif = underline navy 2px + badge navy/lime.
 
-Je vous ouvrirai un formulaire sécurisé pour la coller (secret `ANTHROPIC_API_KEY`, stocké côté serveur, jamais exposé au navigateur).
+## 3. Onglet Commercial (`CommercialTrackingTab.tsx` + sous-composants)
+Grille `grid-cols-[1fr_336px] gap-[22px]`.
 
-## Choix du modèle Claude
-Je propose **`claude-sonnet-4-5`** (dernier Sonnet, excellent rapport qualité/prix, très bon en rédaction FR nuancée — équivalent GPT-5 mini). Alternatives possibles à la demande : `claude-opus-4-1` (qualité max, ~5× plus cher) ou `claude-haiku-4-5` (économique).
+### Colonne principale
+1. **Assistant de relance** (refonte de `ClientFollowupBanner.tsx`) : carte blanche (plus de fond navy).
+   - Header : tuile 36×36 gradient navy + Sparkles lime, titre "Assistant de relance", badge "IA" navy/lime, sous-titre muted.
+   - Header droite : pastille verte "Généré à l'instant" si résultat.
+   - États :
+     - Vide : bloc centré + CTA lime "Générer une relance" (Sparkles).
+     - Chargement : 3 skeleton lines animate-pulse + "Rédaction en cours…" + spinner.
+     - Résultat : encadré `bg-[hsl(var(--surface-soft))]` radius 12 padding 16 `whitespace-pre-line`. Actions : Copier (toggle vert "Copié" 1.8s), navy "Envoyer par email", lien discret "Régénérer" à droite.
+2. **Suivi commercial** : carte, 2 selects côte à côte (Interlocuteur / Statut), séparateur, sous-bloc "Contacts additionnels" (composant existant `ClientContactsManager`).
+3. **Qualification du besoin** (`QualificationCollapsible.tsx`) : header cliquable avec barre progression lime (X/10) + chevron rotate. Grille 2 cols labels normal-case. Chips zone géo actives = navy/blanc. Bouton dashed "Ajouter une question".
+4. **Comptes rendus** (`CommercialNotesCards.tsx`) : segmented control Tous/Publics/Privés, CTA navy "Ajouter un CR", lignes dépliables.
 
-## Ce qui change
+### Colonne droite (rail sticky `top-4`)
+Refonte `ClientCommercialSidebar.tsx` en 3 cartes empilées :
+- **Pipeline** : 8 étapes ; actif = fond `lime/10`, gras, puce carrée lime pleine ; autres = puce carrée outline.
+- **Étapes de rendez-vous** : MeetingsCompactBlock repensé, pastilles vert/gris + `+`.
+- **URLs veille IA** : liste puce lime + bouton retirer + `+` (ScrapeUrlsManagerModal en trigger).
 
-### `supabase/functions/suggest-followup/index.ts`
-- Retirer l'appel à `https://ai.gateway.lovable.dev/v1/chat/completions` avec header `Lovable-API-Key`
-- Appeler `https://api.anthropic.com/v1/messages` avec headers `x-api-key: ${ANTHROPIC_API_KEY}` + `anthropic-version: 2023-06-01`
-- Adapter le corps de requête au format Anthropic : `system` en champ séparé (pas dans `messages`), `max_tokens` obligatoire, réponse dans `content[0].text`
-- Conserver TOUT le reste inchangé : prompt système, contexte (URLs scrappées, 3 derniers CR, cache Hub & Up + Google Alerts), parsing des 3 idées, stockage en base, gestion d'erreurs 429/402→surface UI
+## 4. Onglet Infos (`ClientInfoTab.tsx`)
+Grille `md:grid-cols-2 gap-[22px]`.
+- Carte "Informations générales" : lignes icône+label+valeur.
+- Carte "Statistiques" : tuile navy "CA total" chiffre lime + tuile gris clair "Année fiscale" + badge vert "Actif".
 
-### `supabase/functions/weekly-slack-excuses/index.ts`
-- Même bascule vers l'API Anthropic
-- Conserver toute la logique : filtre clients Target, skip si ni CR ni URL, post Slack par client sur `#hubteam_sales`, x-cron-secret pour le cron
+## 5. Onglet Projets (`ClientProjectsTab.tsx`)
+Header + CTA navy "Nouveau projet". Grille cartes projet actuelles restylées radius-card, barre progression lime. Ajouter tuile dashed "Créer un nouveau projet" en fin de grille.
 
-### Gestion d'erreurs Anthropic
-- `401` → clé invalide (toast clair « Vérifiez ANTHROPIC_API_KEY »)
-- `429` → rate limit (retry / message user)
-- `529` (overloaded) → même traitement que 429
-- Solde épuisé → message clair pointant vers console.anthropic.com/billing
+## 6. Onglets Tâches / Documents / Factures
+Ajouter composant partagé `EmptyState` (icône lime pastel, titre, phrase, CTA lime) et l'utiliser quand liste vide dans `ClientTasksTab`, `ClientKDriveTab`, `ClientInvoicesTab`.
 
-## Détails techniques
+## 7. Fichiers touchés
+- `src/index.css` — nouveaux tokens.
+- `tailwind.config.ts` — extend colors/radius.
+- `src/pages/ClientDetails.tsx` — en-tête + onglets restylés.
+- `src/components/client-details/ClientFollowupBanner.tsx` — refonte complète (carte blanche + 3 états).
+- `src/components/client-details/CommercialTrackingTab.tsx` — grille + ordre des cartes.
+- `src/components/client-details/CommercialNotesCards.tsx` — segmented, CTA navy.
+- `src/components/client-details/QualificationCollapsible.tsx` — header progression, labels normal-case, chips zone.
+- `src/components/client-details/ClientCommercialSidebar.tsx` — 3 cartes Pipeline/RDV/URLs.
+- `src/components/client-details/MeetingsCompactBlock.tsx` — pastilles statut.
+- `src/components/client-details/ClientInfoTab.tsx` — 2 cartes.
+- `src/components/client-details/ClientProjectsTab.tsx` — CTA + carte dashed.
+- `src/components/client-details/ClientTasksTab.tsx`, `ClientKDriveTab.tsx`, `ClientInvoicesTab.tsx` — empty states.
+- `src/components/common/EmptyState.tsx` — nouveau.
 
-Format Anthropic (référence : https://docs.anthropic.com/en/api/messages) :
+## Non-inclus
+- Sidebar app globale et topbar (déjà en place, conformes) — non retouchées sauf si tu confirmes.
+- Aucun changement DB/RLS/permissions.
+- Logique fetch et Supabase queries inchangées.
 
-```ts
-const resp = await fetch("https://api.anthropic.com/v1/messages", {
-  method: "POST",
-  headers: {
-    "x-api-key": Deno.env.get("ANTHROPIC_API_KEY")!,
-    "anthropic-version": "2023-06-01",
-    "content-type": "application/json",
-  },
-  body: JSON.stringify({
-    model: "claude-sonnet-4-5",
-    max_tokens: 1024,
-    system: systemPrompt,        // séparé, pas dans messages
-    messages: [{ role: "user", content: userPrompt }],
-  }),
-});
-const data = await resp.json();
-const text = data.content?.[0]?.text ?? "";
-```
-
-Différences clés vs OpenAI-compatible qui étaient utilisées avant :
-- `system` = champ top-level, pas un message role=system
-- `max_tokens` obligatoire (mettre 1024, largement suffisant pour 3 idées courtes)
-- Pas de `response_format` JSON natif — on garde le parsing texte actuel qui fonctionne déjà
-
-## Vérification après implémentation
-1. Sur la fiche client SEB (Target avec CR + URLs) → cliquer « Générer des excuses de relance » → 3 idées apparaissent
-2. Paramètres → « Tester maintenant » sur `TestSlackExcuses` → au moins un client Target génère un message Slack
-3. Consulter les logs de la fonction pour vérifier l'appel Anthropic (statut 200, latence)
-
-## Coût indicatif
-Claude Sonnet 4.5 : ~3 $ / M tokens input, ~15 $ / M tokens output. Un appel « excuse de relance » ≈ 2-5k tokens input + 300 tokens output ≈ **0,01 à 0,02 € par génération**. Volume actuel très faible → coût négligeable.
-
-## Étapes d'exécution
-1. Vous approuvez ce plan → passage en build mode
-2. Je vous demande la clé `ANTHROPIC_API_KEY` via formulaire sécurisé
-3. Une fois la clé confirmée, je modifie les deux edge functions
-4. Test manuel via le bouton « Tester maintenant » + sur la fiche SEB
+## Vérification
+- `bun run build` clean.
+- Playwright : capture des 3 onglets (Commercial / Infos / Projets) en 1280×1800 pour comparer au brief.
