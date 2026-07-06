@@ -41,6 +41,8 @@ export default function CRM() {
   const { data: clients = [], isLoading: clientsLoading } = useClients();
   const loading = clientsLoading || permissionsLoading;
   const [searchQuery, setSearchQuery] = useState('');
+  const [addClientOpen, setAddClientOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'grid'>(() => {
     return (localStorage.getItem('crm-view-mode') as 'list' | 'kanban' | 'grid') || 'kanban';
   });
