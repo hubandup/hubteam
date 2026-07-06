@@ -103,10 +103,37 @@
     --sidebar-ring: 68 100% 64%;
     --sidebar-muted: 224 40% 14%;
 
-    /* Brand & semantic tokens (used by business components) */
-    --brand-yellow: 68 100% 64%;            /* #E8FF4C accent — same in dark */
-    --brand-yellow-foreground: 216 60% 10%;  /* dark text on yellow */
-    --brand-ink: 216 60% 10%;                /* deep ink (#0f1422-ish) */
+    /* ─────────────────────────────────────────────
+       Hub+Up Design System — semantic tokens
+       Use these in every new component. Existing
+       --brand-* tokens are kept as aliases.
+       ───────────────────────────────────────────── */
+    --ink: 220 33% 9%;                       /* #0F1420 — main text */
+    --ink-foreground: 0 0% 100%;
+    --navy: 218 100% 6%;                     /* #000C1F — sidebar, dark buttons */
+    --navy-hover: 220 45% 18%;               /* #1A2540 */
+    --navy-foreground: 0 0% 100%;
+    --lime: 68 87% 58%;                      /* #CDF03A — accent, primary CTA, active */
+    --lime-foreground: 220 33% 9%;           /* navy text on lime */
+    --app-bg: 220 14% 96%;                   /* #F5F6F8 — app background */
+    --label: 218 8% 40%;                     /* #5C6270 — form labels */
+    --field-border: 218 11% 90%;             /* #E2E5EA — input borders */
+    --focus-ring: 220 33% 9%;                /* focus = ink */
+
+    /* Status pairs (fg on bg) */
+    --status-success: 152 76% 36%;           /* #17A06B */
+    --status-success-bg: 148 55% 94%;        /* #E7F6EE */
+    --status-warning-fg: 44 100% 27%;        /* #8A6D00 */
+    --status-warning-bg: 48 100% 92%;        /* #FFF7D6 */
+    --status-danger: 8 55% 51%;              /* #C9503F */
+    --status-danger-bg: 3 84% 96%;           /* #FDECEA */
+    --status-info: 218 8% 40%;               /* neutral info */
+    --status-info-bg: 216 12% 95%;           /* #F1F3F5 */
+
+    /* Aliases (kept for legacy components) */
+    --brand-yellow: 68 87% 58%;
+    --brand-yellow-foreground: 220 33% 9%;
+    --brand-ink: 220 33% 9%;
     --brand-ink-foreground: 0 0% 100%;
 
     /* Neutral surfaces */
@@ -119,12 +146,13 @@
     --hairline-strong: 220 13% 80%;
 
     /* Urgency / alert hues */
-    --urgency-late: 0 73% 51%;              /* #DC2626 */
+    --urgency-late: 0 73% 51%;
     --urgency-late-foreground: 0 0% 100%;
-    --urgency-week: 25 95% 53%;             /* #EA580C */
+    --urgency-week: 25 95% 53%;
     --urgency-week-foreground: 0 0% 100%;
-    --urgency-soon: 215 16% 47%;            /* slate */
+    --urgency-soon: 215 16% 47%;
     --urgency-soon-foreground: 0 0% 100%;
+
   }
   
   .dark {
