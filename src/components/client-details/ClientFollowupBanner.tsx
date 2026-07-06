@@ -181,8 +181,9 @@ export function ClientFollowupBanner({ clientId }: Props) {
           ) : !hasExcuse ? (
             <div className="text-center py-6">
               <p className="text-muted-foreground mb-4" style={{ fontSize: 13 }}>
-                Aucune relance générée pour ce contact. Lance la génération pour obtenir un message contextualisé.
+                Aucune relance générée pour l'instant. L'IA s'appuie sur l'historique et la qualification du besoin pour rédiger un message adapté.
               </p>
+
               <button
                 type="button"
                 onClick={() => setOpenModal(true)}
