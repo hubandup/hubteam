@@ -1,82 +1,82 @@
+# Basculer les « Excuses de relance » sur Claude (Anthropic)
+
 ## Objectif
+Remplacer Gemini par Claude d'Anthropic dans les deux surfaces qui génèrent des idées de relance commerciale :
+1. **Fiche client → onglet Commercial → « Excuses de relance »** (edge function `suggest-followup`, actuellement `google/gemini-3-flash-preview`)
+2. **Paramètres → Test Slack + cron hebdo #hubteam_sales** (edge function `weekly-slack-excuses`, actuellement `google/gemini-2.5-flash`)
 
-Centraliser tout le travail dans la fiche client, sans jamais toucher aux données. Aucune migration SQL, aucune suppression, aucune modification de RLS. Uniquement des changements d'affichage, de navigation et de composition.
+Aucune autre fonction IA de l'app n'est modifiée (scraping, notifications, etc. restent sur leurs modèles actuels).
 
-## Règle absolue
+## Pré-requis à votre charge
+Il faut créer une clé API chez Anthropic (Claude n'est pas dans le catalogue Lovable AI Gateway, donc pas d'accès « sans clé » possible) :
 
-**100% additif.** Aucun `DROP`, `DELETE`, `TRUNCATE`. Aucun fichier de composant existant supprimé — ils seront désactivés de la nav mais conservés pour préserver leur logique (fetch, mutations, permissions notes privées). Tâches, notes, équipes, documents, métadonnées projet restent intacts.
+1. Aller sur https://console.anthropic.com/
+2. Créer un compte / se connecter
+3. Onglet **API Keys** → **Create Key**
+4. Ajouter du crédit dans **Billing** (min ~5 €)
+5. Copier la clé (`sk-ant-...`)
 
-## 1. Fiche client — nouvel ordre des onglets
+Je vous ouvrirai un formulaire sécurisé pour la coller (secret `ANTHROPIC_API_KEY`, stocké côté serveur, jamais exposé au navigateur).
 
-Ordre appliqué dans `src/pages/ClientDetails.tsx` (`allTabs`) :
+## Choix du modèle Claude
+Je propose **`claude-sonnet-4-5`** (dernier Sonnet, excellent rapport qualité/prix, très bon en rédaction FR nuancée — équivalent GPT-5 mini). Alternatives possibles à la demande : `claude-opus-4-1` (qualité max, ~5× plus cher) ou `claude-haiku-4-5` (économique).
 
-1. **Commercial** (admin uniquement, inchangé)
-2. **Infos** (inchangé)
-3. **Projets** (existe déjà — `ClientProjectsTab`)
-4. **Tâches** (nouveau — agrégation)
-5. **Documents** (renommage de l'onglet « kDrive » — libellé déjà « Documents » côté UI, on nettoie la clé `value: 'kdrive'` → `value: 'documents'` en gardant une redirection depuis l'ancienne clé pour ne pas casser les liens sauvegardés)
-6. **Factures** (inchangé)
+## Ce qui change
 
-Le badge et les compteurs existants sont conservés.
+### `supabase/functions/suggest-followup/index.ts`
+- Retirer l'appel à `https://ai.gateway.lovable.dev/v1/chat/completions` avec header `Lovable-API-Key`
+- Appeler `https://api.anthropic.com/v1/messages` avec headers `x-api-key: ${ANTHROPIC_API_KEY}` + `anthropic-version: 2023-06-01`
+- Adapter le corps de requête au format Anthropic : `system` en champ séparé (pas dans `messages`), `max_tokens` obligatoire, réponse dans `content[0].text`
+- Conserver TOUT le reste inchangé : prompt système, contexte (URLs scrappées, 3 derniers CR, cache Hub & Up + Google Alerts), parsing des 3 idées, stockage en base, gestion d'erreurs 429/402→surface UI
 
-## 2. Nouvel onglet Tâches (niveau client)
+### `supabase/functions/weekly-slack-excuses/index.ts`
+- Même bascule vers l'API Anthropic
+- Conserver toute la logique : filtre clients Target, skip si ni CR ni URL, post Slack par client sur `#hubteam_sales`, x-cron-secret pour le cron
 
-Nouveau composant `src/components/client-details/ClientTasksTab.tsx` :
+### Gestion d'erreurs Anthropic
+- `401` → clé invalide (toast clair « Vérifiez ANTHROPIC_API_KEY »)
+- `429` → rate limit (retry / message user)
+- `529` (overloaded) → même traitement que 429
+- Solde épuisé → message clair pointant vers console.anthropic.com/billing
 
-- Récupère tous les `project_clients` du client → liste de `project_id`.
-- Fetch `tasks` filtrées `project_id IN (...)` avec jointure sur `projects(name)` pour afficher le projet d'origine.
-- Colonnes : titre, projet d'origine (badge cliquable qui ouvre le projet imbriqué), assigné à, statut, deadline.
-- Filtre par projet (dropdown), filtre statut, tri deadline.
-- Aucune écriture nouvelle — réutilise les hooks existants (`useTasks`) et respecte les RLS déjà en place.
+## Détails techniques
 
-## 3. Navigation projet imbriquée dans la fiche client
+Format Anthropic (référence : https://docs.anthropic.com/en/api/messages) :
 
-Quand on clique un projet depuis l'onglet Projets ou depuis le badge d'une tâche :
+```ts
+const resp = await fetch("https://api.anthropic.com/v1/messages", {
+  method: "POST",
+  headers: {
+    "x-api-key": Deno.env.get("ANTHROPIC_API_KEY")!,
+    "anthropic-version": "2023-06-01",
+    "content-type": "application/json",
+  },
+  body: JSON.stringify({
+    model: "claude-sonnet-4-5",
+    max_tokens: 1024,
+    system: systemPrompt,        // séparé, pas dans messages
+    messages: [{ role: "user", content: userPrompt }],
+  }),
+});
+const data = await resp.json();
+const text = data.content?.[0]?.text ?? "";
+```
 
-- URL : `/client/:id?tab=projects&project=:projectId&subtab=tasks|notes`
-- Pas de rechargement — on reste dans `ClientDetails.tsx`, on ne navigue pas vers `/project/:id`.
-- Nouveau composant `src/components/client-details/EmbeddedProjectView.tsx` :
-  - En-tête projet complet : nom, description, dates, statut, **équipe (client + agences + membres)**, **métadonnées** — issus de l'ex-onglet Infos + Équipe.
-  - Bouton « ← Retour aux projets » qui repasse à `tab=projects` sans `project`.
-  - Sous-onglets réduits à **Tâches** et **Notes** uniquement, via `ProjectTasksNotebookTab` et `ProjectNotesTab` existants (aucune modification interne).
-- Les composants `ProjectTeamTab`, `ProjectKDriveTab`, `EditProjectInfoDialog` **restent en place** — leurs données remontent simplement dans l'en-tête embarqué. L'accès direct `/project/:id` continue d'exister (route conservée) pour compatibilité liens/notifs.
+Différences clés vs OpenAI-compatible qui étaient utilisées avant :
+- `system` = champ top-level, pas un message role=system
+- `max_tokens` obligatoire (mettre 1024, largement suffisant pour 3 idées courtes)
+- Pas de `response_format` JSON natif — on garde le parsing texte actuel qui fonctionne déjà
 
-## 4. Onglet Documents unifié
+## Vérification après implémentation
+1. Sur la fiche client SEB (Target avec CR + URLs) → cliquer « Générer des excuses de relance » → 3 idées apparaissent
+2. Paramètres → « Tester maintenant » sur `TestSlackExcuses` → au moins un client Target génère un message Slack
+3. Consulter les logs de la fonction pour vérifier l'appel Anthropic (statut 200, latence)
 
-- Le composant `ClientKDriveTab` gère déjà l'arborescence kDrive du client. On garde son rendu, on renomme uniquement :
-  - `value: 'kdrive'` → `value: 'documents'` dans la définition d'onglets.
-  - Libellé UI : « Documents » (déjà en place).
-  - Redirection : si `?tab=kdrive` est présent dans l'URL, on le mappe vers `documents` au montage pour préserver les anciens liens.
-- Aucun déplacement de fichier physique — l'arborescence remonte telle quelle avec un sous-dossier par projet (déjà le cas via la logique kDrive existante).
+## Coût indicatif
+Claude Sonnet 4.5 : ~3 $ / M tokens input, ~15 $ / M tokens output. Un appel « excuse de relance » ≈ 2-5k tokens input + 300 tokens output ≈ **0,01 à 0,02 € par génération**. Volume actuel très faible → coût négligeable.
 
-## 5. Notes privées
-
-Comportement strictement inchangé — `ProjectNotesTab` est réutilisé tel quel, ses filtres de visibilité (auteur + admin) s'appliquent naturellement dans le contexte imbriqué.
-
-## 6. Page /projects transversale
-
-- Aucun changement fonctionnel : liste + Kanban + filtres inchangés.
-- Modif du handler de clic sur une carte projet : au lieu de `navigate('/project/:id')`, redirige vers `/client/:clientId?tab=projects&project=:projectId&subtab=tasks` en récupérant le `client_id` depuis `project_clients` (déjà chargé dans `useProjects`).
-- Fallback : si un projet n'a pas de client rattaché (edge case), on garde `/project/:id` comme aujourd'hui.
-
-## Critères d'acceptation vérifiés
-
-- Base de données strictement identique avant/après (aucune migration).
-- Toutes les tâches et notes existantes restent accessibles depuis la fiche client.
-- Onglet Tâches client agrège l'ensemble avec projet d'origine et filtre.
-- Onglet unique « Documents », plus aucun libellé « kDrive » dans l'UI.
-- Notes privées restreintes comme avant.
-- `/projects` fonctionnel, redirige dans le contexte client.
-- Navigation projet-dans-client sans rechargement (React state + query params).
-
-## Vérification manuelle post-implémentation
-
-Ouvrir 2-3 clients (dont SEB), confirmer que toutes tâches + notes remontent bien, cliquer sur un projet et vérifier les 2 sous-onglets + l'en-tête équipe/infos.
-
-## Section technique
-
-- **Fichiers créés** : `ClientTasksTab.tsx`, `EmbeddedProjectView.tsx`.
-- **Fichiers modifiés** : `ClientDetails.tsx` (tabs + gestion query params `project`/`subtab`), `Projects.tsx` + `ProjectCard.tsx`/`ProjectListView.tsx`/`ProjectKanbanView.tsx` (nouveau handler de clic).
-- **Fichiers conservés inchangés mais non montés dans la nouvelle nav projet** : `ProjectTeamTab.tsx`, `ProjectKDriveTab.tsx`, `ProjectAttachmentsTab.tsx`, `EditProjectInfoDialog.tsx` — accessibles via `/project/:id` (route intacte).
-- Route `/project/:id` conservée pour compat notifications/deep-links.
-- Aucun changement dans `src/hooks/useTasks.tsx`, `useProjects.tsx`, `useNotes` — seuls des consommateurs.
+## Étapes d'exécution
+1. Vous approuvez ce plan → passage en build mode
+2. Je vous demande la clé `ANTHROPIC_API_KEY` via formulaire sécurisé
+3. Une fois la clé confirmée, je modifie les deux edge functions
+4. Test manuel via le bouton « Tester maintenant » + sur la fiche SEB
