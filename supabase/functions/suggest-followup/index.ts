@@ -17,6 +17,7 @@ interface Payload {
   action_label?: string; // libellé humain de l'action à proposer
   address_form?: 'vous' | 'tu'; // forme d'adresse : vouvoiement (par défaut) ou tutoiement
   model_id?: ModelChoice; // choix du modèle IA (défaut: claude)
+  calendly_url_override?: string | null; // si fourni, remplace le lien Calendly attribué par défaut
   save?: boolean; // persist to history (default true)
 }
 
