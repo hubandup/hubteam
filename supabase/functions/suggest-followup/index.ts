@@ -730,6 +730,7 @@ Génère le JSON.`;
       sources,
       sources_count: validScrapes.length,
       recipient: { email: recipientEmail, name: recipientName, role: recipientRole },
+      model_used: modelChoice,
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' } });
   } catch (e) {
     console.error('suggest-followup error', e);
