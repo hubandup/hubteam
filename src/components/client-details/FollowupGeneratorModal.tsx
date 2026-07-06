@@ -261,6 +261,16 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
               </SelectContent>
             </Select>
           </div>
+          <div className="md:col-span-2">
+            <Label className="text-xs">Modèle IA</Label>
+            <Select value={modelId} onValueChange={(v: any) => setModelId(v)}>
+              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="claude">Claude Sonnet 4.5 (Anthropic) — défaut</SelectItem>
+                <SelectItem value="gpt5mini">GPT-5 mini (OpenAI)</SelectItem>
+                <SelectItem value="gemini">Google Gemini 3 Flash Preview</SelectItem>
+              </SelectContent>
+            </Select>
           {action === 'custom' && (
             <div className="md:col-span-2">
               <Label className="text-xs">Action personnalisée</Label>
