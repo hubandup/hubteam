@@ -84,37 +84,47 @@ export function Layout({ children }: LayoutProps) {
   return (
     <SidebarProvider>
       <SkipToContent />
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-app-bg">
         <Sidebar />
         <div className="flex-1 min-w-0 flex flex-col">
           <OfflineBanner />
           <AnnouncementBanner />
-          <header className="h-14 border-b border-border/40 bg-background/80 backdrop-blur-xl flex items-center justify-between px-5 sticky top-0 z-10">
-            <SidebarTrigger />
+          <header
+            className="border-b border-border bg-card flex items-center justify-between sticky top-0 z-10 transition-all"
+            style={{ height: 66, paddingLeft: 20, paddingRight: 24 }}
+          >
+            <div className="flex items-center gap-2">
+              <SidebarTrigger className="h-10 w-10 rounded-[10px] text-foreground hover:bg-muted transition-colors" />
+            </div>
             <div className="flex items-center gap-1.5">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-lg"
+              <IconButton
+                aria-label="Rechercher"
                 onClick={() => {
                   document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
                 }}
-                aria-label="Rechercher"
               >
                 <Search className="h-4 w-4" />
-              </Button>
+              </IconButton>
               <LanguageSelector />
               <ThemeToggle />
               <NotificationBell />
-              <HeaderUserProfile />
+              <div className="pl-1.5 ml-1.5 border-l border-border">
+                <HeaderUserProfile />
+              </div>
             </div>
           </header>
-          <main id="main-content" className="flex-1 min-h-0 min-w-0 overflow-auto bg-background transition-opacity duration-150" style={{ scrollbarGutter: 'stable' }}>
-            <div className="px-5 md:px-8 py-4">
-              <Breadcrumbs />
-            </div>
-            <div className="px-5 md:px-8 pb-8">
-              {children}
+          <main
+            id="main-content"
+            className="flex-1 min-h-0 min-w-0 overflow-auto bg-app-bg transition-opacity duration-150"
+            style={{ scrollbarGutter: 'stable' }}
+          >
+            <div className="mx-auto w-full" style={{ maxWidth: 1240, paddingLeft: 28, paddingRight: 28 }}>
+              <div className="py-4">
+                <Breadcrumbs />
+              </div>
+              <div className="pb-10">
+                {children}
+              </div>
             </div>
           </main>
         </div>
@@ -123,3 +133,4 @@ export function Layout({ children }: LayoutProps) {
     </SidebarProvider>
   );
 }
+
