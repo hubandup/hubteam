@@ -271,6 +271,7 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
                 <SelectItem value="gemini">Google Gemini 3 Flash Preview</SelectItem>
               </SelectContent>
             </Select>
+          </div>
           {action === 'custom' && (
             <div className="md:col-span-2">
               <Label className="text-xs">Action personnalisée</Label>
