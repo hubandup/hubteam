@@ -281,11 +281,12 @@ export function ClientCommercialSidebar({ client }: Props) {
                 <button
                   type="button"
                   onClick={() => removeUrl(u.id)}
-                  className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0"
                   aria-label="Retirer cette URL"
                 >
-                  <X size={12} />
+                  <Minus size={14} />
                 </button>
+
               </li>
             ))}
           </ul>
