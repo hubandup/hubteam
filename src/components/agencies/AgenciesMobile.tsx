@@ -144,7 +144,7 @@ export function AgenciesMobile({ agencies, onAgencyAdded, addAgencyOpen, onAddAg
           Aucune agence ne correspond
         </div>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-2 w-full min-w-0">
           {filtered.map((agency) => (
             <AgencySummaryCard key={agency.id} agency={agency} onOpen={() => setSelectedId(agency.id)} />
           ))}
@@ -187,11 +187,11 @@ function AgencySummaryCard({ agency, onOpen }: { agency: Agency; onOpen: () => v
   const fallback = getLogoFallback(agency.name || '?');
 
   return (
-    <li>
+    <li className="w-full min-w-0">
       <button
         type="button"
         onClick={onOpen}
-        className="w-full bg-white p-3 text-left active:bg-black/[0.02] transition-colors"
+        className="w-full min-w-0 max-w-full bg-white p-3 text-left active:bg-black/[0.02] transition-colors overflow-hidden"
         style={{ border: `1px solid ${CARD_BORDER}`, borderRadius: 16 }}
       >
         {/* Row 1 */}
