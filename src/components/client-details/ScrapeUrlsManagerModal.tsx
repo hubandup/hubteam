@@ -23,6 +23,34 @@ export function ScrapeUrlsManagerModal({ open, onOpenChange, trackingId }: Props
   const [label, setLabel] = useState('');
   const [scrapingId, setScrapingId] = useState<string | null>(null);
   const [scrapingAll, setScrapingAll] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editUrl, setEditUrl] = useState('');
+  const [editLabel, setEditLabel] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const startEdit = (u: any) => {
+    setEditingId(u.id);
+    setEditUrl(u.url || '');
+    setEditLabel(u.label || '');
+  };
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditUrl('');
+    setEditLabel('');
+  };
+  const saveEdit = async (id: string) => {
+    if (!editUrl.trim()) return toast.error('URL requise');
+    setSavingEdit(true);
+    const { error } = await supabase
+      .from('commercial_scrape_urls')
+      .update({ url: editUrl.trim(), label: editLabel.trim() || null })
+      .eq('id', id);
+    setSavingEdit(false);
+    if (error) return toast.error('Erreur de mise à jour');
+    toast.success('URL modifiée');
+    cancelEdit();
+    qc.invalidateQueries({ queryKey: ['commercial-scrape-urls', trackingId] });
+  };
 
   const { data: urls = [], isLoading } = useQuery({
     queryKey: ['commercial-scrape-urls', trackingId],
