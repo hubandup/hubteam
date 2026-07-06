@@ -248,10 +248,10 @@ function ProjectSummaryCard({ project, onOpen }: { project: any; onOpen: () => v
             {fallback.initials}
           </span>
           <div className="flex-1 min-w-0">
-            <p className="text-[14.5px] font-semibold truncate" style={{ color: TITLE }}>
+            <p className="text-[14.5px] font-semibold truncate min-w-0" style={{ color: TITLE }}>
               {project.name}
             </p>
-            <p className="text-[12px] truncate" style={{ color: MUTED }}>
+            <p className="text-[12px] truncate min-w-0" style={{ color: MUTED }}>
               {clientName}
             </p>
           </div>

@@ -203,10 +203,10 @@ function AgencySummaryCard({ agency, onOpen }: { agency: Agency; onOpen: () => v
             {fallback.initials}
           </span>
           <div className="flex-1 min-w-0">
-            <p className="text-[14.5px] font-semibold truncate" style={{ color: TITLE }}>
+            <p className="text-[14.5px] font-semibold truncate min-w-0" style={{ color: TITLE }}>
               {agency.name}
             </p>
-            <p className="text-[12px] truncate" style={{ color: MUTED }}>
+            <p className="text-[12px] truncate min-w-0" style={{ color: MUTED }}>
               {contact.name}
             </p>
           </div>
@@ -226,7 +226,7 @@ function AgencySummaryCard({ agency, onOpen }: { agency: Agency; onOpen: () => v
           style={{ borderTop: `1px solid ${CARD_BORDER}` }}
         >
           <Mail className="h-3.5 w-3.5 shrink-0" style={{ color: MUTED }} />
-          <span className="text-[12.5px] font-medium truncate" style={{ color: MUTED }}>
+          <span className="text-[12.5px] font-medium truncate min-w-0" style={{ color: MUTED }}>
             {contact.email || '—'}
           </span>
         </div>
