@@ -63,9 +63,8 @@ export function AgenciesMobile({ agencies, onAgencyAdded, addAgencyOpen, onAddAg
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-
-
   const filtered = useMemo(() => {
+
     const q = search.trim().toLowerCase();
     let out = agencies;
     if (q) {
