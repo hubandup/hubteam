@@ -29,6 +29,7 @@ import { PageLoader } from '@/components/PageLoader';
 import { PendingQuoteActionsBanner } from '@/components/PendingQuoteActionsBanner';
 import { cn } from '@/lib/utils';
 import { buildProjectNavPath } from '@/lib/project-nav';
+import { ProjectsMobile } from '@/components/projects/ProjectsMobile';
 
 
 type ViewMode = 'grid' | 'list' | 'kanban';
