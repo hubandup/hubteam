@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { MobileBottomSheet } from '@/components/MobileBottomSheet';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { AddAgencyDialog } from '@/components/AddAgencyDialog';
-import { getLogoFallback } from '@/components/targets/targetUtils';
+import { LogoAvatar } from '@/components/targets/LogoAvatar';
 
 const NAVY = '#0C1320';
 const LIME = '#DDF247';
