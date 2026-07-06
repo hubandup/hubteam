@@ -53,8 +53,9 @@ export default function Agencies() {
         (agenciesData || []).map(async (agency) => {
           const { data: contacts } = await supabase
             .from('agency_contacts')
-            .select('id, first_name, last_name, email')
+            .select('id, first_name, last_name, email, phone')
             .eq('agency_id', agency.id);
+
           
           return {
             ...agency,
