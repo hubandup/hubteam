@@ -297,7 +297,7 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
           )}
 
           {wantsBookingLink && (
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 space-y-2">
               {resolvedCalendly ? (
                 <div
                   className="flex items-start gap-2 px-3 py-2 text-xs"
@@ -308,7 +308,9 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
                     <p className="font-semibold" style={{ color: 'hsl(var(--brand-ink))' }}>
                       Lien Calendly attribué : {resolvedCalendly.owner === 'amandine' ? 'Amandine' : 'Charles'}
                     </p>
-                    <p className="text-[11px] text-foreground truncate">{resolvedCalendly.url}</p>
+                    <p className="text-[11px] text-foreground/70">
+                      Par défaut : {resolvedCalendly.url}
+                    </p>
                   </div>
                 </div>
               ) : (
@@ -318,13 +320,38 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
                 >
                   <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: '#a15c00' }} />
                   <p className="text-foreground">
-                    Aucun lien Calendly configuré pour cette action. Le message sera généré sans lien de réservation.
+                    Aucun lien Calendly configuré par défaut. Vous pouvez saisir un lien ci-dessous, sinon le message sera généré sans lien de réservation.
                   </p>
                 </div>
               )}
+              <div>
+                <Label className="text-xs">Lien Calendly à utiliser (modifiable)</Label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    type="url"
+                    placeholder="https://calendly.com/…"
+                    value={calendlyUrlOverride}
+                    onChange={(e) => setCalendlyUrlOverride(e.target.value)}
+                  />
+                  {resolvedCalendly && calendlyUrlOverride !== resolvedCalendly.url && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCalendlyUrlOverride(resolvedCalendly.url)}
+                    >
+                      Réinitialiser
+                    </Button>
+                  )}
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Laissez vide pour générer le message sans lien de réservation.
+                </p>
+              </div>
             </div>
           )}
         </div>
+
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>Annuler</Button>
