@@ -39,6 +39,7 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
   const [recipientChoice, setRecipientChoice] = useState<string>('main');
   const [customEmail, setCustomEmail] = useState('');
   const [customName, setCustomName] = useState('');
+  const [modelId, setModelId] = useState<'claude' | 'gemini' | 'gpt5mini'>('claude');
   const [busy, setBusy] = useState(false);
 
   const { data: tracking } = useQuery({
@@ -171,6 +172,7 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
           action_key: action,
           action_label: actionLabel,
           address_form: address,
+          model_id: modelId,
         },
       });
       if (error) throw error;
@@ -256,6 +258,17 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
                 <SelectItem value="ask_feedback">Demander un retour / un avis</SelectItem>
                 <SelectItem value="just_hello">Juste un coucou 👋</SelectItem>
                 <SelectItem value="custom">Personnalisé…</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="md:col-span-2">
+            <Label className="text-xs">Modèle IA</Label>
+            <Select value={modelId} onValueChange={(v: any) => setModelId(v)}>
+              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="claude">Claude Sonnet 4.5 (Anthropic) — défaut</SelectItem>
+                <SelectItem value="gpt5mini">GPT-5 mini (OpenAI)</SelectItem>
+                <SelectItem value="gemini">Google Gemini 3 Flash Preview</SelectItem>
               </SelectContent>
             </Select>
           </div>

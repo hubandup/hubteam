@@ -5,6 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+type ModelChoice = 'gemini' | 'claude' | 'gpt5mini';
+
 interface Payload {
   tracking_id: string;
   tone?: 'friendly' | 'formal' | 'direct';
@@ -14,7 +16,57 @@ interface Payload {
   action_key?: string; // ex: 'propose_slot', 'send_quote', 'schedule_call', 'custom'
   action_label?: string; // libellé humain de l'action à proposer
   address_form?: 'vous' | 'tu'; // forme d'adresse : vouvoiement (par défaut) ou tutoiement
+  model_id?: ModelChoice; // choix du modèle IA (défaut: claude)
   save?: boolean; // persist to history (default true)
+}
+
+/** Appel unifié aux modèles IA. Retourne le texte brut généré. */
+async function callAI(
+  modelChoice: ModelChoice,
+  systemPrompt: string,
+  userPrompt: string,
+  opts: { anthropicKey?: string; lovableKey?: string },
+): Promise<{ ok: true; text: string } | { ok: false; status: number; body: string; provider: 'anthropic' | 'lovable' }> {
+  if (modelChoice === 'claude') {
+    if (!opts.anthropicKey) return { ok: false, status: 500, body: 'ANTHROPIC_API_KEY missing', provider: 'anthropic' };
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': opts.anthropicKey,
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 2048,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
+      }),
+    });
+    if (!r.ok) return { ok: false, status: r.status, body: await r.text(), provider: 'anthropic' };
+    const j = await r.json();
+    return { ok: true, text: j?.content?.[0]?.text || '' };
+  }
+  // Lovable AI Gateway (OpenAI-compatible)
+  if (!opts.lovableKey) return { ok: false, status: 500, body: 'LOVABLE_API_KEY missing', provider: 'lovable' };
+  const model = modelChoice === 'gemini' ? 'google/gemini-3-flash-preview' : 'openai/gpt-5-mini';
+  const r = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Lovable-API-Key': opts.lovableKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+    }),
+  });
+  if (!r.ok) return { ok: false, status: r.status, body: await r.text(), provider: 'lovable' };
+  const j = await r.json();
+  return { ok: true, text: j?.choices?.[0]?.message?.content || '' };
 }
 
 /** Strip markdown leftovers (>, **, ##, ---, leading bullets) and convert to safe HTML. */
@@ -56,12 +108,8 @@ Deno.serve(async (req) => {
     const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
     const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
-    if (!ANTHROPIC_API_KEY) {
-      return new Response(JSON.stringify({ error: 'ANTHROPIC_API_KEY not configured' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
-      });
-    }
 
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -468,48 +516,40 @@ ${sourcesText}
 
 Génère le JSON.`;
 
-    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
-        max_tokens: 2048,
-        system: systemPrompt,
-        messages: [
-          { role: 'user', content: `${userPrompt}\n\nRéponds UNIQUEMENT avec le JSON demandé, sans markdown ni backticks.` },
-        ],
-      }),
+    const modelChoice: ModelChoice =
+      body.model_id === 'gemini' || body.model_id === 'gpt5mini' ? body.model_id : 'claude';
+
+    const fullUserPrompt = `${userPrompt}\n\nRéponds UNIQUEMENT avec le JSON demandé, sans markdown ni backticks.`;
+    const aiCall = await callAI(modelChoice, systemPrompt, fullUserPrompt, {
+      anthropicKey: ANTHROPIC_API_KEY,
+      lovableKey: LOVABLE_API_KEY,
     });
 
-    if (!aiRes.ok) {
-      if (aiRes.status === 429 || aiRes.status === 529) {
-        return new Response(JSON.stringify({ error: 'rate_limited', message: 'Anthropic surchargé, réessayez dans un instant.' }), {
+    if (!aiCall.ok) {
+      const providerLabel = aiCall.provider === 'anthropic' ? 'Anthropic' : 'Lovable AI';
+      if (aiCall.status === 429 || aiCall.status === 529) {
+        return new Response(JSON.stringify({ error: 'rate_limited', message: `${providerLabel} surchargé, réessayez dans un instant.` }), {
           status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
         });
       }
-      if (aiRes.status === 401) {
-        return new Response(JSON.stringify({ error: 'unauthorized', message: 'Clé ANTHROPIC_API_KEY invalide.' }), {
+      if (aiCall.status === 401) {
+        return new Response(JSON.stringify({ error: 'unauthorized', message: `Clé ${providerLabel} invalide ou manquante.` }), {
           status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
         });
       }
-      if (aiRes.status === 402 || aiRes.status === 403) {
-        return new Response(JSON.stringify({ error: 'payment_required', message: 'Crédits Anthropic épuisés — voir console.anthropic.com/billing.' }), {
+      if (aiCall.status === 402 || aiCall.status === 403) {
+        return new Response(JSON.stringify({ error: 'payment_required', message: `Crédits ${providerLabel} épuisés.` }), {
           status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
         });
       }
-      const t = await aiRes.text();
-      console.error('Anthropic error', aiRes.status, t);
+      console.error(`${providerLabel} error`, aiCall.status, aiCall.body);
       return new Response(JSON.stringify({ error: 'ai_error', message: 'Erreur du modèle IA.' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
       });
     }
 
-    const aiJson = await aiRes.json();
-    const raw = aiJson?.content?.[0]?.text || '';
+    const raw = aiCall.text;
+
 
     let parsed: { angles?: Array<{ title?: string; description?: string; source?: string }>; subject?: string; body_plain?: string } = {};
     try {
@@ -690,6 +730,7 @@ Génère le JSON.`;
       sources,
       sources_count: validScrapes.length,
       recipient: { email: recipientEmail, name: recipientName, role: recipientRole },
+      model_used: modelChoice,
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' } });
   } catch (e) {
     console.error('suggest-followup error', e);

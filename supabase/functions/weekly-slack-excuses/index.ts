@@ -8,6 +8,7 @@ const corsHeaders = {
 const SLACK_BOT_TOKEN = Deno.env.get('SLACK_BOT_TOKEN');
 const SLACK_CHANNEL = '#hubteam_sales';
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
+const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const FIRECRAWL_API_KEY = Deno.env.get('FIRECRAWL_API_KEY');
 const CRON_SECRET = Deno.env.get('CRON_SECRET');
 
@@ -214,8 +215,6 @@ async function loadTargets(supabase: any): Promise<TargetData[]> {
 
 // ----- AI generation -----
 async function generateRelanceIdeas(target: TargetData, hubandupContext: string): Promise<string[]> {
-  if (!ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY missing');
-
   const notesBlock = target.notes.length
     ? target.notes.map((n, i) => `CR ${i + 1}:\n${n.slice(0, 2000)}`).join('\n\n')
     : '(aucun compte rendu)';
@@ -268,35 +267,73 @@ ${hubandupContext.slice(0, 6000)}
 - Pas d'introduction ni conclusion
 - Ton professionnel, actionnable, en français`;
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const system = 'Tu génères des idées de relance commerciale précises, sourcées et actionnables.';
+
+  const parseIdeas = (raw: string): string[] =>
+    raw
+      .split('\n')
+      .map((l) => l.replace(/^[\s\-•*\d.\)]+/, '').replace(/^["«»“”]/, '').replace(/["«»“”]$/, '').trim())
+      .filter((l) => l.length > 10)
+      .slice(0, 3);
+
+  // Tentative 1 : Claude Sonnet 4.5
+  if (ANTHROPIC_API_KEY) {
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-5',
+          max_tokens: 1024,
+          temperature: 0.8,
+          system,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const raw: string = data?.content?.[0]?.text ?? '';
+        const ideas = parseIdeas(raw);
+        if (ideas.length > 0) return ideas;
+        console.warn('[relances] Claude returned no parseable ideas, falling back to GPT-5 mini');
+      } else {
+        const txt = await res.text();
+        console.warn(`[relances] Claude error ${res.status}: ${txt} — fallback GPT-5 mini`);
+      }
+    } catch (e) {
+      console.warn('[relances] Claude threw, fallback GPT-5 mini:', (e as Error).message);
+    }
+  } else {
+    console.warn('[relances] ANTHROPIC_API_KEY missing, using GPT-5 mini fallback');
+  }
+
+  // Fallback : GPT-5 mini via Lovable AI Gateway
+  if (!LOVABLE_API_KEY) throw new Error('Aucun modèle IA disponible (ANTHROPIC_API_KEY et LOVABLE_API_KEY manquants)');
+  const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'x-api-key': ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
+      'Lovable-API-Key': LOVABLE_API_KEY,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 1024,
-      temperature: 0.8,
-      system: 'Tu génères des idées de relance commerciale précises, sourcées et actionnables.',
+      model: 'openai/gpt-5-mini',
       messages: [
+        { role: 'system', content: system },
         { role: 'user', content: prompt },
       ],
     }),
   });
-
   if (!res.ok) {
     const txt = await res.text();
-    throw new Error(`Anthropic error ${res.status}: ${txt}`);
+    throw new Error(`Lovable AI (GPT-5 mini) error ${res.status}: ${txt}`);
   }
   const data = await res.json();
-  const raw: string = data?.content?.[0]?.text ?? '';
-  return raw
-    .split('\n')
-    .map((l) => l.replace(/^[\s\-•*\d.\)]+/, '').replace(/^["«»“”]/, '').replace(/["«»“”]$/, '').trim())
-    .filter((l) => l.length > 10)
-    .slice(0, 3);
+  const raw: string = data?.choices?.[0]?.message?.content ?? '';
+  return parseIdeas(raw);
 }
 
 // ----- Slack -----
