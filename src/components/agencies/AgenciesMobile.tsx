@@ -104,11 +104,12 @@ export function AgenciesMobile({ agencies, onAgencyAdded, addAgencyOpen, onAddAg
               letterSpacing: '-0.03em',
             }}
           >
-            {t('agencies.title')}
+            Agences
           </h1>
           <p className="text-white/60 text-[13px] mt-1" style={{ fontFamily: "'Manrope', system-ui, sans-serif" }}>
             {filtered.length} agence{filtered.length > 1 ? 's' : ''} · gère tes partenaires
           </p>
+
         </div>
         <ProtectedAction module="agencies" action="create">
           <button
