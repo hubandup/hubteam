@@ -202,14 +202,13 @@ export default function Projects() {
 
   if (isMobile) {
     return (
-      <div className="p-4" style={{ backgroundColor: '#F4F4F3', minHeight: '100vh' }}>
-        <ProjectsMobile
-          addProjectOpen={addProjectOpen}
-          onAddProjectOpenChange={setAddProjectOpen}
-        />
-      </div>
+      <ProjectsMobile
+        addProjectOpen={addProjectOpen}
+        onAddProjectOpenChange={setAddProjectOpen}
+      />
     );
   }
+
 
   return (
     <div className="space-y-0 bg-background min-h-screen p-7">

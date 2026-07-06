@@ -188,16 +188,15 @@ export default function Agencies() {
 
   if (isMobile) {
     return (
-      <div className="p-3 pb-6">
-        <AgenciesMobile
-          agencies={agencies}
-          onAgencyAdded={fetchAgencies}
-          addAgencyOpen={addAgencyOpen}
-          onAddAgencyOpenChange={setAddAgencyOpen}
-        />
-      </div>
+      <AgenciesMobile
+        agencies={agencies}
+        onAgencyAdded={fetchAgencies}
+        addAgencyOpen={addAgencyOpen}
+        onAddAgencyOpenChange={setAddAgencyOpen}
+      />
     );
   }
+
 
   return (
     <div className="p-6 space-y-6">
