@@ -6,7 +6,7 @@ import { LagostinaSubTabs } from './LagostinaSubTabs';
 
 function SectionCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-5">
+    <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-5">
       <div className="flex items-center gap-2 mb-4">
         {icon}
         <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">{title}</h3>
@@ -72,7 +72,7 @@ export function LagostinaConsumer() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-32 bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 animate-pulse" />)}
+        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-32 bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl animate-pulse" />)}
       </div>
     );
   }
@@ -138,7 +138,7 @@ export function LagostinaConsumer() {
           )}
 
           {activeTab === 'brand' && (
-            <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-5">
+            <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Eye className="h-4 w-4 text-foreground font-semibold" />
                 <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Brand Monitoring</h3>
@@ -163,7 +163,7 @@ export function LagostinaConsumer() {
           )}
 
           {activeTab === 'rnr' && (
-            <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-5">
+            <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <MessageSquare className="h-4 w-4 text-foreground font-semibold" />

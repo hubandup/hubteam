@@ -323,7 +323,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
           {/* KPI cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {kpis.map((kpi) => (
-              <div key={kpi.label} className={`bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
+              <div key={kpi.label} className={`bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
                 <p className="text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider mb-1">{kpi.label}</p>
                 <div className="flex items-end gap-2">
                   <span className={`text-xl font-bold font-['Instrument_Sans'] ${getCondColor(kpi.actual, kpi.obj) || 'text-foreground'}`}>
@@ -340,7 +340,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
 
           {/* Evolution charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4">
+            <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-4">
               <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Reach & Engagement</h3>
               <div className="h-52">
                 <ResponsiveContainer width="100%" height="100%">
@@ -358,7 +358,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
               </div>
             </div>
 
-            <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4">
+            <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-4">
               <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Budget & CPM</h3>
               <div className="h-52">
                 <ResponsiveContainer width="100%" height="100%">
@@ -378,7 +378,8 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
           </div>
 
           {/* Detailed monthly table */}
-          <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
+          <div className="rounded-2xl border border-border/30 overflow-hidden">
+            <div className="bg-card dark:bg-[hsl(var(--brand-ink))] overflow-x-auto">
             <div className="px-4 py-3 border-b border-border/40">
               <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Détail mensuel</h3>
             </div>
@@ -409,6 +410,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
                 ))}
               </tbody>
             </table>
+          </div>
           </div>
         </div>
         );
@@ -498,7 +500,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
             {/* KPI cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {affKpis.map((kpi) => (
-                <div key={kpi.label} className={`bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
+                <div key={kpi.label} className={`bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl border-l-[3px] ${getCondBg(kpi.actual, kpi.obj)} p-4`}>
                   <p className="text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider mb-1">{kpi.label}</p>
                   <div className="flex items-end gap-2">
                     <span className={`text-xl font-bold font-['Instrument_Sans'] ${getCondColor(kpi.actual, kpi.obj) || 'text-foreground'}`}>
@@ -512,7 +514,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
 
             {/* Evolution charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4">
+              <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-4">
                 <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Reach & Engagement</h3>
                 <div className="h-52">
                   <ResponsiveContainer width="100%" height="100%">
@@ -530,7 +532,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
                 </div>
               </div>
 
-              <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4">
+              <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-4">
                 <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Budget & CPM</h3>
                 <div className="h-52">
                   <ResponsiveContainer width="100%" height="100%">
@@ -550,7 +552,8 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
             </div>
 
             {/* Detailed monthly table */}
-            <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
+            <div className="rounded-2xl border border-border/30 overflow-hidden">
+              <div className="bg-card dark:bg-[hsl(var(--brand-ink))] overflow-x-auto">
               <div className="px-4 py-3 border-b border-border/40">
                 <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold">Détail mensuel</h3>
               </div>
@@ -582,6 +585,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
                 </tbody>
               </table>
             </div>
+            </div>
           </div>
         );
       })()}
@@ -594,7 +598,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
             {/* Pie charts side by side */}
             <div className="flex flex-col gap-4 shrink-0 w-full md:w-60">
               {/* Pie chart - count */}
-              <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-5 flex flex-col items-center w-full">
+              <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-5 flex flex-col items-center w-full">
                 <p className="text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider mb-3">Retombées par tonalité</p>
                 <div className="w-40 h-40">
                   <ResponsiveContainer width="100%" height="100%">
@@ -618,7 +622,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
               </div>
 
               {/* Pie chart - reach */}
-              <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-5 flex flex-col items-center w-full">
+              <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-5 flex flex-col items-center w-full">
                 <p className="text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider mb-3">Reach par tonalité</p>
                 <div className="w-40 h-40">
                   <ResponsiveContainer width="100%" height="100%">
@@ -676,7 +680,8 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
               </div>
 
               {/* Table */}
-              <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
+              <div className="rounded-2xl border border-border/30 overflow-hidden">
+                <div className="bg-card dark:bg-[hsl(var(--brand-ink))] overflow-x-auto">
                 <table className="w-full text-sm font-['Instrument Sans']">
                   <thead>
                     <tr className="border-b border-border/40">
@@ -718,6 +723,7 @@ export function LagostinaInfluenceRP({ learningsButton, learningsPanel }: { lear
                     })}
                   </tbody>
                 </table>
+              </div>
               </div>
 
               {/* Pagination */}

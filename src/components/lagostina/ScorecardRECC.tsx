@@ -510,8 +510,9 @@ export function ScorecardRECC({
       {learningsPanel}
 
       {/* Scorecard table */}
-      <div ref={tableRef} className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
-        <table className="w-full text-sm font-['Instrument Sans'] border-collapse">
+      <div className="rounded-2xl border border-border/30 overflow-hidden">
+        <div ref={tableRef} className="bg-card dark:bg-[hsl(var(--brand-ink))] overflow-x-auto">
+          <table className="w-full text-sm font-['Instrument Sans'] border-collapse">
           <thead>
             <tr className="border-b border-border/40 bg-foreground/[0.02]/[0.02]">
               <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-card dark:bg-[hsl(var(--brand-ink))] z-20 min-w-[220px] border-r border-border/30 text-[11px]">
@@ -606,6 +607,7 @@ export function ScorecardRECC({
             })}
           </tbody>
         </table>
+      </div>
       </div>
 
       {/* Legend */}

@@ -38,7 +38,7 @@ function getLevierColor(levier: string, index: number): string {
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border border-black dark:border-white px-3 py-2 font-['Instrument Sans'] text-xs">
+    <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-md border border-black dark:border-white px-3 py-2 font-['Instrument Sans'] text-xs">
       <p className="text-foreground font-medium mb-1">{label}</p>
       {payload.map((p: any) => (
         <p key={p.dataKey} style={{ color: p.color }}>
@@ -192,7 +192,7 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                 {/* KPIs globaux — 2 colonnes */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Budget consommé année */}
-                  <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-6">
+                  <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-3">
                       <div>
                         <p className="text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider">Budget consommé (S1)</p>
@@ -226,7 +226,7 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                   </div>
 
                   {/* Synthèse semestrielle */}
-                  <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-6">
+                  <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-6">
                     <p className="text-muted-foreground text-xs font-['Instrument Sans'] uppercase tracking-wider mb-3">Synthèse semestrielle</p>
                     <div className="grid grid-cols-4 gap-4 mb-4">
                       <div>
@@ -273,8 +273,9 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                 </div>
 
                 {/* Détail par levier — synthèse S1/S2 */}
-                <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
-                  <table className="w-full text-sm font-['Instrument Sans']">
+                <div className="rounded-2xl border border-border/30 overflow-hidden">
+                  <div className="bg-card dark:bg-[hsl(var(--brand-ink))] overflow-x-auto">
+                    <table className="w-full text-sm font-['Instrument Sans']">
                     <thead>
                       <tr className="border-b border-border/40">
                         <th className="text-left px-4 py-3 text-muted-foreground font-medium uppercase tracking-wider text-xs">Levier</th>
@@ -338,13 +339,14 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                     </tbody>
                   </table>
                 </div>
+              </div>
               </>
             );
           })()}
 
           {activeTab === 'repartition' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4">
+              <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-4">
                 <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Répartition par levier</h3>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
@@ -358,7 +360,7 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                         content={({ active, payload }) => {
                           if (!active || !payload?.length) return null;
                           return (
-                            <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 border border-black dark:border-white px-3 py-2 font-['Instrument Sans'] text-xs">
+                            <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-md border border-black dark:border-white px-3 py-2 font-['Instrument Sans'] text-xs">
                               <p className="text-foreground">{payload[0].name}: {Number(payload[0].value).toLocaleString('fr-FR')}€</p>
                             </div>
                           );
@@ -370,7 +372,7 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                 </div>
               </div>
 
-              <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 p-4">
+              <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 rounded-2xl p-4">
                 <h3 className="text-foreground text-sm font-['Instrument_Sans'] font-bold mb-4">Burn rate cumulé</h3>
                 <div className="h-56">
                   <ResponsiveContainer width="100%" height="100%">
@@ -392,8 +394,9 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
           )}
 
           {activeTab === 'detail' && (
-            <div className="bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 overflow-x-auto">
-              <table className="w-full text-sm font-['Instrument Sans']">
+            <div className="rounded-2xl border border-border/30 overflow-hidden">
+              <div className="bg-card dark:bg-[hsl(var(--brand-ink))] overflow-x-auto">
+                <table className="w-full text-sm font-['Instrument Sans']">
                 <thead>
                   <tr className="border-b border-border/40">
                     <th className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wider sticky left-0 bg-card dark:bg-[hsl(var(--brand-ink))] border border-border/30 z-10 min-w-[120px]">Levier</th>
@@ -455,6 +458,7 @@ export function LagostinaBudget({ learningsButton, learningsPanel }: { learnings
                   </tr>
                 </tbody>
               </table>
+            </div>
             </div>
           )}
         </>
