@@ -173,8 +173,63 @@ export default function CRM() {
           title={showArchived ? t('crm.archivesTitle') : t('crm.title')}
           subtitle={showArchived ? t('crm.archivesSubtitle') : t('crm.subtitle')}
           actions={
-            <>
-              {!isMobile && (
+            isMobile ? (
+              <ProtectedAction module="crm" action="create">
+                <AddClientDialog
+                  open={addClientOpen}
+                  onOpenChange={setAddClientOpen}
+                  onClientAdded={() => queryClient.invalidateQueries({ queryKey: ['clients'] })}
+                />
+                <button
+                  type="button"
+                  onClick={() => setAddClientOpen(true)}
+                  className="inline-flex items-center justify-center h-11 w-11 rounded-full bg-navy text-white hover:bg-navy-hover transition-colors duration-150"
+                  aria-label="Nouveau client"
+                >
+                  <Plus size={18} strokeWidth={1.8} />
+                </button>
+              </ProtectedAction>
+            ) : (
+              <div className="flex items-center gap-3 flex-wrap font-['Instrument_Sans']">
+                {/* Segmented — view toggle */}
+                <div
+                  role="group"
+                  aria-label="Sélecteur de vue"
+                  className="inline-flex h-11 rounded-full border border-[#E2E5EA] bg-white overflow-hidden"
+                >
+                  {[
+                    { value: 'list' as const, icon: List, label: 'Vue liste' },
+                    { value: 'kanban' as const, icon: Columns3, label: 'Vue colonnes' },
+                    { value: 'grid' as const, icon: LayoutGrid, label: 'Vue grille' },
+                  ].map((opt, i) => {
+                    const active = viewMode === opt.value;
+                    const Icon = opt.icon;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setViewMode(opt.value)}
+                        aria-label={opt.label}
+                        aria-pressed={active}
+                        title={opt.label}
+                        className={`h-full w-12 inline-flex items-center justify-center transition-colors duration-150 ${
+                          i > 0 ? 'border-l border-[#E2E5EA]' : ''
+                        } ${
+                          active
+                            ? 'bg-[#000C1F] text-white'
+                            : 'bg-white text-[#8A909C] hover:bg-[#F7F8FA]'
+                        }`}
+                      >
+                        <Icon size={18} strokeWidth={1.8} />
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Séparateur */}
+                <div className="w-px h-[26px] bg-[#ECEEF1]" aria-hidden="true" />
+
+                {/* Exporter */}
                 <ExportButton
                   data={filteredClients}
                   columns={[
@@ -187,39 +242,82 @@ export default function CRM() {
                     ...(showRevenue ? [{ key: 'revenue_current_year', label: 'CA Année Fiscale', formatter: (v: any) => v ?? 0 }] : []),
                   ]}
                   filename="clients"
+                  renderTrigger={({ isExporting }) => (
+                    <button
+                      type="button"
+                      disabled={isExporting}
+                      className="inline-flex items-center gap-[9px] h-11 px-[22px] rounded-full border border-[#E2E5EA] bg-white text-[#0F1420] text-[14.5px] font-semibold transition-colors duration-150 hover:bg-[#F7F8FA] hover:border-[#D6DAE0] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <Download size={18} strokeWidth={1.8} />
+                      Exporter
+                    </button>
+                  )}
                 />
-              )}
-              {!isMobile && (
-                <ViewToggle<'list' | 'kanban' | 'grid'>
-                  options={[
-                    { value: 'list', icon: List, label: 'Vue liste' },
-                    { value: 'kanban', icon: Columns3, label: 'Vue kanban' },
-                    { value: 'grid', icon: LayoutGrid, label: 'Vue grille' },
-                  ]}
-                  value={viewMode}
-                  onChange={setViewMode}
-                />
-              )}
 
-              {!isMobile && (
+                {/* Importer */}
                 <ProtectedAction module="crm" action="create">
-                  <ImportClientsValidationDialog onClientsImported={() => queryClient.invalidateQueries({ queryKey: ['clients'] })} />
+                  <ImportClientsValidationDialog
+                    open={importOpen}
+                    onOpenChange={setImportOpen}
+                    hideTrigger
+                    onClientsImported={() => queryClient.invalidateQueries({ queryKey: ['clients'] })}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setImportOpen(true)}
+                    className="inline-flex items-center gap-[9px] h-11 px-[22px] rounded-full border border-[#E2E5EA] bg-white text-[#0F1420] text-[14.5px] font-semibold transition-colors duration-150 hover:bg-[#F7F8FA] hover:border-[#D6DAE0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <Upload size={18} strokeWidth={1.8} />
+                    Importer
+                  </button>
                 </ProtectedAction>
-              )}
-              <ProtectedAction module="crm" action="create">
-                <AddClientDialog onClientAdded={() => queryClient.invalidateQueries({ queryKey: ['clients'] })} />
-              </ProtectedAction>
-              <Button
-                variant="outline"
-                onClick={() => setShowArchived(!showArchived)}
-                className="gap-2"
-              >
-                <Archive className="h-4 w-4" />
-                {!isMobile && (
-                  <span>{t('crm.archives')} {archivedCount > 0 && `(${archivedCount})`}</span>
-                )}
-              </Button>
-            </>
+
+                {/* Archives */}
+                <button
+                  type="button"
+                  onClick={() => setShowArchived(!showArchived)}
+                  aria-pressed={showArchived}
+                  className={`inline-flex items-center gap-[9px] h-11 px-[22px] rounded-full border text-[14.5px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    showArchived
+                      ? 'bg-[#000C1F] text-white border-[#000C1F] hover:bg-navy-hover'
+                      : 'bg-white text-[#0F1420] border-[#E2E5EA] hover:bg-[#F7F8FA] hover:border-[#D6DAE0]'
+                  }`}
+                >
+                  <Archive size={18} strokeWidth={1.8} />
+                  {t('crm.archives')}
+                  {archivedCount > 0 && (
+                    <span
+                      className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full text-xs font-semibold ${
+                        showArchived
+                          ? 'bg-white/15 text-white'
+                          : 'bg-[#F1F3F5] text-[#8A909C]'
+                      }`}
+                    >
+                      {archivedCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Spacer + primaire */}
+                <div className="flex-1 min-w-4" />
+
+                <ProtectedAction module="crm" action="create">
+                  <AddClientDialog
+                    open={addClientOpen}
+                    onOpenChange={setAddClientOpen}
+                    onClientAdded={() => queryClient.invalidateQueries({ queryKey: ['clients'] })}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setAddClientOpen(true)}
+                    className="inline-flex items-center gap-[9px] h-11 px-[22px] rounded-full bg-navy text-white text-[14.5px] font-semibold transition-colors duration-150 hover:bg-navy-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <Plus size={18} strokeWidth={1.8} />
+                    Nouveau client
+                  </button>
+                </ProtectedAction>
+              </div>
+            )
           }
         />
       </div>
