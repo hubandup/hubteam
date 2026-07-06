@@ -177,6 +177,7 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
           action_label: actionLabel,
           address_form: address,
           model_id: modelId,
+          calendly_url_override: wantsBookingLink ? (calendlyUrlOverride.trim() || null) : null,
         },
       });
       if (error) throw error;
