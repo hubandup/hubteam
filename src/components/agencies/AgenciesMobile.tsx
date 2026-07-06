@@ -60,11 +60,11 @@ function getPrimaryContact(agency: Agency): { name: string; email?: string; phon
   };
 }
 
-export function AgenciesMobile({ agencies, addAgencyOpen, onAddAgencyOpenChange }: Props) {
+export function AgenciesMobile({ agencies, onAgencyAdded, addAgencyOpen, onAddAgencyOpenChange }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
