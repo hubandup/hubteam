@@ -239,35 +239,39 @@ function ProjectSummaryCard({ project, onOpen }: { project: any; onOpen: () => v
         className="w-full min-w-0 max-w-full bg-white p-3 text-left active:bg-black/[0.02] transition-colors overflow-hidden flex flex-col items-stretch justify-start"
         style={{ border: `1px solid ${CARD_BORDER}`, borderRadius: 16 }}
       >
-        {/* Row 1 */}
-        <div className="flex items-center gap-3 min-h-[44px]">
+        {/* Row 1: logo + title + badge + chevron */}
+        <div className="flex items-center gap-3">
           <span
             className="h-10 w-10 rounded-full flex items-center justify-center shrink-0 text-[12px] font-bold"
             style={{ backgroundColor: fallback.bg, color: fallback.text }}
           >
             {fallback.initials}
           </span>
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 flex items-center gap-2">
             <p className="text-[14.5px] font-semibold truncate min-w-0" style={{ color: TITLE }}>
               {project.name}
             </p>
-            <p className="text-[12px] truncate min-w-0" style={{ color: MUTED }}>
-              {clientName}
-            </p>
+            <span
+              className="text-[10px] font-bold px-2 py-1 rounded-full tracking-wide shrink-0"
+              style={{
+                backgroundColor: `${status.color}1A`,
+                color: status.color,
+              }}
+            >
+              {status.label}
+            </span>
           </div>
-          <span
-            className="text-[10px] font-bold px-2 py-1 rounded-full tracking-wide shrink-0"
-            style={{
-              backgroundColor: `${status.color}1A`,
-              color: status.color,
-            }}
-          >
-            {status.label}
-          </span>
           <ChevronRight className="h-4 w-4 shrink-0" style={{ color: MUTED }} />
         </div>
 
-        {/* Row 2 */}
+        {/* Row 2: subtitle */}
+        <div className="mt-0.5 pl-[52px]">
+          <p className="text-[12px] truncate min-w-0" style={{ color: MUTED }}>
+            {clientName}
+          </p>
+        </div>
+
+        {/* Row 3: date + progress */}
         <div
           className="mt-3 pt-3 flex items-center justify-between gap-3"
           style={{ borderTop: `1px solid ${CARD_BORDER}` }}
