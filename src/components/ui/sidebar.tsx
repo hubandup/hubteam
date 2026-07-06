@@ -466,6 +466,7 @@ const SidebarMenuButton = React.forwardRef<
       data-size={size}
       data-active={isActive}
       className={cn(
+        "sidebar-menu-button",
         sidebarMenuButtonVariants({ variant, size }),
         notch && "sidebar-menu-button-notch overflow-visible",
         className,
