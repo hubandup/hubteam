@@ -176,10 +176,10 @@ export function AgenciesMobile({ agencies, onAgencyAdded, addAgencyOpen, onAddAg
         hideTrigger
         onAgencyAdded={onAgencyAdded}
       />
-
     </div>
   );
 }
+
 
 /* ---------------- Summary card ---------------- */
 
