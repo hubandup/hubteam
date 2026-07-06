@@ -60,6 +60,7 @@ export default function Projects() {
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') || '');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+  const [addProjectOpen, setAddProjectOpen] = useState(false);
 
   useEffect(() => {
     const urlTab = searchParams.get('tab');
