@@ -108,10 +108,10 @@ export function Layout({ children }: LayoutProps) {
 
         <main
           id="main-content"
-          className="flex-1 overflow-auto rounded-t-[22px] transition-opacity duration-150"
+          className="flex-1 overflow-y-auto overflow-x-hidden rounded-t-[22px] transition-opacity duration-150 w-full min-w-0"
           style={{ backgroundColor: MOBILE_BG }}
         >
-          <div className="px-4 py-4 pb-28">
+          <div className="px-4 py-4 pb-28 w-full min-w-0 max-w-full overflow-x-hidden">
             {children}
           </div>
         </main>
