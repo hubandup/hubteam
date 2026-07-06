@@ -138,20 +138,35 @@ export function QualificationCollapsible({ trackingId }: Props) {
     return <Input defaultValue={q.answer || ''} onBlur={(e) => updateAnswer(q.id, e.target.value)} />;
   };
 
+  const total = Math.max(questions.length, 1);
+  const pct = Math.round((filledCount / total) * 100);
+
   return (
-    <section className="bg-card border border-border">
+    <section className="bg-card border border-border" style={{ borderRadius: 18 }}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full px-5 py-4 flex items-center justify-between hover:bg-muted transition-colors text-left"
+        className="w-full px-5 py-4 flex items-center gap-4 hover:bg-muted/40 transition-colors text-left"
+        style={{ borderRadius: 18 }}
       >
-        <div className="flex items-baseline gap-3 min-w-0">
-          <h3 className="display leading-none" style={{ fontSize: 18, fontWeight: 700, color: 'hsl(var(--brand-ink))' }}>
-            Qualification du besoin
-          </h3>
-          <span className="text-muted-foreground whitespace-nowrap leading-none" style={{ fontSize: 12 }}>
-            {filledCount}/{questions.length} renseigné{filledCount > 1 ? 's' : ''}
-          </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-3 min-w-0 mb-2">
+            <h3 className="display leading-none text-foreground" style={{ fontSize: 17, fontWeight: 700 }}>
+              Qualification du besoin
+            </h3>
+            <span className="text-muted-foreground whitespace-nowrap leading-none" style={{ fontSize: 12 }}>
+              {filledCount}/{questions.length} renseigné{filledCount > 1 ? 's' : ''}
+            </span>
+          </div>
+          <div
+            className="w-full overflow-hidden"
+            style={{ height: 6, background: 'hsl(var(--muted))', borderRadius: 999 }}
+          >
+            <div
+              className="h-full transition-all duration-500"
+              style={{ width: `${pct}%`, background: 'hsl(var(--brand-yellow))' }}
+            />
+          </div>
         </div>
         <ChevronDown
           size={18}
@@ -160,43 +175,58 @@ export function QualificationCollapsible({ trackingId }: Props) {
       </button>
 
       {open && (
-        <div className="border-t border-border px-5 py-5">
+        <div className="border-t border-border px-5 py-5 animate-fade-in">
           {isLoading ? (
             <div className="flex items-center justify-center py-6 text-muted-foreground text-sm">
               <Loader2 className="h-4 w-4 animate-spin mr-2" /> Chargement…
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                {questions.map((q: any) => (
-                  <div key={q.id} className="space-y-1.5 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <label
-                        className="uppercase tracking-wider font-semibold text-muted-foreground"
-                        style={{ fontSize: 12 }}
-                      >
-                        {q.question_label}
-                      </label>
-                      {q.is_custom && (
-                        <button
-                          type="button"
-                          onClick={() => remove(q.id)}
-                          className="text-muted-foreground hover:text-red-600"
-                          aria-label="Supprimer la question"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+                {questions.map((q: any) => {
+                  const def = DEFAULT_QUESTIONS.find((d) => d.key === q.question_key);
+                  const isFull = def?.type === 'textarea';
+                  return (
+                    <div key={q.id} className={`space-y-1.5 min-w-0 ${isFull ? 'md:col-span-2' : ''}`}>
+                      <div className="flex items-center justify-between gap-2">
+                        <label
+                          className="text-foreground font-medium"
+                          style={{ fontSize: 12.5 }}
                         >
-                          <Trash2 size={12} />
-                        </button>
-                      )}
+                          {q.question_label}
+                        </label>
+                        {q.is_custom && (
+                          <button
+                            type="button"
+                            onClick={() => remove(q.id)}
+                            className="text-muted-foreground hover:text-destructive"
+                            aria-label="Supprimer la question"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        )}
+                      </div>
+                      {renderField(q)}
                     </div>
-                    {renderField(q)}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
-              <div className="mt-5 pt-4 border-t border-border flex justify-end">
-                <Button size="sm" variant="outline" onClick={addCustom}>
-                  <Plus className="h-4 w-4 mr-1" /> Ajouter une question
-                </Button>
+              <div className="mt-5 pt-4 border-t border-border flex justify-center">
+                <button
+                  type="button"
+                  onClick={addCustom}
+                  className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 999,
+                    border: '1px dashed hsl(var(--border))',
+                    fontSize: 12.5,
+                    fontWeight: 500,
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5" /> Ajouter une question
+                </button>
               </div>
             </>
           )}
@@ -205,3 +235,4 @@ export function QualificationCollapsible({ trackingId }: Props) {
     </section>
   );
 }
+
