@@ -30,6 +30,9 @@ import {
   type ClientProjectFilterKey,
   type ProjectStatusKey,
 } from '@/lib/project-status';
+import { CRMMobile } from '@/components/crm/CRMMobile';
+
+
 
 
 export default function CRM() {
@@ -167,8 +170,18 @@ export default function CRM() {
     );
   }
 
+  if (isMobile) {
+    return (
+      <CRMMobile
+        addClientOpen={addClientOpen}
+        onAddClientOpenChange={setAddClientOpen}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col h-full min-h-0 overflow-hidden">
+
       {/* Header - Always visible */}
       <div className="flex-shrink-0 pb-2 md:pb-4 bg-background">
         <PageHeader

@@ -757,14 +757,17 @@
   }
 
   /* Hide scrollbar but keep functionality */
-  .hide-scrollbar {
+  .hide-scrollbar,
+  .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
 
-  .hide-scrollbar::-webkit-scrollbar {
+  .hide-scrollbar::-webkit-scrollbar,
+  .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
 
   /* Safe area utilities for PWA/Native */
   .safe-area-top {
