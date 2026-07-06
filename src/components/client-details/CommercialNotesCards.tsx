@@ -251,7 +251,7 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
   };
 
   return (
-    <section className="bg-card border border-border">
+    <section className="bg-card border border-border overflow-hidden" style={{ borderRadius: 18 }}>
       {/* Header */}
       <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-baseline gap-3 min-w-0">
