@@ -9,9 +9,10 @@ import { AddProjectDialog } from '@/components/AddProjectDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Search, Archive, ArchiveRestore, Edit, Trash2 } from 'lucide-react';
+import { Search, Archive, ArchiveRestore, Edit, Trash2, Plus, Download } from 'lucide-react';
 import { ExportButton } from '@/components/exports/ExportButton';
 import { PageHeader } from '@/components/layout';
+import { PillButton } from '@/components/ui/pill-button';
 
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
