@@ -378,12 +378,14 @@ export function ImportClientsValidationDialog({ onClientsImported, open: openPro
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <FileSpreadsheet className="h-4 w-4 mr-2" />
-          Importer
-        </Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button variant="outline">
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            Importer
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Import de clients avec validation</DialogTitle>
