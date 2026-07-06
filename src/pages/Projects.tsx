@@ -198,7 +198,7 @@ export default function Projects() {
   }
 
   return (
-    <div className="space-y-0 bg-card min-h-screen p-7">
+    <div className="space-y-0 bg-background min-h-screen p-7">
       <PendingQuoteActionsBanner />
 
       {/* ── Page title + actions ──────────────────────────────────────── */}
