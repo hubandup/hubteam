@@ -229,8 +229,13 @@ export default function Home() {
     comment: 'un commentaire',
   };
 
+  if (isMobile) {
+    return <HomeMobile />;
+  }
+
   return (
     <div className="space-y-6">
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-bold text-foreground" style={{ fontSize: '4rem', lineHeight: '3.5rem', marginBottom: '8px' }}>
