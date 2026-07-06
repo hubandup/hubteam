@@ -315,8 +315,9 @@ export default function ClientDetails() {
         </div>
 
         {/* HEADER + TABS dans le même conteneur blanc */}
-        <div className="bg-card border border-border">
+        <div className="bg-card border border-border overflow-hidden" style={{ borderRadius: 18 }}>
           {/* Header */}
+
           <div className="p-6 flex items-start gap-4">
             {/* Logo carré */}
             {client.logo_url ? (
