@@ -317,8 +317,12 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
           {visible.map((n: any) => {
             const isOpen = !!expanded[n.id];
             const authorName = [n.author?.first_name, n.author?.last_name].filter(Boolean).join(' ') || 'Utilisateur';
+            const isProject = n.source === 'project';
+            const plainContent = isProject
+              ? (n.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+              : (n.content || '');
             return (
-              <li key={n.id} className="px-5 py-4">
+              <li key={`${n.source}-${n.id}`} className="px-5 py-4">
                 <button
                   type="button"
                   onClick={() => setExpanded((s) => ({ ...s, [n.id]: !s[n.id] }))}
@@ -328,12 +332,12 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                     className="inline-flex items-center justify-center flex-shrink-0"
                     style={{ width: 32, height: 32, border: '1px solid #e5e5e5', fontSize: 16 }}
                   >
-                    {TYPE_EMOJI(n.content || '')}
+                    {isProject ? <FolderKanban size={14} /> : TYPE_EMOJI(plainContent)}
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold" style={{ fontSize: 14, color: 'hsl(var(--brand-ink))' }}>
-                        {format(extractMeetingDate(n.content || '', n.created_at), 'd MMMM yyyy', { locale: fr })}
+                        {format(extractMeetingDate(plainContent, n.created_at), 'd MMMM yyyy', { locale: fr })}
                       </p>
                       {n.is_private && (
                         <span
@@ -343,8 +347,19 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                           <Lock size={10} /> Privé
                         </span>
                       )}
+                      {isProject && (
+                        <span
+                          className="inline-flex items-center gap-1 text-foreground"
+                          style={{ background: 'hsl(var(--brand-yellow))', padding: '2px 6px', fontSize: 10, fontWeight: 600 }}
+                        >
+                          <FolderKanban size={10} /> Projet
+                        </span>
+                      )}
                     </div>
-                    <p className="text-muted-foreground" style={{ fontSize: 12 }}>{authorName}</p>
+                    <p className="text-muted-foreground" style={{ fontSize: 12 }}>
+                      {authorName}
+                      {isProject && n.project?.name ? ` · ${n.project.name}` : ''}
+                    </p>
                   </div>
                   <ChevronDown
                     size={16}
@@ -355,29 +370,49 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                 <div className="mt-3 pl-[44px]">
                   {isOpen ? (
                     <div className="space-y-2">
-                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                        {n.content}
-                      </p>
+                      {isProject ? (
+                        <div
+                          className="prose prose-sm dark:prose-invert max-w-none text-sm text-foreground leading-relaxed"
+                          dangerouslySetInnerHTML={createSafeHtml(n.content || '')}
+                        />
+                      ) : (
+                        <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                          {n.content}
+                        </p>
+                      )}
                       <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(n)}
-                          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-                        >
-                          <Pencil size={12} /> Modifier
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => remove(n.id)}
-                          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-red-600"
-                        >
-                          <Trash2 size={12} /> Supprimer
-                        </button>
+                        {isProject ? (
+                          n.project?.id && (
+                            <Link
+                              to={buildEmbeddedProjectPath(client.id, n.project.id, 'notes')}
+                              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              <ExternalLink size={12} /> Ouvrir dans le projet
+                            </Link>
+                          )
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => openEdit(n)}
+                              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              <Pencil size={12} /> Modifier
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => remove(n.id)}
+                              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-red-600"
+                            >
+                              <Trash2 size={12} /> Supprimer
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   ) : (
                     <p className="text-sm text-foreground leading-relaxed">
-                      {preview(n.content || '', 180)}
+                      {preview(plainContent, 180)}
                     </p>
                   )}
                 </div>
