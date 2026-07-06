@@ -201,7 +201,6 @@ export function CRMMobile({ addClientOpen, onAddClientOpenChange }: Props) {
               key={client.id}
               client={client}
               isStarred={!!targets?.has(client.id)}
-              showRevenue={showRevenue}
               onOpen={() => {
                 setSelectedId(client.id);
                 prefetchClientDetails(queryClient, client.id);
