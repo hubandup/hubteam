@@ -182,7 +182,7 @@ export function MeetingsCompactBlock({ trackingId, client }: Props) {
   const toDelete: any = items.find((m: any) => m.id === confirmDeleteId);
 
   return (
-    <section className="bg-card border border-border">
+    <section className="bg-card border border-border overflow-hidden" style={{ borderRadius: 18 }}>
       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2 leading-none">
           <span className="flex items-center justify-center shrink-0">
