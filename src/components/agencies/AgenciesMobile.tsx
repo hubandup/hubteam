@@ -107,9 +107,9 @@ export function AgenciesMobile({ agencies, onAgencyAdded, addAgencyOpen, onAddAg
           <p className="text-white/60 text-[13px] mt-1" style={{ fontFamily: "'Manrope', system-ui, sans-serif" }}>
             {filtered.length} agence{filtered.length > 1 ? 's' : ''} · gère tes partenaires
           </p>
-
         </div>
         <ProtectedAction module="agencies" action="create">
+
           <button
             type="button"
             onClick={() => onAddAgencyOpenChange(true)}
