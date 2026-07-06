@@ -22,7 +22,9 @@ import { prefetchClientDetails } from '@/hooks/usePrefetchAppData';
 import { AddClientDialog } from '@/components/AddClientDialog';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { MobileBottomSheet } from '@/components/MobileBottomSheet';
+import { LogoAvatar } from '@/components/targets/LogoAvatar';
 import { getUrgency, getStatusBucket, getLogoFallback, formatCa, formatShortFrDate } from '@/components/targets/targetUtils';
+
 import {
   PROJECT_STATUS_LABELS,
   type ClientProjectFilterKey,
@@ -266,12 +268,14 @@ function ClientSummaryCard({
         style={{ border: `1px solid ${CARD_BORDER}`, borderRadius: 16 }}
       >
         <div className="flex items-center gap-3 min-h-[44px]">
+          <LogoAvatar url={client.logo_url} name={client.company || `${client.first_name || ''} ${client.last_name || ''}`.trim() || '?'} size={40} />
           <span
             className="flex-1 min-w-0 truncate text-[15px] font-semibold uppercase"
             style={{ color: TITLE }}
           >
             {client.company || `${client.first_name || ''} ${client.last_name || ''}`.trim()}
           </span>
+
           <button
             type="button"
             onClick={(e) => {
@@ -349,12 +353,8 @@ function ClientDetailContent({
     <div className="pt-2 pb-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <span
-          className="h-16 w-16 rounded-2xl flex items-center justify-center shrink-0 text-[18px] font-bold"
-          style={{ backgroundColor: fallback.bg, color: fallback.text }}
-        >
-          {fallback.initials}
-        </span>
+        <LogoAvatar url={client.logo_url} name={client.company || contactName || '?'} size={64} className="!rounded-2xl" />
+
         <div className="min-w-0 flex-1">
           <h2
             className="text-[22px] leading-tight uppercase truncate"
