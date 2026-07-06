@@ -17,6 +17,7 @@ interface Payload {
   action_label?: string; // libellé humain de l'action à proposer
   address_form?: 'vous' | 'tu'; // forme d'adresse : vouvoiement (par défaut) ou tutoiement
   model_id?: ModelChoice; // choix du modèle IA (défaut: claude)
+  calendly_url_override?: string | null; // si fourni, remplace le lien Calendly attribué par défaut
   save?: boolean; // persist to history (default true)
 }
 
@@ -297,7 +298,16 @@ Deno.serve(async (req) => {
       }
       return { owner: null, email: '', url: '' };
     };
-    const calendly = await pickCalendlyAttribution();
+    const defaultCalendly = await pickCalendlyAttribution();
+    // Override éventuel fourni par l'utilisateur dans la modale
+    const overrideUrl = typeof body.calendly_url_override === 'string' ? body.calendly_url_override.trim() : '';
+    const calendly = overrideUrl
+      ? (overrideUrl === defaultCalendly.url
+          ? defaultCalendly
+          : { owner: null as 'charles'|'amandine'|null, email: '', url: overrideUrl })
+      : (body.calendly_url_override === null || body.calendly_url_override === ''
+          ? { owner: null as 'charles'|'amandine'|null, email: '', url: '' }
+          : defaultCalendly);
 
 
     const tone = body.tone || 'friendly';
@@ -459,8 +469,9 @@ Deno.serve(async (req) => {
 
     // Bloc Calendly conditionnel : si une action de proposition de RDV/call est demandée ET qu'un lien Calendly est disponible
     const wantsBookingLink = ['propose_slot', 'schedule_call'].includes(actionKey);
+    const ownerLabel = calendly.owner === 'amandine' ? 'Amandine' : calendly.owner === 'charles' ? 'Charles' : "l'expéditeur";
     const calendlyRule = (wantsBookingLink && calendly.url)
-      ? `- LIEN CALENDLY (obligatoire pour cette action) : intègre EXPLICITEMENT le lien Calendly suivant attribué à l'expéditeur (${calendly.owner === 'amandine' ? 'Amandine' : 'Charles'}) : ${calendly.url}\n  Présente-le naturellement dans la dernière phrase du corps (ex : "Voici mon agenda si vous souhaitez réserver un créneau directement : ${calendly.url}"). N'invente AUCUN autre lien Calendly.`
+      ? `- LIEN CALENDLY (obligatoire pour cette action) : intègre EXPLICITEMENT le lien Calendly suivant attribué à ${ownerLabel} : ${calendly.url}\n  Présente-le naturellement dans la dernière phrase du corps (ex : "Voici mon agenda si vous souhaitez réserver un créneau directement : ${calendly.url}"). N'invente AUCUN autre lien Calendly.`
       : `- LIEN CALENDLY : n'inclus AUCUN lien Calendly dans cet email (l'action choisie ne le requiert pas, ou aucun lien n'est configuré).`;
 
     const systemPrompt = `Tu es un expert en développement commercial B2B pour HUB+UP (agence de communication). Tu génères une "excuse de relance" personnalisée pour un destinataire précis, en t'appuyant sur plusieurs sources de contexte fraîches : actualités scrappées du client, comptes rendus internes, projets en cours, contexte HUB+UP (résumé du site officiel) et Google Alerts liées au client.
@@ -507,7 +518,7 @@ Destinataire choisi pour ce message :
 - Prénom à utiliser dans la salutation : ${recipientFirstName || recipientName || ''}
 
 ACTION À PROPOSER (call-to-action obligatoire de l'email) : ${actionLabel}
-${wantsBookingLink && calendly.url ? `LIEN CALENDLY À INTÉGRER : ${calendly.url} (attribué à ${calendly.owner === 'amandine' ? 'Amandine' : 'Charles'})` : ''}
+${wantsBookingLink && calendly.url ? `LIEN CALENDLY À INTÉGRER : ${calendly.url}${calendly.owner ? ` (attribué à ${calendly.owner === 'amandine' ? 'Amandine' : 'Charles'})` : ' (lien personnalisé fourni par l\'utilisateur)'}` : ''}
 ${contextFiche}${contextHubOwner}${contextInterlocuteurs}${contextNotes}${contextMeetings}${contextMeetingNotes}${contextQualification}${contextProjects}${contextGoogleAlerts}${contextHubAndUp}${contextPriorSuggestions}
 
 Contenus scrappés récemment (URLs veille du client) :
