@@ -201,7 +201,6 @@ export function CRMMobile({ addClientOpen, onAddClientOpenChange }: Props) {
               key={client.id}
               client={client}
               isStarred={!!targets?.has(client.id)}
-              showRevenue={showRevenue}
               onOpen={() => {
                 setSelectedId(client.id);
                 prefetchClientDetails(queryClient, client.id);
@@ -250,37 +249,14 @@ export function CRMMobile({ addClientOpen, onAddClientOpenChange }: Props) {
 function ClientSummaryCard({
   client,
   isStarred,
-  showRevenue,
   onOpen,
   onToggleStar,
 }: {
   client: any;
   isStarred: boolean;
-  showRevenue: boolean;
   onOpen: () => void;
   onToggleStar: () => void;
 }) {
-  const urgency = getUrgency(client.follow_up_date);
-  const bucket = getStatusBucket(client.kanban_stage, client.follow_up_date);
-  const status = STATUS_META[bucket];
-  const fallback = getLogoFallback(client.company || client.first_name || '?');
-  const ca = client.revenue_current_year ?? client.revenue ?? 0;
-  const highlightLate = urgency.bucket === 'late';
-
-  let meta: { text: string; color: string } | null = null;
-  if (highlightLate) {
-    meta = { text: `Retard ${Math.abs(urgency.daysDiff) || 0}j`, color: DANGER };
-  } else if (showRevenue && Number(ca) > 0) {
-    meta = { text: formatCa(Number(ca)), color: TITLE };
-  } else if (client.last_contact) {
-    meta = { text: `Contact ${formatShortFrDate(client.last_contact)}`, color: MUTED };
-  } else if (client.follow_up_date) {
-    meta = {
-      text: `Échéance ${format(new Date(client.follow_up_date), 'dd/MM', { locale: fr })}`,
-      color: MUTED,
-    };
-  }
-
   return (
     <li className="w-full min-w-0">
       <button
@@ -290,12 +266,6 @@ function ClientSummaryCard({
         style={{ border: `1px solid ${CARD_BORDER}`, borderRadius: 16 }}
       >
         <div className="flex items-center gap-3 min-h-[44px]">
-          <span
-            className="h-10 w-10 rounded-full flex items-center justify-center shrink-0 text-[12px] font-bold"
-            style={{ backgroundColor: fallback.bg, color: fallback.text }}
-          >
-            {fallback.initials}
-          </span>
           <span
             className="flex-1 min-w-0 truncate text-[15px] font-semibold uppercase"
             style={{ color: TITLE }}
