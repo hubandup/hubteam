@@ -42,8 +42,8 @@ interface Props {
 }
 
 function getPrimaryContact(agency: Agency): { name: string; email?: string; phone?: string } {
-
   const contacts = agency.agency_contacts || [];
+
   const main = agency.main_contact_id
     ? contacts.find((c) => c.id === agency.main_contact_id)
     : undefined;
