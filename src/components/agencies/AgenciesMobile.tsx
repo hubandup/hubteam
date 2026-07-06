@@ -62,9 +62,8 @@ function getPrimaryContact(agency: Agency): { name: string; email?: string; phon
 export function AgenciesMobile({ agencies, onAgencyAdded, addAgencyOpen, onAddAgencyOpenChange }: Props) {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-
-
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
