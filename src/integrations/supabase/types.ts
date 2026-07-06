@@ -4503,6 +4503,7 @@ export type Database = {
     }
     Functions: {
       client_id_for_user: { Args: { _user_id: string }; Returns: string }
+      current_user_email: { Args: never; Returns: string }
       get_user_role: {
         Args: { p_user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
