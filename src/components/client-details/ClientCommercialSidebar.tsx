@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle2, Link2, Plus, Calendar, ChevronRight } from 'lucide-react';
+import { CheckCircle2, Link2, Plus, Calendar, ChevronRight, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { MeetingsCompactBlock } from './MeetingsCompactBlock';
 import { ScrapeUrlsManagerModal } from './ScrapeUrlsManagerModal';
@@ -172,22 +172,19 @@ export function ClientCommercialSidebar({ client }: Props) {
     qc.invalidateQueries({ queryKey: ['clients'] });
   };
 
+  const removeUrl = async (urlId: string) => {
+    const { error } = await supabase.from('commercial_scrape_urls').delete().eq('id', urlId);
+    if (error) return toast.error('Impossible de retirer');
+    qc.invalidateQueries({ queryKey: ['commercial-scrape-urls', tracking?.id] });
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 lg:sticky lg:top-4">
       {/* 1. PIPELINE */}
       <SectionShell icon={<CheckCircle2 size={14} style={{ color: 'hsl(var(--brand-ink))' }} />} title="Pipeline">
-        <ul className="space-y-2.5">
+        <ul className="space-y-1">
           {PIPELINE_STAGES.map((s, i) => {
-            const isDone = i < currentIdx;
             const isCurrent = i === currentIdx;
-            const stepStyle = isDone
-              ? { background: 'hsl(var(--brand-ink))', borderColor: 'hsl(var(--brand-ink))' }
-              : isCurrent
-                ? { background: 'hsl(var(--brand-yellow))', borderColor: 'hsl(var(--brand-ink))' }
-                : { background: 'hsl(var(--card))', borderColor: 'hsl(var(--border))' };
-            const labelClass = isCurrent
-              ? 'font-semibold text-foreground'
-              : isDone ? 'text-foreground' : 'text-muted-foreground';
             const isUpdating = updatingStage === s.id;
             return (
               <li key={s.id}>
@@ -195,17 +192,33 @@ export function ClientCommercialSidebar({ client }: Props) {
                   type="button"
                   onClick={() => updateStage(s.id)}
                   disabled={!!updatingStage || isCurrent}
-                  className="w-full flex items-center gap-2.5 text-xs text-left hover:bg-muted -mx-1 px-1 py-0.5 transition-colors disabled:cursor-default disabled:hover:bg-transparent"
-                  aria-label={`Passer à l'étape ${s.label}`}
+                  className="w-full flex items-center gap-2.5 text-left transition-colors disabled:cursor-default"
+                  style={{
+                    background: isCurrent ? 'hsl(var(--brand-yellow) / 0.18)' : 'transparent',
+                    padding: '7px 10px',
+                    borderRadius: 10,
+                    fontSize: 12.5,
+                    opacity: isUpdating ? 0.5 : 1,
+                  }}
                   aria-current={isCurrent ? 'step' : undefined}
                 >
                   <span
-                    className="inline-flex items-center justify-center flex-shrink-0"
-                    style={{ width: 16, height: 16, border: '1px solid', ...stepStyle, opacity: isUpdating ? 0.5 : 1 }}
+                    className="inline-block flex-shrink-0"
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: 3,
+                      background: isCurrent ? 'hsl(var(--brand-yellow))' : 'transparent',
+                      border: isCurrent
+                        ? '1px solid hsl(var(--brand-yellow))'
+                        : '1px solid hsl(var(--border))',
+                    }}
+                  />
+                  <span
+                    className={isCurrent ? 'font-semibold text-foreground' : 'text-muted-foreground'}
                   >
-                    {isDone && <CheckCircle2 size={10} className="text-background" />}
+                    {s.label}
                   </span>
-                  <span className={labelClass}>{s.label}</span>
                 </button>
               </li>
             );
@@ -223,7 +236,7 @@ export function ClientCommercialSidebar({ client }: Props) {
         action={
           <button
             type="button"
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground transition-colors"
             onClick={() => setUrlsModalOpen(true)}
             aria-label="Gérer les URLs"
             disabled={!tracking?.id}
@@ -235,24 +248,36 @@ export function ClientCommercialSidebar({ client }: Props) {
         {urls.length === 0 ? (
           <p className="text-xs text-muted-foreground italic">Aucune URL configurée.</p>
         ) : (
-          <ul className="space-y-2">
-            {urls.slice(0, 6).map((u: any) => {
-              const d = daysSince(u.last_scraped_at);
-              return (
-                <li key={u.id} className="flex items-center gap-2">
-                  <a
-                    href={u.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-foreground hover:text-foreground truncate flex-1"
-                    title={u.url}
-                  >
-                    {u.label || u.url}
-                  </a>
-                  <span className="text-muted-foreground" style={{ fontSize: 10 }}>{ageLabel(d)}</span>
-                </li>
-              );
-            })}
+          <ul className="space-y-1.5">
+            {urls.slice(0, 6).map((u: any) => (
+              <li key={u.id} className="flex items-center gap-2 group">
+                <span
+                  className="inline-block flex-shrink-0"
+                  style={{
+                    width: 6, height: 6, borderRadius: 999,
+                    background: 'hsl(var(--brand-yellow))',
+                  }}
+                />
+                <a
+                  href={u.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground hover:underline truncate flex-1"
+                  title={u.url}
+                  style={{ fontSize: 12.5 }}
+                >
+                  {u.label || u.url}
+                </a>
+                <button
+                  type="button"
+                  onClick={() => removeUrl(u.id)}
+                  className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                  aria-label="Retirer cette URL"
+                >
+                  <X size={12} />
+                </button>
+              </li>
+            ))}
           </ul>
         )}
       </SectionShell>
@@ -268,3 +293,4 @@ export function ClientCommercialSidebar({ client }: Props) {
     </div>
   );
 }
+
