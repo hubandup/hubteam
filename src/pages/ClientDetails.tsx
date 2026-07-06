@@ -492,19 +492,16 @@ export default function ClientDetails() {
           </div>
         </div>
 
-        {/* STRUCTURE PRÉPARÉE pour les prochaines étapes */}
         <div className="space-y-4">
-          {/* Zone "actions commerciales" : bandeau Excuse de relance IA (admin only, onglet Commercial uniquement) */}
-          {role === 'admin' && activeTab === 'commercial' && (
-            <div data-zone="commercial-actions">
-              <ClientFollowupBanner clientId={client.id} />
-            </div>
-          )}
-
           {/* Grid 2/3 + 1/3 (corps) — sidebar Commercial uniquement sur l'onglet Commercial */}
           {activeTab === 'commercial' ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <div className="lg:col-span-2 min-w-0">
+              <div className="lg:col-span-2 min-w-0 space-y-4">
+                {role === 'admin' && (
+                  <div data-zone="commercial-actions">
+                    <ClientFollowupBanner clientId={client.id} />
+                  </div>
+                )}
                 {currentTab?.content}
               </div>
               <aside className="lg:col-span-1 min-w-0" data-zone="commercial-sidebar">
@@ -517,6 +514,7 @@ export default function ClientDetails() {
             </div>
           )}
         </div>
+
       </div>
     </div>
   );
