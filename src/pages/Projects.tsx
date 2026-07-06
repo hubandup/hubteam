@@ -222,15 +222,34 @@ export default function Projects() {
                     { key: 'end_date', label: 'Date fin' },
                   ]}
                   filename="projets"
+                  renderTrigger={({ isExporting }) => (
+                    <PillButton type="button" disabled={isExporting}>
+                      <Download size={16} strokeWidth={1.8} />
+                      Exporter
+                    </PillButton>
+                  )}
                 />
               )}
               <ProtectedAction module="projects" action="create">
-                <AddProjectDialog onProjectAdded={() => {
-                  void Promise.all([
-                    queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' }),
-                    queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' }),
-                  ]);
-                }} />
+                <AddProjectDialog
+                  open={addProjectOpen}
+                  onOpenChange={setAddProjectOpen}
+                  hideTrigger
+                  onProjectAdded={() => {
+                    void Promise.all([
+                      queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' }),
+                      queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' }),
+                    ]);
+                  }}
+                />
+                <PillButton
+                  type="button"
+                  variant="primary"
+                  onClick={() => setAddProjectOpen(true)}
+                >
+                  <Plus size={16} strokeWidth={1.8} />
+                  Nouveau projet
+                </PillButton>
               </ProtectedAction>
             </>
           ) : null
