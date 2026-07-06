@@ -86,7 +86,7 @@ export function MobileBottomSheet({
           borderTopLeftRadius: 26,
           borderTopRightRadius: 26,
           maxHeight: '82vh',
-          paddingBottom: 'env(safe-area-inset-bottom)',
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + 72px)',
           boxShadow: '0 -8px 30px rgba(0,0,0,0.25)',
         }}
       >
@@ -115,6 +115,7 @@ export function MobileBottomSheet({
         <div className="overflow-y-auto overscroll-contain flex-1 px-4 pb-6">
           {children}
         </div>
+
       </div>
     </div>
   );
