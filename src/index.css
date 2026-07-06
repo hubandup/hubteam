@@ -731,4 +731,39 @@
   .safe-area-right {
     padding-right: env(safe-area-inset-right, 0px);
   }
+
+  /* Sidebar active item notch effect */
+  .sidebar-menu-button-notch {
+    position: relative;
+  }
+
+  .sidebar-menu-button-notch::before,
+  .sidebar-menu-button-notch::after {
+    content: '';
+    position: absolute;
+    right: -8px;
+    width: 32px;
+    height: 32px;
+    background: hsl(var(--sidebar-background));
+    border-radius: 50%;
+    z-index: 10;
+    pointer-events: none;
+    box-shadow: -4px 0 10px rgba(0, 0, 0, 0.3);
+  }
+
+  .sidebar-menu-button-notch::before {
+    top: -16px;
+    clip-path: inset(0 50% 50% 0);
+  }
+
+  .sidebar-menu-button-notch::after {
+    bottom: -16px;
+    clip-path: inset(50% 50% 0 0);
+  }
 }
+
+
+
+
+
+
