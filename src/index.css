@@ -219,11 +219,34 @@
     --sidebar-border: 216 60% 12%;
     --sidebar-ring: 68 100% 64%;
 
-    /* Brand & semantic tokens — dark variants */
-    --brand-yellow: 68 100% 64%;
-    --brand-yellow-foreground: 216 60% 10%;
+    /* Hub+Up Design System — dark variants */
+    --ink: 220 20% 95%;
+    --ink-foreground: 216 60% 10%;
+    --navy: 218 100% 6%;
+    --navy-hover: 220 45% 22%;
+    --navy-foreground: 0 0% 100%;
+    --lime: 68 87% 58%;
+    --lime-foreground: 220 33% 9%;
+    --app-bg: 216 60% 6%;
+    --label: 220 15% 65%;
+    --field-border: 216 60% 20%;
+    --focus-ring: 68 87% 58%;
+
+    --status-success: 152 69% 50%;
+    --status-success-bg: 152 40% 15%;
+    --status-warning-fg: 44 90% 60%;
+    --status-warning-bg: 44 40% 15%;
+    --status-danger: 8 75% 62%;
+    --status-danger-bg: 8 40% 18%;
+    --status-info: 220 15% 65%;
+    --status-info-bg: 216 40% 16%;
+
+    /* Aliases */
+    --brand-yellow: 68 87% 58%;
+    --brand-yellow-foreground: 220 33% 9%;
     --brand-ink: 220 20% 95%;
     --brand-ink-foreground: 216 60% 10%;
+
 
     --surface: 216 60% 10%;
     --surface-muted: 216 60% 14%;
