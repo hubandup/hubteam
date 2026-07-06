@@ -123,172 +123,171 @@ export function ClientFollowupBanner({ clientId }: Props) {
     return single.length > 80 ? single.slice(0, 80) + '…' : single;
   }, [plainBody]);
 
+  const hasExcuse = !!latest && !!plainBody;
+
   return (
     <>
       <div
         className="relative rounded-card overflow-hidden"
-        style={{ background: 'hsl(var(--brand-ink))', border: '2px solid hsl(var(--brand-ink))', marginBottom: 20 }}
+        style={{
+          background: 'hsl(var(--brand-ink))',
+          border: '1px solid rgba(255,255,255,0.08)',
+          marginBottom: 20,
+          padding: '20px 24px',
+        }}
       >
-        {/* Header */}
-        <div
-          className="relative flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: isCollapsed ? 'none' : '1px solid rgba(255,255,255,0.1)' }}
-        >
-          <div className="flex items-center gap-3 min-w-0">
-            <div
-              className="flex items-center justify-center flex-shrink-0 rounded-button"
-              style={{ width: 28, height: 28, background: 'hsl(var(--brand-yellow))' }}
-            >
-              <Sparkles size={14} style={{ color: 'hsl(var(--brand-ink))' }} />
-            </div>
-            <div className="min-w-0">
-              <p className="display text-background font-bold truncate" style={{ fontSize: 14 }}>
-                Excuse de relance
-              </p>
-              <p className="uppercase tracking-wider text-background/50" style={{ fontSize: 10 }}>
-                Générée par l'IA · {dateLabel}
-              </p>
-            </div>
+        {/* Header — icône + titre + méta */}
+        <div className="flex items-start gap-3">
+          <div
+            className="flex items-center justify-center flex-shrink-0 rounded-full"
+            style={{ width: 32, height: 32, background: 'hsl(var(--brand-yellow))' }}
+          >
+            <Sparkles size={15} style={{ color: 'hsl(var(--brand-ink))' }} />
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setOpenModal(true)}
-              className="inline-flex items-center gap-1.5 text-xs text-background/60 hover:text-background transition-colors"
+          <div className="min-w-0 flex-1">
+            <p className="display text-background font-bold" style={{ fontSize: 14, lineHeight: 1.2 }}>
+              Excuse de relance
+            </p>
+            <p
+              className="uppercase tracking-[0.14em] text-background/45 mt-1"
+              style={{ fontSize: 10 }}
             >
-              <RefreshCw size={12} />
-              Générer
-            </button>
+              Générée par l'IA · {dateLabel}
+            </p>
+          </div>
+          {hasExcuse && (
             <button
               type="button"
               onClick={() => setIsCollapsed((s) => !s)}
-              className="text-background/60 hover:text-background transition-colors"
+              className="text-background/40 hover:text-background transition-colors shrink-0"
               aria-label={isCollapsed ? 'Déplier' : 'Replier'}
             >
               <ChevronDown
-                size={14}
+                size={16}
                 className={`transition-transform ${isCollapsed ? '' : 'rotate-180'}`}
               />
             </button>
+          )}
+        </div>
+
+        {/* Zone centrale */}
+        <div className="relative" style={{ minHeight: 96, padding: '20px 0 4px' }}>
+          {isLoading ? (
+            <div className="flex items-center justify-center gap-2 text-background/60 text-sm py-6">
+              <Loader2 className="h-4 w-4 animate-spin" /> Chargement…
+            </div>
+          ) : !hasExcuse ? (
+            <div className="flex items-center justify-center py-4">
+              <button
+                type="button"
+                onClick={() => setOpenModal(true)}
+                className="inline-flex items-center gap-2 font-semibold rounded-button transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                style={{
+                  background: 'hsl(var(--brand-yellow))',
+                  color: 'hsl(var(--brand-ink))',
+                  padding: '14px 28px',
+                  fontSize: 15,
+                }}
+              >
+                Générer une excuse
+              </button>
+            </div>
+          ) : isCollapsed ? (
+            <button
+              type="button"
+              onClick={() => setIsCollapsed(false)}
+              className="w-full text-left text-background/70 text-sm hover:text-background/90 transition-colors truncate"
+            >
+              {collapsedPreview}
+            </button>
+          ) : (
+            <p className="text-sm text-background/90 leading-relaxed whitespace-pre-wrap">
+              {plainBody}
+            </p>
+          )}
+        </div>
+
+        {/* Barre d'actions bas */}
+        <div
+          className="flex items-center gap-2 flex-wrap pt-4"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+        >
+          <button
+            type="button"
+            onClick={copy}
+            disabled={!plainBody}
+            className="inline-flex items-center gap-1.5 font-semibold text-xs rounded-button transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              background: hasExcuse ? 'hsl(var(--brand-yellow))' : 'rgba(232,255,76,0.25)',
+              color: hasExcuse ? 'hsl(var(--brand-ink))' : 'hsl(var(--brand-yellow))',
+              padding: '7px 14px',
+            }}
+          >
+            <Copy size={13} /> Copier
+          </button>
+          <button
+            type="button"
+            onClick={sendMail}
+            disabled={!latest}
+            className="inline-flex items-center gap-1.5 text-xs text-background/80 hover:bg-card/10 rounded-button transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            style={{
+              border: '1px solid rgba(255,255,255,0.15)',
+              padding: '7px 14px',
+            }}
+          >
+            <Send size={13} /> Envoyer par email
+          </button>
+
+          <div className="ml-auto flex items-center gap-3">
+            {hasExcuse && (
+              <button
+                type="button"
+                onClick={() => setOpenModal(true)}
+                className="inline-flex items-center gap-1.5 text-xs text-background/60 hover:text-background transition-colors"
+              >
+                <RefreshCw size={12} /> Régénérer
+              </button>
+            )}
+            {historyCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setOpenHistory(true)}
+                className="inline-flex items-center gap-1 text-xs text-background/60 hover:text-background transition-colors"
+              >
+                <Clock size={12} /> Historique ({historyCount})
+              </button>
+            )}
+            {sourcesList.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowSources((s) => !s)}
+                className="inline-flex items-center gap-1 text-xs text-background/60 hover:text-background transition-colors"
+              >
+                {showSources ? 'Masquer sources' : 'Sources'}
+                <ChevronRight
+                  size={12}
+                  className={showSources ? 'rotate-90 transition-transform' : 'transition-transform'}
+                />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Body — collapsed mode */}
-        {isCollapsed ? (
-          <button
-            type="button"
-            onClick={() => setIsCollapsed(false)}
-            className="w-full flex items-center gap-3 hover:bg-card/5 transition-colors text-left"
-            style={{ padding: '12px 20px' }}
-          >
-            <span className="flex-1 truncate text-background/70 text-xs">
-              {collapsedPreview || 'Aucune excuse générée.'}
-            </span>
-            {latest && (
-              <span
-                className="inline-flex items-center gap-2 shrink-0"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  type="button"
-                  onClick={copy}
-                  disabled={!plainBody}
-                  className="inline-flex items-center gap-1 font-semibold text-xs disabled:opacity-50 rounded-button"
-                  style={{ background: 'hsl(var(--brand-yellow))', color: 'hsl(var(--brand-ink))', padding: '6px 12px' }}
-                >
-                  <Copy size={12} /> Copier
-                </button>
-                <button
-                  type="button"
-                  onClick={sendMail}
-                  className="inline-flex items-center gap-1 text-xs text-background hover:bg-card/10 rounded-button"
-                  style={{ border: '1px solid rgba(255,255,255,0.2)', padding: '6px 12px' }}
-                >
-                  <Send size={12} /> Envoyer par email
-                </button>
-              </span>
-            )}
-          </button>
-        ) : (
-          /* Body — expanded mode */
-          <div className="relative px-5 py-4">
-            {isLoading ? (
-              <div className="flex items-center gap-2 text-background/60 text-sm py-2">
-                <Loader2 className="h-4 w-4 animate-spin" /> Chargement…
-              </div>
-            ) : !latest ? (
-              <p className="text-sm text-background/70 mb-4 leading-relaxed">
-                Aucune excuse générée pour ce client. Cliquez sur <strong className="text-background">Générer</strong> pour en créer une.
-              </p>
-            ) : (
-              <p className="text-sm text-background/90 mb-4 leading-relaxed whitespace-pre-wrap">
-                {plainBody}
-              </p>
-            )}
-
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={copy}
-                disabled={!plainBody}
-                className="inline-flex items-center gap-1.5 font-semibold text-sm disabled:opacity-50 rounded-button"
-                style={{ background: 'hsl(var(--brand-yellow))', color: 'hsl(var(--brand-ink))', padding: '8px 16px' }}
-              >
-                <Copy size={14} /> Copier
-              </button>
-              <button
-                type="button"
-                onClick={sendMail}
-                disabled={!latest}
-                className="inline-flex items-center gap-1.5 text-sm text-background hover:bg-card/10 disabled:opacity-50 rounded-button"
-                style={{ border: '1px solid rgba(255,255,255,0.2)', padding: '8px 16px' }}
-              >
-                <Send size={14} /> Envoyer par email
-              </button>
-
-              <div className="ml-auto flex items-center gap-4">
-                {historyCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setOpenHistory(true)}
-                    className="inline-flex items-center gap-1 text-xs text-background/70 hover:text-background"
+        {showSources && sourcesList.length > 0 && (
+          <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <ul className="space-y-1">
+              {sourcesList.map((s, i) => (
+                <li key={i} className="text-xs text-background/70 flex items-center gap-2">
+                  <span
+                    className="uppercase font-semibold tracking-wider rounded-badge"
+                    style={{ background: 'rgba(232,255,76,0.15)', color: 'hsl(var(--brand-yellow))', padding: '1px 6px', fontSize: 9 }}
                   >
-                    <Clock size={12} /> Historique ({historyCount})
-                  </button>
-                )}
-                {sourcesList.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowSources((s) => !s)}
-                    className="inline-flex items-center gap-1 text-sm text-background/70 hover:text-background"
-                  >
-                    {showSources ? 'Masquer les sources' : 'Voir les sources utilisées'}
-                    <ChevronRight
-                      size={14}
-                      className={showSources ? 'rotate-90 transition-transform' : 'transition-transform'}
-                    />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {showSources && sourcesList.length > 0 && (
-              <div className="mt-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                <ul className="space-y-1">
-                  {sourcesList.map((s, i) => (
-                    <li key={i} className="text-xs text-background/70 flex items-center gap-2">
-                      <span
-                        className="uppercase font-semibold tracking-wider rounded-badge"
-                        style={{ background: 'rgba(232,255,76,0.15)', color: 'hsl(var(--brand-yellow))', padding: '1px 6px', fontSize: 9 }}
-                      >
-                        {s.kind}
-                      </span>
-                      <span className="truncate">{s.label}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+                    {s.kind}
+                  </span>
+                  <span className="truncate">{s.label}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </div>
