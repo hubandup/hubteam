@@ -4502,6 +4502,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accessible_project_ids: { Args: never; Returns: string[] }
       client_id_for_user: { Args: { _user_id: string }; Returns: string }
       current_user_email: { Args: never; Returns: string }
       get_user_role: {
@@ -4537,6 +4538,7 @@ export type Database = {
         Returns: boolean
       }
       notify_upcoming_deadlines: { Args: never; Returns: undefined }
+      same_agency_user_ids: { Args: never; Returns: string[] }
       should_send_notification:
         | {
             Args: {
