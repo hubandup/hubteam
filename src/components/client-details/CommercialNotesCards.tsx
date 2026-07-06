@@ -2,15 +2,18 @@ import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { ChevronDown, Plus, Loader2, Trash2, Lock, Pencil } from 'lucide-react';
+import { ChevronDown, Plus, Loader2, Trash2, Lock, Pencil, FolderKanban, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { createSafeHtml } from '@/lib/sanitize';
+import { buildEmbeddedProjectPath } from '@/lib/project-nav';
 
 interface Props {
   trackingId: string;
@@ -111,23 +114,67 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
         .order('created_at', { ascending: false });
       if (error) throw error;
       const ids = Array.from(new Set((data || []).map((n: any) => n.author_id)));
-      if (ids.length === 0) return data || [];
+      if (ids.length === 0) return (data || []).map((n: any) => ({ ...n, source: 'commercial' }));
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, avatar_url')
         .in('id', ids);
       return (data || []).map((n: any) => ({
         ...n,
+        source: 'commercial',
         author: profiles?.find((p: any) => p.id === n.author_id),
       }));
     },
   });
 
+  // Project notes attached to any project of this client
+  const { data: projectNotes = [] } = useQuery({
+    queryKey: ['client-project-notes', client?.id],
+    enabled: !!client?.id,
+    queryFn: async () => {
+      const { data: links } = await supabase
+        .from('project_clients')
+        .select('project_id')
+        .eq('client_id', client.id);
+      const projectIds = (links || []).map((l: any) => l.project_id);
+      if (projectIds.length === 0) return [];
+      const { data: pNotes, error } = await supabase
+        .from('project_notes')
+        .select('*')
+        .in('project_id', projectIds)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      if (!pNotes || pNotes.length === 0) return [];
+      const authorIds = Array.from(new Set(pNotes.map((n: any) => n.created_by).filter(Boolean)));
+      const { data: profiles } = authorIds.length
+        ? await supabase.from('profiles').select('id, first_name, last_name, avatar_url').in('id', authorIds)
+        : { data: [] as any[] };
+      const { data: projects } = await supabase
+        .from('projects')
+        .select('id, name')
+        .in('id', projectIds);
+      return pNotes.map((n: any) => ({
+        ...n,
+        source: 'project',
+        author_id: n.created_by,
+        author: profiles?.find((p: any) => p.id === n.created_by),
+        project: projects?.find((p: any) => p.id === n.project_id),
+      }));
+    },
+  });
+
+  const allNotes = useMemo(() => {
+    return [...notes, ...projectNotes].sort(
+      (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+  }, [notes, projectNotes]);
+
   const filteredNotes = useMemo(() => {
-    if (privacyFilter === 'public') return notes.filter((n: any) => !n.is_private);
-    if (privacyFilter === 'private') return notes.filter((n: any) => n.is_private);
-    return notes;
-  }, [notes, privacyFilter]);
+    if (privacyFilter === 'public') return allNotes.filter((n: any) => !n.is_private);
+    if (privacyFilter === 'private') return allNotes.filter((n: any) => n.is_private);
+    return allNotes;
+  }, [allNotes, privacyFilter]);
+
 
   const visible = useMemo(
     () => (showAll ? filteredNotes : filteredNotes.slice(0, 3)),
@@ -270,8 +317,12 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
           {visible.map((n: any) => {
             const isOpen = !!expanded[n.id];
             const authorName = [n.author?.first_name, n.author?.last_name].filter(Boolean).join(' ') || 'Utilisateur';
+            const isProject = n.source === 'project';
+            const plainContent = isProject
+              ? (n.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+              : (n.content || '');
             return (
-              <li key={n.id} className="px-5 py-4">
+              <li key={`${n.source}-${n.id}`} className="px-5 py-4">
                 <button
                   type="button"
                   onClick={() => setExpanded((s) => ({ ...s, [n.id]: !s[n.id] }))}
@@ -281,12 +332,12 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                     className="inline-flex items-center justify-center flex-shrink-0"
                     style={{ width: 32, height: 32, border: '1px solid #e5e5e5', fontSize: 16 }}
                   >
-                    {TYPE_EMOJI(n.content || '')}
+                    {isProject ? <FolderKanban size={14} /> : TYPE_EMOJI(plainContent)}
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold" style={{ fontSize: 14, color: 'hsl(var(--brand-ink))' }}>
-                        {format(extractMeetingDate(n.content || '', n.created_at), 'd MMMM yyyy', { locale: fr })}
+                        {format(extractMeetingDate(plainContent, n.created_at), 'd MMMM yyyy', { locale: fr })}
                       </p>
                       {n.is_private && (
                         <span
@@ -296,8 +347,19 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                           <Lock size={10} /> Privé
                         </span>
                       )}
+                      {isProject && (
+                        <span
+                          className="inline-flex items-center gap-1 text-foreground"
+                          style={{ background: 'hsl(var(--brand-yellow))', padding: '2px 6px', fontSize: 10, fontWeight: 600 }}
+                        >
+                          <FolderKanban size={10} /> Projet
+                        </span>
+                      )}
                     </div>
-                    <p className="text-muted-foreground" style={{ fontSize: 12 }}>{authorName}</p>
+                    <p className="text-muted-foreground" style={{ fontSize: 12 }}>
+                      {authorName}
+                      {isProject && n.project?.name ? ` · ${n.project.name}` : ''}
+                    </p>
                   </div>
                   <ChevronDown
                     size={16}
@@ -308,29 +370,49 @@ export function CommercialNotesCards({ trackingId, tracking, client }: Props) {
                 <div className="mt-3 pl-[44px]">
                   {isOpen ? (
                     <div className="space-y-2">
-                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                        {n.content}
-                      </p>
+                      {isProject ? (
+                        <div
+                          className="prose prose-sm dark:prose-invert max-w-none text-sm text-foreground leading-relaxed"
+                          dangerouslySetInnerHTML={createSafeHtml(n.content || '')}
+                        />
+                      ) : (
+                        <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                          {n.content}
+                        </p>
+                      )}
                       <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(n)}
-                          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-                        >
-                          <Pencil size={12} /> Modifier
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => remove(n.id)}
-                          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-red-600"
-                        >
-                          <Trash2 size={12} /> Supprimer
-                        </button>
+                        {isProject ? (
+                          n.project?.id && (
+                            <Link
+                              to={buildEmbeddedProjectPath(client.id, n.project.id, 'notes')}
+                              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              <ExternalLink size={12} /> Ouvrir dans le projet
+                            </Link>
+                          )
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => openEdit(n)}
+                              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              <Pencil size={12} /> Modifier
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => remove(n.id)}
+                              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-red-600"
+                            >
+                              <Trash2 size={12} /> Supprimer
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   ) : (
                     <p className="text-sm text-foreground leading-relaxed">
-                      {preview(n.content || '', 180)}
+                      {preview(plainContent, 180)}
                     </p>
                   )}
                 </div>
