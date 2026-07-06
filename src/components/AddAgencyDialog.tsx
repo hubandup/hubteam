@@ -36,7 +36,11 @@ type AgencyFormData = z.infer<typeof agencySchema>;
 
 interface AddAgencyDialogProps {
   onAgencyAdded: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }
+
 
 export function AddAgencyDialog({ onAgencyAdded }: AddAgencyDialogProps) {
   const [open, setOpen] = useState(false);
