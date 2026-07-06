@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { createSafeHtml, sanitizeHtml } from '@/lib/sanitize';
+import { createSafeHtml } from '@/lib/sanitize';
 import { buildEmbeddedProjectPath } from '@/lib/project-nav';
 
 interface Props {
