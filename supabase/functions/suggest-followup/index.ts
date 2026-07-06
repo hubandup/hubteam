@@ -518,7 +518,7 @@ Destinataire choisi pour ce message :
 - Prénom à utiliser dans la salutation : ${recipientFirstName || recipientName || ''}
 
 ACTION À PROPOSER (call-to-action obligatoire de l'email) : ${actionLabel}
-${wantsBookingLink && calendly.url ? `LIEN CALENDLY À INTÉGRER : ${calendly.url} (attribué à ${calendly.owner === 'amandine' ? 'Amandine' : 'Charles'})` : ''}
+${wantsBookingLink && calendly.url ? `LIEN CALENDLY À INTÉGRER : ${calendly.url}${calendly.owner ? ` (attribué à ${calendly.owner === 'amandine' ? 'Amandine' : 'Charles'})` : ' (lien personnalisé fourni par l\'utilisateur)'}` : ''}
 ${contextFiche}${contextHubOwner}${contextInterlocuteurs}${contextNotes}${contextMeetings}${contextMeetingNotes}${contextQualification}${contextProjects}${contextGoogleAlerts}${contextHubAndUp}${contextPriorSuggestions}
 
 Contenus scrappés récemment (URLs veille du client) :
