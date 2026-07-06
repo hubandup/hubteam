@@ -164,7 +164,7 @@ export default function ProjectDetails() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-card">
+      <div className="flex items-center justify-center h-screen bg-background">
         <Loader2 className="h-6 w-6 animate-spin text-foreground" />
       </div>
     );
@@ -240,7 +240,7 @@ export default function ProjectDetails() {
   );
 
   return (
-    <div className="bg-card min-h-screen">
+    <div className="bg-background min-h-screen">
       <div className="max-w-[960px] px-7 py-7 space-y-6">
 
         {/* ── Header ───────────────────────────────────────────────────── */}

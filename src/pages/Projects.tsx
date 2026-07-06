@@ -186,7 +186,7 @@ export default function Projects() {
   if (loading) return <PageLoader />;
   if (!canRead('projects')) {
     return (
-      <div className="flex items-center justify-center h-screen bg-card">
+      <div className="flex items-center justify-center h-screen bg-background">
         <div className="text-center">
           <p style={{ fontFamily: "'Instrument Sans', sans-serif", fontWeight: 700, fontSize: 16, color: 'hsl(var(--foreground))', marginBottom: 6 }}>
             {t('common.accessDenied')}
@@ -198,7 +198,7 @@ export default function Projects() {
   }
 
   return (
-    <div className="space-y-0 bg-card min-h-screen p-7">
+    <div className="space-y-0 bg-background min-h-screen p-7">
       <PendingQuoteActionsBanner />
 
       {/* ── Page title + actions ──────────────────────────────────────── */}
