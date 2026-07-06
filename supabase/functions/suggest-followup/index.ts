@@ -55,10 +55,10 @@ Deno.serve(async (req) => {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: 'LOVABLE_API_KEY not configured' }), {
+    if (!ANTHROPIC_API_KEY) {
+      return new Response(JSON.stringify({ error: 'ANTHROPIC_API_KEY not configured' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
       });
     }
@@ -468,42 +468,48 @@ ${sourcesText}
 
 Génère le JSON.`;
 
-    const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-3-flash-preview',
+        model: 'claude-sonnet-4-5',
+        max_tokens: 2048,
+        system: systemPrompt,
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
+          { role: 'user', content: `${userPrompt}\n\nRéponds UNIQUEMENT avec le JSON demandé, sans markdown ni backticks.` },
         ],
-        response_format: { type: 'json_object' },
       }),
     });
 
     if (!aiRes.ok) {
-      if (aiRes.status === 429) {
-        return new Response(JSON.stringify({ error: 'rate_limited', message: 'Trop de requêtes, réessayez dans un instant.' }), {
+      if (aiRes.status === 429 || aiRes.status === 529) {
+        return new Response(JSON.stringify({ error: 'rate_limited', message: 'Anthropic surchargé, réessayez dans un instant.' }), {
           status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
         });
       }
-      if (aiRes.status === 402) {
-        return new Response(JSON.stringify({ error: 'payment_required', message: 'Crédits Lovable AI épuisés.' }), {
+      if (aiRes.status === 401) {
+        return new Response(JSON.stringify({ error: 'unauthorized', message: 'Clé ANTHROPIC_API_KEY invalide.' }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
+        });
+      }
+      if (aiRes.status === 402 || aiRes.status === 403) {
+        return new Response(JSON.stringify({ error: 'payment_required', message: 'Crédits Anthropic épuisés — voir console.anthropic.com/billing.' }), {
           status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
         });
       }
       const t = await aiRes.text();
-      console.error('AI gateway error', aiRes.status, t);
+      console.error('Anthropic error', aiRes.status, t);
       return new Response(JSON.stringify({ error: 'ai_error', message: 'Erreur du modèle IA.' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
       });
     }
 
     const aiJson = await aiRes.json();
-    const raw = aiJson.choices?.[0]?.message?.content || '';
+    const raw = aiJson?.content?.[0]?.text || '';
 
     let parsed: { angles?: Array<{ title?: string; description?: string; source?: string }>; subject?: string; body_plain?: string } = {};
     try {

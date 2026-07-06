@@ -7,7 +7,7 @@ const corsHeaders = {
 
 const SLACK_BOT_TOKEN = Deno.env.get('SLACK_BOT_TOKEN');
 const SLACK_CHANNEL = '#hubteam_sales';
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const FIRECRAWL_API_KEY = Deno.env.get('FIRECRAWL_API_KEY');
 const CRON_SECRET = Deno.env.get('CRON_SECRET');
 
@@ -214,7 +214,7 @@ async function loadTargets(supabase: any): Promise<TargetData[]> {
 
 // ----- AI generation -----
 async function generateRelanceIdeas(target: TargetData, hubandupContext: string): Promise<string[]> {
-  if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY missing');
+  if (!ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY missing');
 
   const notesBlock = target.notes.length
     ? target.notes.map((n, i) => `CR ${i + 1}:\n${n.slice(0, 2000)}`).join('\n\n')
@@ -268,25 +268,30 @@ ${hubandupContext.slice(0, 6000)}
 - Pas d'introduction ni conclusion
 - Ton professionnel, actionnable, en français`;
 
-  const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+    headers: {
+      'x-api-key': ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({
-      model: 'google/gemini-2.5-flash',
+      model: 'claude-sonnet-4-5',
+      max_tokens: 1024,
+      temperature: 0.8,
+      system: 'Tu génères des idées de relance commerciale précises, sourcées et actionnables.',
       messages: [
-        { role: 'system', content: 'Tu génères des idées de relance commerciale précises, sourcées et actionnables.' },
         { role: 'user', content: prompt },
       ],
-      temperature: 0.8,
     }),
   });
 
   if (!res.ok) {
     const txt = await res.text();
-    throw new Error(`AI Gateway error ${res.status}: ${txt}`);
+    throw new Error(`Anthropic error ${res.status}: ${txt}`);
   }
   const data = await res.json();
-  const raw: string = data?.choices?.[0]?.message?.content ?? '';
+  const raw: string = data?.content?.[0]?.text ?? '';
   return raw
     .split('\n')
     .map((l) => l.replace(/^[\s\-•*\d.\)]+/, '').replace(/^["«»“”]/, '').replace(/["«»“”]$/, '').trim())
