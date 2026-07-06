@@ -114,7 +114,10 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
       } else if (cfg.calendly_charles_url) {
         pick = { owner: 'charles', email: cfg.calendly_charles_email, url: cfg.calendly_charles_url };
       }
-      if (!cancelled) setResolvedCalendly(pick);
+      if (!cancelled) {
+        setResolvedCalendly(pick);
+        setCalendlyUrlOverride(pick?.url || '');
+      }
     })();
     return () => { cancelled = true; };
   }, [wantsBookingLink, calendlyCfg]);
