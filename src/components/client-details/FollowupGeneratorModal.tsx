@@ -40,6 +40,7 @@ export function FollowupGeneratorModal({ open, onOpenChange, trackingId }: Props
   const [customEmail, setCustomEmail] = useState('');
   const [customName, setCustomName] = useState('');
   const [modelId, setModelId] = useState<'claude' | 'gemini' | 'gpt5mini'>('claude');
+  const [calendlyUrlOverride, setCalendlyUrlOverride] = useState<string>('');
   const [busy, setBusy] = useState(false);
 
   const { data: tracking } = useQuery({
