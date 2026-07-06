@@ -16,6 +16,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { PillButton } from '@/components/ui/pill-button';
 import { cn } from '@/lib/utils';
 import { ClientInfoTab } from '@/components/client-details/ClientInfoTab';
 import { ClientMeetingNotesTab } from '@/components/client-details/ClientMeetingNotesTab';
