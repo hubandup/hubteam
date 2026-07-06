@@ -20,10 +20,15 @@ import { AddClientDialog, type AddedClientPayload } from './AddClientDialog';
 
 interface AddProjectDialogProps {
   onProjectAdded: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }
 
-export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
-  const [open, setOpen] = useState(false);
+export function AddProjectDialog({ onProjectAdded, open: openProp, onOpenChange, hideTrigger }: AddProjectDialogProps) {
+  const [openState, setOpenState] = useState(false);
+  const open = openProp !== undefined ? openProp : openState;
+  const setOpen = (v: boolean) => { onOpenChange ? onOpenChange(v) : setOpenState(v); };
   const [loading, setLoading] = useState(false);
   const [addClientOpen, setAddClientOpen] = useState(false);
   const [clients, setClients] = useState<AddedClientPayload[]>([]);
@@ -217,12 +222,14 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
       if (!nextOpen && addClientOpen) return;
       setOpen(nextOpen);
     }}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouveau projet
-        </Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Nouveau projet
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[600px]" onInteractOutside={(e) => { if (addClientOpen) e.preventDefault(); }}>
         <form onSubmit={handleSubmit}>
           <DialogHeader>

@@ -16,6 +16,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { PillButton } from '@/components/ui/pill-button';
 import { cn } from '@/lib/utils';
 import { ClientInfoTab } from '@/components/client-details/ClientInfoTab';
 import { ClientMeetingNotesTab } from '@/components/client-details/ClientMeetingNotesTab';
@@ -309,10 +310,12 @@ export default function ClientDetails() {
       <div className="p-6 space-y-4 max-w-[1400px] mx-auto">
         {/* Back button */}
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="-ml-2">
-            <ArrowLeft className="h-4 w-4 mr-1" /> Retour
-          </Button>
+          <PillButton variant="ghost" onClick={() => navigate(-1)} className="-ml-2">
+            <ArrowLeft size={16} strokeWidth={1.8} />
+            Retour
+          </PillButton>
         </div>
+
 
         {/* HEADER + TABS dans le même conteneur blanc */}
         <div className="bg-card border border-border overflow-hidden" style={{ borderRadius: 18 }}>

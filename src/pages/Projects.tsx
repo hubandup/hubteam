@@ -9,9 +9,10 @@ import { AddProjectDialog } from '@/components/AddProjectDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Search, Archive, ArchiveRestore, Edit, Trash2 } from 'lucide-react';
+import { Search, Archive, ArchiveRestore, Edit, Trash2, Plus, Download } from 'lucide-react';
 import { ExportButton } from '@/components/exports/ExportButton';
 import { PageHeader } from '@/components/layout';
+import { PillButton } from '@/components/ui/pill-button';
 
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -59,6 +60,7 @@ export default function Projects() {
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') || '');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+  const [addProjectOpen, setAddProjectOpen] = useState(false);
 
   useEffect(() => {
     const urlTab = searchParams.get('tab');
@@ -220,15 +222,34 @@ export default function Projects() {
                     { key: 'end_date', label: 'Date fin' },
                   ]}
                   filename="projets"
+                  renderTrigger={({ isExporting }) => (
+                    <PillButton type="button" disabled={isExporting}>
+                      <Download size={16} strokeWidth={1.8} />
+                      Exporter
+                    </PillButton>
+                  )}
                 />
               )}
               <ProtectedAction module="projects" action="create">
-                <AddProjectDialog onProjectAdded={() => {
-                  void Promise.all([
-                    queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' }),
-                    queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' }),
-                  ]);
-                }} />
+                <AddProjectDialog
+                  open={addProjectOpen}
+                  onOpenChange={setAddProjectOpen}
+                  hideTrigger
+                  onProjectAdded={() => {
+                    void Promise.all([
+                      queryClient.refetchQueries({ queryKey: ['projects'], type: 'active' }),
+                      queryClient.refetchQueries({ queryKey: ['archived-projects'], type: 'active' }),
+                    ]);
+                  }}
+                />
+                <PillButton
+                  type="button"
+                  variant="primary"
+                  onClick={() => setAddProjectOpen(true)}
+                >
+                  <Plus size={16} strokeWidth={1.8} />
+                  Nouveau projet
+                </PillButton>
               </ProtectedAction>
             </>
           ) : null
