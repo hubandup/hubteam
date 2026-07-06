@@ -175,10 +175,9 @@ export function AgenciesMobile({ agencies, onAgencyAdded, addAgencyOpen, onAddAg
         open={addAgencyOpen}
         onOpenChange={onAddAgencyOpenChange}
         hideTrigger
-        onAgencyAdded={() => {
-          void queryClient.refetchQueries({ queryKey: ['agencies'], type: 'active' });
-        }}
+        onAgencyAdded={onAgencyAdded}
       />
+
     </div>
   );
 }
