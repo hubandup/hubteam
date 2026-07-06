@@ -24,12 +24,15 @@ export default function Agencies() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { canRead, loading: permissionsLoading } = usePermissions();
+  const isMobile = useIsMobile();
   useSilentTagsReconciliation();
   const [agencies, setAgencies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagSearchOpen, setTagSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [addAgencyOpen, setAddAgencyOpen] = useState(false);
+
 
   useEffect(() => {
     fetchAgencies();
