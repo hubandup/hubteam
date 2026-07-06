@@ -589,37 +589,37 @@ function ContactsSection({ trackingId, client }: { trackingId: string; client: a
     toast.success('Contact supprimé');
   };
 
-  // Hide the section entirely if there are no additional contacts (main contact already shown in page header)
   if (contacts.length === 0) {
     return (
-      <div className="bg-card border border-border px-4 py-3 flex items-center justify-between">
-        <span className="uppercase tracking-wider font-semibold text-muted-foreground" style={{ fontSize: 10 }}>
-          Contacts additionnels
-        </span>
-        <Button size="sm" variant="outline" onClick={addContact} className="h-7 text-xs">
-          <Plus className="h-3 w-3 mr-1" /> Ajouter un contact
+      <div className="px-6 py-4 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-foreground font-medium" style={{ fontSize: 13 }}>Contacts additionnels</div>
+          <div className="text-muted-foreground" style={{ fontSize: 12 }}>Aucun contact secondaire pour l'instant</div>
+        </div>
+        <Button size="sm" variant="outline" onClick={addContact} className="h-8 text-xs shrink-0">
+          <Plus className="h-3.5 w-3.5 mr-1" /> Ajouter un contact
         </Button>
       </div>
     );
   }
 
   return (
-    <section className="bg-card border border-border">
-      <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2">
+    <div>
+      <div className="px-6 py-3 flex items-center justify-between gap-2">
         <div className="flex items-baseline gap-2 min-w-0">
-          <span className="uppercase tracking-wider font-semibold text-muted-foreground" style={{ fontSize: 10 }}>
+          <span className="text-foreground font-medium" style={{ fontSize: 13 }}>
             Contacts additionnels
           </span>
-          <span className="text-muted-foreground" style={{ fontSize: 11 }}>
+          <span className="text-muted-foreground" style={{ fontSize: 12 }}>
             {contacts.length}
           </span>
         </div>
-        <Button size="sm" variant="outline" onClick={addContact} className="h-7 text-xs">
-          <Plus className="h-3 w-3 mr-1" /> Ajouter
+        <Button size="sm" variant="outline" onClick={addContact} className="h-8 text-xs">
+          <Plus className="h-3.5 w-3.5 mr-1" /> Ajouter
         </Button>
       </div>
 
-      <ul className="divide-y divide-neutral-100">
+      <ul className="divide-y divide-border border-t border-border">
         {contacts.map((c: any) => (
           <CompactContactRow
             key={c.id}
@@ -629,9 +629,10 @@ function ContactsSection({ trackingId, client }: { trackingId: string; client: a
           />
         ))}
       </ul>
-    </section>
+    </div>
   );
 }
+
 
 /* ---------- Compact contact row (collapsed by default, expands to edit) ---------- */
 function CompactContactRow({
