@@ -469,8 +469,9 @@ Deno.serve(async (req) => {
 
     // Bloc Calendly conditionnel : si une action de proposition de RDV/call est demandée ET qu'un lien Calendly est disponible
     const wantsBookingLink = ['propose_slot', 'schedule_call'].includes(actionKey);
+    const ownerLabel = calendly.owner === 'amandine' ? 'Amandine' : calendly.owner === 'charles' ? 'Charles' : "l'expéditeur";
     const calendlyRule = (wantsBookingLink && calendly.url)
-      ? `- LIEN CALENDLY (obligatoire pour cette action) : intègre EXPLICITEMENT le lien Calendly suivant attribué à l'expéditeur (${calendly.owner === 'amandine' ? 'Amandine' : 'Charles'}) : ${calendly.url}\n  Présente-le naturellement dans la dernière phrase du corps (ex : "Voici mon agenda si vous souhaitez réserver un créneau directement : ${calendly.url}"). N'invente AUCUN autre lien Calendly.`
+      ? `- LIEN CALENDLY (obligatoire pour cette action) : intègre EXPLICITEMENT le lien Calendly suivant attribué à ${ownerLabel} : ${calendly.url}\n  Présente-le naturellement dans la dernière phrase du corps (ex : "Voici mon agenda si vous souhaitez réserver un créneau directement : ${calendly.url}"). N'invente AUCUN autre lien Calendly.`
       : `- LIEN CALENDLY : n'inclus AUCUN lien Calendly dans cet email (l'action choisie ne le requiert pas, ou aucun lien n'est configuré).`;
 
     const systemPrompt = `Tu es un expert en développement commercial B2B pour HUB+UP (agence de communication). Tu génères une "excuse de relance" personnalisée pour un destinataire précis, en t'appuyant sur plusieurs sources de contexte fraîches : actualités scrappées du client, comptes rendus internes, projets en cours, contexte HUB+UP (résumé du site officiel) et Google Alerts liées au client.
