@@ -17,9 +17,10 @@ interface ExportButtonProps {
   columns: ExportColumn[];
   filename: string;
   label?: string;
+  renderTrigger?: (opts: { isExporting: boolean }) => React.ReactNode;
 }
 
-export function ExportButton({ data, columns, filename, label = 'Exporter' }: ExportButtonProps) {
+export function ExportButton({ data, columns, filename, label = 'Exporter', renderTrigger }: ExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
 
   const formatData = () => {
