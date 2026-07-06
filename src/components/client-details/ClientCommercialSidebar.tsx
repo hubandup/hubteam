@@ -194,28 +194,37 @@ export function ClientCommercialSidebar({ client }: Props) {
                   disabled={!!updatingStage || isCurrent}
                   className="w-full flex items-center gap-2.5 text-left transition-colors disabled:cursor-default"
                   style={{
-                    background: isCurrent ? 'hsl(var(--brand-yellow) / 0.18)' : 'transparent',
-                    padding: '7px 10px',
+                    background: isCurrent ? 'hsl(var(--brand-yellow))' : 'transparent',
+                    padding: '8px 12px',
                     borderRadius: 10,
                     fontSize: 12.5,
                     opacity: isUpdating ? 0.5 : 1,
                   }}
                   aria-current={isCurrent ? 'step' : undefined}
                 >
+                  {isCurrent ? (
+                    <span
+                      className="inline-flex items-center justify-center flex-shrink-0"
+                      style={{
+                        width: 14, height: 14, borderRadius: 4,
+                        background: 'hsl(var(--brand-ink))',
+                      }}
+                    >
+                      <CheckCircle2 size={9} strokeWidth={3} style={{ color: 'hsl(var(--brand-yellow))' }} />
+                    </span>
+                  ) : (
+                    <span
+                      className="inline-block flex-shrink-0"
+                      style={{
+                        width: 14, height: 14, borderRadius: 4,
+                        background: 'transparent',
+                        border: '1.5px solid hsl(var(--border))',
+                      }}
+                    />
+                  )}
                   <span
-                    className="inline-block flex-shrink-0"
-                    style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: 3,
-                      background: isCurrent ? 'hsl(var(--brand-yellow))' : 'transparent',
-                      border: isCurrent
-                        ? '1px solid hsl(var(--brand-yellow))'
-                        : '1px solid hsl(var(--border))',
-                    }}
-                  />
-                  <span
-                    className={isCurrent ? 'font-semibold text-foreground' : 'text-muted-foreground'}
+                    className={isCurrent ? 'font-semibold' : 'text-muted-foreground'}
+                    style={isCurrent ? { color: 'hsl(var(--brand-ink))' } : undefined}
                   >
                     {s.label}
                   </span>
@@ -225,6 +234,7 @@ export function ClientCommercialSidebar({ client }: Props) {
           })}
         </ul>
       </SectionShell>
+
 
       {/* 2. ÉTAPES DE RENDEZ-VOUS */}
       {tracking?.id && <MeetingsCompactBlock trackingId={tracking.id} client={client} />}
