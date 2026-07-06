@@ -2,15 +2,18 @@ import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { ChevronDown, Plus, Loader2, Trash2, Lock, Pencil } from 'lucide-react';
+import { ChevronDown, Plus, Loader2, Trash2, Lock, Pencil, FolderKanban, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { createSafeHtml, sanitizeHtml } from '@/lib/sanitize';
+import { buildEmbeddedProjectPath } from '@/lib/project-nav';
 
 interface Props {
   trackingId: string;
