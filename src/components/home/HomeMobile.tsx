@@ -43,9 +43,9 @@ function SectionCard({
       style={{ border: `1px solid ${CARD_BORDER}`, borderRadius: 16 }}
     >
       <header className="flex items-center gap-2 mb-3">
-        <Icon className="h-4 w-4" style={{ color: TITLE_COLOR }} strokeWidth={2} />
+        <Icon className="h-5 w-5 shrink-0" style={{ color: TITLE_COLOR }} strokeWidth={2} />
         <h2
-          className="text-[15px] font-semibold"
+          className="text-[15px] font-semibold leading-none"
           style={{
             color: TITLE_COLOR,
             fontFamily: "'Archivo', 'Instrument Sans', system-ui, sans-serif",
@@ -58,6 +58,7 @@ function SectionCard({
       {children}
     </section>
   );
+
 }
 
 function statusMeta(status: string) {
