@@ -6,9 +6,8 @@ import { ProtectedAction } from '@/components/ProtectedAction';
 import { AddAgencyDialog } from '@/components/AddAgencyDialog';
 import { getLogoFallback } from '@/components/targets/targetUtils';
 
-
-
 const NAVY = '#0C1320';
+
 const LIME = '#DDF247';
 const CARD_BORDER = '#ECECEE';
 const TITLE = '#0F1524';
