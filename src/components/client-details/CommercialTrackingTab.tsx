@@ -125,18 +125,127 @@ export function CommercialTrackingTab({ clientId, client }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Interlocuteur Hub & Up (déplacé depuis l'onglet Infos) */}
-      <MainContactSection client={client} />
+      {/* Suivi commercial : Interlocuteur + Statut + Contacts additionnels dans une seule carte */}
+      <CommercialTrackingCard tracking={tracking} client={client} />
 
-      {/* Compact status + notify bar (unique actions, no duplicate of header) */}
-      <StatusActionsBar tracking={tracking} client={client} />
-
-      <ContactsSection trackingId={tracking.id} client={client} />
       <QualificationCollapsible trackingId={tracking.id} />
       <CommercialNotesCards trackingId={tracking.id} tracking={tracking} client={client} />
     </div>
   );
 }
+
+/* ---------- Suivi commercial (carte unique : interlocuteur + statut + contacts) ---------- */
+function CommercialTrackingCard({ tracking, client }: { tracking: any; client: any }) {
+  const qc = useQueryClient();
+
+  const { data: teamMembers = [] } = useQuery({
+    queryKey: ['hubup-team-members'],
+    queryFn: async () => {
+      const { data: rolesData } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('role', ['admin', 'team']);
+      const ids = (rolesData || []).map((r: any) => r.user_id);
+      if (ids.length === 0) return [];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', ids);
+      return profiles || [];
+    },
+  });
+
+  const handleContactChange = async (userId: string) => {
+    const contactId = userId === 'none' ? null : userId;
+    const { error } = await supabase.from('clients').update({ main_contact_id: contactId }).eq('id', client.id);
+    if (error) return toast.error('Erreur lors de la mise à jour');
+    toast.success('Interlocuteur Hub & Up mis à jour');
+    qc.invalidateQueries({ queryKey: ['client', client.id] });
+  };
+
+  const handleStatusChange = async (status: string) => {
+    const previousStatus = tracking.status;
+    if (status === previousStatus) return;
+    const { error } = await supabase.from('commercial_tracking').update({ status: status as any }).eq('id', tracking.id);
+    if (error) return toast.error('Erreur');
+    qc.invalidateQueries({ queryKey: ['commercial-tracking'] });
+    toast.success('Statut mis à jour');
+
+    if (status === 'to_followup') {
+      try {
+        const { data: result, error: notifError } = await supabase.functions.invoke('notify-target-relance', {
+          body: {
+            client_id: tracking.client_id,
+            tracking_id: tracking.id,
+            company: client.company,
+            contact_name: `${client.first_name} ${client.last_name}`,
+            event_type: 'status_to_followup',
+            expected_previous_status: previousStatus,
+          },
+        });
+        if (notifError) toast.error('Notification de relance non envoyée');
+        else if (!(result as any)?.skipped) {
+          toast.success('Équipe notifiée (Slack + email)');
+          qc.invalidateQueries({ queryKey: ['target-relance-history', tracking.client_id] });
+        }
+      } catch (e) {
+        console.error('notify-target-relance error', e);
+      }
+    }
+  };
+
+  return (
+    <section className="bg-card border border-border" style={{ borderRadius: 18 }}>
+      <div className="px-6 pt-5 pb-2">
+        <h3 className="display font-bold text-foreground" style={{ fontSize: 17 }}>
+          Suivi commercial
+        </h3>
+      </div>
+
+      <div className="px-6 pb-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <label className="text-foreground font-medium" style={{ fontSize: 12.5 }}>
+            Interlocuteur Hub &amp; Up
+          </label>
+          <Select value={client.main_contact_id || 'none'} onValueChange={handleContactChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Sélectionner un interlocuteur" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Aucun</SelectItem>
+              {teamMembers.map((m: any) => (
+                <SelectItem key={m.id} value={m.id}>
+                  {m.first_name} {m.last_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-foreground font-medium" style={{ fontSize: 12.5 }}>
+            Statut commercial
+          </label>
+          <Select value={tracking.status} onValueChange={handleStatusChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_OPTIONS.map((s) => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="border-t border-border">
+        <ContactsSection trackingId={tracking.id} client={client} />
+      </div>
+    </section>
+  );
+}
+
 
 /* ---------- Interlocuteur Hub & Up ---------- */
 function MainContactSection({ client }: { client: any }) {
