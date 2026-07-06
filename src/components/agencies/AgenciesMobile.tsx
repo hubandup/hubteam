@@ -2,11 +2,11 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Search, ChevronRight, Mail, Phone, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
 import { MobileBottomSheet } from '@/components/MobileBottomSheet';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { AddAgencyDialog } from '@/components/AddAgencyDialog';
 import { getLogoFallback } from '@/components/targets/targetUtils';
+
 
 const NAVY = '#0C1320';
 const LIME = '#DDF247';
