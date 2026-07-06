@@ -1,79 +1,101 @@
-## Objectif
-Refondre la page `src/pages/ClientDetails.tsx` et ses sous-composants pour livrer l'UI décrite : cartes aérées radius 16–18, palette lime/navy, bloc IA "Assistant de relance" repensé, rail droit pipeline/RDV/URLs, onglets Infos & Projets alignés. Aucune modification du back / des données.
+# Design System Hub+Up — Plan de mise en œuvre
 
-## 1. Design tokens (index.css + tailwind.config.ts)
-Ajouter/aligner les variables sémantiques HSL :
-- `--ink 222 22% 10%` (#0F1420)
-- `--navy 222 32% 8%` + `--navy-hover 222 40% 18%`
-- `--lime 74 87% 58%` (#CDF03A) — `--lime-foreground` = navy
-- `--bg 220 15% 97%`, `--card 0 0% 100%`, `--card-border 220 12% 92%` (#E8EAEE)
-- `--muted-fg 222 8% 58%`, `--label 222 10% 40%`
-- `--success-fg 154 76% 36%`, `--success-bg 145 55% 93%`
-- `--field-border 220 13% 90%`, `--danger 8 58% 51%`
-- Radius : `--radius-card: 18px`, `--radius-button: 999px` (déjà pill), `--radius-chip: 999px`, `--radius-field: 12px`
+Objectif : établir un langage visuel unique et réutilisable, puis y aligner progressivement toutes les pages. Le travail est **découpé en 4 lots** pour livrer de la valeur par étapes et éviter une régression massive.
 
-Exposer dans `tailwind.config.ts` : `colors.ink/navy/lime/success`, `borderRadius.card`. Body déjà en Instrument Sans (confirmé mémoire).
+---
 
-## 2. Nouvel en-tête client (`ClientDetails.tsx`)
-- Carte blanche unique radius-card, padding 28.
-- Logo 56×56 radius 14, bord `--card-border`. Fallback initiale.
-- Titre 26/700, badge statut lime (navy text) au lieu du fond jaune actuel.
-- Ligne infos avec icônes 14px `text-muted-fg`, gap 20.
-- Tags gris pill radius-chip padding 4/10.
-- Onglets intégrés en bas de la même carte, border-top ; onglet actif = underline navy 2px + badge navy/lime.
+## Lot 1 — Fondations (tokens + Tailwind config)
 
-## 3. Onglet Commercial (`CommercialTrackingTab.tsx` + sous-composants)
-Grille `grid-cols-[1fr_336px] gap-[22px]`.
+Un seul commit qui pose les bases pour tous les composants suivants.
 
-### Colonne principale
-1. **Assistant de relance** (refonte de `ClientFollowupBanner.tsx`) : carte blanche (plus de fond navy).
-   - Header : tuile 36×36 gradient navy + Sparkles lime, titre "Assistant de relance", badge "IA" navy/lime, sous-titre muted.
-   - Header droite : pastille verte "Généré à l'instant" si résultat.
-   - États :
-     - Vide : bloc centré + CTA lime "Générer une relance" (Sparkles).
-     - Chargement : 3 skeleton lines animate-pulse + "Rédaction en cours…" + spinner.
-     - Résultat : encadré `bg-[hsl(var(--surface-soft))]` radius 12 padding 16 `whitespace-pre-line`. Actions : Copier (toggle vert "Copié" 1.8s), navy "Envoyer par email", lien discret "Régénérer" à droite.
-2. **Suivi commercial** : carte, 2 selects côte à côte (Interlocuteur / Statut), séparateur, sous-bloc "Contacts additionnels" (composant existant `ClientContactsManager`).
-3. **Qualification du besoin** (`QualificationCollapsible.tsx`) : header cliquable avec barre progression lime (X/10) + chevron rotate. Grille 2 cols labels normal-case. Chips zone géo actives = navy/blanc. Bouton dashed "Ajouter une question".
-4. **Comptes rendus** (`CommercialNotesCards.tsx`) : segmented control Tous/Publics/Privés, CTA navy "Ajouter un CR", lignes dépliables.
+**`src/index.css`** — refonte des variables (light + dark) :
+- `--ink` `--navy` `--navy-hover` `--lime` `--bg` `--card` `--border` `--field-border` `--focus` `--muted` `--label`
+- Statuts : `--success` / `--success-bg`, `--warning` / `--warning-bg`, `--danger` / `--danger-bg`, `--info` / `--info-bg`
+- Rayons : `--radius-input` (10), `--radius-card` (18), `--radius-pill` (999)
+- Dark mode : `--bg #0B1220`, `--card #131C30`, texte clair, lime conservé
 
-### Colonne droite (rail sticky `top-4`)
-Refonte `ClientCommercialSidebar.tsx` en 3 cartes empilées :
-- **Pipeline** : 8 étapes ; actif = fond `lime/10`, gras, puce carrée lime pleine ; autres = puce carrée outline.
-- **Étapes de rendez-vous** : MeetingsCompactBlock repensé, pastilles vert/gris + `+`.
-- **URLs veille IA** : liste puce lime + bouton retirer + `+` (ScrapeUrlsManagerModal en trigger).
+**`tailwind.config.ts`** :
+- `fontFamily.sans = ['Instrument Sans', ...]` (déjà chargée)
+- Étendre `colors` avec les tokens ci-dessus (ink, navy, lime, muted, label, success, warning, danger, info)
+- Étendre `borderRadius` (input, card, pill)
+- Échelle typo custom : `display`, `h1`, `h2`, `h3`, `body`, `label`, `caption`
 
-## 4. Onglet Infos (`ClientInfoTab.tsx`)
-Grille `md:grid-cols-2 gap-[22px]`.
-- Carte "Informations générales" : lignes icône+label+valeur.
-- Carte "Statistiques" : tuile navy "CA total" chiffre lime + tuile gris clair "Année fiscale" + badge vert "Actif".
+**Règle d'or** : plus aucun `bg-black`, `text-white`, `bg-[#…]` en dur dans les composants. Tout via tokens.
 
-## 5. Onglet Projets (`ClientProjectsTab.tsx`)
-Header + CTA navy "Nouveau projet". Grille cartes projet actuelles restylées radius-card, barre progression lime. Ajouter tuile dashed "Créer un nouveau projet" en fin de grille.
+---
 
-## 6. Onglets Tâches / Documents / Factures
-Ajouter composant partagé `EmptyState` (icône lime pastel, titre, phrase, CTA lime) et l'utiliser quand liste vide dans `ClientTasksTab`, `ClientKDriveTab`, `ClientInvoicesTab`.
+## Lot 2 — Bibliothèque de primitives
 
-## 7. Fichiers touchés
-- `src/index.css` — nouveaux tokens.
-- `tailwind.config.ts` — extend colors/radius.
-- `src/pages/ClientDetails.tsx` — en-tête + onglets restylés.
-- `src/components/client-details/ClientFollowupBanner.tsx` — refonte complète (carte blanche + 3 états).
-- `src/components/client-details/CommercialTrackingTab.tsx` — grille + ordre des cartes.
-- `src/components/client-details/CommercialNotesCards.tsx` — segmented, CTA navy.
-- `src/components/client-details/QualificationCollapsible.tsx` — header progression, labels normal-case, chips zone.
-- `src/components/client-details/ClientCommercialSidebar.tsx` — 3 cartes Pipeline/RDV/URLs.
-- `src/components/client-details/MeetingsCompactBlock.tsx` — pastilles statut.
-- `src/components/client-details/ClientInfoTab.tsx` — 2 cartes.
-- `src/components/client-details/ClientProjectsTab.tsx` — CTA + carte dashed.
-- `src/components/client-details/ClientTasksTab.tsx`, `ClientKDriveTab.tsx`, `ClientInvoicesTab.tsx` — empty states.
-- `src/components/common/EmptyState.tsx` — nouveau.
+Nouveaux composants dans `src/components/ui/` (ou révision des shadcn existants via variantes CVA). Un seul style par primitive, utilisé partout ensuite.
 
-## Non-inclus
-- Sidebar app globale et topbar (déjà en place, conformes) — non retouchées sauf si tu confirmes.
-- Aucun changement DB/RLS/permissions.
-- Logique fetch et Supabase queries inchangées.
+| Composant | Fichier | Notes |
+|---|---|---|
+| Button (primary/dark/outline/ghost/danger, sm/md, loading) | `ui/button.tsx` (variantes CVA étendues) | Primary = lime/navy · Dark = navy/blanc |
+| Card (+ CardHeader collapsible) | `ui/card.tsx` | radius 18, padding 20–28, header optionnel |
+| Input / Textarea / Select | déjà shadcn, on aligne les tokens | focus ring = ink |
+| Chips sélectionnables | `ui/chip.tsx` (nouveau) | mono/multi, actif navy |
+| SegmentedControl | `ui/segmented.tsx` (nouveau) | conteneur muted, actif blanc + shadow |
+| Badge / StatusPill | `ui/status-pill.tsx` (nouveau) | success/warning/danger/info/neutral + puce |
+| Tabs | `ui/tabs.tsx` (révision) | underline navy 2px + badge compteur |
+| ProgressBar | `ui/progress.tsx` (révision) | remplissage lime |
+| StatTile | `ui/stat-tile.tsx` (nouveau) | variante navy (chiffre lime) + claire |
+| IconButton | `ui/icon-button.tsx` (nouveau) | carré 38px, hover muted |
+| Breadcrumb | `ui/breadcrumb.tsx` (nouveau) | dernier segment gras |
+| EmptyState | `common/EmptyState.tsx` (nouveau) | tuile icône lime pastel + titre + phrase + CTA |
+| DatePill | `ui/date-pill.tsx` (nouveau) | pill neutre avec icône calendrier |
+| AI Assistant Card | `ai/AssistantCard.tsx` (nouveau) | tuile dégradé navy + étincelle lime, états vide/loading/résultat, actions Copier/Envoyer/Régénérer |
 
-## Vérification
-- `bun run build` clean.
-- Playwright : capture des 3 onglets (Commercial / Infos / Projets) en 1280×1800 pour comparer au brief.
+Le `ClientFollowupBanner` actuel sera migré vers `AssistantCard` (mêmes props).
+
+---
+
+## Lot 3 — Shell applicatif
+
+Ajuster ce qui existe déjà (`Sidebar`, `Topbar`, layout racine) pour matcher exactement la spec :
+
+- **Sidebar** 250px, fond navy, logo HUB+UP, item actif = pill lime/navy gras (déjà proche), inactif #8A92A3, hover navy clair, « Déconnexion » séparée par bordure haute.
+- **Topbar** 66px blanche : toggle sidebar (gauche), recherche + FR + thème + cloche (pastille lime) + avatar chevron (droite). Boutons icônes = IconButton 38px.
+- **Zone contenu** : `max-w-[1240px] mx-auto px-7 py-8`, Breadcrumb en tête de chaque page, `← Retour` sur sous-pages.
+
+---
+
+## Lot 4 — Déclinaison écran par écran (progressif)
+
+Après validation des lots 1-3, on décline dans cet ordre (une PR par écran) :
+
+1. **CRM — fiche client** (déjà en cours) : finaliser Commercial, puis Infos, Projets, Tâches, Documents, Factures avec les primitives.
+2. **CRM — liste clients** : header (titre + compteur + CTA), filtres + SegmentedControl, table stylée, EmptyState.
+3. **Projets** (liste + détail) : mêmes patterns.
+4. **Prospection**, **Agences**, **Targets**, **Factures** : pages liste alignées.
+5. **Accueil / Activité / Finances / Comptabilité** : dashboards (StatTile navy + graphes + listes).
+6. **FAQ / Paramètres** : formulaires en cartes, actions ancrées bas.
+
+Chaque écran reçoit ses 4 états : normal / loading (skeleton) / vide (EmptyState) / erreur.
+
+---
+
+## Détails techniques
+
+- **Aucune migration DB** ni changement de logique métier dans ces lots — 100 % présentation.
+- Les composants shadcn existants sont **révisés** (variantes CVA, tokens) plutôt que remplacés, pour ne pas casser les imports.
+- Un fichier `src/styles/tokens.md` documentera les tokens et leur usage (référence pour futurs écrans).
+- Le mode sombre est câblé dès le lot 1 mais testé écran par écran au lot 4.
+- Les emojis sont retirés partout où l'UI les utilise encore (ex. `TYPE_EMOJI` dans `CommercialNotesCards`) et remplacés par des icônes Lucide.
+
+---
+
+## Ordre de livraison proposé
+
+**Turn 1** (ce prochain message si tu valides) : Lot 1 + Lot 2 (tokens + primitives). Aucune page ne change encore visuellement de façon massive — les composants existants continuent de fonctionner car ils passent par les mêmes tokens.
+
+**Turn 2** : Lot 3 (shell) + migration de la fiche client CRM entièrement sur les primitives (finition du travail en cours).
+
+**Turns 3+** : les autres écrans, un par un, dans l'ordre listé — tu valides après chaque écran.
+
+---
+
+## Ce que je te demande de confirmer
+
+1. **OK pour la découpe en 4 lots** livrés progressivement (plutôt qu'un big-bang qui casserait tout d'un coup) ?
+2. **Ordre des écrans au lot 4** : commencer par finir CRM (fiche + liste), puis Projets, puis dashboards ? Ou tu préfères un autre ordre (ex. Accueil d'abord car vitrine) ?
+3. **Mode sombre** : je le câble en tokens dès le lot 1, mais est-ce que je le teste / débogue écran par écran (temps supplémentaire) ou on le remet à plus tard ?
