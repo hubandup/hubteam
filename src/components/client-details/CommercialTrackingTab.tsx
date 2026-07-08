@@ -136,7 +136,7 @@ export function CommercialTrackingTab({ clientId, client, onClientUpdate }: Prop
 }
 
 /* ---------- Suivi commercial (carte unique : interlocuteur + statut + contacts) ---------- */
-function CommercialTrackingCard({ tracking, client }: { tracking: any; client: any }) {
+function CommercialTrackingCard({ tracking, client, onClientUpdate }: { tracking: any; client: any; onClientUpdate?: () => void | Promise<void> }) {
   const qc = useQueryClient();
 
   const { data: teamMembers = [] } = useQuery({
@@ -162,7 +162,9 @@ function CommercialTrackingCard({ tracking, client }: { tracking: any; client: a
     if (error) return toast.error('Erreur lors de la mise à jour');
     toast.success('Interlocuteur Hub & Up mis à jour');
     qc.invalidateQueries({ queryKey: ['client', client.id] });
+    await onClientUpdate?.();
   };
+
 
   const handleStatusChange = async (status: string) => {
     const previousStatus = tracking.status;
