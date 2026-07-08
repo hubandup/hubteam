@@ -22,6 +22,7 @@ import { QualificationCollapsible } from './QualificationCollapsible';
 interface Props {
   clientId: string;
   client: any;
+  onClientUpdate?: () => void | Promise<void>;
 }
 
 const STATUS_OPTIONS = [
