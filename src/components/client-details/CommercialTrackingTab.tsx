@@ -74,7 +74,7 @@ function downloadICS(filename: string, content: string) {
   URL.revokeObjectURL(url);
 }
 
-export function CommercialTrackingTab({ clientId, client }: Props) {
+export function CommercialTrackingTab({ clientId, client, onClientUpdate }: Props) {
   const qc = useQueryClient();
   const { user } = useAuth();
 
