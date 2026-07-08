@@ -231,7 +231,7 @@ export function CRMMobile({ addClientOpen, onAddClientOpenChange }: Props) {
             showRevenue={showRevenue}
             onOpenFull={() => {
               setSelectedId(null);
-              navigate(`/client/${selected.id}?tab=info`);
+              navigate(`/client/${selected.id}?tab=commercial`);
             }}
           />
         )}
