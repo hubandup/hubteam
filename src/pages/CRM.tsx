@@ -372,7 +372,7 @@ export default function CRM() {
                 <ClientCard
                   key={client.id}
                   client={client}
-                  onClick={() => navigate(`/client/${client.id}?tab=info`)}
+                  onClick={() => navigate(`/client/${client.id}?tab=commercial`)}
                   onMouseEnter={() => prefetchClientDetails(queryClient, client.id)}
                 />
               ))}
