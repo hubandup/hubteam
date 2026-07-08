@@ -382,7 +382,7 @@ export default function CRM() {
           <div className="overflow-y-auto h-full px-6 pb-6">
             <ClientListView
               clients={filteredClients}
-              onClientClick={(clientId) => navigate(`/client/${clientId}?tab=info`)}
+              onClientClick={(clientId) => navigate(`/client/${clientId}?tab=commercial`)}
               onClientHover={(clientId) => prefetchClientDetails(queryClient, clientId)}
             />
           </div>
@@ -391,7 +391,7 @@ export default function CRM() {
             <div className="min-w-max">
               <ClientKanbanView
                 clients={filteredClients}
-                onClientClick={(clientId) => navigate(`/client/${clientId}?tab=info`)}
+                onClientClick={(clientId) => navigate(`/client/${clientId}?tab=commercial`)}
                 onClientHover={(clientId) => prefetchClientDetails(queryClient, clientId)}
                 onStageChange={handleStageChange}
               />
@@ -400,14 +400,14 @@ export default function CRM() {
         ) : (
           <div className="overflow-y-auto h-full px-6 pb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredClients.map((client) => (
-                <ClientCard
-                  key={client.id}
-                  client={client}
-                  onClick={() => navigate(`/client/${client.id}?tab=info`)}
-                  onMouseEnter={() => prefetchClientDetails(queryClient, client.id)}
-                />
-              ))}
+                {filteredClients.map((client) => (
+                  <ClientCard
+                    key={client.id}
+                    client={client}
+                    onClick={() => navigate(`/client/${client.id}?tab=commercial`)}
+                    onMouseEnter={() => prefetchClientDetails(queryClient, client.id)}
+                  />
+                ))}
             </div>
           </div>
         )}
