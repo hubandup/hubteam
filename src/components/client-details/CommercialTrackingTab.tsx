@@ -127,7 +127,7 @@ export function CommercialTrackingTab({ clientId, client, onClientUpdate }: Prop
   return (
     <div className="space-y-4">
       {/* Suivi commercial : Interlocuteur + Statut + Contacts additionnels dans une seule carte */}
-      <CommercialTrackingCard tracking={tracking} client={client} />
+      <CommercialTrackingCard tracking={tracking} client={client} onClientUpdate={onClientUpdate} />
 
       <QualificationCollapsible trackingId={tracking.id} />
       <CommercialNotesCards trackingId={tracking.id} tracking={tracking} client={client} />
