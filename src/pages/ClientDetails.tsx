@@ -240,7 +240,7 @@ export default function ClientDetails() {
   const rawTabs: (TabDef & { visible: boolean })[] = [
     {
       value: 'commercial', label: 'Commercial', icon: <Briefcase className="h-4 w-4" />,
-      content: <CommercialTrackingTab clientId={client.id} client={client} />,
+      content: <CommercialTrackingTab clientId={client.id} client={client} onClientUpdate={fetchClientDetails} />,
       // Commercial data is admin-only (contient scoring, excuses, suivi).
       visible: role === 'admin',
     },

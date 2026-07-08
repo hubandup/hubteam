@@ -22,6 +22,7 @@ import { QualificationCollapsible } from './QualificationCollapsible';
 interface Props {
   clientId: string;
   client: any;
+  onClientUpdate?: () => void | Promise<void>;
 }
 
 const STATUS_OPTIONS = [
@@ -73,7 +74,7 @@ function downloadICS(filename: string, content: string) {
   URL.revokeObjectURL(url);
 }
 
-export function CommercialTrackingTab({ clientId, client }: Props) {
+export function CommercialTrackingTab({ clientId, client, onClientUpdate }: Props) {
   const qc = useQueryClient();
   const { user } = useAuth();
 
@@ -126,7 +127,7 @@ export function CommercialTrackingTab({ clientId, client }: Props) {
   return (
     <div className="space-y-4">
       {/* Suivi commercial : Interlocuteur + Statut + Contacts additionnels dans une seule carte */}
-      <CommercialTrackingCard tracking={tracking} client={client} />
+      <CommercialTrackingCard tracking={tracking} client={client} onClientUpdate={onClientUpdate} />
 
       <QualificationCollapsible trackingId={tracking.id} />
       <CommercialNotesCards trackingId={tracking.id} tracking={tracking} client={client} />
@@ -135,7 +136,7 @@ export function CommercialTrackingTab({ clientId, client }: Props) {
 }
 
 /* ---------- Suivi commercial (carte unique : interlocuteur + statut + contacts) ---------- */
-function CommercialTrackingCard({ tracking, client }: { tracking: any; client: any }) {
+function CommercialTrackingCard({ tracking, client, onClientUpdate }: { tracking: any; client: any; onClientUpdate?: () => void | Promise<void> }) {
   const qc = useQueryClient();
 
   const { data: teamMembers = [] } = useQuery({
@@ -161,7 +162,9 @@ function CommercialTrackingCard({ tracking, client }: { tracking: any; client: a
     if (error) return toast.error('Erreur lors de la mise à jour');
     toast.success('Interlocuteur Hub & Up mis à jour');
     qc.invalidateQueries({ queryKey: ['client', client.id] });
+    await onClientUpdate?.();
   };
+
 
   const handleStatusChange = async (status: string) => {
     const previousStatus = tracking.status;
