@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { RoleBadge } from '@/components/common/RoleBadge';
-import { Users, Edit, Loader2, Trash2, UserPlus, Mail, CheckCircle2, Circle, Wifi, WifiOff, BadgeCheck } from 'lucide-react';
+import { Users, Edit, Loader2, Trash2, UserPlus, Mail, CheckCircle2, Circle, Wifi, WifiOff, BadgeCheck, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { EditUserRoleDialog } from './EditUserRoleDialog';
