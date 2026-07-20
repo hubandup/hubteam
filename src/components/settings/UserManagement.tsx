@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { EditUserRoleDialog } from './EditUserRoleDialog';
 import { InviteUserDialog } from './InviteUserDialog';
+import { ResetPasswordDialog } from './ResetPasswordDialog';
 import {
   AlertDialog,
   AlertDialogAction,
