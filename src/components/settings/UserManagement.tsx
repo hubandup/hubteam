@@ -331,6 +331,12 @@ export function UserManagement() {
         onSuccess={fetchUsers}
       />
 
+      <ResetPasswordDialog
+        open={resetPasswordOpen}
+        onOpenChange={(o) => { setResetPasswordOpen(o); if (!o) setResetPasswordUser(null); }}
+        user={resetPasswordUser}
+      />
+
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
