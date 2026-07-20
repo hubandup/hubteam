@@ -291,6 +291,15 @@ export function UserManagement() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => { setResetPasswordUser(user); setResetPasswordOpen(true); }}
+                            title="Réinitialiser le mot de passe"
+                          >
+                            <KeyRound className="h-4 w-4 mr-1" />
+                            Mot de passe
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => handleDeleteUser(user)}
                             className="text-destructive hover:text-destructive"
                           >
