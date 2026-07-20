@@ -4,11 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { RoleBadge } from '@/components/common/RoleBadge';
-import { Users, Edit, Loader2, Trash2, UserPlus, Mail, CheckCircle2, Circle, Wifi, WifiOff, BadgeCheck } from 'lucide-react';
+import { Users, Edit, Loader2, Trash2, UserPlus, Mail, CheckCircle2, Circle, Wifi, WifiOff, BadgeCheck, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { EditUserRoleDialog } from './EditUserRoleDialog';
 import { InviteUserDialog } from './InviteUserDialog';
+import { ResetPasswordDialog } from './ResetPasswordDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +43,8 @@ export function UserManagement() {
   const [userToDelete, setUserToDelete] = useState<UserWithRole | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [resendingInvite, setResendingInvite] = useState<string | null>(null);
+  const [resetPasswordUser, setResetPasswordUser] = useState<UserWithRole | null>(null);
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -288,6 +291,15 @@ export function UserManagement() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => { setResetPasswordUser(user); setResetPasswordOpen(true); }}
+                            title="Réinitialiser le mot de passe"
+                          >
+                            <KeyRound className="h-4 w-4 mr-1" />
+                            Mot de passe
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => handleDeleteUser(user)}
                             className="text-destructive hover:text-destructive"
                           >
@@ -317,6 +329,12 @@ export function UserManagement() {
         open={inviteDialogOpen}
         onOpenChange={setInviteDialogOpen}
         onSuccess={fetchUsers}
+      />
+
+      <ResetPasswordDialog
+        open={resetPasswordOpen}
+        onOpenChange={(o) => { setResetPasswordOpen(o); if (!o) setResetPasswordUser(null); }}
+        user={resetPasswordUser}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

@@ -227,14 +227,78 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const existingUser = existingUsers.users.find(u => u.email === email);
-    
+
+    // ===== Mode: password =====
+    if (mode === 'password') {
+      // If user exists (confirmed or not), update the password and force change on next login
+      if (existingUser) {
+        console.log("Existing user found — resetting provisional password:", email);
+        const { data: updateData, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+          existingUser.id,
+          {
+            password,
+            email_confirm: true,
+            user_metadata: {
+              ...(existingUser.user_metadata || {}),
+              ...(firstName ? { first_name: firstName } : {}),
+              ...(lastName ? { last_name: lastName } : {}),
+              must_change_password: true,
+            },
+          }
+        );
+
+        if (updateError) {
+          console.error("ERROR: Failed to reset password:", updateError);
+          return new Response(
+            JSON.stringify({ error: "Échec de la réinitialisation du mot de passe", details: updateError.message }),
+            { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+          );
+        }
+
+        console.log("✓ Provisional password set for existing user:", updateData.user?.email);
+        return new Response(
+          JSON.stringify({ success: true, mode: 'password', reset: true, user: updateData.user }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      // No existing user — create new with provisional password
+      console.log("Creating user with provisional password...");
+      const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          role,
+          first_name: firstName || '',
+          last_name: lastName || '',
+          must_change_password: true,
+        },
+      });
+
+      if (createError) {
+        console.error("ERROR: Failed to create user:", createError);
+        return new Response(
+          JSON.stringify({ error: "Échec de la création de l'utilisateur", details: createError.message }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      console.log("✓ User created with provisional password:", createData.user?.email);
+      return new Response(
+        JSON.stringify({ success: true, mode: 'password', user: createData.user }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // ===== Mode: invite (email) =====
     // If user exists and has confirmed their email, they cannot be re-invited
     if (existingUser && existingUser.email_confirmed_at) {
       console.error("ERROR: User with this email already exists and is confirmed:", email);
       return new Response(
         JSON.stringify({ 
           error: "Utilisateur déjà actif",
-          details: `Un utilisateur avec l'email ${email} a déjà activé son compte. Vous ne pouvez pas renvoyer d'invitation. Si vous souhaitez modifier son rôle, veuillez le faire depuis la gestion des utilisateurs.`
+          details: `Un utilisateur avec l'email ${email} a déjà activé son compte. Utilisez « Réinitialiser le mot de passe » pour lui fournir un nouveau mot de passe provisoire.`
         }),
         {
           status: 409,
@@ -264,36 +328,6 @@ const handler = async (req: Request): Promise<Response> => {
       console.log("✓ Old unconfirmed user deleted, proceeding with new invitation");
     } else {
       console.log("✓ Email is available, proceeding with invitation");
-    }
-
-    // ===== Mode: password (create user directly with provisional password) =====
-    if (mode === 'password') {
-      console.log("Creating user with provisional password...");
-      const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          role,
-          first_name: firstName || '',
-          last_name: lastName || '',
-          must_change_password: true,
-        },
-      });
-
-      if (createError) {
-        console.error("ERROR: Failed to create user:", createError);
-        return new Response(
-          JSON.stringify({ error: "Échec de la création de l'utilisateur", details: createError.message }),
-          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
-      }
-
-      console.log("✓ User created with provisional password:", createData.user?.email);
-      return new Response(
-        JSON.stringify({ success: true, mode: 'password', user: createData.user }),
-        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
     }
 
     // Generate invite link - redirects to set-password page
