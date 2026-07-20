@@ -43,6 +43,8 @@ export function UserManagement() {
   const [userToDelete, setUserToDelete] = useState<UserWithRole | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [resendingInvite, setResendingInvite] = useState<string | null>(null);
+  const [resetPasswordUser, setResetPasswordUser] = useState<UserWithRole | null>(null);
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
 
   useEffect(() => {
     fetchUsers();
