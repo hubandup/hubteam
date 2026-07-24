@@ -335,7 +335,8 @@ export function useProjects() {
   return query;
 }
 
-export function useArchivedProjects() {
+export function useArchivedProjects(options: { enabled?: boolean } = {}) {
+  const { enabled = true } = options;
   const { user } = useAuth();
   const { role } = useUserRole();
   const queryClient = useQueryClient();
@@ -343,7 +344,7 @@ export function useArchivedProjects() {
   const query = useQuery({
     queryKey: ['archived-projects', user?.id, role],
     queryFn: () => fetchArchivedProjects(user?.id || null, role),
-    enabled: !!user,
+    enabled: !!user && enabled,
   });
 
   useEffect(() => {
