@@ -209,25 +209,34 @@ export function CRMMobile({ addClientOpen, onAddClientOpenChange }: Props) {
           Aucun client ne correspond
         </div>
       ) : (
-        <ul className="flex flex-col gap-2 w-full min-w-0">
-          {filtered.map((client) => (
-            <ClientSummaryCard
-              key={client.id}
-              client={client}
-              isStarred={!!targets?.has(client.id)}
-              onOpen={() => {
-                setSelectedId(client.id);
-                prefetchClientDetails(queryClient, client.id);
-              }}
-              onToggleStar={() =>
-                toggleTarget.mutate({
-                  clientId: client.id,
-                  starred: !!targets?.has(client.id),
-                })
-              }
-            />
-          ))}
-        </ul>
+        <>
+          <ul className="flex flex-col gap-2 w-full min-w-0">
+            {visibleFiltered.map((client) => (
+              <ClientSummaryCard
+                key={client.id}
+                client={client}
+                isStarred={!!targets?.has(client.id)}
+                onOpen={() => {
+                  setSelectedId(client.id);
+                  prefetchClientDetails(queryClient, client.id);
+                }}
+                onToggleStar={() =>
+                  toggleTarget.mutate({
+                    clientId: client.id,
+                    starred: !!targets?.has(client.id),
+                  })
+                }
+              />
+            ))}
+          </ul>
+          <LoadMoreSentinel
+            ref={sentinelRef}
+            hasMore={hasMore}
+            onLoadMore={loadMore}
+            visible={visibleCount}
+            total={total}
+          />
+        </>
       )}
 
       {/* Detail sheet */}
