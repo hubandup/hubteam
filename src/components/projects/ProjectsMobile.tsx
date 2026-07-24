@@ -191,11 +191,20 @@ export function ProjectsMobile({ addProjectOpen, onAddProjectOpenChange }: Props
           Aucun projet
         </div>
       ) : (
-        <ul className="flex flex-col gap-2 w-full min-w-0">
-          {filtered.map((p: any) => (
-            <ProjectSummaryCard key={p.id} project={p} onOpen={() => setSelectedId(p.id)} />
-          ))}
-        </ul>
+        <>
+          <ul className="flex flex-col gap-2 w-full min-w-0">
+            {visibleFiltered.map((p: any) => (
+              <ProjectSummaryCard key={p.id} project={p} onOpen={() => setSelectedId(p.id)} />
+            ))}
+          </ul>
+          <LoadMoreSentinel
+            ref={sentinelRef}
+            hasMore={hasMore}
+            onLoadMore={loadMore}
+            visible={visibleCount}
+            total={total}
+          />
+        </>
       )}
 
       {/* Detail sheet */}
