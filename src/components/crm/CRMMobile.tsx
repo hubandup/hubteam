@@ -24,6 +24,8 @@ import { ProtectedAction } from '@/components/ProtectedAction';
 import { MobileBottomSheet } from '@/components/MobileBottomSheet';
 import { LogoAvatar } from '@/components/targets/LogoAvatar';
 import { getUrgency, getStatusBucket, getLogoFallback, formatCa, formatShortFrDate } from '@/components/targets/targetUtils';
+import { useProgressiveList } from '@/hooks/useProgressiveList';
+import { LoadMoreSentinel } from '@/components/LoadMoreSentinel';
 
 import {
   PROJECT_STATUS_LABELS,
