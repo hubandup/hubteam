@@ -130,6 +130,17 @@ export default function CRM() {
     return clients.filter(client => client.active === false).length;
   }, [clients]);
 
+  // Progressive rendering for list/grid views (kanban stays complete for drag-drop).
+  const {
+    visible: visibleClients,
+    hasMore: hasMoreClients,
+    loadMore: loadMoreClients,
+    sentinelRef: clientsSentinelRef,
+    visibleCount: visibleClientsCount,
+    total: totalClients,
+  } = useProgressiveList(filteredClients, 30);
+
+
   const handleStageChange = async (clientId: string, newStage: string) => {
     // Snapshot pour rollback éventuel
     const previousClients = queryClient.getQueryData<any[]>(['clients']);
