@@ -173,7 +173,44 @@ export function AddTeamMemberDialog({
 
     setLoading(true);
     let pendingInviteRef: { first_name: string; last_name: string; email: string } | null = null;
+    let effectiveMemberId = memberId;
     try {
+      // If the selected client contact actually comes from commercial_contacts,
+      // promote it into client_contacts first so it can be attached to the project.
+      if (memberType === 'client_contact' && memberId.startsWith('commercial:') && projectClientId) {
+        const selected = members.find((m) => m.id === memberId);
+        if (selected) {
+          // Try to reuse an existing client_contact with the same email
+          let clientContactId: string | null = null;
+          if (selected.email) {
+            const { data: existing } = await supabase
+              .from('client_contacts')
+              .select('id')
+              .eq('client_id', projectClientId)
+              .ilike('email', selected.email)
+              .maybeSingle();
+            clientContactId = existing?.id || null;
+          }
+
+          if (!clientContactId) {
+            const { data: created, error: createErr } = await supabase
+              .from('client_contacts')
+              .insert({
+                client_id: projectClientId,
+                first_name: selected.first_name,
+                last_name: selected.last_name,
+                email: selected.email,
+                title: selected.title || null,
+              })
+              .select('id')
+              .single();
+            if (createErr) throw createErr;
+            clientContactId = created.id;
+          }
+          effectiveMemberId = clientContactId!;
+        }
+      }
+
       // Helper function to grant project access to a user profile by email (case-insensitive)
       const grantProfileAccess = async (email: string) => {
         const { data: profile, error: profileError } = await supabase
