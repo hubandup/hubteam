@@ -67,6 +67,16 @@ export function ProjectsMobile({ addProjectOpen, onAddProjectOpenChange }: Props
     return projects.filter((p: any) => p.status === filter);
   }, [projects, filter]);
 
+  const {
+    visible: visibleFiltered,
+    hasMore,
+    loadMore,
+    sentinelRef,
+    visibleCount,
+    total,
+  } = useProgressiveList(filtered, 20);
+
+
   const selected = useMemo(
     () => projects.find((p: any) => p.id === selectedId) || null,
     [selectedId, projects],
