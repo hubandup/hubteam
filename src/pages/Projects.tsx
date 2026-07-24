@@ -451,8 +451,9 @@ export default function Projects() {
               <p style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>{t('projects.archivedAutoDescription')}</p>
             </div>
           ) : (
+            <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-              {filteredProjects.map((project) => (
+              {visibleProjects.map((project) => (
                 <div key={project.id} style={{ border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))', padding: '18px 20px' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
                     <div style={{ flex: 1 }}>
@@ -514,6 +515,14 @@ export default function Projects() {
                 </div>
               ))}
             </div>
+            <LoadMoreSentinel
+              ref={sentinelRef}
+              hasMore={hasMore}
+              onLoadMore={loadMore}
+              visible={visibleCount}
+              total={totalProjects}
+            />
+            </>
           )
         ) : filteredProjects.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '64px 20px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }}>
