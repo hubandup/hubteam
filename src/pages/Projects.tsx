@@ -534,12 +534,13 @@ export default function Projects() {
             </div>
           </div>
         ) : isMobile || viewMode === 'grid' ? (
+          <>
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
             gap: 16,
           }}>
-            {filteredProjects.map((project) => (
+            {visibleProjects.map((project) => (
               <ProjectCard
                 key={project.id}
                 project={project}
@@ -547,6 +548,14 @@ export default function Projects() {
               />
             ))}
           </div>
+          <LoadMoreSentinel
+            ref={sentinelRef}
+            hasMore={hasMore}
+            onLoadMore={loadMore}
+            visible={visibleCount}
+            total={totalProjects}
+          />
+          </>
         ) : viewMode === 'kanban' ? (
           <ProjectKanbanView
             projects={filteredProjects}
