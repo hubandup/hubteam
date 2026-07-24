@@ -30,6 +30,8 @@ import { PendingQuoteActionsBanner } from '@/components/PendingQuoteActionsBanne
 import { cn } from '@/lib/utils';
 import { buildProjectNavPath } from '@/lib/project-nav';
 import { ProjectsMobile } from '@/components/projects/ProjectsMobile';
+import { useProgressiveList } from '@/hooks/useProgressiveList';
+import { LoadMoreSentinel } from '@/components/LoadMoreSentinel';
 
 
 type ViewMode = 'grid' | 'list' | 'kanban';
