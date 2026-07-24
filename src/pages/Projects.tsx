@@ -53,9 +53,12 @@ export default function Projects() {
   const queryClient = useQueryClient();
   const { isClient } = useUserRole();
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'active');
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
-  const { data: archivedProjects = [], isLoading: archivedLoading } = useArchivedProjects();
-  const loading = projectsLoading || archivedLoading || permissionsLoading;
+  const { data: archivedProjects = [], isLoading: archivedLoading } = useArchivedProjects({
+    enabled: activeTab === 'archived',
+  });
+  const loading = projectsLoading || (activeTab === 'archived' && archivedLoading) || permissionsLoading;
 
   const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'active');
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') || '');
