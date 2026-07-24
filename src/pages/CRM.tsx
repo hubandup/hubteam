@@ -31,6 +31,8 @@ import {
   type ProjectStatusKey,
 } from '@/lib/project-status';
 import { CRMMobile } from '@/components/crm/CRMMobile';
+import { useProgressiveList } from '@/hooks/useProgressiveList';
+import { LoadMoreSentinel } from '@/components/LoadMoreSentinel';
 
 
 
