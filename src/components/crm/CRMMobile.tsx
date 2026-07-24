@@ -109,6 +109,16 @@ export function CRMMobile({ addClientOpen, onAddClientOpenChange }: Props) {
     );
   }, [clients, search, filter]);
 
+  const {
+    visible: visibleFiltered,
+    hasMore,
+    loadMore,
+    sentinelRef,
+    visibleCount,
+    total,
+  } = useProgressiveList(filtered, 25);
+
+
   const selected = useMemo(
     () => filtered.find((c) => c.id === selectedId) || clients.find((c) => c.id === selectedId) || null,
     [selectedId, filtered, clients],
