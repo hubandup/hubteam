@@ -249,7 +249,14 @@ export function EditUserRoleDialog({ open, onOpenChange, user }: EditUserRoleDia
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as 'password' | 'access')} className="w-full">
+        <Tabs
+          value={tab}
+          onValueChange={(v) => {
+            if (v === 'access' && !isAdmin) return;
+            setTab(v as 'password' | 'access');
+          }}
+          className="w-full"
+        >
           <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <TabsTrigger value="password">
               <KeyRound className="h-4 w-4 mr-2" />
