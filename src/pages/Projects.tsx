@@ -190,6 +190,17 @@ export default function Projects() {
     archived: archivedProjects.length,
   }), [projects, archivedProjects]);
 
+  // Progressive rendering: only render a slice up-front, reveal more on scroll.
+  const {
+    visible: visibleProjects,
+    hasMore,
+    loadMore,
+    sentinelRef,
+    visibleCount,
+    total: totalProjects,
+  } = useProgressiveList(filteredProjects, 24);
+
+
   if (loading) return <PageLoader />;
   if (!canRead('projects')) {
     return (
