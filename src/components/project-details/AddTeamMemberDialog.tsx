@@ -290,7 +290,7 @@ export function AddTeamMemberDialog({
         .insert({
           project_id: projectId,
           member_type: memberType,
-          member_id: memberId,
+          member_id: effectiveMemberId,
         });
 
       if (error) {
