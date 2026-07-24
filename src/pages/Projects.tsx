@@ -60,7 +60,6 @@ export default function Projects() {
   });
   const loading = projectsLoading || (activeTab === 'archived' && archivedLoading) || permissionsLoading;
 
-  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'active');
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') || '');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
