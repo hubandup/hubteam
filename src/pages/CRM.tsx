@@ -381,7 +381,7 @@ export default function CRM() {
         ) : isMobile ? (
           <div className="overflow-y-auto h-full">
             <div className="space-y-3">
-              {filteredClients.map((client) => (
+              {visibleClients.map((client) => (
                 <ClientCard
                   key={client.id}
                   client={client}
@@ -390,13 +390,27 @@ export default function CRM() {
                 />
               ))}
             </div>
+            <LoadMoreSentinel
+              ref={clientsSentinelRef}
+              hasMore={hasMoreClients}
+              onLoadMore={loadMoreClients}
+              visible={visibleClientsCount}
+              total={totalClients}
+            />
           </div>
         ) : viewMode === 'list' ? (
           <div className="overflow-y-auto h-full px-6 pb-6">
             <ClientListView
-              clients={filteredClients}
+              clients={visibleClients}
               onClientClick={(clientId) => navigate(`/client/${clientId}?tab=commercial`)}
               onClientHover={(clientId) => prefetchClientDetails(queryClient, clientId)}
+            />
+            <LoadMoreSentinel
+              ref={clientsSentinelRef}
+              hasMore={hasMoreClients}
+              onLoadMore={loadMoreClients}
+              visible={visibleClientsCount}
+              total={totalClients}
             />
           </div>
         ) : viewMode === 'kanban' ? (
@@ -413,7 +427,7 @@ export default function CRM() {
         ) : (
           <div className="overflow-y-auto h-full px-6 pb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredClients.map((client) => (
+                {visibleClients.map((client) => (
                   <ClientCard
                     key={client.id}
                     client={client}
@@ -422,6 +436,13 @@ export default function CRM() {
                   />
                 ))}
             </div>
+            <LoadMoreSentinel
+              ref={clientsSentinelRef}
+              hasMore={hasMoreClients}
+              onLoadMore={loadMoreClients}
+              visible={visibleClientsCount}
+              total={totalClients}
+            />
           </div>
         )}
       </div>
