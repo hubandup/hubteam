@@ -249,9 +249,16 @@ const handler = async (req: Request): Promise<Response> => {
 
         if (updateError) {
           console.error("ERROR: Failed to reset password:", updateError);
+          const isWeak = (updateError as any).code === 'weak_password' || /weak|pwned/i.test(updateError.message);
           return new Response(
-            JSON.stringify({ error: "Échec de la réinitialisation du mot de passe", details: updateError.message }),
-            { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+            JSON.stringify({
+              error: isWeak
+                ? "Ce mot de passe est trop faible ou compromis. Choisissez-en un autre (12+ caractères, mélange lettres/chiffres/symboles)."
+                : "Échec de la réinitialisation du mot de passe",
+              code: (updateError as any).code,
+              details: updateError.message,
+            }),
+            { status: isWeak ? 400 : 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
           );
         }
 
