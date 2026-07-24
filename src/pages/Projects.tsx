@@ -30,6 +30,8 @@ import { PendingQuoteActionsBanner } from '@/components/PendingQuoteActionsBanne
 import { cn } from '@/lib/utils';
 import { buildProjectNavPath } from '@/lib/project-nav';
 import { ProjectsMobile } from '@/components/projects/ProjectsMobile';
+import { useProgressiveList } from '@/hooks/useProgressiveList';
+import { LoadMoreSentinel } from '@/components/LoadMoreSentinel';
 
 
 type ViewMode = 'grid' | 'list' | 'kanban';
@@ -53,11 +55,13 @@ export default function Projects() {
   const queryClient = useQueryClient();
   const { isClient } = useUserRole();
   const { user } = useAuth();
-  const { data: projects = [], isLoading: projectsLoading } = useProjects();
-  const { data: archivedProjects = [], isLoading: archivedLoading } = useArchivedProjects();
-  const loading = projectsLoading || archivedLoading || permissionsLoading;
-
   const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'active');
+  const { data: projects = [], isLoading: projectsLoading } = useProjects();
+  const { data: archivedProjects = [], isLoading: archivedLoading } = useArchivedProjects({
+    enabled: activeTab === 'archived',
+  });
+  const loading = projectsLoading || (activeTab === 'archived' && archivedLoading) || permissionsLoading;
+
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') || '');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
@@ -185,6 +189,17 @@ export default function Projects() {
     lost: projects.filter(p => p.status === 'lost').length,
     archived: archivedProjects.length,
   }), [projects, archivedProjects]);
+
+  // Progressive rendering: only render a slice up-front, reveal more on scroll.
+  const {
+    visible: visibleProjects,
+    hasMore,
+    loadMore,
+    sentinelRef,
+    visibleCount,
+    total: totalProjects,
+  } = useProgressiveList(filteredProjects, 24);
+
 
   if (loading) return <PageLoader />;
   if (!canRead('projects')) {
@@ -436,8 +451,9 @@ export default function Projects() {
               <p style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))' }}>{t('projects.archivedAutoDescription')}</p>
             </div>
           ) : (
+            <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-              {filteredProjects.map((project) => (
+              {visibleProjects.map((project) => (
                 <div key={project.id} style={{ border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))', padding: '18px 20px' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
                     <div style={{ flex: 1 }}>
@@ -499,6 +515,14 @@ export default function Projects() {
                 </div>
               ))}
             </div>
+            <LoadMoreSentinel
+              ref={sentinelRef}
+              hasMore={hasMore}
+              onLoadMore={loadMore}
+              visible={visibleCount}
+              total={totalProjects}
+            />
+            </>
           )
         ) : filteredProjects.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '64px 20px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }}>
@@ -510,12 +534,13 @@ export default function Projects() {
             </div>
           </div>
         ) : isMobile || viewMode === 'grid' ? (
+          <>
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
             gap: 16,
           }}>
-            {filteredProjects.map((project) => (
+            {visibleProjects.map((project) => (
               <ProjectCard
                 key={project.id}
                 project={project}
@@ -523,6 +548,14 @@ export default function Projects() {
               />
             ))}
           </div>
+          <LoadMoreSentinel
+            ref={sentinelRef}
+            hasMore={hasMore}
+            onLoadMore={loadMore}
+            visible={visibleCount}
+            total={totalProjects}
+          />
+          </>
         ) : viewMode === 'kanban' ? (
           <ProjectKanbanView
             projects={filteredProjects}

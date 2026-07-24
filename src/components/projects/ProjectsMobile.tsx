@@ -10,6 +10,8 @@ import { useProjects } from '@/hooks/useProjects';
 import { useQueryClient } from '@tanstack/react-query';
 import { buildProjectNavPath } from '@/lib/project-nav';
 import { LogoAvatar } from '@/components/targets/LogoAvatar';
+import { useProgressiveList } from '@/hooks/useProgressiveList';
+import { LoadMoreSentinel } from '@/components/LoadMoreSentinel';
 
 const NAVY = '#0C1320';
 const LIME = '#DDF247';
@@ -64,6 +66,16 @@ export function ProjectsMobile({ addProjectOpen, onAddProjectOpenChange }: Props
     if (filter === 'active') return projects.filter((p: any) => p.status === 'active' || p.status === 'reco_in_progress');
     return projects.filter((p: any) => p.status === filter);
   }, [projects, filter]);
+
+  const {
+    visible: visibleFiltered,
+    hasMore,
+    loadMore,
+    sentinelRef,
+    visibleCount,
+    total,
+  } = useProgressiveList(filtered, 20);
+
 
   const selected = useMemo(
     () => projects.find((p: any) => p.id === selectedId) || null,
@@ -179,11 +191,20 @@ export function ProjectsMobile({ addProjectOpen, onAddProjectOpenChange }: Props
           Aucun projet
         </div>
       ) : (
-        <ul className="flex flex-col gap-2 w-full min-w-0">
-          {filtered.map((p: any) => (
-            <ProjectSummaryCard key={p.id} project={p} onOpen={() => setSelectedId(p.id)} />
-          ))}
-        </ul>
+        <>
+          <ul className="flex flex-col gap-2 w-full min-w-0">
+            {visibleFiltered.map((p: any) => (
+              <ProjectSummaryCard key={p.id} project={p} onOpen={() => setSelectedId(p.id)} />
+            ))}
+          </ul>
+          <LoadMoreSentinel
+            ref={sentinelRef}
+            hasMore={hasMore}
+            onLoadMore={loadMore}
+            visible={visibleCount}
+            total={total}
+          />
+        </>
       )}
 
       {/* Detail sheet */}

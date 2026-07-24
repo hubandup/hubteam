@@ -24,6 +24,8 @@ import { ProtectedAction } from '@/components/ProtectedAction';
 import { MobileBottomSheet } from '@/components/MobileBottomSheet';
 import { LogoAvatar } from '@/components/targets/LogoAvatar';
 import { getUrgency, getStatusBucket, getLogoFallback, formatCa, formatShortFrDate } from '@/components/targets/targetUtils';
+import { useProgressiveList } from '@/hooks/useProgressiveList';
+import { LoadMoreSentinel } from '@/components/LoadMoreSentinel';
 
 import {
   PROJECT_STATUS_LABELS,
@@ -106,6 +108,16 @@ export function CRMMobile({ addClientOpen, onAddClientOpenChange }: Props) {
       (a.company || '').toLowerCase().localeCompare((b.company || '').toLowerCase()),
     );
   }, [clients, search, filter]);
+
+  const {
+    visible: visibleFiltered,
+    hasMore,
+    loadMore,
+    sentinelRef,
+    visibleCount,
+    total,
+  } = useProgressiveList(filtered, 25);
+
 
   const selected = useMemo(
     () => filtered.find((c) => c.id === selectedId) || clients.find((c) => c.id === selectedId) || null,
@@ -197,25 +209,34 @@ export function CRMMobile({ addClientOpen, onAddClientOpenChange }: Props) {
           Aucun client ne correspond
         </div>
       ) : (
-        <ul className="flex flex-col gap-2 w-full min-w-0">
-          {filtered.map((client) => (
-            <ClientSummaryCard
-              key={client.id}
-              client={client}
-              isStarred={!!targets?.has(client.id)}
-              onOpen={() => {
-                setSelectedId(client.id);
-                prefetchClientDetails(queryClient, client.id);
-              }}
-              onToggleStar={() =>
-                toggleTarget.mutate({
-                  clientId: client.id,
-                  starred: !!targets?.has(client.id),
-                })
-              }
-            />
-          ))}
-        </ul>
+        <>
+          <ul className="flex flex-col gap-2 w-full min-w-0">
+            {visibleFiltered.map((client) => (
+              <ClientSummaryCard
+                key={client.id}
+                client={client}
+                isStarred={!!targets?.has(client.id)}
+                onOpen={() => {
+                  setSelectedId(client.id);
+                  prefetchClientDetails(queryClient, client.id);
+                }}
+                onToggleStar={() =>
+                  toggleTarget.mutate({
+                    clientId: client.id,
+                    starred: !!targets?.has(client.id),
+                  })
+                }
+              />
+            ))}
+          </ul>
+          <LoadMoreSentinel
+            ref={sentinelRef}
+            hasMore={hasMore}
+            onLoadMore={loadMore}
+            visible={visibleCount}
+            total={total}
+          />
+        </>
       )}
 
       {/* Detail sheet */}

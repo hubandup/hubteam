@@ -31,6 +31,8 @@ import {
   type ProjectStatusKey,
 } from '@/lib/project-status';
 import { CRMMobile } from '@/components/crm/CRMMobile';
+import { useProgressiveList } from '@/hooks/useProgressiveList';
+import { LoadMoreSentinel } from '@/components/LoadMoreSentinel';
 
 
 
@@ -127,6 +129,17 @@ export default function CRM() {
   const archivedCount = useMemo(() => {
     return clients.filter(client => client.active === false).length;
   }, [clients]);
+
+  // Progressive rendering for list/grid views (kanban stays complete for drag-drop).
+  const {
+    visible: visibleClients,
+    hasMore: hasMoreClients,
+    loadMore: loadMoreClients,
+    sentinelRef: clientsSentinelRef,
+    visibleCount: visibleClientsCount,
+    total: totalClients,
+  } = useProgressiveList(filteredClients, 30);
+
 
   const handleStageChange = async (clientId: string, newStage: string) => {
     // Snapshot pour rollback éventuel
@@ -368,7 +381,7 @@ export default function CRM() {
         ) : isMobile ? (
           <div className="overflow-y-auto h-full">
             <div className="space-y-3">
-              {filteredClients.map((client) => (
+              {visibleClients.map((client) => (
                 <ClientCard
                   key={client.id}
                   client={client}
@@ -377,13 +390,27 @@ export default function CRM() {
                 />
               ))}
             </div>
+            <LoadMoreSentinel
+              ref={clientsSentinelRef}
+              hasMore={hasMoreClients}
+              onLoadMore={loadMoreClients}
+              visible={visibleClientsCount}
+              total={totalClients}
+            />
           </div>
         ) : viewMode === 'list' ? (
           <div className="overflow-y-auto h-full px-6 pb-6">
             <ClientListView
-              clients={filteredClients}
+              clients={visibleClients}
               onClientClick={(clientId) => navigate(`/client/${clientId}?tab=commercial`)}
               onClientHover={(clientId) => prefetchClientDetails(queryClient, clientId)}
+            />
+            <LoadMoreSentinel
+              ref={clientsSentinelRef}
+              hasMore={hasMoreClients}
+              onLoadMore={loadMoreClients}
+              visible={visibleClientsCount}
+              total={totalClients}
             />
           </div>
         ) : viewMode === 'kanban' ? (
@@ -400,7 +427,7 @@ export default function CRM() {
         ) : (
           <div className="overflow-y-auto h-full px-6 pb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredClients.map((client) => (
+                {visibleClients.map((client) => (
                   <ClientCard
                     key={client.id}
                     client={client}
@@ -409,6 +436,13 @@ export default function CRM() {
                   />
                 ))}
             </div>
+            <LoadMoreSentinel
+              ref={clientsSentinelRef}
+              hasMore={hasMoreClients}
+              onLoadMore={loadMoreClients}
+              visible={visibleClientsCount}
+              total={totalClients}
+            />
           </div>
         )}
       </div>
