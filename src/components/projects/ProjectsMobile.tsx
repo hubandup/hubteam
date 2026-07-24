@@ -10,6 +10,8 @@ import { useProjects } from '@/hooks/useProjects';
 import { useQueryClient } from '@tanstack/react-query';
 import { buildProjectNavPath } from '@/lib/project-nav';
 import { LogoAvatar } from '@/components/targets/LogoAvatar';
+import { useProgressiveList } from '@/hooks/useProgressiveList';
+import { LoadMoreSentinel } from '@/components/LoadMoreSentinel';
 
 const NAVY = '#0C1320';
 const LIME = '#DDF247';
