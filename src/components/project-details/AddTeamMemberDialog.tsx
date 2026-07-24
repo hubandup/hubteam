@@ -107,6 +107,7 @@ export function AddTeamMemberDialog({
           data = [];
           toast.info("Associez d'abord un client au projet");
         } else {
+          // 1. Contacts stored in client_contacts
           const { data: clientContacts, error } = await supabase
             .from('client_contacts')
             .select('id, first_name, last_name, email, title')
@@ -116,11 +117,42 @@ export function AddTeamMemberDialog({
           if (error) {
             console.error('Error fetching client contacts:', error);
             toast.error('Erreur lors du chargement des contacts clients');
-          } else {
-            data = clientContacts || [];
-            if (data.length === 0) {
-              toast.info('Aucun contact trouvé pour ce client');
-            }
+          }
+
+          const cc = (clientContacts || []).map((c: any) => ({ ...c, _source: 'client_contact' }));
+
+          // 2. Contacts stored in commercial_contacts (via commercial_tracking) — visible in CRM > client > Commercial
+          const { data: tracking } = await supabase
+            .from('commercial_tracking')
+            .select('id')
+            .eq('client_id', projectClientId);
+          const trackingIds = (tracking || []).map((t: any) => t.id);
+
+          let commercial: any[] = [];
+          if (trackingIds.length > 0) {
+            const { data: commercialContacts } = await supabase
+              .from('commercial_contacts')
+              .select('id, first_name, last_name, email, job_title')
+              .in('tracking_id', trackingIds)
+              .order('first_name');
+            commercial = (commercialContacts || []).map((c: any) => ({
+              id: `commercial:${c.id}`,
+              first_name: c.first_name,
+              last_name: c.last_name,
+              email: c.email,
+              title: c.job_title,
+              _source: 'commercial_contact',
+              _raw: c,
+            }));
+          }
+
+          // Merge, de-dup on email (prefer existing client_contact row)
+          const seen = new Set(cc.map((c: any) => (c.email || '').toLowerCase()).filter(Boolean));
+          const merged = [...cc, ...commercial.filter((c: any) => !seen.has((c.email || '').toLowerCase()))];
+          data = merged;
+
+          if (data.length === 0) {
+            toast.info('Aucun contact trouvé pour ce client');
           }
         }
       }
