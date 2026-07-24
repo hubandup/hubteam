@@ -74,7 +74,12 @@ export function ResetPasswordDialog({ open, onOpenChange, user }: ResetPasswordD
       toast.success('Mot de passe provisoire défini');
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.message || 'Erreur lors de la réinitialisation');
+      let msg = err?.message || 'Erreur lors de la réinitialisation';
+      try {
+        const body = await err?.context?.json?.();
+        if (body?.error) msg = body.error;
+      } catch {}
+      toast.error(msg, { duration: 6000 });
     } finally {
       setSubmitting(false);
     }
