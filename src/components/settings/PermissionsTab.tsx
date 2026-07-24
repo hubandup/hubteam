@@ -226,14 +226,22 @@ export function PermissionsTab() {
 
       if (deleteError) throw deleteError;
 
-      // Insert new permissions with scope
+      // Insert new permissions with scope (dedupe on role+module+action+scope)
       if (permissions.length > 0) {
-        const permissionsToInsert = permissions.map(p => ({
-          role: p.role,
-          module: p.module,
-          action: p.action,
-          scope: p.scope || 'all',
-        }));
+        const seen = new Set<string>();
+        const permissionsToInsert = permissions
+          .map(p => ({
+            role: p.role,
+            module: p.module,
+            action: p.action,
+            scope: p.scope || 'all',
+          }))
+          .filter(p => {
+            const key = `${p.role}|${p.module}|${p.action}|${p.scope}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
 
         const { error: insertError } = await supabase
           .from('role_permissions')
