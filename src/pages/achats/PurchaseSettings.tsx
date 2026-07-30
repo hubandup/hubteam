@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { PageHeader } from "@/components/layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -100,6 +101,97 @@ function SyncTab() {
   );
 }
 
+/** Conditions Générales d'Achat imprimées en page 2 du PDF. */
+function PurchaseTermsTab() {
+  const { data: settings, isLoading, refetch } = useCompanySettings();
+  const [terms, setTerms] = useState("");
+  const [version, setVersion] = useState("");
+  const [effectiveDate, setEffectiveDate] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!settings) return;
+    setTerms(settings.purchase_terms ?? "");
+    setVersion(settings.purchase_terms_version ?? "");
+    setEffectiveDate(settings.purchase_terms_effective_date ?? "");
+  }, [settings]);
+
+  const save = async () => {
+    if (!settings?.id) return toast.error("Coordonnées société non initialisées");
+    setSaving(true);
+    const { error } = await supabase
+      .from("company_settings")
+      .update({
+        purchase_terms: terms.trim() || null,
+        purchase_terms_version: version.trim() || null,
+        purchase_terms_effective_date: effectiveDate || null,
+      })
+      .eq("id", settings.id);
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success("Conditions générales d'achat enregistrées");
+    refetch();
+  };
+
+  if (isLoading) return <AppSkeleton />;
+
+  return (
+    <div className="rounded-3xl border bg-card p-6 space-y-4">
+      <div>
+        <p className="font-medium">Conditions Générales d'Achat</p>
+        <p className="text-sm text-muted-foreground">
+          Ce texte est imprimé en page 2 de chaque bon de commande, sur deux colonnes. Les lignes en
+          majuscules ou commençant par « Article » sont mises en gras. La version appliquée est
+          archivée avec chaque bon de commande émis.
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 max-w-xl">
+        <div className="space-y-1.5">
+          <Label htmlFor="terms-version">Version</Label>
+          <Input
+            id="terms-version"
+            value={version}
+            onChange={(e) => setVersion(e.target.value)}
+            placeholder="2026-01"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="terms-date">En vigueur au</Label>
+          <Input
+            id="terms-date"
+            type="date"
+            value={effectiveDate}
+            onChange={(e) => setEffectiveDate(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="terms-text">Texte des CGA</Label>
+        <Textarea
+          id="terms-text"
+          value={terms}
+          onChange={(e) => setTerms(e.target.value)}
+          rows={20}
+          className="font-mono text-xs"
+          placeholder="Collez ici le texte des Conditions Générales d'Achat…"
+        />
+        <p className="text-xs text-muted-foreground">
+          {terms.trim()
+            ? `${terms.trim().length} caractères`
+            : "Aucun texte : la page 2 n'est pas générée."}
+        </p>
+      </div>
+
+      <Button onClick={save} disabled={saving}>
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        Enregistrer
+      </Button>
+    </div>
+  );
+}
+
 export default function PurchaseSettings() {
   const { role, loading } = useUserRole();
 
@@ -118,6 +210,7 @@ export default function PurchaseSettings() {
           <TabsTrigger value="categories">Catégories d'achat</TabsTrigger>
           <TabsTrigger value="vat">Taux de TVA</TabsTrigger>
           <TabsTrigger value="company">Coordonnées société</TabsTrigger>
+          <TabsTrigger value="terms">CGA</TabsTrigger>
           <TabsTrigger value="sync">Synchronisation</TabsTrigger>
         </TabsList>
 
@@ -129,6 +222,9 @@ export default function PurchaseSettings() {
         </TabsContent>
         <TabsContent value="company" className="mt-4">
           <CompanyTab />
+        </TabsContent>
+        <TabsContent value="terms" className="mt-4">
+          <PurchaseTermsTab />
         </TabsContent>
         <TabsContent value="sync" className="mt-4">
           <SyncTab />
