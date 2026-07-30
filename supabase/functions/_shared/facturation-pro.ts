@@ -81,10 +81,20 @@ export interface FpCategory {
 export interface FpPurchase {
   id: number;
   title?: string | null;
+  /** Montant HT — LECTURE SEULE côté facturation.pro (recalculé). */
   total?: string | number | null;
+  total_with_vat?: string | number | null;
+  vat_amount?: string | number | null;
   supplier_id?: number | null;
   invoice_ref?: string | null;
+  ref?: string | null;
+  api_custom?: string | null;
+  category_id?: number | null;
+  invoiced_on?: string | null;
+  term_on?: string | null;
+  notes?: string | null;
 }
+
 
 export interface FpPagination {
   page: number;

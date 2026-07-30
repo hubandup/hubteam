@@ -3923,6 +3923,7 @@ export type Database = {
           created_by: string | null
           currency: string
           description: string | null
+          facturation_pro_purchase_id: number | null
           facturation_pro_quote_id: string | null
           hubup_dossier_ref: string
           id: string
@@ -3931,6 +3932,11 @@ export type Database = {
           pdf_generated_at: string | null
           pdf_path: string | null
           po_number: string
+          purchase_match_confidence: string | null
+          purchase_match_confirmed: boolean
+          purchase_match_method: string | null
+          purchase_matched_at: string | null
+          quote_total_ht: number | null
           sent_at: string | null
           sent_by: string | null
           sent_pdf_path: string | null
@@ -3958,6 +3964,7 @@ export type Database = {
           created_by?: string | null
           currency?: string
           description?: string | null
+          facturation_pro_purchase_id?: number | null
           facturation_pro_quote_id?: string | null
           hubup_dossier_ref: string
           id?: string
@@ -3966,6 +3973,11 @@ export type Database = {
           pdf_generated_at?: string | null
           pdf_path?: string | null
           po_number: string
+          purchase_match_confidence?: string | null
+          purchase_match_confirmed?: boolean
+          purchase_match_method?: string | null
+          purchase_matched_at?: string | null
+          quote_total_ht?: number | null
           sent_at?: string | null
           sent_by?: string | null
           sent_pdf_path?: string | null
@@ -3993,6 +4005,7 @@ export type Database = {
           created_by?: string | null
           currency?: string
           description?: string | null
+          facturation_pro_purchase_id?: number | null
           facturation_pro_quote_id?: string | null
           hubup_dossier_ref?: string
           id?: string
@@ -4001,6 +4014,11 @@ export type Database = {
           pdf_generated_at?: string | null
           pdf_path?: string | null
           po_number?: string
+          purchase_match_confidence?: string | null
+          purchase_match_confirmed?: boolean
+          purchase_match_method?: string | null
+          purchase_matched_at?: string | null
+          quote_total_ht?: number | null
           sent_at?: string | null
           sent_by?: string | null
           sent_pdf_path?: string | null

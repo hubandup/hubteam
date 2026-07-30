@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { AlertTriangle, TrendingUp, Layers, Building2, Loader2 } from "lucide-react";
+import { AlertTriangle, TrendingUp, Layers, Building2, Loader2, Scale, FileWarning } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatEUR, formatDateFR, formatFrNumber } from "@/lib/purchasing";
 import {
@@ -87,6 +87,85 @@ export function PurchaseOrdersSummary({ filters }: { filters: PurchaseOrderFilte
           )}
         </div>
       )}
+
+      {data.overdueUnmatched.length > 0 && (
+        <div className="rounded-3xl border border-orange-300 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/40 p-5">
+          <div className="flex items-center gap-2 font-medium text-orange-900 dark:text-orange-200">
+            <FileWarning className="h-4 w-4" />
+            {data.overdueUnmatched.length} bon{data.overdueUnmatched.length > 1 ? "s" : ""} envoyé
+            {data.overdueUnmatched.length > 1 ? "s" : ""} dont la date de règlement est dépassée sans
+            achat rapproché dans facturation.pro · {formatEUR(data.overdueUnmatchedHt)} HT
+          </div>
+          <ul className="mt-3 space-y-1.5 text-sm">
+            {data.overdueUnmatched.slice(0, 6).map((po) => (
+              <li key={po.id} className="flex flex-wrap items-center gap-2">
+                <Link
+                  to={`/achats/bons-de-commande/${po.id}`}
+                  className="font-medium underline underline-offset-2"
+                >
+                  {po.po_number}
+                </Link>
+                <span className="text-muted-foreground">{po.supplier_name ?? "—"}</span>
+                <span className="text-muted-foreground">
+                  échéance {formatDateFR(po.payment_date)}
+                </span>
+                <span className="ml-auto font-medium">{formatEUR(po.amount_ht)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {data.dossierOverruns.length > 0 && (
+        <div className="rounded-3xl border border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40 p-5">
+          <div className="flex items-center gap-2 font-medium text-amber-900 dark:text-amber-200">
+            <AlertTriangle className="h-4 w-4" />
+            {data.dossierOverruns.length} dossier{data.dossierOverruns.length > 1 ? "s" : ""} dont le
+            cumul des bons de commande dépasse le devis client
+          </div>
+          <ul className="mt-3 space-y-1.5 text-sm">
+            {data.dossierOverruns.slice(0, 6).map((d) => (
+              <li key={d.dossier} className="flex flex-wrap items-center gap-2">
+                <span className="font-medium">{d.dossier}</span>
+                <span className="text-muted-foreground">{d.count} PO</span>
+                <span className="ml-auto">
+                  engagé {formatEUR(d.engagedHt)} HT / devis {formatEUR(d.quoteTotalHt ?? 0)} HT
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card title="Écart engagé / facturé" icon={<Scale className="h-4 w-4" />}>
+          <p className="text-3xl font-semibold tracking-tight">{formatEUR(data.gapHt)}</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            engagé {formatEUR(data.totalHt)} HT · facturé {formatEUR(data.invoicedHt)} HT
+          </p>
+          <div className="mt-4">
+            <Bar value={data.totalHt > 0 ? (data.invoicedHt / data.totalHt) * 100 : 0} />
+            <p className="mt-1 text-xs text-muted-foreground">
+              {formatFrNumber(
+                Math.round(data.totalHt > 0 ? (data.invoicedHt / data.totalHt) * 100 : 0),
+              )}{" "}
+              % de l'engagé rapproché à un achat facturation.pro
+            </p>
+          </div>
+          {data.dossierGaps.length > 0 && (
+            <ul className="mt-4 space-y-1.5 text-sm">
+              {data.dossierGaps.map((d) => (
+                <li key={d.dossier} className="flex justify-between gap-2">
+                  <span className="truncate text-muted-foreground">{d.dossier}</span>
+                  <span className="whitespace-nowrap">
+                    {formatEUR(d.engagedHt - d.invoicedHt)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card title="Total engagé (période filtrée)" icon={<TrendingUp className="h-4 w-4" />}>
