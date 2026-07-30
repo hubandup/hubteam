@@ -3916,10 +3916,12 @@ export type Database = {
           id: string
           internal_notes: string | null
           payment_date: string | null
+          pdf_generated_at: string | null
           pdf_path: string | null
           po_number: string
           sent_at: string | null
           sent_by: string | null
+          sent_pdf_path: string | null
           sent_to_email: string | null
           status: Database["public"]["Enums"]["purchase_order_status"]
           supplier_id: string
@@ -3948,10 +3950,12 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           payment_date?: string | null
+          pdf_generated_at?: string | null
           pdf_path?: string | null
           po_number: string
           sent_at?: string | null
           sent_by?: string | null
+          sent_pdf_path?: string | null
           sent_to_email?: string | null
           status?: Database["public"]["Enums"]["purchase_order_status"]
           supplier_id: string
@@ -3980,10 +3984,12 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           payment_date?: string | null
+          pdf_generated_at?: string | null
           pdf_path?: string | null
           po_number?: string
           sent_at?: string | null
           sent_by?: string | null
+          sent_pdf_path?: string | null
           sent_to_email?: string | null
           status?: Database["public"]["Enums"]["purchase_order_status"]
           supplier_id?: string
