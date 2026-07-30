@@ -51,7 +51,7 @@ import {
   formatFrNumber,
   PO_STATUS_LABELS,
   PO_STATUS_BADGE,
-  PO_EVENT_LABELS,
+  
 } from "@/lib/purchasing";
 import { generateAndStorePurchaseOrderPdf, getPurchaseOrderPdfUrl } from "@/lib/po-pdf-service";
 
