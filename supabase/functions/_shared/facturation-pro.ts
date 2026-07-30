@@ -390,6 +390,30 @@ export async function createPurchase(
   return data;
 }
 
+/** GET /purchases/{id}.json */
+export async function getPurchase(
+  creds: FpCredentials,
+  id: string | number,
+): Promise<FpPurchase> {
+  const { data } = await fpRequest<FpPurchase>(creds, `/purchases/${id}.json`);
+  return data;
+}
+
+/**
+ * Traduit l'état d'un achat facturation.pro vers le statut d'un bon de commande HubTeam.
+ * L'énumération HubTeam ne contient que draft / sent / invoiced / cancelled.
+ */
+export function mapPurchaseStatusToPoStatus(
+  purchase: FpPurchase | null | undefined,
+): "invoiced" | "cancelled" {
+  if (!purchase) return "invoiced";
+  const raw = String(purchase.status ?? "").toLowerCase();
+  if (purchase.cancelled === true || purchase.cancelled_on || raw.includes("cancel") || raw.includes("annul")) {
+    return "cancelled";
+  }
+  return "invoiced";
+}
+
 /** GET /suppliers/{id}.json */
 export async function getSupplier(creds: FpCredentials, id: string | number): Promise<FpSupplier> {
   const { data } = await fpRequest<FpSupplier>(creds, `/suppliers/${id}.json`);
