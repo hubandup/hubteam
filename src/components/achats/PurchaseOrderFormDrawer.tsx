@@ -45,6 +45,7 @@ import {
 import {
   useSavePurchaseOrder,
   useDuplicatePurchaseOrder,
+  useDossierCommitment,
   useLogPurchaseOrderEvent,
   useUpdatePurchaseOrderStatus,
   type PurchaseOrder,
