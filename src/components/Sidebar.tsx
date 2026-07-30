@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, HelpCircle, Euro, ArrowUpFromLine, CookingPot, Flame, Megaphone, Star, Receipt } from 'lucide-react';
+import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, HelpCircle, Euro, ArrowUpFromLine, CookingPot, Flame, Megaphone, Star, Receipt, ShoppingCart } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { NavLink } from './NavLink';
 
@@ -80,6 +80,7 @@ export function Sidebar() {
     ...(role === 'client' && clientId ? [{ title: t('nav.myClientFile'), url: `/client/${clientId}`, icon: Users, module: 'crm' as const, matchParent: true, isClientItem: true }] : []),
     { title: t('nav.activity'), url: '/dashboard', icon: LayoutDashboard, module: 'dashboard' as const },
     ...(hasAccountingAccess ? [{ title: t('nav.accounting'), url: '/comptabilite', icon: Receipt, module: 'dashboard' as const, hasDedicatedAccess: true }] : []),
+    { title: 'Achats', url: '/achats/fournisseurs', icon: ShoppingCart, module: 'dashboard' as const, matchParent: true, hideForClient: true, hideForAgency: true },
     { title: t('nav.finances'), url: '/finances', icon: Euro, module: 'dashboard' as const, adminOnly: true },
     { title: t('nav.crm'), url: '/crm', icon: Users, module: 'crm' as const, matchParent: true },
     { title: 'Targets', url: '/targets', icon: Star, module: 'crm' as const, hideForClient: true, hideForAgency: true },
