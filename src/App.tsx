@@ -42,6 +42,8 @@ const Brisach = lazy(() => import("./pages/Brisach"));
 const Announcements = lazy(() => import("./pages/Announcements"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Comptabilite = lazy(() => import("./pages/Comptabilite"));
+const Suppliers = lazy(() => import("./pages/achats/Suppliers"));
+const PurchaseSettings = lazy(() => import("./pages/achats/PurchaseSettings"));
 
 // Minimal page-level loading skeleton
 function PageSuspense({ children }: { children: React.ReactNode }) {
