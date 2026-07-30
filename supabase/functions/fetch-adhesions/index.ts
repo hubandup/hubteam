@@ -73,6 +73,7 @@ serve(async (req) => {
         headers: {
           'Authorization': `Basic ${credentials}`,
           'Content-Type': 'application/json',
+          'User-Agent': 'HubTeam (contact@hubandup.com)',
         },
       }
     );

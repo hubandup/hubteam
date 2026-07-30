@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
     while (true) {
       const r = await fetch(
         `${FACTURATION_PRO_API_URL}/firms/${firmId}/invoices.json?page=${page}&per_page=100`,
-        { headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' } }
+        { headers: { 'Authorization': authHeader, 'Content-Type': 'application/json', 'User-Agent': 'HubTeam (contact@hubandup.com)' } }
       )
       if (!r.ok) throw new Error(`Facturation.PRO API error (page ${page}): ${await r.text()}`)
       const pageInvoices: FacturationProInvoice[] = await r.json()
@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
           try {
             const cr = await fetch(
               `${FACTURATION_PRO_API_URL}/firms/${firmId}/customers/${customerKey}.json`,
-              { headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' } }
+              { headers: { 'Authorization': authHeader, 'Content-Type': 'application/json', 'User-Agent': 'HubTeam (contact@hubandup.com)' } }
             );
             if (cr.ok) {
               const cust = await cr.json();
