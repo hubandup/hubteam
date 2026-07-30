@@ -94,6 +94,15 @@ Deno.serve(async (req) => {
     const creds = readCredentials();
     const purchase = await createPurchase(creds, payload);
 
+    // Relit l'achat pour récupérer l'état réel côté facturation.pro et aligner le statut du PO.
+    let synced = purchase;
+    try {
+      synced = await getPurchase(creds, purchase.id);
+    } catch (e) {
+      console.warn("relecture achat impossible, statut déduit de la création", e);
+    }
+    const poStatus = mapPurchaseStatusToPoStatus(synced);
+
     await admin
       .from("purchase_orders")
       .update({
@@ -102,11 +111,11 @@ Deno.serve(async (req) => {
         purchase_match_confidence: "certain",
         purchase_matched_at: new Date().toISOString(),
         purchase_match_confirmed: true,
-        status: "invoiced",
+        status: poStatus,
       })
       .eq("id", po.id);
 
-    return json({ success: true, purchase_id: Number(purchase.id) });
+    return json({ success: true, purchase_id: Number(purchase.id), status: poStatus });
   } catch (error) {
     console.error("create-purchase-facturation error", error);
     const status = error instanceof FpError ? error.status || 502 : 500;
