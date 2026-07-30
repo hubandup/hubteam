@@ -2,9 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
+export type SupplierSyncStatus = "pending" | "synced" | "failed";
+
 export interface Supplier {
   id: string;
   company_name: string;
+  civility: string | null;
   last_name: string | null;
   first_name: string | null;
   email: string | null;
@@ -15,10 +18,15 @@ export interface Supplier {
   city: string | null;
   country: string | null;
   vat_number: string | null;
+  siret: string | null;
   iban: string | null;
   bic: string | null;
   is_active: boolean;
   notes: string | null;
+  facturation_pro_id: number | null;
+  sync_status: SupplierSyncStatus;
+  synced_at: string | null;
+  sync_error: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -29,7 +37,9 @@ export interface PurchaseCategory {
   description: string | null;
   is_active: boolean;
   sort_order: number;
+  facturation_pro_category_id: number | null;
 }
+
 
 export interface VatRate {
   id: string;
