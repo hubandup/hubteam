@@ -48,7 +48,7 @@ export function CreatePurchaseDialog({ open, onOpenChange, po, onCreated, notice
       return;
     }
     try {
-      await createPurchase.mutateAsync({
+      const res = await createPurchase.mutateAsync({
         purchase_order_id: po.id,
         ref: ref.trim(),
         invoiced_on: invoicedOn,
@@ -56,7 +56,7 @@ export function CreatePurchaseDialog({ open, onOpenChange, po, onCreated, notice
       });
       toast.success("Achat créé dans facturation.pro");
       onOpenChange(false);
-      await onCreated?.();
+      await onCreated?.(res?.status);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Création impossible");
     }
