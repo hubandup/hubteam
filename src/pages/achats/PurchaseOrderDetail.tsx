@@ -29,6 +29,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { PurchaseOrderFormDrawer } from "@/components/achats/PurchaseOrderFormDrawer";
+import { SendPurchaseOrderDialog } from "@/components/achats/SendPurchaseOrderDialog";
 import {
   usePurchaseOrder,
   usePurchaseOrderEvents,
@@ -65,6 +66,8 @@ export default function PurchaseOrderDetail() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [needsResend, setNeedsResend] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
+  const [sendResend, setSendResend] = useState(false);
 
   const categoryName = useMemo(
     () => categories.find((c) => c.id === po?.category_id)?.name ?? null,
@@ -234,7 +237,7 @@ export default function PurchaseOrderDetail() {
               </Button>
             )}
             {po.status === "draft" && (
-              <Button onClick={() => handleSend(false)} disabled={busy === "send"}>
+              <Button onClick={() => openSendDialog(false)} disabled={busy === "send"}>
                 {busy === "send" ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
@@ -245,7 +248,7 @@ export default function PurchaseOrderDetail() {
             )}
             {po.status === "sent" && (
               <>
-                <Button variant="outline" onClick={() => handleSend(true)} disabled={busy === "send"}>
+                <Button variant="outline" onClick={() => openSendDialog(true)} disabled={busy === "send"}>
                   {busy === "send" ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
