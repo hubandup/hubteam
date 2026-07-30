@@ -83,3 +83,9 @@ verify_jwt = false
 # TikTok OAuth callback - public (state CSRF validation)
 [functions.tiktok-oauth-callback]
 verify_jwt = false
+
+[functions.reconcile-purchases-facturation]
+verify_jwt = false
+
+[functions.create-purchase-facturation]
+verify_jwt = false
