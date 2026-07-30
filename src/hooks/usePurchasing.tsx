@@ -2,9 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
+export type SupplierSyncStatus = "pending" | "synced" | "failed";
+
 export interface Supplier {
   id: string;
   company_name: string;
+  civility: string | null;
   last_name: string | null;
   first_name: string | null;
   email: string | null;
@@ -15,10 +18,15 @@ export interface Supplier {
   city: string | null;
   country: string | null;
   vat_number: string | null;
+  siret: string | null;
   iban: string | null;
   bic: string | null;
   is_active: boolean;
   notes: string | null;
+  facturation_pro_id: number | null;
+  sync_status: SupplierSyncStatus;
+  synced_at: string | null;
+  sync_error: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -29,7 +37,9 @@ export interface PurchaseCategory {
   description: string | null;
   is_active: boolean;
   sort_order: number;
+  facturation_pro_category_id: number | null;
 }
+
 
 export interface VatRate {
   id: string;
@@ -118,6 +128,25 @@ export function useSupplierPurchaseOrders(supplierId?: string) {
   });
 }
 
+/**
+ * Synchronise un fournisseur vers la comptabilité.
+ * Ne lève jamais : un échec laisse le fournisseur utilisable (sync_status = 'failed').
+ */
+async function pushSupplierToAccounting(supplierId: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabase.functions.invoke("sync-supplier-facturation", {
+      body: { supplier_id: supplierId },
+    });
+    if (error) return error.message;
+    if (data && (data as { success?: boolean }).success === false) {
+      return (data as { error?: string }).error ?? "Synchronisation impossible";
+    }
+    return null;
+  } catch (err) {
+    return err instanceof Error ? err.message : "Synchronisation impossible";
+  }
+}
+
 export function useSaveSupplier() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -128,6 +157,7 @@ export function useSaveSupplier() {
         Object.entries(values).map(([k, v]) => [k, v === "" ? null : v]),
       );
 
+      let saved: Supplier;
       if (id) {
         const { data, error } = await supabase
           .from("suppliers")
@@ -136,22 +166,42 @@ export function useSaveSupplier() {
           .select()
           .single();
         if (error) throw error;
-        return data as Supplier;
+        saved = data as Supplier;
+      } else {
+        const { data, error } = await supabase
+          .from("suppliers")
+          .insert({ ...payload, created_by: user?.id ?? null } as never)
+          .select()
+          .single();
+        if (error) throw error;
+        saved = data as Supplier;
       }
 
-      const { data, error } = await supabase
-        .from("suppliers")
-        .insert({ ...payload, created_by: user?.id ?? null } as never)
-        .select()
-        .single();
-      if (error) throw error;
-      return data as Supplier;
+      const syncError = await pushSupplierToAccounting(saved.id);
+      return { ...saved, sync_error: syncError ?? saved.sync_error } as Supplier & {
+        syncError?: string | null;
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["suppliers"] });
     },
   });
 }
+
+/** Relance manuelle de la synchronisation d'un fournisseur. */
+export function useRetrySupplierSync() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (supplierId: string) => {
+      const message = await pushSupplierToAccounting(supplierId);
+      if (message) throw new Error(message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+    },
+  });
+}
+
 
 export function useToggleSupplierActive() {
   const queryClient = useQueryClient();
@@ -214,6 +264,27 @@ export function useCompanySettings() {
         .maybeSingle();
       if (error) throw error;
       return data as CompanySettings | null;
+    },
+  });
+}
+
+/* ----------------------- Catégories comptables (externe) ---------------------- */
+
+export interface AccountingCategory {
+  id: number;
+  label: string;
+}
+
+export function useAccountingCategories(enabled = true) {
+  return useQuery({
+    queryKey: ["accounting-categories"],
+    enabled,
+    staleTime: 10 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("facturation-pro-categories");
+      if (error) throw new Error(error.message);
+      if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
+      return ((data as { categories?: AccountingCategory[] })?.categories ?? []) as AccountingCategory[];
     },
   });
 }

@@ -15,13 +15,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus, Trash2, ArrowUp, ArrowDown, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUserRole } from "@/hooks/useUserRole";
 import { AppSkeleton } from "@/components/AppSkeleton";
+import { SupplierImportPanel } from "@/components/achats/SupplierImportPanel";
 import {
+  useAccountingCategories,
   usePurchaseCategories,
   useVatRates,
   useCompanySettings,
@@ -71,6 +80,7 @@ function SyncTab() {
   if (loading) return <AppSkeleton />;
 
   return (
+    <div className="space-y-4">
     <div className="rounded-3xl border bg-card p-6 max-w-2xl space-y-4">
       <div className="flex items-start justify-between gap-6">
         <div>
@@ -83,6 +93,9 @@ function SyncTab() {
         </div>
         <Switch checked={enabled} disabled={saving} onCheckedChange={toggle} />
       </div>
+    </div>
+
+    <SupplierImportPanel />
     </div>
   );
 }
@@ -136,6 +149,8 @@ function isInUseError(error: unknown) {
 function CategoriesTab() {
   const { data: categories = [], isLoading } = usePurchaseCategories();
   const queryClient = useQueryClient();
+  const { data: accountingCategories = [], isLoading: loadingAccounting, error: accountingError } =
+    useAccountingCategories();
   const [newName, setNewName] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -173,6 +188,17 @@ function CategoriesTab() {
       return;
     }
     toast.success("Catégorie renommée");
+    refresh();
+  };
+
+  const setAccountingCategory = async (cat: PurchaseCategory, value: string) => {
+    const id = value === "none" ? null : Number(value);
+    const { error } = await supabase
+      .from("purchase_categories")
+      .update({ facturation_pro_category_id: id })
+      .eq("id", cat.id);
+    if (error) return toast.error(error.message);
+    toast.success("Correspondance comptable enregistrée");
     refresh();
   };
 
@@ -234,6 +260,7 @@ function CategoriesTab() {
           <TableHeader>
             <TableRow>
               <TableHead>Nom</TableHead>
+              <TableHead className="w-64">Catégorie comptable</TableHead>
               <TableHead className="w-28">Ordre</TableHead>
               <TableHead className="w-28">Active</TableHead>
               <TableHead className="w-20 text-right">Suppr.</TableHead>
@@ -242,7 +269,7 @@ function CategoriesTab() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8">
+                <TableCell colSpan={5} className="text-center py-8">
                   <Loader2 className="h-4 w-4 animate-spin mx-auto" />
                 </TableCell>
               </TableRow>
@@ -256,6 +283,33 @@ function CategoriesTab() {
                       onBlur={(e) => rename(cat, e.target.value)}
                       className="max-w-sm"
                     />
+                  </TableCell>
+                  <TableCell>
+                    <Select
+                      value={
+                        cat.facturation_pro_category_id
+                          ? String(cat.facturation_pro_category_id)
+                          : "none"
+                      }
+                      onValueChange={(v) => setAccountingCategory(cat, v)}
+                      disabled={loadingAccounting || !!accountingError}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            accountingError ? "Comptabilité indisponible" : "Non rattachée"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-64">
+                        <SelectItem value="none">Non rattachée</SelectItem>
+                        {accountingCategories.map((c) => (
+                          <SelectItem key={c.id} value={String(c.id)}>
+                            {c.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell>
                     <Button variant="ghost" size="sm" disabled={index === 0} onClick={() => move(index, -1)}>

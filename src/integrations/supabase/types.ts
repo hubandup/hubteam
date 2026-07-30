@@ -3840,6 +3840,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          facturation_pro_category_id: number | null
           id: string
           is_active: boolean
           name: string
@@ -3848,6 +3849,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          facturation_pro_category_id?: number | null
           id?: string
           is_active?: boolean
           name: string
@@ -3856,6 +3858,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          facturation_pro_category_id?: number | null
           id?: string
           is_active?: boolean
           name?: string
@@ -4331,11 +4334,13 @@ export type Database = {
           address_2: string | null
           bic: string | null
           city: string | null
+          civility: string | null
           company_name: string
           country: string
           created_at: string
           created_by: string | null
           email: string | null
+          facturation_pro_id: number | null
           first_name: string | null
           iban: string | null
           id: string
@@ -4344,6 +4349,10 @@ export type Database = {
           notes: string | null
           phone: string | null
           postal_code: string | null
+          siret: string | null
+          sync_error: string | null
+          sync_status: Database["public"]["Enums"]["supplier_sync_status"]
+          synced_at: string | null
           updated_at: string
           vat_number: string | null
         }
@@ -4352,11 +4361,13 @@ export type Database = {
           address_2?: string | null
           bic?: string | null
           city?: string | null
+          civility?: string | null
           company_name: string
           country?: string
           created_at?: string
           created_by?: string | null
           email?: string | null
+          facturation_pro_id?: number | null
           first_name?: string | null
           iban?: string | null
           id?: string
@@ -4365,6 +4376,10 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           postal_code?: string | null
+          siret?: string | null
+          sync_error?: string | null
+          sync_status?: Database["public"]["Enums"]["supplier_sync_status"]
+          synced_at?: string | null
           updated_at?: string
           vat_number?: string | null
         }
@@ -4373,11 +4388,13 @@ export type Database = {
           address_2?: string | null
           bic?: string | null
           city?: string | null
+          civility?: string | null
           company_name?: string
           country?: string
           created_at?: string
           created_by?: string | null
           email?: string | null
+          facturation_pro_id?: number | null
           first_name?: string | null
           iban?: string | null
           id?: string
@@ -4386,6 +4403,10 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           postal_code?: string | null
+          siret?: string | null
+          sync_error?: string | null
+          sync_status?: Database["public"]["Enums"]["supplier_sync_status"]
+          synced_at?: string | null
           updated_at?: string
           vat_number?: string | null
         }
@@ -4994,6 +5015,7 @@ export type Database = {
         | "synced"
         | "failed"
         | "not_applicable"
+      supplier_sync_status: "pending" | "synced" | "failed"
       team_member_type:
         | "profile"
         | "agency_contact"
@@ -5224,6 +5246,7 @@ export const Constants = {
         "failed",
         "not_applicable",
       ],
+      supplier_sync_status: ["pending", "synced", "failed"],
       team_member_type: [
         "profile",
         "agency_contact",

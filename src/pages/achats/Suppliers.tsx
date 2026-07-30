@@ -26,13 +26,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Plus, ArrowUpDown, Pencil, Power, Settings2, Loader2 } from "lucide-react";
+import { Search, Plus, ArrowUpDown, Pencil, Power, Settings2, Loader2, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { SupplierFormDialog } from "@/components/achats/SupplierFormDialog";
 import {
   useSuppliers,
   useToggleSupplierActive,
+  useRetrySupplierSync,
   useSupplierPurchaseOrders,
   type Supplier,
 } from "@/hooks/usePurchasing";
@@ -43,6 +44,7 @@ type SortKey = "company_name" | "city" | "created_at";
 export default function Suppliers() {
   const { data: suppliers = [], isLoading } = useSuppliers();
   const toggleActive = useToggleSupplierActive();
+  const retrySync = useRetrySupplierSync();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("active");
@@ -84,6 +86,15 @@ export default function Suppliers() {
       toast.success(supplier.is_active ? "Fournisseur désactivé" : "Fournisseur réactivé");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Action impossible");
+    }
+  };
+
+  const handleRetrySync = async (supplier: Supplier) => {
+    try {
+      await retrySync.mutateAsync(supplier.id);
+      toast.success("Fournisseur synchronisé avec la comptabilité");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Synchronisation impossible");
     }
   };
 
@@ -186,9 +197,20 @@ export default function Suppliers() {
                     {supplier.city || "—"}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={supplier.is_active ? "default" : "secondary"}>
-                      {supplier.is_active ? "Actif" : "Inactif"}
-                    </Badge>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Badge variant={supplier.is_active ? "default" : "secondary"}>
+                        {supplier.is_active ? "Actif" : "Inactif"}
+                      </Badge>
+                      {supplier.sync_status !== "synced" ? (
+                        <Badge
+                          variant="outline"
+                          className="border-destructive/40 text-destructive"
+                          title={supplier.sync_error ?? undefined}
+                        >
+                          Non synchronisé
+                        </Badge>
+                      ) : null}
+                    </div>
                   </TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <Button
@@ -201,6 +223,17 @@ export default function Suppliers() {
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
+                    {supplier.sync_status !== "synced" ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        title="Relancer la synchronisation"
+                        disabled={retrySync.isPending}
+                        onClick={() => handleRetrySync(supplier)}
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                    ) : null}
                     <Button variant="ghost" size="sm" onClick={() => handleToggleActive(supplier)}>
                       <Power className="h-4 w-4" />
                     </Button>
@@ -264,6 +297,17 @@ function SupplierDetailSheet({
                 <Info label="N° TVA" value={supplier.vat_number} />
                 <Info label="IBAN" value={supplier.iban} />
                 <Info label="BIC" value={supplier.bic} />
+                <Info label="SIRET" value={supplier.siret} />
+                <Info
+                  label="Comptabilité"
+                  value={
+                    supplier.sync_status === "synced"
+                      ? `Synchronisé (n° ${supplier.facturation_pro_id ?? "—"})`
+                      : supplier.sync_status === "failed"
+                        ? `Non synchronisé — ${supplier.sync_error ?? "erreur inconnue"}`
+                        : "En attente de synchronisation"
+                  }
+                />
               </div>
 
               <div className="rounded-2xl border bg-muted/40 p-4">

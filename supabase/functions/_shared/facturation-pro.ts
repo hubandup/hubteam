@@ -49,11 +49,34 @@ export const FP_QUOTE_API_CUSTOM_MAX = 255;
 export interface FpSupplier {
   id: number;
   company_name?: string | null;
+  civility?: string | null;
   first_name?: string | null;
   last_name?: string | null;
+  /** Adresse sur un seul champ (retours a la ligne autorises). */
+  street?: string | null;
+  zip_code?: string | null;
+  city?: string | null;
+  /** Code ISO 2 lettres en majuscules. */
+  country?: string | null;
+  phone?: string | null;
   email?: string | null;
   vat_number?: string | null;
+  siret?: string | null;
+  /** Lisibles uniquement avec la cle API de l'administrateur de l'entreprise. */
+  sepa_iban?: string | null;
+  sepa_bic?: string | null;
+  notes?: string | null;
+  /** Champ libre utilise comme cle de rapprochement (uuid HubTeam). */
+  api_custom?: string | null;
 }
+
+export interface FpCategory {
+  id: number;
+  title?: string | null;
+  name?: string | null;
+  label?: string | null;
+}
+
 
 export interface FpPurchase {
   id: number;
@@ -336,4 +359,159 @@ export async function createPurchase(
 ): Promise<FpPurchase> {
   const { data } = await fpRequest<FpPurchase>(creds, "/purchases.json", { method: "POST", body: payload });
   return data;
+}
+
+/** GET /suppliers/{id}.json */
+export async function getSupplier(creds: FpCredentials, id: string | number): Promise<FpSupplier> {
+  const { data } = await fpRequest<FpSupplier>(creds, `/suppliers/${id}.json`);
+  return data;
+}
+
+/** GET /categories.json (categories comptables d'achat). */
+export async function listCategories(creds: FpCredentials, page = 1): Promise<FpResponse<FpCategory[]>> {
+  const res = await fpRequest<unknown>(creds, "/categories.json", { query: { page } });
+  return { ...res, data: asList<FpCategory>(res.data, "categories") };
+}
+
+/* ------------------------- Correspondance fournisseurs ------------------------ */
+
+export interface HubSupplier {
+  id: string;
+  company_name: string;
+  civility?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  address_1?: string | null;
+  address_2?: string | null;
+  postal_code?: string | null;
+  city?: string | null;
+  country?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  vat_number?: string | null;
+  siret?: string | null;
+  iban?: string | null;
+  bic?: string | null;
+  notes?: string | null;
+  facturation_pro_id?: number | null;
+}
+
+const ISO_BY_COUNTRY: Record<string, string> = {
+  france: "FR",
+  belgique: "BE",
+  suisse: "CH",
+  luxembourg: "LU",
+  italie: "IT",
+  espagne: "ES",
+  allemagne: "DE",
+  "pays-bas": "NL",
+  portugal: "PT",
+  "royaume-uni": "GB",
+  irlande: "IE",
+  "etats-unis": "US",
+};
+
+const stripAccents = (v: string) =>
+  v.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+/** Nom normalise (casse et accents ignores) pour le rapprochement des doublons. */
+export function normalizeCompanyName(value: string | null | undefined): string {
+  return stripAccents(String(value ?? "").trim().toLowerCase()).replace(/\s+/g, " ");
+}
+
+/** Pays HubTeam -> code ISO 2 lettres majuscules. */
+export function toIsoCountry(value: string | null | undefined): string | undefined {
+  const raw = String(value ?? "").trim();
+  if (!raw) return undefined;
+  if (/^[A-Za-z]{2}$/.test(raw)) return raw.toUpperCase();
+  return ISO_BY_COUNTRY[stripAccents(raw.toLowerCase())] ?? undefined;
+}
+
+const ISO_TO_LABEL: Record<string, string> = Object.fromEntries(
+  Object.entries(ISO_BY_COUNTRY).map(([label, iso]) => [
+    iso,
+    label.charAt(0).toUpperCase() + label.slice(1),
+  ]),
+);
+
+export function fromIsoCountry(value: string | null | undefined): string | undefined {
+  const raw = String(value ?? "").trim().toUpperCase();
+  if (!raw) return undefined;
+  return ISO_TO_LABEL[raw] ?? raw;
+}
+
+/** address_1 + address_2 -> street (un seul champ, separe par un retour a la ligne). */
+export function joinStreet(a1?: string | null, a2?: string | null): string | undefined {
+  const lines = [a1, a2].map((v) => String(v ?? "").trim()).filter(Boolean);
+  return lines.length ? lines.join("\n") : undefined;
+}
+
+/** street -> address_1 / address_2 (scission inverse). */
+export function splitStreet(street?: string | null): { address_1: string | null; address_2: string | null } {
+  const lines = String(street ?? "")
+    .split(/\r?\n/)
+    .map((v) => v.trim())
+    .filter(Boolean);
+  return {
+    address_1: lines[0] ?? null,
+    address_2: lines.slice(1).join(" ") || null,
+  };
+}
+
+/** Fournisseur HubTeam -> charge utile facturation.pro. */
+export function toFpSupplierPayload(s: HubSupplier): Partial<FpSupplier> {
+  const payload: Partial<FpSupplier> = {
+    company_name: s.company_name,
+    civility: s.civility || undefined,
+    first_name: s.first_name || undefined,
+    last_name: s.last_name || undefined,
+    street: joinStreet(s.address_1, s.address_2),
+    zip_code: s.postal_code || undefined,
+    city: s.city || undefined,
+    country: toIsoCountry(s.country),
+    phone: s.phone || undefined,
+    email: s.email || undefined,
+    vat_number: s.vat_number || undefined,
+    siret: s.siret || undefined,
+    notes: s.notes || undefined,
+    api_custom: s.id,
+  };
+  // Coordonnees bancaires : envoyees uniquement si renseignees cote HubTeam.
+  if (s.iban) payload.sepa_iban = s.iban;
+  if (s.bic) payload.sepa_bic = s.bic;
+  return payload;
+}
+
+/**
+ * Fournisseur facturation.pro -> champs HubTeam.
+ * `existing` sert a ne JAMAIS ecraser un IBAN/BIC deja stocke lorsque l'API
+ * renvoie des valeurs vides (lecture reservee a l'administrateur de l'entreprise).
+ */
+export function fromFpSupplier(
+  fp: FpSupplier,
+  existing?: { iban?: string | null; bic?: string | null } | null,
+): Record<string, unknown> {
+  const { address_1, address_2 } = splitStreet(fp.street);
+  const out: Record<string, unknown> = {
+    company_name: (fp.company_name || [fp.first_name, fp.last_name].filter(Boolean).join(" ") || "Sans nom").trim(),
+    civility: fp.civility || null,
+    first_name: fp.first_name || null,
+    last_name: fp.last_name || null,
+    address_1,
+    address_2,
+    postal_code: fp.zip_code || null,
+    city: fp.city || null,
+    country: fromIsoCountry(fp.country) ?? "France",
+    phone: fp.phone || null,
+    email: fp.email || null,
+    vat_number: fp.vat_number || null,
+    siret: fp.siret || null,
+    notes: fp.notes || null,
+    facturation_pro_id: fp.id,
+  };
+  if (fp.sepa_iban) out.iban = fp.sepa_iban;
+  else if (existing?.iban) out.iban = existing.iban;
+  if (fp.sepa_bic) out.bic = fp.sepa_bic;
+  else if (existing?.bic) out.bic = existing.bic;
+  return out;
 }
