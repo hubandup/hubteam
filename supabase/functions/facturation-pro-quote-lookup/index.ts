@@ -26,6 +26,13 @@ const extract = (data: unknown): FpQuote[] => {
 
 const normalize = (v: string) => v.replace(/[^a-z0-9]/gi, "").toLowerCase();
 
+/** Cache court en mémoire (par instance) pour limiter les appels à facturation.pro */
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const TIMEOUT_MS = 12000;
+const cache = new Map<string, { at: number; body: string }>();
+
+
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
