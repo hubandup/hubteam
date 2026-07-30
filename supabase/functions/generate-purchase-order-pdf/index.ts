@@ -319,9 +319,9 @@ Deno.serve(async (req) => {
     // ---- Filigrane ANNULÉ ----
     if (po.status === "cancelled") {
       page.drawText(sanitize("ANNULÉ"), {
-        x: 80,
-        y: 240,
-        size: 130,
+        x: 118,
+        y: 215,
+        size: 104,
         font: bold,
         color: rgb(0.85, 0.15, 0.15),
         opacity: 0.18,
