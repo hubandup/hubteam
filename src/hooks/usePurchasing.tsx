@@ -63,6 +63,9 @@ export interface CompanySettings {
   phone: string | null;
   accounting_email: string | null;
   logo_url: string | null;
+  purchase_terms: string | null;
+  purchase_terms_version: string | null;
+  purchase_terms_effective_date: string | null;
 }
 
 /* ---------------------------------- Suppliers --------------------------------- */

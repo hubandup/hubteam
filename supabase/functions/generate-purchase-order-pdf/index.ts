@@ -119,6 +119,14 @@ Deno.serve(async (req) => {
     const supplier = po.suppliers as Record<string, string | null> | null;
     const categoryName = (po.purchase_categories as { name?: string } | null)?.name ?? null;
 
+    // ---- Conditions Générales d'Achat ----
+    const termsText = clean(company?.purchase_terms) ?? "";
+    const hasTerms = termsText.length > 0;
+    const currentVersion = clean(company?.purchase_terms_version);
+    // La version appliquée est figée à la première émission du PDF.
+    const termsVersion = clean(po.terms_version) ?? currentVersion;
+    const termsDate = company?.purchase_terms_effective_date ?? null;
+
     const pdf = await PDFDocument.create();
     pdf.setTitle(`Bon de commande ${po.po_number}`);
     pdf.setProducer("Hub & Up");
@@ -261,7 +269,17 @@ Deno.serve(async (req) => {
       text(value, M + contentW - 10, y - 15, { size: strong ? 11 : 9, bold: true, align: "right" });
       y -= 22;
     }
-    y -= 18;
+    y -= 14;
+
+    if (hasTerms) {
+      const cgaNote =
+        "L'exécution de cette commande emporte acceptation sans réserve des Conditions Générales d'Achat figurant en page 2.";
+      for (const l of wrap(cgaNote, font, 8.5, contentW)) {
+        text(l, M, y, { size: 8.5, bold: true });
+        y -= 11;
+      }
+    }
+    y -= 12;
 
     // ---- Règlement ----
     text("Date de règlement prévue", M, y, { size: 8, bold: true, color: GREY });
@@ -316,17 +334,107 @@ Deno.serve(async (req) => {
       align: "right",
     });
 
-    // ---- Filigrane ANNULÉ ----
+    // ---- Page(s) 2+ : Conditions Générales d'Achat ----
+    if (hasTerms) {
+      const BODY = 7;
+      const LEAD = 8.6;
+      const GUTTER = 18;
+      const cgaColW = (contentW - GUTTER) / 2;
+      const cgaTop = A4.h - M - 34;
+      const cgaBottom = 70;
+
+      const isTitle = (line: string) =>
+        /^\s*(article\s|art\.\s|\d+[.)]\s|[IVX]+[.)]\s)/i.test(line) ||
+        (line.trim().length > 0 &&
+          line.trim().length <= 90 &&
+          line.trim() === line.trim().toUpperCase() &&
+          /[A-ZÀ-Þ]/.test(line));
+
+      type Line = { t: string; bold: boolean; gap: number };
+      const lines: Line[] = [];
+      for (const raw of sanitize(termsText).split("\n")) {
+        const source = raw.replace(/^\s*#{1,6}\s*/, "").replace(/\*\*/g, "");
+        if (!source.trim()) {
+          lines.push({ t: "", bold: false, gap: LEAD * 0.6 });
+          continue;
+        }
+        const titleLine = isTitle(source) || /^\s*#{1,6}\s/.test(raw) || /^\s*\*\*/.test(raw);
+        const f = titleLine ? bold : font;
+        for (const wl of wrap(source, f, BODY, cgaColW)) {
+          lines.push({ t: wl, bold: titleLine, gap: LEAD });
+        }
+        if (titleLine) lines.push({ t: "", bold: false, gap: LEAD * 0.25 });
+      }
+
+      let cgaPage = pdf.addPage([A4.w, A4.h]);
+      let col = 0;
+      let cy = cgaTop;
+
+      const startCgaPage = () => {
+        cgaPage.drawText(sanitize("CONDITIONS GÉNÉRALES D'ACHAT"), {
+          x: M,
+          y: A4.h - M - 8,
+          size: 11,
+          font: bold,
+          color: INK,
+        });
+        cgaPage.drawRectangle({ x: M, y: A4.h - M - 18, width: contentW, height: 2.5, color: ACCENT });
+      };
+      startCgaPage();
+
+      for (const line of lines) {
+        if (cy - line.gap < cgaBottom) {
+          if (col === 0) {
+            col = 1;
+            cy = cgaTop;
+          } else {
+            cgaPage = pdf.addPage([A4.w, A4.h]);
+            startCgaPage();
+            col = 0;
+            cy = cgaTop;
+          }
+        }
+        if (line.t) {
+          cgaPage.drawText(line.t, {
+            x: col === 0 ? M : M + cgaColW + GUTTER,
+            y: cy,
+            size: BODY,
+            font: line.bold ? bold : font,
+            color: INK,
+          });
+        }
+        cy -= line.gap;
+      }
+
+      const cgaFooter = sanitize(
+        `CGA version ${termsVersion ?? "—"} en vigueur au ${fmtDate(termsDate)}`,
+      );
+      for (const p of pdf.getPages().slice(1)) {
+        p.drawRectangle({ x: M, y: 56, width: contentW, height: 0.8, color: LIGHT });
+        p.drawText(cgaFooter, { x: M, y: 44, size: 7, font, color: GREY });
+        p.drawText(sanitize(String(po.po_number)), {
+          x: M + contentW - font.widthOfTextAtSize(sanitize(String(po.po_number)), 7),
+          y: 44,
+          size: 7,
+          font,
+          color: GREY,
+        });
+      }
+    }
+
+    // ---- Filigrane ANNULÉ (toutes les pages) ----
     if (po.status === "cancelled") {
-      page.drawText(sanitize("ANNULÉ"), {
-        x: 118,
-        y: 215,
-        size: 104,
-        font: bold,
-        color: rgb(0.85, 0.15, 0.15),
-        opacity: 0.18,
-        rotate: degrees(38),
-      });
+      for (const p of pdf.getPages()) {
+        p.drawText(sanitize("ANNULÉ"), {
+          x: 118,
+          y: 215,
+          size: 104,
+          font: bold,
+          color: rgb(0.85, 0.15, 0.15),
+          opacity: 0.18,
+          rotate: degrees(38),
+        });
+      }
     }
 
     const bytes = await pdf.save();
@@ -341,7 +449,11 @@ Deno.serve(async (req) => {
     const generatedAt = new Date().toISOString();
     await admin
       .from("purchase_orders")
-      .update({ pdf_path: path, pdf_generated_at: generatedAt })
+      .update({
+        pdf_path: path,
+        pdf_generated_at: generatedAt,
+        ...(po.terms_version ? {} : termsVersion ? { terms_version: termsVersion } : {}),
+      })
       .eq("id", poId);
 
     await admin.from("purchase_order_events").insert({
