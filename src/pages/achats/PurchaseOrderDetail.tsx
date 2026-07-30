@@ -458,31 +458,6 @@ export default function PurchaseOrderDetail() {
         </div>
       </div>
 
-      <div className="rounded-3xl border bg-card p-6">
-        <h2 className="font-semibold mb-4">Journal d'audit</h2>
-        {events.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucun évènement</p>
-        ) : (
-          <ul className="space-y-3">
-            {events.map((event) => (
-              <li key={event.id} className="text-sm border-l-2 pl-3">
-                <p className="font-medium">
-                  {PO_EVENT_LABELS[event.event_type] ?? event.event_type}
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  {new Date(event.created_at).toLocaleString("fr-FR")}
-                  {event.user_id ? ` · utilisateur ${event.user_id.slice(0, 8)}` : ""}
-                </p>
-                {event.payload && Object.keys(event.payload).length > 0 && (
-                  <pre className="mt-1 max-h-32 overflow-auto rounded-xl bg-muted/50 p-2 text-[11px] whitespace-pre-wrap">
-                    {JSON.stringify(event.payload, null, 2)}
-                  </pre>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
 
       <PurchaseOrderFormDrawer
         open={editOpen}
