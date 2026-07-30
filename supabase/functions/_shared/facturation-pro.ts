@@ -253,12 +253,24 @@ export async function findQuoteByRef(
   ref: string,
   timeoutMs = 12000,
 ): Promise<FpQuote | null> {
-  const { data } = await fpRequest<unknown>(creds, "/quotes.json", {
-    query: { full_quote_ref: ref.trim(), with_details: 1 },
-    timeoutMs,
-  });
-  const quotes = asList<FpQuote>(data, "quotes");
-  return quotes[0] ?? null;
+  const trimmed = ref.trim();
+  // Certaines refs renvoient 404 sur le filtre exact : on retombe alors sur quote_ref.
+  const attempts: Record<string, string | number>[] = [
+    { full_quote_ref: trimmed, with_details: 1 },
+    { quote_ref: trimmed, with_details: 1 },
+  ];
+  for (const query of attempts) {
+    try {
+      const { data } = await fpRequest<unknown>(creds, "/quotes.json", { query, timeoutMs });
+      const quotes = asList<FpQuote>(data, "quotes");
+      if (quotes[0]) return quotes[0];
+    } catch (error) {
+      // 404 = aucun devis correspondant, ce n'est pas une erreur serveur.
+      if (error instanceof FpError && error.status === 404) continue;
+      throw error;
+    }
+  }
+  return null;
 }
 
 export async function getQuote(creds: FpCredentials, quoteId: string | number): Promise<FpQuote> {
