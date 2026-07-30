@@ -85,7 +85,7 @@ export default function PurchaseOrders() {
     [search, supplierId, categoryId, status, dossierRef, dateFrom, dateTo],
   );
 
-  const { data, isLoading, isFetching } = usePurchaseOrders({
+  const { data, isLoading, isFetching, isError, error, refetch } = usePurchaseOrders({
     filters,
     sortKey,
     sortAsc,
@@ -235,7 +235,70 @@ export default function PurchaseOrders() {
 
       <PurchaseOrdersSummary filters={filters} />
 
-      <div className="rounded-3xl border bg-card overflow-hidden">
+      {isError && (
+        <div className="rounded-3xl border border-destructive/40 bg-destructive/5 p-5 flex flex-wrap items-center gap-3">
+          <AlertTriangle className="h-4 w-4 text-destructive" />
+          <span className="text-sm">
+            Impossible de charger les bons de commande
+            {error instanceof Error ? ` : ${error.message}` : ""}
+          </span>
+          <Button variant="outline" size="sm" className="ml-auto" onClick={() => refetch()}>
+            Réessayer
+          </Button>
+        </div>
+      )}
+
+      {/* Vue carte mobile (< 768 px) */}
+      <div className="md:hidden space-y-3">
+        {isLoading ? (
+          <div className="rounded-3xl border bg-card p-8 flex justify-center">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="rounded-3xl border bg-card p-8 text-center text-sm text-muted-foreground">
+            Aucun bon de commande
+          </div>
+        ) : (
+          rows.map((po) => (
+            <button
+              key={po.id}
+              type="button"
+              onClick={() => navigate(`/achats/bons-de-commande/${po.id}`)}
+              className="w-full text-left rounded-3xl border bg-card p-4 space-y-2"
+            >
+              <div className="flex items-start justify-between gap-2 min-w-0">
+                <span className="font-medium truncate">{po.po_number}</span>
+                <Badge className={PO_STATUS_BADGE[po.status]} variant="secondary">
+                  {PO_STATUS_LABELS[po.status]}
+                </Badge>
+              </div>
+              <p className="text-sm truncate">{po.suppliers?.company_name ?? "—"}</p>
+              <p className="text-sm text-muted-foreground truncate">
+                {po.hubup_dossier_ref} · {po.description ?? "—"}
+              </p>
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <span className="text-muted-foreground">
+                  Validé le {formatDateFR(po.validation_date)}
+                  {po.payment_date ? ` · Règlement ${formatDateFR(po.payment_date)}` : ""}
+                </span>
+                <span className="font-medium whitespace-nowrap">
+                  {formatEUR(po.amount_ht, po.currency)} HT
+                </span>
+              </div>
+              {po.sync_status === "failed" && (
+                <Badge
+                  variant="secondary"
+                  className="bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+                >
+                  <AlertTriangle className="h-3 w-3 mr-1" /> À reporter manuellement
+                </Badge>
+              )}
+            </button>
+          ))
+        )}
+      </div>
+
+      <div className="hidden md:block rounded-3xl border bg-card overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -366,7 +429,16 @@ export default function PurchaseOrders() {
         )}
       </div>
 
-      <div className="flex items-center justify-between">
+      {totals && (
+        <div className="md:hidden rounded-3xl border bg-muted/40 px-4 py-3 text-sm">
+          <div className="flex justify-between gap-2">
+            <span className="font-medium">{totals.count} PO (hors annulés)</span>
+            <span>{formatEUR(totals.ht)} HT</span>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           {totalCount} résultat{totalCount > 1 ? "s" : ""} · page {page + 1} / {pageCount}
           {isFetching && !isLoading ? " · actualisation…" : ""}
