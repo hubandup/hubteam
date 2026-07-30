@@ -35,6 +35,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { PurchaseOrderFormDrawer } from "@/components/achats/PurchaseOrderFormDrawer";
 import { SendPurchaseOrderDialog } from "@/components/achats/SendPurchaseOrderDialog";
 import { CreatePurchaseDialog } from "@/components/achats/CreatePurchaseDialog";
+import { PurchaseOrderPdfViewer } from "@/components/achats/PurchaseOrderPdfViewer";
 import {
   usePurchaseOrder,
   usePurchaseOrderEvents,
