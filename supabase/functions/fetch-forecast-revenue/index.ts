@@ -250,6 +250,7 @@ Deno.serve(async (req) => {
     const headers = {
       Authorization: `Basic ${btoa(`${apiId}:${apiKey}`)}`,
       'Content-Type': 'application/json',
+      'User-Agent': 'HubTeam (contact@hubandup.com)',
     };
 
     // Get dates for next 3 months

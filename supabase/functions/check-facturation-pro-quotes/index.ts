@@ -59,6 +59,7 @@ Deno.serve(async (req) => {
         headers: {
           'Authorization': `Basic ${btoa(`${apiId}:${apiKey}`)}`,
           'Content-Type': 'application/json',
+          'User-Agent': 'HubTeam (contact@hubandup.com)',
         },
       }
     )

@@ -77,6 +77,7 @@ Deno.serve(async (req) => {
     const headers = {
       Authorization: `Basic ${btoa(`${apiId}:${apiKey}`)}`,
       'Content-Type': 'application/json',
+      'User-Agent': 'HubTeam (contact@hubandup.com)',
     };
 
     // Facturation.PRO seems to paginate results; fetch multiple pages.
