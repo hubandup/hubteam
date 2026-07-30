@@ -25,6 +25,8 @@ import {
   CheckCircle2,
   Loader2,
   FileText,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -35,6 +37,7 @@ import {
   usePurchaseOrderEvents,
   useUpdatePurchaseOrderStatus,
   useLogPurchaseOrderEvent,
+  useSyncPurchaseOrderToFacturation,
 } from "@/hooks/usePurchaseOrders";
 import { useSupplier, useCompanySettings, usePurchaseCategories } from "@/hooks/usePurchasing";
 import {
@@ -59,6 +62,7 @@ export default function PurchaseOrderDetail() {
   const { data: categories = [] } = usePurchaseCategories();
   const updateStatus = useUpdatePurchaseOrderStatus();
   const logEvent = useLogPurchaseOrderEvent();
+  const syncFacturation = useSyncPurchaseOrderToFacturation();
 
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -274,12 +278,63 @@ export default function PurchaseOrderDetail() {
         <Badge className={PO_STATUS_BADGE[po.status]} variant="secondary">
           {PO_STATUS_LABELS[po.status]}
         </Badge>
+        {po.sync_status === "failed" && (
+          <Badge
+            variant="secondary"
+            className="bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+          >
+            <AlertTriangle className="h-3 w-3 mr-1" /> À reporter manuellement
+          </Badge>
+        )}
+        {po.sync_status === "synced" && (
+          <span className="text-xs text-muted-foreground">
+            Synchronisé avec facturation.pro{po.synced_at ? ` le ${formatDateFR(po.synced_at)}` : ""}
+          </span>
+        )}
         {po.status === "cancelled" && po.cancellation_reason && (
           <span className="text-sm text-muted-foreground">
             Motif : {po.cancellation_reason} ({formatDateFR(po.cancelled_at)})
           </span>
         )}
       </div>
+
+      {po.sync_status === "failed" && (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-4 text-sm flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-600" />
+            <div>
+              <p className="font-medium">
+                À reporter manuellement dans facturation.pro
+              </p>
+              <p className="text-muted-foreground">{po.sync_error ?? "Synchronisation échouée"}</p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={syncFacturation.isPending}
+            onClick={() =>
+              syncFacturation.mutate(po.id, {
+                onSuccess: (res) =>
+                  res?.success
+                    ? toast.success(
+                        res.skipped ? "Synchronisation désactivée" : "Synchronisation réussie",
+                      )
+                    : toast.error(res?.error ?? "Synchronisation impossible"),
+                onError: (e) =>
+                  toast.error(e instanceof Error ? e.message : "Synchronisation impossible"),
+              })
+            }
+          >
+            {syncFacturation.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
+            Relancer la synchronisation
+          </Button>
+        </div>
+      )}
 
       {needsResend && po.status === "sent" && (
         <div className="rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-4 text-sm">
@@ -365,6 +420,17 @@ export default function PurchaseOrderDetail() {
         onSent={async () => {
           setNeedsResend(false);
           await updateStatus.mutateAsync({ id: po.id });
+          // Synchronisation facturation.pro : non bloquante, n'empêche jamais l'envoi
+          syncFacturation.mutate(po.id, {
+            onSuccess: (res) => {
+              if (res?.success === false) {
+                toast.warning("Report du n° de PO sur facturation.pro impossible");
+              }
+            },
+            onError: () => {
+              toast.warning("Report du n° de PO sur facturation.pro impossible");
+            },
+          });
         }}
       />
 
