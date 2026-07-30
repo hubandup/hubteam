@@ -356,6 +356,20 @@ export default function PurchaseOrderDetail() {
         }}
       />
 
+      <SendPurchaseOrderDialog
+        open={sendOpen}
+        onOpenChange={setSendOpen}
+        po={po}
+        supplier={supplier}
+        resend={sendResend}
+        onSent={async () => {
+          setNeedsResend(false);
+          await updateStatus.mutateAsync({ id: po.id });
+        }}
+      />
+
+
+
       <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
