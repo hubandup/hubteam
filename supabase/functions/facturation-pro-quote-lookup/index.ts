@@ -57,6 +57,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    const cacheKey = normalize(ref);
+    const cached = cache.get(cacheKey);
+    if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
+      return new Response(cached.body, {
+        headers: { ...corsHeaders, "Content-Type": "application/json", "X-Cache": "HIT" },
+      });
+    }
+
     const apiKey = Deno.env.get("FACTURATION_PRO_API_KEY");
     const apiId = Deno.env.get("FACTURATION_PRO_API_ID");
     const firmId = Deno.env.get("FACTURATION_PRO_FIRM_ID");
@@ -67,14 +75,14 @@ Deno.serve(async (req) => {
       "Content-Type": "application/json",
     };
 
-    const target = normalize(ref);
+    const target = cacheKey;
     let match: FpQuote | null = null;
 
     for (let page = 1; page <= 10 && !match; page++) {
       const url = new URL(`${API_URL}/firms/${firmId}/quotes.json`);
       url.searchParams.set("page", String(page));
       url.searchParams.set("per_page", "100");
-      const res = await fetch(url.toString(), { headers });
+      const res = await fetch(url.toString(), { headers, signal: AbortSignal.timeout(TIMEOUT_MS) });
       if (!res.ok) break;
       const quotes = extract(await res.json());
       if (quotes.length === 0) break;
@@ -85,31 +93,43 @@ Deno.serve(async (req) => {
       if (quotes.length < 100) break;
     }
 
-    if (!match) {
-      return new Response(JSON.stringify({ found: false }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const payload = match
+      ? {
+          found: true,
+          quote: {
+            id: String(match.id),
+            ref: match.quote_ref ?? ref,
+            title: match.title ?? "",
+            customer: match.customer_identity || match.customer_short_name || "",
+            total: Number(match.total ?? 0) || 0,
+            date: match.accepted_date || match.quote_date || null,
+          },
+        }
+      : { found: false };
 
-    return new Response(
-      JSON.stringify({
-        found: true,
-        quote: {
-          id: String(match.id),
-          ref: match.quote_ref ?? ref,
-          title: match.title ?? "",
-          customer: match.customer_identity || match.customer_short_name || "",
-          total: Number(match.total ?? 0) || 0,
-          date: match.accepted_date || match.quote_date || null,
-        },
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    const responseBody = JSON.stringify(payload);
+    cache.set(cacheKey, { at: Date.now(), body: responseBody });
+    if (cache.size > 200) cache.delete(cache.keys().next().value as string);
+
+    return new Response(responseBody, {
+      headers: { ...corsHeaders, "Content-Type": "application/json", "X-Cache": "MISS" },
+    });
   } catch (error) {
+    const isTimeout = error instanceof DOMException && error.name === "TimeoutError";
     console.error("facturation-pro-quote-lookup error", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Erreur inconnue" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      JSON.stringify({
+        error: isTimeout
+          ? "facturation.pro n'a pas répondu dans le délai imparti"
+          : error instanceof Error
+            ? error.message
+            : "Erreur inconnue",
+      }),
+      {
+        status: isTimeout ? 504 : 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
     );
   }
 });
+
