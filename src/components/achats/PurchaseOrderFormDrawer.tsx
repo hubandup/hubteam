@@ -45,6 +45,7 @@ import {
 import {
   useSavePurchaseOrder,
   useDuplicatePurchaseOrder,
+  useDossierCommitment,
   useLogPurchaseOrderEvent,
   useUpdatePurchaseOrderStatus,
   type PurchaseOrder,
@@ -129,6 +130,18 @@ export function PurchaseOrderFormDrawer({ open, onOpenChange, purchaseOrder, onS
     values.supplier_quote_ref || undefined,
     purchaseOrder?.id,
   );
+
+  const { data: otherEngaged = 0 } = useDossierCommitment(
+    values.hubup_dossier_ref,
+    purchaseOrder?.id,
+  );
+
+  const budgetWarning = useMemo(() => {
+    if (!quoteInfo || !quoteInfo.total) return null;
+    const engaged = round2(otherEngaged + (Number.isNaN(amountHt) ? 0 : amountHt));
+    if (engaged <= Number(quoteInfo.total)) return null;
+    return { engaged, quoteTotal: Number(quoteInfo.total) };
+  }, [quoteInfo, otherEngaged, amountHt]);
 
   /* Initialisation à l'ouverture */
   useEffect(() => {
@@ -408,6 +421,15 @@ export function PurchaseOrderFormDrawer({ open, onOpenChange, purchaseOrder, onS
                   <p className="text-muted-foreground">
                     {quoteInfo.customer} · {formatEUR(quoteInfo.total)} ·{" "}
                     {formatDateFR(quoteInfo.date)}
+                  </p>
+                </div>
+              )}
+              {budgetWarning && (
+                <div className="rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 text-sm flex gap-2">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-amber-600" />
+                  <p>
+                    Ce dossier est engagé à {formatEUR(budgetWarning.engaged)} HT pour un devis
+                    client de {formatEUR(budgetWarning.quoteTotal)} HT.
                   </p>
                 </div>
               )}
