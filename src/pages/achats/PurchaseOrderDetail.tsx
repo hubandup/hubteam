@@ -87,18 +87,8 @@ export default function PurchaseOrderDetail() {
 
   const ensurePdf = async () => {
     if (!po) return null;
-    const path = await generateAndStorePurchaseOrderPdf({
-      po,
-      supplier,
-      company,
-      categoryName,
-    });
+    const path = await generateAndStorePurchaseOrderPdf({ id: po.id });
     await updateStatus.mutateAsync({ id: po.id, pdfPath: path });
-    await logEvent.mutateAsync({
-      purchaseOrderId: po.id,
-      eventType: "pdf_generated",
-      payload: { path },
-    });
     return path;
   };
 

@@ -235,20 +235,8 @@ export function PurchaseOrderFormDrawer({ open, onOpenChange, purchaseOrder, onS
 
       const wasSent = purchaseOrder && purchaseOrder.status !== "draft";
       if (mode === "pdf" || wasSent) {
-        const supplier = suppliers.find((s) => s.id === saved.supplier_id) ?? null;
-        const categoryName = categories.find((c) => c.id === saved.category_id)?.name ?? null;
-        const path = await generateAndStorePurchaseOrderPdf({
-          po: saved,
-          supplier,
-          company,
-          categoryName,
-        });
+        const path = await generateAndStorePurchaseOrderPdf({ id: saved.id });
         await updateStatus.mutateAsync({ id: saved.id, pdfPath: path });
-        await logEvent.mutateAsync({
-          purchaseOrderId: saved.id,
-          eventType: "pdf_generated",
-          payload: { path },
-        });
         toast.success(
           wasSent
             ? "PDF régénéré — pensez à renvoyer le document au fournisseur"
