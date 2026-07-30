@@ -1,10 +1,15 @@
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import {
   FpError,
   findQuoteByRef,
   readCredentials,
   type FpQuote,
 } from "../_shared/facturation-pro.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
 
 /** Cache court en mémoire (par instance) pour limiter les appels à facturation.pro */
 const CACHE_TTL_MS = 5 * 60 * 1000;

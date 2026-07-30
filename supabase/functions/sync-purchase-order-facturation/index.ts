@@ -1,5 +1,4 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import {
   FpError,
   findQuoteByRef,
@@ -8,6 +7,12 @@ import {
   readCredentials,
   type FpQuote,
 } from "../_shared/facturation-pro.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
