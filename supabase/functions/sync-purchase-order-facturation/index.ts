@@ -1,10 +1,12 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
+  FP_QUOTE_API_CUSTOM_MAX,
   FpError,
   findQuoteByRef,
   getQuote,
   patchQuote,
   readCredentials,
+  uploadQuoteAttachment,
   type FpQuote,
 } from "../_shared/facturation-pro.ts";
 
@@ -13,7 +15,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
@@ -21,6 +22,54 @@ const json = (body: unknown, status = 200) =>
   });
 
 const FLAG_KEY = "po_facturation_pro_sync_enabled";
+const MAX_ATTEMPTS = 3;
+const PO_BUCKET = "purchase-orders";
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+const formatDateFR = (iso?: string | null) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/${d.getUTCFullYear()}`;
+};
+
+const formatAmount = (value: number) =>
+  new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+
+/** Ligne ajoutee a internal_note (texte libre, non imprime sur le devis). */
+function buildNoteLine(po: {
+  po_number: string;
+  amount_ht: number | string | null;
+  sent_at: string | null;
+  validation_date: string | null;
+  created_at: string | null;
+}, supplierName: string) {
+  const amount = formatAmount(Number(po.amount_ht ?? 0));
+  const date = formatDateFR(po.sent_at ?? po.validation_date ?? po.created_at);
+  return `${po.po_number} | ${supplierName} | ${amount} € HT | émis le ${date}`;
+}
+
+/** Liste des n° de PO du dossier, separes par « ; », tronquee aux plus recents. */
+function buildApiCustom(existing: string | null | undefined, poNumbers: string[]) {
+  const fromExisting = String(existing ?? "")
+    .split(";")
+    .map((v) => v.trim())
+    .filter(Boolean);
+  // Les plus recents en tete de liste de reference, ordre chronologique en sortie.
+  const merged: string[] = [];
+  for (const n of [...fromExisting, ...poNumbers]) if (!merged.includes(n)) merged.push(n);
+
+  let kept = merged;
+  let truncated = 0;
+  while (kept.length > 1 && kept.join(";").length > FP_QUOTE_API_CUSTOM_MAX) {
+    kept = kept.slice(1); // on retire le plus ancien
+    truncated++;
+  }
+  let value = kept.join(";");
+  if (value.length > FP_QUOTE_API_CUSTOM_MAX) value = value.slice(0, FP_QUOTE_API_CUSTOM_MAX);
+  return { value, truncated };
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -56,7 +105,9 @@ Deno.serve(async (req) => {
 
     const { data: po, error: poError } = await admin
       .from("purchase_orders")
-      .select("id, po_number, hubup_dossier_ref, facturation_pro_quote_id, status")
+      .select(
+        "id, po_number, hubup_dossier_ref, facturation_pro_quote_id, status, amount_ht, sent_at, validation_date, created_at, pdf_path, sent_pdf_path, suppliers(company_name)",
+      )
       .eq("id", poId)
       .maybeSingle();
     if (poError) throw poError;
@@ -72,65 +123,110 @@ Deno.serve(async (req) => {
 
     const creds = readCredentials();
 
+    // Résolution du devis : id mémorisé, sinon recherche exacte par référence dossier.
     let quote: FpQuote | null = null;
     if (po.facturation_pro_quote_id) {
       quote = await getQuote(creds, po.facturation_pro_quote_id);
-    } else {
-      // Recherche exacte documentée : ?full_quote_ref={numéro}&with_details=1
-      quote = await findQuoteByRef(creds, po.hubup_dossier_ref);
+    } else if (po.hubup_dossier_ref) {
+      quote = await findQuoteByRef(creds, String(po.hubup_dossier_ref));
     }
     if (!quote?.id) {
-      throw new Error(`Devis introuvable dans facturation.pro (${po.hubup_dossier_ref})`);
+      // Aucun devis rattaché : rien à reporter, ce n'est pas une erreur.
+      await admin
+        .from("purchase_orders")
+        .update({ sync_status: "not_applicable", sync_error: null })
+        .eq("id", poId);
+      return json({ success: true, skipped: true, reason: "Aucun devis facturation.pro rattaché" });
     }
     const quoteId = String(quote.id);
 
-    const mention = `Bon de commande Hub & Up : ${po.po_number}`;
-    // PATCH : seuls les champs transmis sont modifiés, on n'écrase donc rien d'autre.
-    const attempts: Array<Partial<Pick<FpQuote, "notes" | "term" | "external_ref">>> = [];
-    const existingNotes = typeof quote.notes === "string" ? quote.notes : "";
-    if (!existingNotes.includes(po.po_number)) {
-      attempts.push({ notes: existingNotes ? `${existingNotes}\n${mention}` : mention });
-    } else {
-      attempts.push({ notes: existingNotes });
-    }
-    const existingTerm = typeof quote.term === "string" ? quote.term : "";
-    attempts.push({
-      term: existingTerm.includes(po.po_number) ? existingTerm : `${existingTerm}\n${mention}`.trim(),
-    });
-    attempts.push({ external_ref: po.po_number });
+    const supplierName =
+      (po as { suppliers?: { company_name?: string | null } | null }).suppliers?.company_name ??
+      "Fournisseur";
+    const noteLine = buildNoteLine(po as never, supplierName);
 
+    // Tentatives avec backoff exponentiel (3 au maximum)
     let lastError = "";
-    let written = false;
-    for (const payload of attempts) {
+    let truncatedCount = 0;
+    let attachmentError: string | null = null;
+
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       try {
-        await patchQuote(creds, quoteId, payload);
-        written = true;
-        break;
+        // Toujours relire le devis pour ne jamais écraser le contenu antérieur
+        const fresh = attempt === 1 ? quote : await getQuote(creds, quoteId);
+
+        const existingNote = typeof fresh.internal_note === "string" ? fresh.internal_note : "";
+        const payload: { internal_note?: string; api_custom?: string } = {};
+
+        if (!existingNote.includes(po.po_number)) {
+          payload.internal_note = existingNote ? `${existingNote}\n${noteLine}` : noteLine;
+        }
+
+        const { value, truncated } = buildApiCustom(fresh.api_custom, [po.po_number]);
+        truncatedCount = truncated;
+        if (value !== (fresh.api_custom ?? "")) payload.api_custom = value;
+        if (truncated > 0) {
+          console.warn(
+            `api_custom tronqué pour le devis ${quoteId} : ${truncated} référence(s) ancienne(s) retirée(s)`,
+          );
+        }
+
+        if (Object.keys(payload).length > 0) {
+          await patchQuote(creds, quoteId, payload);
+        }
+
+        // Pièce jointe : PDF du PO, nommé {po_number}.pdf, non visible par le client
+        const pdfPath = po.sent_pdf_path || po.pdf_path;
+        if (pdfPath) {
+          try {
+            const { data: file, error: dlError } = await admin.storage
+              .from(PO_BUCKET)
+              .download(pdfPath);
+            if (dlError || !file) throw dlError ?? new Error("PDF introuvable dans le stockage");
+            const bytes = new Uint8Array(await file.arrayBuffer());
+            await uploadQuoteAttachment(creds, quoteId, bytes, `${po.po_number}.pdf`);
+          } catch (err) {
+            // La pièce jointe ne doit pas invalider l'écriture des champs texte
+            attachmentError = err instanceof Error ? err.message : String(err);
+            console.error("Pièce jointe non transmise", attachmentError);
+          }
+        }
+
+        await admin
+          .from("purchase_orders")
+          .update({
+            sync_status: "synced",
+            sync_error: attachmentError ? `Pièce jointe non transmise : ${attachmentError}`.slice(0, 500) : null,
+            synced_at: new Date().toISOString(),
+            facturation_pro_quote_id: quoteId,
+          })
+          .eq("id", poId);
+
+        await admin.from("purchase_order_events").insert({
+          purchase_order_id: poId,
+          event_type: "synced",
+          payload: {
+            quote_id: quoteId,
+            internal_note_line: noteLine,
+            api_custom_truncated: truncatedCount,
+            attachment_error: attachmentError,
+            attempts: attempt,
+          },
+          user_id: user.id,
+        });
+
+        return json({ success: true, quoteId, attachmentError, truncated: truncatedCount });
       } catch (err) {
-        if (err instanceof FpError && err.status === 429) throw err;
         lastError = err instanceof Error ? err.message : String(err);
+        console.error(`Tentative ${attempt}/${MAX_ATTEMPTS} échouée`, lastError);
+        if (err instanceof FpError && err.status >= 400 && err.status < 500 && err.status !== 429) {
+          break; // erreur définitive, inutile de réessayer
+        }
+        if (attempt < MAX_ATTEMPTS) await sleep(Math.min(2 ** attempt * 1000, 8000));
       }
     }
-    if (!written) throw new Error(`Écriture refusée par facturation.pro : ${lastError}`);
 
-    await admin
-      .from("purchase_orders")
-      .update({
-        sync_status: "synced",
-        sync_error: null,
-        synced_at: new Date().toISOString(),
-        facturation_pro_quote_id: quoteId,
-      })
-      .eq("id", poId);
-
-    await admin.from("purchase_order_events").insert({
-      purchase_order_id: poId,
-      event_type: "synced",
-      payload: { quote_id: quoteId, mention },
-      user_id: user.id,
-    });
-
-    return json({ success: true, quoteId });
+    throw new Error(lastError || "Écriture refusée par facturation.pro");
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erreur inconnue";
     console.error("sync-purchase-order-facturation error", message);
