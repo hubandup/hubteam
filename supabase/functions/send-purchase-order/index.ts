@@ -88,7 +88,20 @@ Deno.serve(async (req) => {
       return json({ error: "Échec de l'envoi de l'e-mail" }, 502);
     }
 
-    const patch: Record<string, unknown> = { sent_to_email: recipient, sent_at: new Date().toISOString() };
+    // Archive la version exacte transmise au fournisseur (reste téléchargeable)
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const year = new Date(po.validation_date ?? po.created_at ?? Date.now()).getUTCFullYear();
+    const archivePath = `${year}/archives/${po.po_number}-${stamp}.pdf`;
+    const { error: archiveError } = await admin.storage
+      .from("purchase-orders")
+      .upload(archivePath, bytes, { contentType: "application/pdf", upsert: true });
+    if (archiveError) console.error("archive error", archiveError);
+
+    const patch: Record<string, unknown> = {
+      sent_to_email: recipient,
+      sent_at: new Date().toISOString(),
+      sent_pdf_path: archiveError ? po.sent_pdf_path ?? null : archivePath,
+    };
     if (po.status === "draft") {
       patch.status = "sent";
       patch.sent_by = user.id;
@@ -98,7 +111,7 @@ Deno.serve(async (req) => {
     await admin.from("purchase_order_events").insert({
       purchase_order_id: poId,
       event_type: isResend || po.status !== "draft" ? "resent" : "sent",
-      payload: { to: recipient },
+      payload: { to: recipient, archive_path: archiveError ? null : archivePath },
       user_id: user.id,
     });
 
