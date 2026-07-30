@@ -86,17 +86,31 @@ export default function PurchaseOrderDetail() {
 
   useEffect(() => {
     let active = true;
+    let objectUrl: string | null = null;
     if (!po?.pdf_path) {
       setPdfUrl(null);
       return;
     }
-    getPurchaseOrderPdfUrl(po.pdf_path).then((url) => {
-      if (active) setPdfUrl(url);
-    });
+    (async () => {
+      const { data, error } = await supabase.storage
+        .from("purchase-orders")
+        .download(po.pdf_path!);
+      if (!active) return;
+      if (error || !data) {
+        // Repli : URL signée directe
+        const signed = await getPurchaseOrderPdfUrl(po.pdf_path!);
+        if (active) setPdfUrl(signed);
+        return;
+      }
+      objectUrl = URL.createObjectURL(data.slice(0, data.size, "application/pdf"));
+      setPdfUrl(objectUrl);
+    })();
     return () => {
       active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [po?.pdf_path, po?.updated_at]);
+
 
   const ensurePdf = async () => {
     if (!po) return null;
