@@ -23,6 +23,8 @@ export interface PurchaseOrder {
   status: PurchaseOrderStatus;
   internal_notes: string | null;
   pdf_path: string | null;
+  pdf_generated_at: string | null;
+  sent_pdf_path: string | null;
   sent_at: string | null;
   sent_to_email: string | null;
   cancelled_at: string | null;

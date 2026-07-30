@@ -87,18 +87,8 @@ export default function PurchaseOrderDetail() {
 
   const ensurePdf = async () => {
     if (!po) return null;
-    const path = await generateAndStorePurchaseOrderPdf({
-      po,
-      supplier,
-      company,
-      categoryName,
-    });
+    const path = await generateAndStorePurchaseOrderPdf({ id: po.id });
     await updateStatus.mutateAsync({ id: po.id, pdfPath: path });
-    await logEvent.mutateAsync({
-      purchaseOrderId: po.id,
-      eventType: "pdf_generated",
-      payload: { path },
-    });
     return path;
   };
 
@@ -226,6 +216,18 @@ export default function PurchaseOrderDetail() {
             {canEdit && (
               <Button variant="outline" onClick={() => setEditOpen(true)}>
                 <Pencil className="h-4 w-4 mr-2" /> Modifier
+              </Button>
+            )}
+            {po.sent_pdf_path && (
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  const url = await getPurchaseOrderPdfUrl(po.sent_pdf_path!);
+                  if (url) window.open(url, "_blank", "noopener");
+                  else toast.error("Version envoyée introuvable");
+                }}
+              >
+                <FileText className="h-4 w-4 mr-2" /> Version envoyée
               </Button>
             )}
             {po.status !== "cancelled" && (
