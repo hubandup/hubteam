@@ -571,3 +571,23 @@ export function useLogPurchaseOrderEvent() {
     },
   });
 }
+
+/** Cumul des montants HT des PO non annulés rattachés à un dossier Hub & Up */
+export function useDossierCommitment(dossierRef?: string, excludeId?: string) {
+  const ref = dossierRef?.trim();
+  return useQuery({
+    queryKey: ["purchase-order-dossier-commitment", ref, excludeId],
+    enabled: !!ref && ref.length >= 3,
+    queryFn: async () => {
+      let q = supabase
+        .from("purchase_orders")
+        .select("id, amount_ht")
+        .eq("hubup_dossier_ref", ref!)
+        .neq("status", "cancelled");
+      if (excludeId) q = q.neq("id", excludeId);
+      const { data, error } = await q.returns<{ id: string; amount_ht: number }[]>();
+      if (error) throw error;
+      return (data ?? []).reduce((sum, po) => sum + Number(po.amount_ht || 0), 0);
+    },
+  });
+}
