@@ -22,10 +22,14 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   po: PurchaseOrder;
+  /** Callback exécuté après création réussie de l'achat (ex: passer le PO en facturé). */
+  onCreated?: () => void | Promise<void>;
+  /** Texte d'information additionnel affiché dans le dialogue. */
+  notice?: string;
 }
 
 /** Création manuelle de l'achat correspondant dans facturation.pro. */
-export function CreatePurchaseDialog({ open, onOpenChange, po }: Props) {
+export function CreatePurchaseDialog({ open, onOpenChange, po, onCreated, notice }: Props) {
   const createPurchase = useCreatePurchaseInFacturation();
   const [ref, setRef] = useState("");
   const [invoicedOn, setInvoicedOn] = useState("");
@@ -52,6 +56,7 @@ export function CreatePurchaseDialog({ open, onOpenChange, po }: Props) {
       });
       toast.success("Achat créé dans facturation.pro");
       onOpenChange(false);
+      await onCreated?.();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Création impossible");
     }
@@ -99,6 +104,7 @@ export function CreatePurchaseDialog({ open, onOpenChange, po }: Props) {
             transmis. Descriptif, catégorie comptable et n° de dossier sont repris du bon de
             commande.
           </p>
+          {notice && <p className="text-xs text-muted-foreground">{notice}</p>}
         </div>
 
         <DialogFooter>
