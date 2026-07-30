@@ -38,7 +38,7 @@ import { CreatePurchaseDialog } from "@/components/achats/CreatePurchaseDialog";
 import { PurchaseOrderPdfViewer } from "@/components/achats/PurchaseOrderPdfViewer";
 import {
   usePurchaseOrder,
-  usePurchaseOrderEvents,
+  
   useUpdatePurchaseOrderStatus,
   useLogPurchaseOrderEvent,
   useSyncPurchaseOrderToFacturation,
