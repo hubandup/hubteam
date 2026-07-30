@@ -38,6 +38,7 @@ export const supplierSchema = z.object({
     .trim()
     .nonempty({ message: "L'entreprise est obligatoire" })
     .max(150, { message: "Maximum 150 caractères" }),
+  civility: optionalText(20),
   last_name: optionalText(100),
   first_name: optionalText(100),
   email: z
@@ -79,6 +80,15 @@ export const supplierSchema = z.object({
     })
     .optional()
     .or(z.literal("")),
+  siret: z
+    .string()
+    .trim()
+    .transform((v) => v.replace(/\s+/g, ""))
+    .refine((v) => v === "" || /^\d{14}$/.test(v), {
+      message: "Le SIRET comporte 14 chiffres",
+    })
+    .optional()
+    .or(z.literal("")),
   notes: optionalText(2000),
 });
 
@@ -86,6 +96,7 @@ export type SupplierFormValues = z.infer<typeof supplierSchema>;
 
 export const emptySupplierForm: SupplierFormValues = {
   company_name: "",
+  civility: "",
   last_name: "",
   first_name: "",
   email: "",
@@ -97,6 +108,7 @@ export const emptySupplierForm: SupplierFormValues = {
   vat_number: "",
   iban: "",
   bic: "",
+  siret: "",
   notes: "",
 };
 
