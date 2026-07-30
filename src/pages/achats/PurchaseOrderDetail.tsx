@@ -218,6 +218,18 @@ export default function PurchaseOrderDetail() {
                 <Pencil className="h-4 w-4 mr-2" /> Modifier
               </Button>
             )}
+            {po.sent_pdf_path && (
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  const url = await getPurchaseOrderPdfUrl(po.sent_pdf_path!);
+                  if (url) window.open(url, "_blank", "noopener");
+                  else toast.error("Version envoyée introuvable");
+                }}
+              >
+                <FileText className="h-4 w-4 mr-2" /> Version envoyée
+              </Button>
+            )}
             {po.status !== "cancelled" && (
               <Button variant="outline" onClick={handleDownload} disabled={busy === "download"}>
                 {busy === "download" ? (
