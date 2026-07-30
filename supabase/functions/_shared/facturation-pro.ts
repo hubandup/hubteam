@@ -93,6 +93,13 @@ export interface FpPurchase {
   invoiced_on?: string | null;
   term_on?: string | null;
   notes?: string | null;
+  /** Champs de règlement / annulation renvoyés par facturation.pro. */
+  paid_on?: string | null;
+  balance?: string | number | null;
+  total_paid?: string | number | null;
+  cancelled?: boolean | null;
+  cancelled_on?: string | null;
+  status?: string | null;
 }
 
 
