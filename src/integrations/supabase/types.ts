@@ -1350,6 +1350,9 @@ export type Database = {
           logo_url: string | null
           phone: string | null
           postal_code: string | null
+          purchase_terms: string | null
+          purchase_terms_effective_date: string | null
+          purchase_terms_version: string | null
           siret: string | null
           updated_at: string
           vat_number: string | null
@@ -1366,6 +1369,9 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           postal_code?: string | null
+          purchase_terms?: string | null
+          purchase_terms_effective_date?: string | null
+          purchase_terms_version?: string | null
           siret?: string | null
           updated_at?: string
           vat_number?: string | null
@@ -1382,6 +1388,9 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           postal_code?: string | null
+          purchase_terms?: string | null
+          purchase_terms_effective_date?: string | null
+          purchase_terms_version?: string | null
           siret?: string | null
           updated_at?: string
           vat_number?: string | null
@@ -3932,6 +3941,7 @@ export type Database = {
           sync_error: string | null
           sync_status: Database["public"]["Enums"]["purchase_order_sync_status"]
           synced_at: string | null
+          terms_version: string | null
           updated_at: string
           validation_date: string
           vat_rate: number
@@ -3966,6 +3976,7 @@ export type Database = {
           sync_error?: string | null
           sync_status?: Database["public"]["Enums"]["purchase_order_sync_status"]
           synced_at?: string | null
+          terms_version?: string | null
           updated_at?: string
           validation_date: string
           vat_rate?: number
@@ -4000,6 +4011,7 @@ export type Database = {
           sync_error?: string | null
           sync_status?: Database["public"]["Enums"]["purchase_order_sync_status"]
           synced_at?: string | null
+          terms_version?: string | null
           updated_at?: string
           validation_date?: string
           vat_rate?: number
