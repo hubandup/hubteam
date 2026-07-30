@@ -128,6 +128,25 @@ export function useSupplierPurchaseOrders(supplierId?: string) {
   });
 }
 
+/**
+ * Synchronise un fournisseur vers la comptabilité.
+ * Ne lève jamais : un échec laisse le fournisseur utilisable (sync_status = 'failed').
+ */
+async function pushSupplierToAccounting(supplierId: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabase.functions.invoke("sync-supplier-facturation", {
+      body: { supplier_id: supplierId },
+    });
+    if (error) return error.message;
+    if (data && (data as { success?: boolean }).success === false) {
+      return (data as { error?: string }).error ?? "Synchronisation impossible";
+    }
+    return null;
+  } catch (err) {
+    return err instanceof Error ? err.message : "Synchronisation impossible";
+  }
+}
+
 export function useSaveSupplier() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -138,6 +157,7 @@ export function useSaveSupplier() {
         Object.entries(values).map(([k, v]) => [k, v === "" ? null : v]),
       );
 
+      let saved: Supplier;
       if (id) {
         const { data, error } = await supabase
           .from("suppliers")
@@ -146,22 +166,42 @@ export function useSaveSupplier() {
           .select()
           .single();
         if (error) throw error;
-        return data as Supplier;
+        saved = data as Supplier;
+      } else {
+        const { data, error } = await supabase
+          .from("suppliers")
+          .insert({ ...payload, created_by: user?.id ?? null } as never)
+          .select()
+          .single();
+        if (error) throw error;
+        saved = data as Supplier;
       }
 
-      const { data, error } = await supabase
-        .from("suppliers")
-        .insert({ ...payload, created_by: user?.id ?? null } as never)
-        .select()
-        .single();
-      if (error) throw error;
-      return data as Supplier;
+      const syncError = await pushSupplierToAccounting(saved.id);
+      return { ...saved, sync_error: syncError ?? saved.sync_error } as Supplier & {
+        syncError?: string | null;
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["suppliers"] });
     },
   });
 }
+
+/** Relance manuelle de la synchronisation d'un fournisseur. */
+export function useRetrySupplierSync() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (supplierId: string) => {
+      const message = await pushSupplierToAccounting(supplierId);
+      if (message) throw new Error(message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+    },
+  });
+}
+
 
 export function useToggleSupplierActive() {
   const queryClient = useQueryClient();
