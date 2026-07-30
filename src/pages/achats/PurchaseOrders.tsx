@@ -24,6 +24,7 @@ import { Search, Plus, ArrowUpDown, Settings2, Users, Loader2, Download, AlertTr
 import { toast } from "sonner";
 import { exportPurchaseOrdersToXlsx } from "@/lib/po-export";
 import { PurchaseOrderFormDrawer } from "@/components/achats/PurchaseOrderFormDrawer";
+import { PurchaseOrdersSummary } from "@/components/achats/PurchaseOrdersSummary";
 import {
   usePurchaseOrders,
   fetchPurchaseOrdersForExport,
@@ -231,6 +232,8 @@ export default function PurchaseOrders() {
           />
         </div>
       </Toolbar>
+
+      <PurchaseOrdersSummary filters={filters} />
 
       <div className="rounded-3xl border bg-card overflow-hidden">
         <div className="overflow-x-auto">

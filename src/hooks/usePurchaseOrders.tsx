@@ -113,6 +113,118 @@ async function matchingSupplierIds(search?: string): Promise<string[] | null> {
   return (data ?? []).map((s) => s.id);
 }
 
+export interface PoSummaryOverdue {
+  id: string;
+  po_number: string;
+  supplier_name: string | null;
+  payment_date: string;
+  amount_ht: number;
+  days_late: number;
+}
+
+export interface PoSummary {
+  totalHt: number;
+  totalTtc: number;
+  count: number;
+  byStatus: Record<PurchaseOrderStatus, { count: number; ht: number }>;
+  byCategory: Array<{ name: string; ht: number; count: number; share: number }>;
+  topSuppliers: Array<{ name: string; ht: number; count: number; share: number }>;
+  overdue: PoSummaryOverdue[];
+  overdueHt: number;
+}
+
+/** Synthèse (total engagé, répartition, top fournisseurs, retards) sur la période filtrée. */
+export function usePurchaseOrdersSummary(filters: PurchaseOrderFilters) {
+  return useQuery({
+    queryKey: ["purchase-orders-summary", filters],
+    queryFn: async (): Promise<PoSummary> => {
+      const supplierIds = await matchingSupplierIds(filters.search);
+      let query = supabase
+        .from("purchase_orders")
+        .select(
+          sel(
+            "id, po_number, status, amount_ht, amount_ttc, payment_date, suppliers(company_name), purchase_categories(name)",
+          ),
+        );
+      query = applyFilters(query, filters, supplierIds);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await query.limit(5000).returns<any[]>();
+      if (error) throw error;
+      const rows = data ?? [];
+
+      const byStatus = {
+        draft: { count: 0, ht: 0 },
+        sent: { count: 0, ht: 0 },
+        invoiced: { count: 0, ht: 0 },
+        cancelled: { count: 0, ht: 0 },
+      } as Record<PurchaseOrderStatus, { count: number; ht: number }>;
+      const catMap = new Map<string, { ht: number; count: number }>();
+      const supMap = new Map<string, { ht: number; count: number }>();
+      const overdue: PoSummaryOverdue[] = [];
+      let totalHt = 0;
+      let totalTtc = 0;
+      let count = 0;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      for (const r of rows) {
+        const ht = Number(r.amount_ht ?? 0);
+        const status = r.status as PurchaseOrderStatus;
+        byStatus[status].count += 1;
+        byStatus[status].ht += ht;
+        if (status === "cancelled") continue;
+
+        count += 1;
+        totalHt += ht;
+        totalTtc += Number(r.amount_ttc ?? 0);
+
+        const cat = r.purchase_categories?.name ?? "Sans catégorie";
+        const c = catMap.get(cat) ?? { ht: 0, count: 0 };
+        catMap.set(cat, { ht: c.ht + ht, count: c.count + 1 });
+
+        const sup = r.suppliers?.company_name ?? "Fournisseur inconnu";
+        const s = supMap.get(sup) ?? { ht: 0, count: 0 };
+        supMap.set(sup, { ht: s.ht + ht, count: s.count + 1 });
+
+        if (status === "sent" && r.payment_date) {
+          const due = new Date(`${r.payment_date}T00:00:00`);
+          if (due < today) {
+            overdue.push({
+              id: r.id,
+              po_number: r.po_number,
+              supplier_name: r.suppliers?.company_name ?? null,
+              payment_date: r.payment_date,
+              amount_ht: ht,
+              days_late: Math.round((today.getTime() - due.getTime()) / 86_400_000),
+            });
+          }
+        }
+      }
+
+      const share = (v: number) => (totalHt > 0 ? (v / totalHt) * 100 : 0);
+      const toList = (m: Map<string, { ht: number; count: number }>) =>
+        Array.from(m.entries())
+          .map(([name, v]) => ({ name, ht: v.ht, count: v.count, share: share(v.ht) }))
+          .sort((a, b) => b.ht - a.ht);
+
+      overdue.sort((a, b) => b.days_late - a.days_late);
+
+      return {
+        totalHt,
+        totalTtc,
+        count,
+        byStatus,
+        byCategory: toList(catMap),
+        topSuppliers: toList(supMap).slice(0, 5),
+        overdue,
+        overdueHt: overdue.reduce((acc, o) => acc + o.amount_ht, 0),
+      };
+    },
+    placeholderData: (prev) => prev,
+  });
+}
+
 export function usePurchaseOrders(params: {
   filters: PurchaseOrderFilters;
   sortKey: PoSortKey;
