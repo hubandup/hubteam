@@ -107,27 +107,20 @@ export default function PurchaseOrderDetail() {
     }
   };
 
-  const handleSend = async (resend: boolean) => {
+  const openSendDialog = async (resend: boolean) => {
     if (!po) return;
     setBusy("send");
     try {
       if (!po.pdf_path) await ensurePdf();
-      const { data, error } = await supabase.functions.invoke("send-purchase-order", {
-        body: { poId: po.id, resend },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      toast.success(`Bon de commande envoyé à ${data?.to ?? "le fournisseur"}`);
-      setNeedsResend(false);
-      await Promise.all([
-        updateStatus.mutateAsync({ id: po.id }),
-      ]);
+      setSendResend(resend);
+      setSendOpen(true);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Envoi impossible");
+      toast.error(error instanceof Error ? error.message : "PDF indisponible");
     } finally {
       setBusy(null);
     }
   };
+
 
   const handleInvoiced = async () => {
     if (!po) return;
