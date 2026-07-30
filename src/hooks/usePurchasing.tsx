@@ -267,3 +267,24 @@ export function useCompanySettings() {
     },
   });
 }
+
+/* ----------------------- Catégories comptables (externe) ---------------------- */
+
+export interface AccountingCategory {
+  id: number;
+  label: string;
+}
+
+export function useAccountingCategories(enabled = true) {
+  return useQuery({
+    queryKey: ["accounting-categories"],
+    enabled,
+    staleTime: 10 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("facturation-pro-categories");
+      if (error) throw new Error(error.message);
+      if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
+      return ((data as { categories?: AccountingCategory[] })?.categories ?? []) as AccountingCategory[];
+    },
+  });
+}
