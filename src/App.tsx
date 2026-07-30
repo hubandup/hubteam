@@ -115,6 +115,9 @@ function AppInner() {
         <Route path="/brisach" element={<ProtectedRoute><Layout><PageSuspense><Brisach /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="/announcements" element={<ProtectedRoute><Layout><PageSuspense><Announcements /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="/comptabilite" element={<ProtectedRoute><Layout><PageSuspense><Comptabilite /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/achats" element={<Navigate to="/achats/fournisseurs" replace />} />
+        <Route path="/achats/fournisseurs" element={<ProtectedRoute><Layout><PageSuspense><Suppliers /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/achats/parametres" element={<ProtectedRoute><Layout><PageSuspense><PurchaseSettings /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="*" element={<Suspense fallback={null}><NotFound /></Suspense>} />
         </Routes>
       </AuthProvider>
