@@ -337,12 +337,14 @@ export function useLogPurchaseOrderEvent() {
       eventType: "pdf_generated" | "sent" | "resent" | "synced" | "updated";
       payload?: Record<string, unknown>;
     }) => {
-      const { error } = await supabase.from("purchase_order_events").insert({
-        purchase_order_id: purchaseOrderId,
-        event_type: eventType,
-        payload: payload ?? {},
-        user_id: user?.id ?? null,
-      });
+      const { error } = await supabase.from("purchase_order_events").insert([
+        {
+          purchase_order_id: purchaseOrderId,
+          event_type: eventType,
+          payload: (payload ?? {}) as never,
+          user_id: user?.id ?? undefined,
+        },
+      ]);
       if (error) throw error;
     },
     onSuccess: (_d, vars) => {
