@@ -130,6 +130,18 @@ export function PurchaseOrderFormDrawer({ open, onOpenChange, purchaseOrder, onS
     purchaseOrder?.id,
   );
 
+  const { data: otherEngaged = 0 } = useDossierCommitment(
+    values.hubup_dossier_ref,
+    purchaseOrder?.id,
+  );
+
+  const budgetWarning = useMemo(() => {
+    if (!quoteInfo || !quoteInfo.total) return null;
+    const engaged = round2(otherEngaged + (Number.isNaN(amountHt) ? 0 : amountHt));
+    if (engaged <= Number(quoteInfo.total)) return null;
+    return { engaged, quoteTotal: Number(quoteInfo.total) };
+  }, [quoteInfo, otherEngaged, amountHt]);
+
   /* Initialisation à l'ouverture */
   useEffect(() => {
     if (!open) return;
