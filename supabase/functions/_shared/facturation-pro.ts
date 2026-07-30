@@ -233,18 +233,67 @@ export async function getQuote(creds: FpCredentials, quoteId: string | number): 
   return data;
 }
 
-/** PATCH /quotes/{id}.json — seuls les champs transmis sont modifies (retour 200). */
+/**
+ * PATCH /quotes/{id}.json — seuls les champs transmis sont modifies (retour 200).
+ * Volontairement limite a internal_note / api_custom : ne JAMAIS ecrire
+ * purchase_number, items, total, total_with_vat ni customer_id.
+ */
 export async function patchQuote(
   creds: FpCredentials,
   quoteId: string | number,
-  payload: Partial<Pick<FpQuote, "notes" | "term" | "external_ref" | "title">>,
+  payload: Partial<FpQuoteWritableFields>,
 ): Promise<FpQuote> {
+  const forbidden = ["purchase_number", "items", "total", "total_with_vat", "customer_id"];
+  for (const key of Object.keys(payload)) {
+    if (forbidden.includes(key)) throw new FpError(`Champ interdit en ecriture : ${key}`, 400);
+  }
   const { data } = await fpRequest<FpQuote>(creds, `/quotes/${quoteId}.json`, {
     method: "PATCH",
     body: payload,
   });
   return data;
 }
+
+/**
+ * POST /quotes/{id}/upload.json — piece jointe multipart (variable `upload_file`).
+ * `visible` est volontairement omis : la piece jointe reste interne.
+ */
+export async function uploadQuoteAttachment(
+  creds: FpCredentials,
+  quoteId: string | number,
+  file: Uint8Array,
+  filename: string,
+  timeoutMs = 20000,
+): Promise<{ id?: number; document_name?: string }> {
+  const url = new URL(
+    `${FP_BASE_URL}/firms/${creds.firmId}/quotes/${quoteId}/upload.json`,
+  );
+  url.searchParams.set("filename", filename);
+
+  const form = new FormData();
+  form.append("upload_file", new Blob([file], { type: "application/pdf" }), filename);
+
+  const res = await fetch(url.toString(), {
+    method: "POST",
+    headers: {
+      Authorization: authHeader(creds),
+      Accept: "application/json",
+      "User-Agent": FP_USER_AGENT,
+    },
+    body: form,
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new FpError(`Envoi de la piece jointe refuse (${res.status})`, res.status, text.slice(0, 300));
+  }
+  try {
+    return JSON.parse(text) as { id?: number; document_name?: string };
+  } catch {
+    return {};
+  }
+}
+
 
 /** GET /suppliers.json (pagine). */
 export async function listSuppliers(creds: FpCredentials, page = 1): Promise<FpResponse<FpSupplier[]>> {
