@@ -49,11 +49,34 @@ export const FP_QUOTE_API_CUSTOM_MAX = 255;
 export interface FpSupplier {
   id: number;
   company_name?: string | null;
+  civility?: string | null;
   first_name?: string | null;
   last_name?: string | null;
+  /** Adresse sur un seul champ (retours a la ligne autorises). */
+  street?: string | null;
+  zip_code?: string | null;
+  city?: string | null;
+  /** Code ISO 2 lettres en majuscules. */
+  country?: string | null;
+  phone?: string | null;
   email?: string | null;
   vat_number?: string | null;
+  siret?: string | null;
+  /** Lisibles uniquement avec la cle API de l'administrateur de l'entreprise. */
+  sepa_iban?: string | null;
+  sepa_bic?: string | null;
+  notes?: string | null;
+  /** Champ libre utilise comme cle de rapprochement (uuid HubTeam). */
+  api_custom?: string | null;
 }
+
+export interface FpCategory {
+  id: number;
+  title?: string | null;
+  name?: string | null;
+  label?: string | null;
+}
+
 
 export interface FpPurchase {
   id: number;
