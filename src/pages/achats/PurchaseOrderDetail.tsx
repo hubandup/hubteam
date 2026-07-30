@@ -444,11 +444,7 @@ export default function PurchaseOrderDetail() {
         <div className="rounded-3xl border bg-card p-6 space-y-4">
           <h2 className="font-semibold">Aperçu du PDF</h2>
           {pdfUrl ? (
-            <iframe
-              title={`Aperçu ${po.po_number}`}
-              src={pdfUrl}
-              className="w-full h-[520px] rounded-2xl border"
-            />
+            <PurchaseOrderPdfViewer url={pdfUrl} />
           ) : (
             <div className="flex h-[200px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed text-sm text-muted-foreground">
               <FileText className="h-6 w-6" />
