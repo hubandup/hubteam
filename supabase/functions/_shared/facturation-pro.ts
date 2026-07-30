@@ -29,10 +29,22 @@ export interface FpQuote {
   accepted_date?: string | null;
   customer_identity?: string | null;
   customer_short_name?: string | null;
-  notes?: string | null;
-  term?: string | null;
-  external_ref?: string | null;
+  /** Note interne, jamais imprimee sur le document commercial. */
+  internal_note?: string | null;
+  /** Champ libre API, 255 caracteres maximum. */
+  api_custom?: string | null;
 }
+
+/**
+ * Champs STRICTEMENT interdits en ecriture sur un devis :
+ * - purchase_number : « Bon de commande » DU CLIENT, imprime sur le devis client.
+ * - items / total / total_with_vat / customer_id : contenu commercial du devis.
+ * Seuls internal_note et api_custom sont autorises (voir FpQuoteWritableFields).
+ */
+export type FpQuoteWritableFields = Pick<FpQuote, "internal_note" | "api_custom">;
+
+export const FP_QUOTE_API_CUSTOM_MAX = 255;
+
 
 export interface FpSupplier {
   id: number;
