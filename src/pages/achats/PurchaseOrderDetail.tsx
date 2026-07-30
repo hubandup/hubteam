@@ -505,8 +505,17 @@ export default function PurchaseOrderDetail() {
         open={createPurchaseOpen}
         onOpenChange={setCreatePurchaseOpen}
         po={po}
-        notice="Une fois l'achat créé, le bon de commande passera automatiquement au statut « Facturé »."
-        onCreated={async () => {
+        notice="Une fois l'achat créé, le statut du bon de commande est synchronisé avec celui renvoyé par facturation.pro."
+        onCreated={async (status) => {
+          // Le statut est déjà aligné côté serveur sur l'état facturation.pro.
+          if (status === "cancelled") {
+            toast.warning("L'achat est annulé sur facturation.pro : bon de commande passé en annulé");
+            return;
+          }
+          if (status === "invoiced") {
+            toast.success("Bon de commande marqué comme facturé");
+            return;
+          }
           try {
             await markInvoiced();
           } catch (error) {
@@ -514,6 +523,7 @@ export default function PurchaseOrderDetail() {
           }
         }}
       />
+
 
       <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <AlertDialogContent>

@@ -93,6 +93,13 @@ export interface FpPurchase {
   invoiced_on?: string | null;
   term_on?: string | null;
   notes?: string | null;
+  /** Champs de règlement / annulation renvoyés par facturation.pro. */
+  paid_on?: string | null;
+  balance?: string | number | null;
+  total_paid?: string | number | null;
+  cancelled?: boolean | null;
+  cancelled_on?: string | null;
+  status?: string | null;
 }
 
 
@@ -381,6 +388,30 @@ export async function createPurchase(
 ): Promise<FpPurchase> {
   const { data } = await fpRequest<FpPurchase>(creds, "/purchases.json", { method: "POST", body: payload });
   return data;
+}
+
+/** GET /purchases/{id}.json */
+export async function getPurchase(
+  creds: FpCredentials,
+  id: string | number,
+): Promise<FpPurchase> {
+  const { data } = await fpRequest<FpPurchase>(creds, `/purchases/${id}.json`);
+  return data;
+}
+
+/**
+ * Traduit l'état d'un achat facturation.pro vers le statut d'un bon de commande HubTeam.
+ * L'énumération HubTeam ne contient que draft / sent / invoiced / cancelled.
+ */
+export function mapPurchaseStatusToPoStatus(
+  purchase: FpPurchase | null | undefined,
+): "invoiced" | "cancelled" {
+  if (!purchase) return "invoiced";
+  const raw = String(purchase.status ?? "").toLowerCase();
+  if (purchase.cancelled === true || purchase.cancelled_on || raw.includes("cancel") || raw.includes("annul")) {
+    return "cancelled";
+  }
+  return "invoiced";
 }
 
 /** GET /suppliers/{id}.json */
