@@ -411,6 +411,15 @@ export function PurchaseOrderFormDrawer({ open, onOpenChange, purchaseOrder, onS
                   </p>
                 </div>
               )}
+              {budgetWarning && (
+                <div className="rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 text-sm flex gap-2">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-amber-600" />
+                  <p>
+                    Ce dossier est engagé à {formatEUR(budgetWarning.engaged)} HT pour un devis
+                    client de {formatEUR(budgetWarning.quoteTotal)} HT.
+                  </p>
+                </div>
+              )}
               {quoteState === "notfound" && (
                 <p className="text-xs text-muted-foreground">
                   Devis introuvable dans facturation.pro
