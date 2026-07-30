@@ -387,7 +387,7 @@ export default function PurchaseOrderDetail() {
               Confirmer l'annulation
             </AlertDialogAction>
           </AlertDialogFooter>
-        </AlertDialogFooter>
+        </AlertDialogContent>
       </AlertDialog>
     </div>
   );
