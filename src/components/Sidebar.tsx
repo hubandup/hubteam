@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, HelpCircle, Euro, ArrowUpFromLine, CookingPot, Flame, Megaphone, Star, Receipt } from 'lucide-react';
+import { Home, LayoutDashboard, FolderKanban, Settings, LogOut, Building2, Users, ListTodo, HelpCircle, Euro, ArrowUpFromLine, CookingPot, Flame, Megaphone, Star, Receipt, ShoppingCart } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { NavLink } from './NavLink';
 
