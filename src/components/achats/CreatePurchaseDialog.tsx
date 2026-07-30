@@ -22,8 +22,8 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   po: PurchaseOrder;
-  /** Callback exécuté après création réussie de l'achat (ex: passer le PO en facturé). */
-  onCreated?: () => void | Promise<void>;
+  /** Callback exécuté après création réussie de l'achat, avec le statut renvoyé par facturation.pro. */
+  onCreated?: (status?: string) => void | Promise<void>;
   /** Texte d'information additionnel affiché dans le dialogue. */
   notice?: string;
 }
