@@ -230,83 +230,81 @@ export default function PurchaseOrderDetail() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={po.po_number}
-        subtitle={supplier?.company_name ?? undefined}
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button variant="ghost" asChild>
-              <Link to="/achats/bons-de-commande">
-                <ArrowLeft className="h-4 w-4 mr-2" /> Liste
-              </Link>
-            </Button>
-            {canEdit && (
-              <Button variant="outline" onClick={() => setEditOpen(true)}>
-                <Pencil className="h-4 w-4 mr-2" /> Modifier
-              </Button>
-            )}
-            {po.sent_pdf_path && (
-              <Button
-                variant="outline"
-                onClick={async () => {
-                  const url = await getPurchaseOrderPdfUrl(po.sent_pdf_path!);
-                  if (url) window.open(url, "_blank", "noopener");
-                  else toast.error("Version envoyée introuvable");
-                }}
-              >
-                <FileText className="h-4 w-4 mr-2" /> Version envoyée
-              </Button>
-            )}
-            {po.status !== "cancelled" && (
-              <Button variant="outline" onClick={handleDownload} disabled={busy === "download"}>
-                {busy === "download" ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4 mr-2" />
-                )}
-                Télécharger le PDF
-              </Button>
-            )}
-            {po.status === "draft" && (
-              <Button onClick={() => openSendDialog(false)} disabled={busy === "send"}>
-                {busy === "send" ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4 mr-2" />
-                )}
-                Envoyer au fournisseur
-              </Button>
-            )}
-            {po.status === "sent" && (
-              <>
-                <Button variant="outline" onClick={() => openSendDialog(true)} disabled={busy === "send"}>
-                  {busy === "send" ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4 mr-2" />
-                  )}
-                  Renvoyer
-                </Button>
-                {!po.facturation_pro_purchase_id && (
-                  <Button variant="outline" onClick={() => setCreatePurchaseOpen(true)}>
-                    <Receipt className="h-4 w-4 mr-2" /> Créer l'achat dans facturation.pro
-                  </Button>
-                )}
-                <Button onClick={handleInvoiced} disabled={busy === "invoiced"}>
-                  <CheckCircle2 className="h-4 w-4 mr-2" /> Marquer comme facturé
-                </Button>
-              </>
-            )}
-            {canCancel && (
-              <Button variant="destructive" onClick={() => setCancelOpen(true)}>
-                <Ban className="h-4 w-4 mr-2" /> Annuler
-              </Button>
-            )}
-          </div>
-        }
-      />
+      <Button variant="ghost" size="sm" asChild className="-ml-2">
+        <Link to="/achats/bons-de-commande">
+          <ArrowLeft className="h-4 w-4 mr-2" /> Liste
+        </Link>
+      </Button>
+
+      <PageHeader title={po.po_number} subtitle={supplier?.company_name ?? undefined} />
 
       <div className="flex flex-wrap items-center gap-2">
+        {canEdit && (
+          <Button variant="outline" onClick={() => setEditOpen(true)}>
+            <Pencil className="h-4 w-4 mr-2" /> Modifier
+          </Button>
+        )}
+        {po.sent_pdf_path && (
+          <Button
+            variant="outline"
+            onClick={async () => {
+              const url = await getPurchaseOrderPdfUrl(po.sent_pdf_path!);
+              if (url) window.open(url, "_blank", "noopener");
+              else toast.error("Version envoyée introuvable");
+            }}
+          >
+            <FileText className="h-4 w-4 mr-2" /> Version envoyée
+          </Button>
+        )}
+        {po.status !== "cancelled" && (
+          <Button variant="outline" onClick={handleDownload} disabled={busy === "download"}>
+            {busy === "download" ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-2" />
+            )}
+            Télécharger le PDF
+          </Button>
+        )}
+        {po.status === "draft" && (
+          <Button onClick={() => openSendDialog(false)} disabled={busy === "send"}>
+            {busy === "send" ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4 mr-2" />
+            )}
+            Envoyer au fournisseur
+          </Button>
+        )}
+        {po.status === "sent" && (
+          <>
+            <Button variant="outline" onClick={() => openSendDialog(true)} disabled={busy === "send"}>
+              {busy === "send" ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4 mr-2" />
+              )}
+              Renvoyer
+            </Button>
+            {!po.facturation_pro_purchase_id && (
+              <Button variant="outline" onClick={() => setCreatePurchaseOpen(true)}>
+                <Receipt className="h-4 w-4 mr-2" /> Créer l'achat dans facturation.pro
+              </Button>
+            )}
+            <Button onClick={handleInvoiced} disabled={busy === "invoiced"}>
+              <CheckCircle2 className="h-4 w-4 mr-2" /> Marquer comme facturé
+            </Button>
+          </>
+        )}
+        {canCancel && (
+          <Button variant="destructive" onClick={() => setCancelOpen(true)}>
+            <Ban className="h-4 w-4 mr-2" /> Annuler
+          </Button>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+
         <Badge className={PO_STATUS_BADGE[po.status]} variant="secondary">
           {PO_STATUS_LABELS[po.status]}
         </Badge>
