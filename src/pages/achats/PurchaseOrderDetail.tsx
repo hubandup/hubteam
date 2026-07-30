@@ -61,7 +61,7 @@ export default function PurchaseOrderDetail() {
   const { isAdmin } = useUserRole();
 
   const { data: po, isLoading } = usePurchaseOrder(id);
-  const { data: events = [] } = usePurchaseOrderEvents(id);
+  
   const { data: supplier } = useSupplier(po?.supplier_id);
   const { data: company } = useCompanySettings();
   const { data: categories = [] } = usePurchaseCategories();
