@@ -27,17 +27,21 @@ import {
   FileText,
   AlertTriangle,
   RefreshCw,
+  Receipt,
+  XCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { PurchaseOrderFormDrawer } from "@/components/achats/PurchaseOrderFormDrawer";
 import { SendPurchaseOrderDialog } from "@/components/achats/SendPurchaseOrderDialog";
+import { CreatePurchaseDialog } from "@/components/achats/CreatePurchaseDialog";
 import {
   usePurchaseOrder,
   usePurchaseOrderEvents,
   useUpdatePurchaseOrderStatus,
   useLogPurchaseOrderEvent,
   useSyncPurchaseOrderToFacturation,
+  useConfirmPurchaseMatch,
 } from "@/hooks/usePurchaseOrders";
 import { useSupplier, useCompanySettings, usePurchaseCategories } from "@/hooks/usePurchasing";
 import {
@@ -63,6 +67,7 @@ export default function PurchaseOrderDetail() {
   const updateStatus = useUpdatePurchaseOrderStatus();
   const logEvent = useLogPurchaseOrderEvent();
   const syncFacturation = useSyncPurchaseOrderToFacturation();
+  const confirmMatch = useConfirmPurchaseMatch();
 
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -72,6 +77,7 @@ export default function PurchaseOrderDetail() {
   const [needsResend, setNeedsResend] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
   const [sendResend, setSendResend] = useState(false);
+  const [createPurchaseOpen, setCreatePurchaseOpen] = useState(false);
 
   const categoryName = useMemo(
     () => categories.find((c) => c.id === po?.category_id)?.name ?? null,
@@ -198,6 +204,12 @@ export default function PurchaseOrderDetail() {
     [`TVA (${formatFrNumber(Number(po.vat_rate))} %)`, formatEUR(po.amount_vat, po.currency)],
     ["Montant TTC", formatEUR(po.amount_ttc, po.currency)],
     ["Envoyé le", po.sent_at ? `${formatDateFR(po.sent_at)} — ${po.sent_to_email ?? ""}` : "—"],
+    [
+      "Achat facturation.pro",
+      po.facturation_pro_purchase_id
+        ? `#${po.facturation_pro_purchase_id}${po.purchase_matched_at ? ` — rapproché le ${formatDateFR(po.purchase_matched_at)}` : ""}`
+        : "—",
+    ],
     ["Notes internes", po.internal_notes ?? "—"],
   ];
 
@@ -260,6 +272,11 @@ export default function PurchaseOrderDetail() {
                   )}
                   Renvoyer
                 </Button>
+                {!po.facturation_pro_purchase_id && (
+                  <Button variant="outline" onClick={() => setCreatePurchaseOpen(true)}>
+                    <Receipt className="h-4 w-4 mr-2" /> Créer l'achat dans facturation.pro
+                  </Button>
+                )}
                 <Button onClick={handleInvoiced} disabled={busy === "invoiced"}>
                   <CheckCircle2 className="h-4 w-4 mr-2" /> Marquer comme facturé
                 </Button>
@@ -297,6 +314,60 @@ export default function PurchaseOrderDetail() {
           </span>
         )}
       </div>
+
+      {po.facturation_pro_purchase_id &&
+        po.purchase_match_confidence === "probable" &&
+        !po.purchase_match_confirmed && (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-4 text-sm flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-600" />
+              <div>
+                <p className="font-medium">Rapprochement probable à confirmer</p>
+                <p className="text-muted-foreground">
+                  L'achat facturation.pro #{po.facturation_pro_purchase_id} a été rapproché
+                  automatiquement (
+                  {po.purchase_match_method === "supplier_amount"
+                    ? "fournisseur et montant TTC identiques"
+                    : "n° de facture fournisseur identique"}
+                  ). Confirmez le rapprochement ou dissociez-le.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                disabled={confirmMatch.isPending}
+                onClick={() =>
+                  confirmMatch.mutate(
+                    { id: po.id, confirm: true },
+                    {
+                      onSuccess: () => toast.success("Rapprochement confirmé"),
+                      onError: () => toast.error("Action impossible"),
+                    },
+                  )
+                }
+              >
+                <CheckCircle2 className="h-4 w-4 mr-2" /> Confirmer
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={confirmMatch.isPending}
+                onClick={() =>
+                  confirmMatch.mutate(
+                    { id: po.id, confirm: false },
+                    {
+                      onSuccess: () => toast.success("Rapprochement dissocié"),
+                      onError: () => toast.error("Action impossible"),
+                    },
+                  )
+                }
+              >
+                <XCircle className="h-4 w-4 mr-2" /> Dissocier
+              </Button>
+            </div>
+          </div>
+        )}
 
       {po.sync_status === "failed" && (
         <div className="rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-4 text-sm flex flex-wrap items-center justify-between gap-3">
@@ -435,6 +506,8 @@ export default function PurchaseOrderDetail() {
       />
 
 
+
+      <CreatePurchaseDialog open={createPurchaseOpen} onOpenChange={setCreatePurchaseOpen} po={po} />
 
       <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <AlertDialogContent>

@@ -30,6 +30,12 @@ export interface PurchaseOrder {
   sync_status: "pending" | "synced" | "failed" | "not_applicable";
   sync_error: string | null;
   synced_at: string | null;
+  facturation_pro_purchase_id: number | null;
+  purchase_match_method: string | null;
+  purchase_match_confidence: "certain" | "probable" | null;
+  purchase_matched_at: string | null;
+  purchase_match_confirmed: boolean;
+  quote_total_ht: number | null;
   cancelled_at: string | null;
   cancellation_reason: string | null;
   created_by: string | null;
@@ -72,7 +78,7 @@ export type PoSortKey =
 const sel = (s: string): string => s;
 
 const LIST_SELECT =
-  "id, po_number, supplier_id, hubup_dossier_ref, facturation_pro_quote_id, supplier_quote_ref, validation_date, description, category_id, amount_ht, vat_rate, amount_vat, amount_ttc, currency, payment_date, status, internal_notes, pdf_path, sent_at, sent_to_email, sent_pdf_path, sync_status, sync_error, synced_at, cancelled_at, cancellation_reason, created_by, created_at, updated_at, suppliers(id, company_name, email), purchase_categories(id, name)";
+  "id, po_number, supplier_id, hubup_dossier_ref, facturation_pro_quote_id, supplier_quote_ref, validation_date, description, category_id, amount_ht, vat_rate, amount_vat, amount_ttc, currency, payment_date, status, internal_notes, pdf_path, sent_at, sent_to_email, sent_pdf_path, sync_status, sync_error, synced_at, facturation_pro_purchase_id, purchase_match_method, purchase_match_confidence, purchase_matched_at, purchase_match_confirmed, quote_total_ht, cancelled_at, cancellation_reason, created_by, created_at, updated_at, suppliers(id, company_name, email), purchase_categories(id, name)";
 
 /** Applique les filtres partagés entre la requête paginée et la requête de totaux. */
 function applyFilters<T>(query: T, filters: PurchaseOrderFilters, supplierIds: string[] | null): T {
@@ -122,6 +128,14 @@ export interface PoSummaryOverdue {
   days_late: number;
 }
 
+export interface PoDossierGap {
+  dossier: string;
+  engagedHt: number;
+  invoicedHt: number;
+  quoteTotalHt: number | null;
+  count: number;
+}
+
 export interface PoSummary {
   totalHt: number;
   totalTtc: number;
@@ -131,6 +145,16 @@ export interface PoSummary {
   topSuppliers: Array<{ name: string; ht: number; count: number; share: number }>;
   overdue: PoSummaryOverdue[];
   overdueHt: number;
+  /** Rapprochement engagé / facturé (achats facturation.pro rattachés) */
+  invoicedHt: number;
+  gapHt: number;
+  /** PO envoyés, échéance dépassée et sans achat rapproché */
+  overdueUnmatched: PoSummaryOverdue[];
+  overdueUnmatchedHt: number;
+  /** Dossiers dont le cumul des PO dépasse le devis client */
+  dossierOverruns: PoDossierGap[];
+  /** Écart engagé / facturé par dossier (les plus importants) */
+  dossierGaps: PoDossierGap[];
 }
 
 /** Synthèse (total engagé, répartition, top fournisseurs, retards) sur la période filtrée. */
@@ -143,7 +167,7 @@ export function usePurchaseOrdersSummary(filters: PurchaseOrderFilters) {
         .from("purchase_orders")
         .select(
           sel(
-            "id, po_number, status, amount_ht, amount_ttc, payment_date, suppliers(company_name), purchase_categories(name)",
+            "id, po_number, status, amount_ht, amount_ttc, payment_date, hubup_dossier_ref, quote_total_ht, facturation_pro_purchase_id, suppliers(company_name), purchase_categories(name)",
           ),
         );
       query = applyFilters(query, filters, supplierIds);
@@ -161,6 +185,12 @@ export function usePurchaseOrdersSummary(filters: PurchaseOrderFilters) {
       const catMap = new Map<string, { ht: number; count: number }>();
       const supMap = new Map<string, { ht: number; count: number }>();
       const overdue: PoSummaryOverdue[] = [];
+      const overdueUnmatched: PoSummaryOverdue[] = [];
+      const dossierMap = new Map<
+        string,
+        { engagedHt: number; invoicedHt: number; quoteTotalHt: number | null; count: number }
+      >();
+      let invoicedHt = 0;
       let totalHt = 0;
       let totalTtc = 0;
       let count = 0;
@@ -187,17 +217,35 @@ export function usePurchaseOrdersSummary(filters: PurchaseOrderFilters) {
         const s = supMap.get(sup) ?? { ht: 0, count: 0 };
         supMap.set(sup, { ht: s.ht + ht, count: s.count + 1 });
 
+        const matched = r.facturation_pro_purchase_id != null;
+        if (matched) invoicedHt += ht;
+
+        const dossier = r.hubup_dossier_ref ?? "—";
+        const d = dossierMap.get(dossier) ?? {
+          engagedHt: 0,
+          invoicedHt: 0,
+          quoteTotalHt: null,
+          count: 0,
+        };
+        d.engagedHt += ht;
+        d.invoicedHt += matched ? ht : 0;
+        d.count += 1;
+        if (r.quote_total_ht != null) d.quoteTotalHt = Number(r.quote_total_ht);
+        dossierMap.set(dossier, d);
+
         if (status === "sent" && r.payment_date) {
           const due = new Date(`${r.payment_date}T00:00:00`);
           if (due < today) {
-            overdue.push({
+            const entry = {
               id: r.id,
               po_number: r.po_number,
               supplier_name: r.suppliers?.company_name ?? null,
               payment_date: r.payment_date,
               amount_ht: ht,
               days_late: Math.round((today.getTime() - due.getTime()) / 86_400_000),
-            });
+            };
+            overdue.push(entry);
+            if (!matched) overdueUnmatched.push(entry);
           }
         }
       }
@@ -209,6 +257,11 @@ export function usePurchaseOrdersSummary(filters: PurchaseOrderFilters) {
           .sort((a, b) => b.ht - a.ht);
 
       overdue.sort((a, b) => b.days_late - a.days_late);
+      overdueUnmatched.sort((a, b) => b.days_late - a.days_late);
+
+      const dossiers: PoDossierGap[] = Array.from(dossierMap.entries())
+        .map(([dossier, v]) => ({ dossier, ...v }))
+        .sort((a, b) => b.engagedHt - a.engagedHt);
 
       return {
         totalHt,
@@ -219,6 +272,14 @@ export function usePurchaseOrdersSummary(filters: PurchaseOrderFilters) {
         topSuppliers: toList(supMap).slice(0, 5),
         overdue,
         overdueHt: overdue.reduce((acc, o) => acc + o.amount_ht, 0),
+        invoicedHt,
+        gapHt: totalHt - invoicedHt,
+        overdueUnmatched,
+        overdueUnmatchedHt: overdueUnmatched.reduce((acc, o) => acc + o.amount_ht, 0),
+        dossierOverruns: dossiers.filter(
+          (d) => d.quoteTotalHt != null && d.engagedHt > (d.quoteTotalHt as number),
+        ),
+        dossierGaps: dossiers.filter((d) => d.engagedHt - d.invoicedHt > 0.01).slice(0, 5),
       };
     },
     placeholderData: (prev) => prev,
@@ -446,6 +507,7 @@ export interface PurchaseOrderInput {
   vat_rate: number;
   payment_date?: string | null;
   internal_notes?: string | null;
+  quote_total_ht?: number | null;
 }
 
 export function useSavePurchaseOrder() {
@@ -462,6 +524,7 @@ export function useSavePurchaseOrder() {
         internal_notes: values.internal_notes || null,
         payment_date: values.payment_date || null,
         facturation_pro_quote_id: values.facturation_pro_quote_id || null,
+        quote_total_ht: values.quote_total_ht ?? null,
       };
 
       if (id) {
@@ -588,6 +651,77 @@ export function useDossierCommitment(dossierRef?: string, excludeId?: string) {
       const { data, error } = await q.returns<{ id: string; amount_ht: number }[]>();
       if (error) throw error;
       return (data ?? []).reduce((sum, po) => sum + Number(po.amount_ht || 0), 0);
+    },
+  });
+}
+
+/** Confirme (ou rejette) un rapprochement « probable » proposé automatiquement. */
+export function useConfirmPurchaseMatch() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, confirm }: { id: string; confirm: boolean }) => {
+      const payload = confirm
+        ? { purchase_match_confirmed: true, purchase_match_confidence: "certain" }
+        : {
+            purchase_match_confirmed: false,
+            purchase_match_confidence: null,
+            purchase_match_method: null,
+            purchase_matched_at: null,
+            facturation_pro_purchase_id: null,
+            status: "sent" as const,
+          };
+      const { error } = await supabase.from("purchase_orders").update(payload).eq("id", id);
+      if (error) throw error;
+    },
+    onSettled: (_d, _e, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["purchase-order", vars.id] });
+    },
+  });
+}
+
+/** Crée l'achat correspondant dans facturation.pro (POST /purchases.json). */
+export function useCreatePurchaseInFacturation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      purchase_order_id: string;
+      ref: string;
+      invoiced_on: string;
+      term_on?: string | null;
+    }) => {
+      const { data, error } = await supabase.functions.invoke("create-purchase-facturation", {
+        body: input,
+      });
+      if (error) throw error;
+      const res = data as { success?: boolean; error?: string; purchase_id?: number };
+      if (!res?.success) throw new Error(res?.error ?? "Création de l'achat impossible");
+      return res;
+    },
+    onSettled: (_d, _e, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["purchase-order", vars.purchase_order_id] });
+    },
+  });
+}
+
+/** Déclenche manuellement le rapprochement engagé / facturé. */
+export function useReconcilePurchases() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke(
+        "reconcile-purchases-facturation",
+        { body: {} },
+      );
+      if (error) throw error;
+      return data as { success: boolean; matched?: number; scanned?: number; error?: string };
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders-summary"] });
     },
   });
 }

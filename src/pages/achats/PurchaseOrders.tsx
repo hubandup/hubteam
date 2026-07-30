@@ -20,13 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Plus, ArrowUpDown, Settings2, Users, Loader2, Download, AlertTriangle } from "lucide-react";
+import { Search, Plus, ArrowUpDown, Settings2, Users, Loader2, Download, AlertTriangle, Scale } from "lucide-react";
 import { toast } from "sonner";
 import { exportPurchaseOrdersToXlsx } from "@/lib/po-export";
 import { PurchaseOrderFormDrawer } from "@/components/achats/PurchaseOrderFormDrawer";
 import { PurchaseOrdersSummary } from "@/components/achats/PurchaseOrdersSummary";
 import {
   usePurchaseOrders,
+  useReconcilePurchases,
   fetchPurchaseOrdersForExport,
   type PoSortKey,
 } from "@/hooks/usePurchaseOrders";
@@ -71,6 +72,7 @@ export default function PurchaseOrders() {
   const [page, setPage] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const reconcile = useReconcilePurchases();
 
   const filters = useMemo(
     () => ({
@@ -145,6 +147,29 @@ export default function PurchaseOrders() {
               <Link to="/achats/parametres">
                 <Settings2 className="h-4 w-4 mr-2" /> Paramètres
               </Link>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() =>
+                reconcile.mutate(undefined, {
+                  onSuccess: (res) =>
+                    res?.success
+                      ? toast.success(
+                          `${res.matched ?? 0} rapprochement(s) sur ${res.scanned ?? 0} achat(s) analysé(s)`,
+                        )
+                      : toast.error(res?.error ?? "Rapprochement impossible"),
+                  onError: (e) =>
+                    toast.error(e instanceof Error ? e.message : "Rapprochement impossible"),
+                })
+              }
+              disabled={reconcile.isPending}
+            >
+              {reconcile.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Scale className="h-4 w-4 mr-2" />
+              )}
+              Rapprocher les achats
             </Button>
             <Button variant="outline" onClick={handleExport} disabled={exporting}>
               {exporting ? (

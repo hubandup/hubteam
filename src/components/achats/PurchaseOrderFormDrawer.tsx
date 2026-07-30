@@ -243,6 +243,7 @@ export function PurchaseOrderFormDrawer({ open, onOpenChange, purchaseOrder, onS
           vat_rate: Number(v.vat_rate),
           payment_date: v.payment_date || null,
           internal_notes: v.internal_notes?.trim() || null,
+          quote_total_ht: quoteInfo?.total ?? purchaseOrder?.quote_total_ht ?? null,
         },
       });
 
