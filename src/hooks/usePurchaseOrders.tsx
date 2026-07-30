@@ -695,7 +695,13 @@ export function useCreatePurchaseInFacturation() {
         body: input,
       });
       if (error) throw error;
-      const res = data as { success?: boolean; error?: string; purchase_id?: number };
+      const res = data as {
+        success?: boolean;
+        error?: string;
+        purchase_id?: number;
+        /** Statut du PO aligné sur l'état renvoyé par facturation.pro. */
+        status?: string;
+      };
       if (!res?.success) throw new Error(res?.error ?? "Création de l'achat impossible");
       return res;
     },
