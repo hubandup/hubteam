@@ -108,7 +108,7 @@ export default function PurchaseOrders() {
     <div className="space-y-6">
       <PageHeader
         title="Bons de commande"
-        description="Suivi des achats et engagements fournisseurs"
+        subtitle="Suivi des achats et engagements fournisseurs"
         actions={
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" asChild>
