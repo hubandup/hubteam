@@ -39,6 +39,7 @@ const FIELDS: Array<{
   colSpan?: boolean;
 }> = [
   { name: "company_name", label: "Entreprise", required: true, colSpan: true },
+  { name: "civility", label: "Civilité", placeholder: "M. / Mme" },
   { name: "last_name", label: "Nom" },
   { name: "first_name", label: "Prénom" },
   { name: "email", label: "Email", type: "email", placeholder: "contact@fournisseur.fr" },
@@ -55,6 +56,7 @@ const FIELDS: Array<{
   },
   { name: "iban", label: "IBAN", placeholder: "FR7630006000011234567890189", colSpan: true },
   { name: "bic", label: "BIC", placeholder: "AGRIFRPP" },
+  { name: "siret", label: "SIRET", placeholder: "12345678901234" },
 ];
 
 export function SupplierFormDialog({
@@ -73,6 +75,8 @@ export function SupplierFormDialog({
     if (supplier) {
       setValues({
         company_name: supplier.company_name ?? "",
+        civility: supplier.civility ?? "",
+        siret: supplier.siret ?? "",
         last_name: supplier.last_name ?? "",
         first_name: supplier.first_name ?? "",
         email: supplier.email ?? "",
@@ -112,7 +116,13 @@ export function SupplierFormDialog({
 
     try {
       const saved = await save.mutateAsync({ id: supplier?.id, values: parsed.data });
+      const syncError = (saved as { sync_error?: string | null }).sync_error;
       toast.success(supplier ? "Fournisseur mis à jour" : "Fournisseur créé");
+      if (syncError) {
+        toast.warning(
+          "Fournisseur enregistré mais non synchronisé avec la comptabilité. Vous pouvez relancer la synchronisation depuis la liste.",
+        );
+      }
       onSaved?.(saved);
       onOpenChange(false);
     } catch (error) {
@@ -127,7 +137,8 @@ export function SupplierFormDialog({
         <DialogHeader>
           <DialogTitle>{supplier ? "Modifier le fournisseur" : "Nouveau fournisseur"}</DialogTitle>
           <DialogDescription>
-            Les coordonnées bancaires et fiscales sont contrôlées au format uniquement.
+            Les coordonnées sont synchronisées avec la comptabilité. Un échec de
+            synchronisation n'empêche jamais l'utilisation du fournisseur.
           </DialogDescription>
         </DialogHeader>
 
