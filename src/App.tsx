@@ -44,6 +44,8 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Comptabilite = lazy(() => import("./pages/Comptabilite"));
 const Suppliers = lazy(() => import("./pages/achats/Suppliers"));
 const PurchaseSettings = lazy(() => import("./pages/achats/PurchaseSettings"));
+const PurchaseOrders = lazy(() => import("./pages/achats/PurchaseOrders"));
+const PurchaseOrderDetail = lazy(() => import("./pages/achats/PurchaseOrderDetail"));
 
 // Minimal page-level loading skeleton
 function PageSuspense({ children }: { children: React.ReactNode }) {
@@ -115,7 +117,9 @@ function AppInner() {
         <Route path="/brisach" element={<ProtectedRoute><Layout><PageSuspense><Brisach /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="/announcements" element={<ProtectedRoute><Layout><PageSuspense><Announcements /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="/comptabilite" element={<ProtectedRoute><Layout><PageSuspense><Comptabilite /></PageSuspense></Layout></ProtectedRoute>} />
-        <Route path="/achats" element={<Navigate to="/achats/fournisseurs" replace />} />
+        <Route path="/achats" element={<Navigate to="/achats/bons-de-commande" replace />} />
+        <Route path="/achats/bons-de-commande" element={<ProtectedRoute><Layout><PageSuspense><PurchaseOrders /></PageSuspense></Layout></ProtectedRoute>} />
+        <Route path="/achats/bons-de-commande/:id" element={<ProtectedRoute><Layout><PageSuspense><PurchaseOrderDetail /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="/achats/fournisseurs" element={<ProtectedRoute><Layout><PageSuspense><Suppliers /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="/achats/parametres" element={<ProtectedRoute><Layout><PageSuspense><PurchaseSettings /></PageSuspense></Layout></ProtectedRoute>} />
         <Route path="*" element={<Suspense fallback={null}><NotFound /></Suspense>} />
