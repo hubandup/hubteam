@@ -1,5 +1,11 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { FpError, createPurchase, readCredentials } from "../_shared/facturation-pro.ts";
+import {
+  FpError,
+  createPurchase,
+  getPurchase,
+  mapPurchaseStatusToPoStatus,
+  readCredentials,
+} from "../_shared/facturation-pro.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
