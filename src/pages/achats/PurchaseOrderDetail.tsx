@@ -29,6 +29,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { PurchaseOrderFormDrawer } from "@/components/achats/PurchaseOrderFormDrawer";
+import { SendPurchaseOrderDialog } from "@/components/achats/SendPurchaseOrderDialog";
 import {
   usePurchaseOrder,
   usePurchaseOrderEvents,
@@ -65,6 +66,8 @@ export default function PurchaseOrderDetail() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [needsResend, setNeedsResend] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
+  const [sendResend, setSendResend] = useState(false);
 
   const categoryName = useMemo(
     () => categories.find((c) => c.id === po?.category_id)?.name ?? null,
@@ -107,27 +110,20 @@ export default function PurchaseOrderDetail() {
     }
   };
 
-  const handleSend = async (resend: boolean) => {
+  const openSendDialog = async (resend: boolean) => {
     if (!po) return;
     setBusy("send");
     try {
       if (!po.pdf_path) await ensurePdf();
-      const { data, error } = await supabase.functions.invoke("send-purchase-order", {
-        body: { poId: po.id, resend },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      toast.success(`Bon de commande envoyé à ${data?.to ?? "le fournisseur"}`);
-      setNeedsResend(false);
-      await Promise.all([
-        updateStatus.mutateAsync({ id: po.id }),
-      ]);
+      setSendResend(resend);
+      setSendOpen(true);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Envoi impossible");
+      toast.error(error instanceof Error ? error.message : "PDF indisponible");
     } finally {
       setBusy(null);
     }
   };
+
 
   const handleInvoiced = async () => {
     if (!po) return;
@@ -241,7 +237,7 @@ export default function PurchaseOrderDetail() {
               </Button>
             )}
             {po.status === "draft" && (
-              <Button onClick={() => handleSend(false)} disabled={busy === "send"}>
+              <Button onClick={() => openSendDialog(false)} disabled={busy === "send"}>
                 {busy === "send" ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
@@ -252,7 +248,7 @@ export default function PurchaseOrderDetail() {
             )}
             {po.status === "sent" && (
               <>
-                <Button variant="outline" onClick={() => handleSend(true)} disabled={busy === "send"}>
+                <Button variant="outline" onClick={() => openSendDialog(true)} disabled={busy === "send"}>
                   {busy === "send" ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
@@ -359,6 +355,20 @@ export default function PurchaseOrderDetail() {
           if (po.status === "sent") setNeedsResend(true);
         }}
       />
+
+      <SendPurchaseOrderDialog
+        open={sendOpen}
+        onOpenChange={setSendOpen}
+        po={po}
+        supplier={supplier}
+        resend={sendResend}
+        onSent={async () => {
+          setNeedsResend(false);
+          await updateStatus.mutateAsync({ id: po.id });
+        }}
+      />
+
+
 
       <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <AlertDialogContent>
