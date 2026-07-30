@@ -150,12 +150,22 @@ export default function PurchaseOrderDetail() {
   };
 
 
+  const markInvoiced = async () => {
+    if (!po) return;
+    await updateStatus.mutateAsync({ id: po.id, status: "invoiced" });
+    toast.success("Bon de commande marqué comme facturé");
+  };
+
   const handleInvoiced = async () => {
     if (!po) return;
+    // Pas encore d'achat côté facturation.pro : on le crée avant de passer en facturé.
+    if (!po.facturation_pro_purchase_id) {
+      setCreatePurchaseOpen(true);
+      return;
+    }
     setBusy("invoiced");
     try {
-      await updateStatus.mutateAsync({ id: po.id, status: "invoiced" });
-      toast.success("Bon de commande marqué comme facturé");
+      await markInvoiced();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Action impossible");
     } finally {
@@ -491,7 +501,19 @@ export default function PurchaseOrderDetail() {
 
 
 
-      <CreatePurchaseDialog open={createPurchaseOpen} onOpenChange={setCreatePurchaseOpen} po={po} />
+      <CreatePurchaseDialog
+        open={createPurchaseOpen}
+        onOpenChange={setCreatePurchaseOpen}
+        po={po}
+        notice="Une fois l'achat créé, le bon de commande passera automatiquement au statut « Facturé »."
+        onCreated={async () => {
+          try {
+            await markInvoiced();
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Action impossible");
+          }
+        }}
+      />
 
       <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <AlertDialogContent>
