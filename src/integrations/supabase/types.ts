@@ -1337,6 +1337,57 @@ export type Database = {
           },
         ]
       }
+      company_settings: {
+        Row: {
+          accounting_email: string | null
+          address_1: string | null
+          address_2: string | null
+          city: string | null
+          country: string
+          created_at: string
+          id: string
+          legal_name: string
+          logo_url: string | null
+          phone: string | null
+          postal_code: string | null
+          siret: string | null
+          updated_at: string
+          vat_number: string | null
+        }
+        Insert: {
+          accounting_email?: string | null
+          address_1?: string | null
+          address_2?: string | null
+          city?: string | null
+          country?: string
+          created_at?: string
+          id?: string
+          legal_name?: string
+          logo_url?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          siret?: string | null
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Update: {
+          accounting_email?: string | null
+          address_1?: string | null
+          address_2?: string | null
+          city?: string | null
+          country?: string
+          created_at?: string
+          id?: string
+          legal_name?: string
+          logo_url?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          siret?: string | null
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Relationships: []
+      }
       design_settings: {
         Row: {
           body_font: string
@@ -3229,6 +3280,21 @@ export type Database = {
           },
         ]
       }
+      po_sequences: {
+        Row: {
+          last_value: number
+          year: number
+        }
+        Insert: {
+          last_value?: number
+          year: number
+        }
+        Update: {
+          last_value?: number
+          year?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -3770,6 +3836,182 @@ export type Database = {
           },
         ]
       }
+      purchase_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      purchase_order_events: {
+        Row: {
+          created_at: string
+          event_type: Database["public"]["Enums"]["purchase_order_event_type"]
+          id: string
+          payload: Json | null
+          purchase_order_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: Database["public"]["Enums"]["purchase_order_event_type"]
+          id?: string
+          payload?: Json | null
+          purchase_order_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: Database["public"]["Enums"]["purchase_order_event_type"]
+          id?: string
+          payload?: Json | null
+          purchase_order_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_events_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          amount_ht: number
+          amount_ttc: number | null
+          amount_vat: number | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          category_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          facturation_pro_quote_id: string | null
+          hubup_dossier_ref: string
+          id: string
+          internal_notes: string | null
+          payment_date: string | null
+          pdf_path: string | null
+          po_number: string
+          sent_at: string | null
+          sent_by: string | null
+          sent_to_email: string | null
+          status: Database["public"]["Enums"]["purchase_order_status"]
+          supplier_id: string
+          supplier_quote_ref: string | null
+          sync_error: string | null
+          sync_status: Database["public"]["Enums"]["purchase_order_sync_status"]
+          synced_at: string | null
+          updated_at: string
+          validation_date: string
+          vat_rate: number
+        }
+        Insert: {
+          amount_ht: number
+          amount_ttc?: number | null
+          amount_vat?: number | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          category_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          facturation_pro_quote_id?: string | null
+          hubup_dossier_ref: string
+          id?: string
+          internal_notes?: string | null
+          payment_date?: string | null
+          pdf_path?: string | null
+          po_number: string
+          sent_at?: string | null
+          sent_by?: string | null
+          sent_to_email?: string | null
+          status?: Database["public"]["Enums"]["purchase_order_status"]
+          supplier_id: string
+          supplier_quote_ref?: string | null
+          sync_error?: string | null
+          sync_status?: Database["public"]["Enums"]["purchase_order_sync_status"]
+          synced_at?: string | null
+          updated_at?: string
+          validation_date: string
+          vat_rate?: number
+        }
+        Update: {
+          amount_ht?: number
+          amount_ttc?: number | null
+          amount_vat?: number | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          category_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          facturation_pro_quote_id?: string | null
+          hubup_dossier_ref?: string
+          id?: string
+          internal_notes?: string | null
+          payment_date?: string | null
+          pdf_path?: string | null
+          po_number?: string
+          sent_at?: string | null
+          sent_by?: string | null
+          sent_to_email?: string | null
+          status?: Database["public"]["Enums"]["purchase_order_status"]
+          supplier_id?: string
+          supplier_quote_ref?: string | null
+          sync_error?: string | null
+          sync_status?: Database["public"]["Enums"]["purchase_order_sync_status"]
+          synced_at?: string | null
+          updated_at?: string
+          validation_date?: string
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -4074,6 +4316,72 @@ export type Database = {
           display_name?: string
           key?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      suppliers: {
+        Row: {
+          address_1: string | null
+          address_2: string | null
+          bic: string | null
+          city: string | null
+          company_name: string
+          country: string
+          created_at: string
+          created_by: string | null
+          email: string | null
+          first_name: string | null
+          iban: string | null
+          id: string
+          is_active: boolean
+          last_name: string | null
+          notes: string | null
+          phone: string | null
+          postal_code: string | null
+          updated_at: string
+          vat_number: string | null
+        }
+        Insert: {
+          address_1?: string | null
+          address_2?: string | null
+          bic?: string | null
+          city?: string | null
+          company_name: string
+          country?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          first_name?: string | null
+          iban?: string | null
+          id?: string
+          is_active?: boolean
+          last_name?: string | null
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Update: {
+          address_1?: string | null
+          address_2?: string | null
+          bic?: string | null
+          city?: string | null
+          company_name?: string
+          country?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          first_name?: string | null
+          iban?: string | null
+          id?: string
+          is_active?: boolean
+          last_name?: string | null
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          updated_at?: string
+          vat_number?: string | null
         }
         Relationships: []
       }
@@ -4497,6 +4805,36 @@ export type Database = {
         }
         Relationships: []
       }
+      vat_rates: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          label: string
+          rate: number
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          label: string
+          rate: number
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          label?: string
+          rate?: number
+          sort_order?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -4537,6 +4875,7 @@ export type Database = {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
       }
+      next_po_number: { Args: { p_year: number }; Returns: string }
       notify_upcoming_deadlines: { Args: never; Returns: undefined }
       same_agency_user_ids: { Args: never; Returns: string[] }
       should_send_notification:
@@ -4634,6 +4973,21 @@ export type Database = {
         | "Gagné"
         | "Perdu"
         | "En veille"
+      purchase_order_event_type:
+        | "created"
+        | "updated"
+        | "pdf_generated"
+        | "sent"
+        | "resent"
+        | "cancelled"
+        | "invoiced"
+        | "synced"
+      purchase_order_status: "draft" | "sent" | "invoiced" | "cancelled"
+      purchase_order_sync_status:
+        | "pending"
+        | "synced"
+        | "failed"
+        | "not_applicable"
       team_member_type:
         | "profile"
         | "agency_contact"
@@ -4846,6 +5200,23 @@ export const Constants = {
         "Gagné",
         "Perdu",
         "En veille",
+      ],
+      purchase_order_event_type: [
+        "created",
+        "updated",
+        "pdf_generated",
+        "sent",
+        "resent",
+        "cancelled",
+        "invoiced",
+        "synced",
+      ],
+      purchase_order_status: ["draft", "sent", "invoiced", "cancelled"],
+      purchase_order_sync_status: [
+        "pending",
+        "synced",
+        "failed",
+        "not_applicable",
       ],
       team_member_type: [
         "profile",
