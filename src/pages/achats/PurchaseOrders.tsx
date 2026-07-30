@@ -136,8 +136,9 @@ export default function PurchaseOrders() {
       <PageHeader
         title="Bons de commande"
         subtitle="Suivi des achats et engagements fournisseurs"
+        className="!flex-col items-stretch"
         actions={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full flex-wrap gap-2 pt-1">
             <Button variant="outline" asChild>
               <Link to="/achats/fournisseurs">
                 <Users className="h-4 w-4 mr-2" /> Fournisseurs
