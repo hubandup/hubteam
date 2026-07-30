@@ -1,9 +1,13 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import {
+  FpError,
+  findQuoteByRef,
+  getQuote,
+  patchQuote,
+  readCredentials,
+  type FpQuote,
+} from "../_shared/facturation-pro.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -11,40 +15,7 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-const API_URL = "https://www.facturation.pro";
 const FLAG_KEY = "po_facturation_pro_sync_enabled";
-const TIMEOUT_MS = 12000;
-
-const normalize = (v: string) => v.replace(/[^a-z0-9]/gi, "").toLowerCase();
-
-async function fpFetch(url: string, init: RequestInit) {
-  return await fetch(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) });
-}
-
-/** Retrouve l'id du devis facturation.pro à partir de sa référence. */
-async function findQuoteId(firmId: string, headers: HeadersInit, ref: string) {
-  const target = normalize(ref);
-  for (let page = 1; page <= 10; page++) {
-    const url = new URL(`${API_URL}/firms/${firmId}/quotes.json`);
-    url.searchParams.set("page", String(page));
-    url.searchParams.set("per_page", "100");
-    const res = await fpFetch(url.toString(), { headers });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const quotes: Array<Record<string, unknown>> = Array.isArray(data)
-      ? data
-      : (data?.quotes ?? data?.data ?? []);
-    if (quotes.length === 0) return null;
-    const match =
-      quotes.find((q) => typeof q.quote_ref === "string" && normalize(q.quote_ref) === target) ??
-      quotes.find(
-        (q) => typeof q.quote_ref === "string" && normalize(q.quote_ref).includes(target),
-      );
-    if (match) return String(match.id);
-    if (quotes.length < 100) return null;
-  }
-  return null;
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -66,7 +37,7 @@ Deno.serve(async (req) => {
     const user = userData?.user;
     if (!user) return json({ error: "Unauthorized" }, 401);
 
-    const body = await req.json().catch(() => ({}));
+    const body = (await req.json().catch(() => ({}))) as { poId?: unknown };
     poId = typeof body?.poId === "string" ? body.poId : "";
     if (!/^[0-9a-f-]{36}$/i.test(poId)) return json({ error: "Identifiant de PO invalide" }, 400);
 
@@ -94,51 +65,46 @@ Deno.serve(async (req) => {
       return json({ success: true, skipped: true, reason: "Synchronisation désactivée" });
     }
 
-    const apiKey = Deno.env.get("FACTURATION_PRO_API_KEY");
-    const apiId = Deno.env.get("FACTURATION_PRO_API_ID");
-    const firmId = Deno.env.get("FACTURATION_PRO_FIRM_ID");
-    if (!apiKey || !apiId || !firmId) throw new Error("Identifiants facturation.pro manquants");
+    const creds = readCredentials();
 
-    const headers = {
-      Authorization: `Basic ${btoa(`${apiId}:${apiKey}`)}`,
-      "Content-Type": "application/json",
-      "User-Agent": "HubTeam (compta@hubandup.com)",
-    };
-
-    const quoteId =
-      po.facturation_pro_quote_id || (await findQuoteId(firmId, headers, po.hubup_dossier_ref));
-    if (!quoteId) throw new Error(`Devis introuvable dans facturation.pro (${po.hubup_dossier_ref})`);
-
-    // Récupère le devis pour ne pas écraser le contenu existant
-    const getRes = await fpFetch(`${API_URL}/firms/${firmId}/quotes/${quoteId}.json`, { headers });
-    if (!getRes.ok) throw new Error(`Lecture du devis impossible (${getRes.status})`);
-    const quote = await getRes.json();
+    let quote: FpQuote | null = null;
+    if (po.facturation_pro_quote_id) {
+      quote = await getQuote(creds, po.facturation_pro_quote_id);
+    } else {
+      // Recherche exacte documentée : ?full_quote_ref={numéro}&with_details=1
+      quote = await findQuoteByRef(creds, po.hubup_dossier_ref);
+    }
+    if (!quote?.id) {
+      throw new Error(`Devis introuvable dans facturation.pro (${po.hubup_dossier_ref})`);
+    }
+    const quoteId = String(quote.id);
 
     const mention = `Bon de commande Hub & Up : ${po.po_number}`;
-    const attempts: Array<Record<string, string>> = [];
-    const existingNotes = typeof quote?.notes === "string" ? quote.notes : "";
+    // PATCH : seuls les champs transmis sont modifiés, on n'écrase donc rien d'autre.
+    const attempts: Array<Partial<Pick<FpQuote, "notes" | "term" | "external_ref">>> = [];
+    const existingNotes = typeof quote.notes === "string" ? quote.notes : "";
     if (!existingNotes.includes(po.po_number)) {
       attempts.push({ notes: existingNotes ? `${existingNotes}\n${mention}` : mention });
     } else {
       attempts.push({ notes: existingNotes });
     }
-    const existingTerm = typeof quote?.term === "string" ? quote.term : "";
-    attempts.push({ term: existingTerm.includes(po.po_number) ? existingTerm : `${existingTerm}\n${mention}`.trim() });
+    const existingTerm = typeof quote.term === "string" ? quote.term : "";
+    attempts.push({
+      term: existingTerm.includes(po.po_number) ? existingTerm : `${existingTerm}\n${mention}`.trim(),
+    });
     attempts.push({ external_ref: po.po_number });
 
     let lastError = "";
     let written = false;
     for (const payload of attempts) {
-      const res = await fpFetch(`${API_URL}/firms/${firmId}/quotes/${quoteId}.json`, {
-        method: "PATCH",
-        headers,
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
+      try {
+        await patchQuote(creds, quoteId, payload);
         written = true;
         break;
+      } catch (err) {
+        if (err instanceof FpError && err.status === 429) throw err;
+        lastError = err instanceof Error ? err.message : String(err);
       }
-      lastError = `${res.status} ${(await res.text()).slice(0, 200)}`;
     }
     if (!written) throw new Error(`Écriture refusée par facturation.pro : ${lastError}`);
 
