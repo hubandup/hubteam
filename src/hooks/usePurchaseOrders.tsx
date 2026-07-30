@@ -27,6 +27,9 @@ export interface PurchaseOrder {
   sent_pdf_path: string | null;
   sent_at: string | null;
   sent_to_email: string | null;
+  sync_status: "pending" | "synced" | "failed" | "not_applicable";
+  sync_error: string | null;
+  synced_at: string | null;
   cancelled_at: string | null;
   cancellation_reason: string | null;
   created_by: string | null;
@@ -69,7 +72,7 @@ export type PoSortKey =
 const sel = (s: string): string => s;
 
 const LIST_SELECT =
-  "id, po_number, supplier_id, hubup_dossier_ref, facturation_pro_quote_id, supplier_quote_ref, validation_date, description, category_id, amount_ht, vat_rate, amount_vat, amount_ttc, currency, payment_date, status, internal_notes, pdf_path, sent_at, sent_to_email, cancelled_at, cancellation_reason, created_by, created_at, updated_at, suppliers(id, company_name, email), purchase_categories(id, name)";
+  "id, po_number, supplier_id, hubup_dossier_ref, facturation_pro_quote_id, supplier_quote_ref, validation_date, description, category_id, amount_ht, vat_rate, amount_vat, amount_ttc, currency, payment_date, status, internal_notes, pdf_path, sent_at, sent_to_email, sent_pdf_path, sync_status, sync_error, synced_at, cancelled_at, cancellation_reason, created_by, created_at, updated_at, suppliers(id, company_name, email), purchase_categories(id, name)";
 
 /** Applique les filtres partagés entre la requête paginée et la requête de totaux. */
 function applyFilters<T>(query: T, filters: PurchaseOrderFilters, supplierIds: string[] | null): T {
@@ -159,6 +162,108 @@ export function usePurchaseOrders(params: {
       };
     },
     placeholderData: (prev) => prev,
+  });
+}
+
+export interface PurchaseOrderExportRow {
+  po_number: string;
+  status: PurchaseOrderStatus;
+  validation_date: string | null;
+  supplier_name: string | null;
+  supplier_vat_number: string | null;
+  hubup_dossier_ref: string | null;
+  supplier_quote_ref: string | null;
+  description: string | null;
+  category_name: string | null;
+  amount_ht: number;
+  vat_rate: number;
+  amount_vat: number;
+  amount_ttc: number;
+  payment_date: string | null;
+  sent_at: string | null;
+  created_by_name: string | null;
+  cancellation_reason: string | null;
+}
+
+/** Récupère toutes les lignes filtrées/triées (sans pagination) pour l'export XLSX. */
+export async function fetchPurchaseOrdersForExport(
+  filters: PurchaseOrderFilters,
+  sortKey: PoSortKey,
+  sortAsc: boolean,
+): Promise<PurchaseOrderExportRow[]> {
+  const supplierIds = await matchingSupplierIds(filters.search);
+  let query = supabase
+    .from("purchase_orders")
+    .select(
+      sel(
+        "po_number, status, validation_date, hubup_dossier_ref, supplier_quote_ref, description, amount_ht, vat_rate, amount_vat, amount_ttc, payment_date, sent_at, cancellation_reason, created_by, suppliers(company_name, vat_number), purchase_categories(name)",
+      ),
+    );
+  query = applyFilters(query, filters, supplierIds);
+  const { data, error } = await query
+    .order(sortKey, { ascending: sortAsc, nullsFirst: false })
+    .limit(5000)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .returns<any[]>();
+  if (error) throw error;
+  const rows = data ?? [];
+
+  const creatorIds = Array.from(
+    new Set(rows.map((r) => r.created_by).filter((v: string | null): v is string => !!v)),
+  );
+  const names = new Map<string, string>();
+  if (creatorIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, first_name, last_name, display_name, email")
+      .in("id", creatorIds);
+    (profiles ?? []).forEach((p) => {
+      const name =
+        p.display_name?.trim() ||
+        [p.first_name, p.last_name].filter(Boolean).join(" ").trim() ||
+        p.email ||
+        "";
+      names.set(p.id, name);
+    });
+  }
+
+  return rows.map((r) => ({
+    po_number: r.po_number,
+    status: r.status,
+    validation_date: r.validation_date,
+    supplier_name: r.suppliers?.company_name ?? null,
+    supplier_vat_number: r.suppliers?.vat_number ?? null,
+    hubup_dossier_ref: r.hubup_dossier_ref,
+    supplier_quote_ref: r.supplier_quote_ref,
+    description: r.description,
+    category_name: r.purchase_categories?.name ?? null,
+    amount_ht: Number(r.amount_ht ?? 0),
+    vat_rate: Number(r.vat_rate ?? 0),
+    amount_vat: Number(r.amount_vat ?? 0),
+    amount_ttc: Number(r.amount_ttc ?? 0),
+    payment_date: r.payment_date,
+    sent_at: r.sent_at,
+    created_by_name: r.created_by ? (names.get(r.created_by) ?? null) : null,
+    cancellation_reason: r.cancellation_reason,
+  }));
+}
+
+/** Pousse le n° de PO sur le devis facturation.pro (non bloquant, derrière un flag). */
+export function useSyncPurchaseOrderToFacturation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (poId: string) => {
+      const { data, error } = await supabase.functions.invoke("sync-purchase-order-facturation", {
+        body: { poId },
+      });
+      if (error) throw error;
+      return data as { success: boolean; skipped?: boolean; error?: string };
+    },
+    onSettled: (_d, _e, poId) => {
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["purchase-order", poId] });
+      queryClient.invalidateQueries({ queryKey: ["purchase-order-events", poId] });
+    },
   });
 }
 

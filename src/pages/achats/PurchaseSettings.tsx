@@ -29,6 +29,64 @@ import {
   type VatRate,
 } from "@/hooks/usePurchasing";
 
+const SYNC_FLAG_KEY = "po_facturation_pro_sync_enabled";
+
+/** Flag d'activation de l'écriture du n° de PO sur les devis facturation.pro. */
+function SyncTab() {
+  const [enabled, setEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from("app_config")
+      .select("value")
+      .eq("key", SYNC_FLAG_KEY)
+      .maybeSingle()
+      .then(({ data }) => {
+        setEnabled(["true", "1", "on", "yes"].includes(String(data?.value ?? "").toLowerCase()));
+        setLoading(false);
+      });
+  }, []);
+
+  const toggle = async (next: boolean) => {
+    setSaving(true);
+    const { error } = await supabase.from("app_config").upsert(
+      {
+        key: SYNC_FLAG_KEY,
+        value: next ? "true" : "false",
+        description: "Écriture du n° de bon de commande sur le devis facturation.pro à l'envoi",
+      },
+      { onConflict: "key" },
+    );
+    setSaving(false);
+    if (error) {
+      toast.error("Enregistrement impossible");
+      return;
+    }
+    setEnabled(next);
+    toast.success(next ? "Synchronisation activée" : "Synchronisation désactivée");
+  };
+
+  if (loading) return <AppSkeleton />;
+
+  return (
+    <div className="rounded-3xl border bg-card p-6 max-w-2xl space-y-4">
+      <div className="flex items-start justify-between gap-6">
+        <div>
+          <p className="font-medium">Reporter le n° de PO dans facturation.pro</p>
+          <p className="text-sm text-muted-foreground">
+            À l'envoi d'un bon de commande, le numéro est ajouté aux notes du devis correspondant.
+            En cas d'échec, l'envoi au fournisseur n'est jamais bloqué : le bon de commande est
+            marqué « À reporter manuellement » et la synchronisation peut être relancée.
+          </p>
+        </div>
+        <Switch checked={enabled} disabled={saving} onCheckedChange={toggle} />
+      </div>
+    </div>
+  );
+}
+
 export default function PurchaseSettings() {
   const { role, loading } = useUserRole();
 
@@ -47,6 +105,7 @@ export default function PurchaseSettings() {
           <TabsTrigger value="categories">Catégories d'achat</TabsTrigger>
           <TabsTrigger value="vat">Taux de TVA</TabsTrigger>
           <TabsTrigger value="company">Coordonnées société</TabsTrigger>
+          <TabsTrigger value="sync">Synchronisation</TabsTrigger>
         </TabsList>
 
         <TabsContent value="categories" className="mt-4">
@@ -57,6 +116,9 @@ export default function PurchaseSettings() {
         </TabsContent>
         <TabsContent value="company" className="mt-4">
           <CompanyTab />
+        </TabsContent>
+        <TabsContent value="sync" className="mt-4">
+          <SyncTab />
         </TabsContent>
       </Tabs>
     </div>

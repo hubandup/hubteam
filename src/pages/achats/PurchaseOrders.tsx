@@ -20,9 +20,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Plus, ArrowUpDown, Settings2, Users, Loader2 } from "lucide-react";
+import { Search, Plus, ArrowUpDown, Settings2, Users, Loader2, Download, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
+import { exportPurchaseOrdersToXlsx } from "@/lib/po-export";
 import { PurchaseOrderFormDrawer } from "@/components/achats/PurchaseOrderFormDrawer";
-import { usePurchaseOrders, type PoSortKey } from "@/hooks/usePurchaseOrders";
+import {
+  usePurchaseOrders,
+  fetchPurchaseOrdersForExport,
+  type PoSortKey,
+} from "@/hooks/usePurchaseOrders";
 import { useSuppliers, usePurchaseCategories } from "@/hooks/usePurchasing";
 import {
   formatEUR,
@@ -63,6 +69,7 @@ export default function PurchaseOrders() {
   const [sortAsc, setSortAsc] = useState(false);
   const [page, setPage] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const filters = useMemo(
     () => ({
@@ -104,6 +111,23 @@ export default function PurchaseOrders() {
     setter(v);
   };
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const exportRows = await fetchPurchaseOrdersForExport(filters, sortKey, sortAsc);
+      if (exportRows.length === 0) {
+        toast.error("Aucune ligne à exporter");
+        return;
+      }
+      exportPurchaseOrdersToXlsx(exportRows);
+      toast.success(`${exportRows.length} bon(s) de commande exporté(s)`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Export impossible");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -120,6 +144,14 @@ export default function PurchaseOrders() {
               <Link to="/achats/parametres">
                 <Settings2 className="h-4 w-4 mr-2" /> Paramètres
               </Link>
+            </Button>
+            <Button variant="outline" onClick={handleExport} disabled={exporting}>
+              {exporting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
+              Exporter
             </Button>
             <PillButton onClick={() => setDrawerOpen(true)}>
               <Plus className="h-4 w-4 mr-2" /> Nouveau bon de commande
@@ -261,9 +293,19 @@ export default function PurchaseOrders() {
                   >
                     <TableCell className="font-medium whitespace-nowrap">{po.po_number}</TableCell>
                     <TableCell>
-                      <Badge className={PO_STATUS_BADGE[po.status]} variant="secondary">
-                        {PO_STATUS_LABELS[po.status]}
-                      </Badge>
+                      <div className="flex flex-col items-start gap-1">
+                        <Badge className={PO_STATUS_BADGE[po.status]} variant="secondary">
+                          {PO_STATUS_LABELS[po.status]}
+                        </Badge>
+                        {po.sync_status === "failed" && (
+                          <Badge
+                            variant="secondary"
+                            className="bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 whitespace-nowrap"
+                          >
+                            <AlertTriangle className="h-3 w-3 mr-1" /> À reporter manuellement
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="max-w-[180px] truncate">
                       {po.suppliers?.company_name ?? "—"}
