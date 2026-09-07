@@ -192,6 +192,8 @@ export function ProjectKanbanView({ projects, onProjectClick, onStatusChange }: 
               onProjectClick={onProjectClick}
               isOver={overId === column.id}
               overId={overId}
+              onStatusChange={onStatusChange}
+
             />
           );
         })}
