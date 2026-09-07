@@ -66,7 +66,7 @@ function TaskBar({ completed, total }: { completed: number; total: number }) {
   );
 }
 
-export function ProjectCard({ project, onClick }: ProjectCardProps) {
+export function ProjectCard({ project, onClick, onStatusChange }: ProjectCardProps) {
   const client = project.project_clients?.[0]?.clients;
   const clientName = client?.company || 'Sans client';
 
@@ -87,6 +87,28 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
       logoSize="xl"
       status={status}
       onClick={onClick}
+      actions={
+        onStatusChange ? (
+          <>
+            <DropdownMenuLabel className="text-xs">Changer le statut</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {STATUS_OPTIONS.map((opt) => (
+              <DropdownMenuItem
+                key={opt.value}
+                onSelect={(e) => {
+                  e.preventDefault();
+                  if (opt.value !== project.status) void onStatusChange(project.id, opt.value);
+                }}
+                className="text-sm"
+              >
+                <span className="flex-1">{opt.label}</span>
+                {opt.value === project.status && <Check size={14} className="ml-2 opacity-70" />}
+              </DropdownMenuItem>
+            ))}
+          </>
+        ) : undefined
+      }
+
       footerLeft={
         endDate ? (
           <span
