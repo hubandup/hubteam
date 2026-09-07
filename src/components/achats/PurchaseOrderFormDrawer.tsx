@@ -182,15 +182,24 @@ export function PurchaseOrderFormDrawer({ open, onOpenChange, purchaseOrder, onS
 
   /* Recherche du devis facturation.pro (debounce 600 ms) */
   const dossierRef = values.hubup_dossier_ref;
+  // « 000 » = achat hors dossier client : aucun devis facturation.pro à récupérer
+  const isNoDossier = (dossierRef ?? "").trim() === "000";
   useEffect(() => {
     if (!open) return;
     if (lookupTimer.current) window.clearTimeout(lookupTimer.current);
     const ref = dossierRef?.trim();
+    if (ref === "000") {
+      setQuoteInfo(null);
+      setQuoteState("idle");
+      form.setValue("facturation_pro_quote_id", "");
+      return;
+    }
     if (!ref || ref.length < 3) {
       setQuoteInfo(null);
       setQuoteState("idle");
       return;
     }
+
     lookupTimer.current = window.setTimeout(async () => {
       setQuoteState("loading");
       try {
@@ -434,11 +443,17 @@ export function PurchaseOrderFormDrawer({ open, onOpenChange, purchaseOrder, onS
                   </p>
                 </div>
               )}
-              {quoteState === "notfound" && (
+              {quoteState === "notfound" && !isNoDossier && (
                 <p className="text-xs text-muted-foreground">
                   Devis introuvable dans facturation.pro
                 </p>
               )}
+              {isNoDossier && (
+                <p className="text-xs text-muted-foreground">
+                  Achat hors dossier client : aucun devis Hub &amp; Up à rattacher.
+                </p>
+              )}
+
             </div>
 
             {/* N° devis fournisseur */}

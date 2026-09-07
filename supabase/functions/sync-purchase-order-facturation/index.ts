@@ -125,11 +125,13 @@ Deno.serve(async (req) => {
 
     // Résolution du devis : id mémorisé, sinon recherche exacte par référence dossier.
     let quote: FpQuote | null = null;
+    const noDossier = String(po.hubup_dossier_ref ?? "").trim() === "000";
     if (po.facturation_pro_quote_id) {
       quote = await getQuote(creds, po.facturation_pro_quote_id);
-    } else if (po.hubup_dossier_ref) {
+    } else if (po.hubup_dossier_ref && !noDossier) {
       quote = await findQuoteByRef(creds, String(po.hubup_dossier_ref));
     }
+
     if (!quote?.id) {
       // Aucun devis rattaché : rien à reporter, ce n'est pas une erreur.
       await admin
