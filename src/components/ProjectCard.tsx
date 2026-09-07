@@ -1,7 +1,9 @@
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EntityCard } from '@/components/layout';
+import { DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { STATUS_TOKENS, type StatusKey } from '@/lib/design-tokens';
 
 interface ProjectCardProps {
@@ -24,6 +26,7 @@ interface ProjectCardProps {
     tasks_completed?: number;
   };
   onClick: () => void;
+  onStatusChange?: (projectId: string, newStatus: string) => void | Promise<void>;
 }
 
 const PROJECT_STATUS_MAP: Record<string, StatusKey> = {
@@ -34,6 +37,16 @@ const PROJECT_STATUS_MAP: Record<string, StatusKey> = {
   lost: 'project_lost',
   urgent: 'project_urgent',
 };
+
+const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: 'planning', label: 'À faire' },
+  { value: 'reco_in_progress', label: 'Reco en cours' },
+  { value: 'active', label: 'En cours' },
+  { value: 'urgent', label: 'Urgent' },
+  { value: 'completed', label: 'Terminé' },
+  { value: 'lost', label: 'Perdu' },
+];
+
 
 function TaskBar({ completed, total }: { completed: number; total: number }) {
   if (total === 0) return null;
