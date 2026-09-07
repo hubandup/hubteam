@@ -1,7 +1,9 @@
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EntityCard } from '@/components/layout';
+import { DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { STATUS_TOKENS, type StatusKey } from '@/lib/design-tokens';
 
 interface ProjectCardProps {
@@ -24,6 +26,7 @@ interface ProjectCardProps {
     tasks_completed?: number;
   };
   onClick: () => void;
+  onStatusChange?: (projectId: string, newStatus: string) => void | Promise<void>;
 }
 
 const PROJECT_STATUS_MAP: Record<string, StatusKey> = {
@@ -34,6 +37,16 @@ const PROJECT_STATUS_MAP: Record<string, StatusKey> = {
   lost: 'project_lost',
   urgent: 'project_urgent',
 };
+
+const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: 'planning', label: 'À faire' },
+  { value: 'reco_in_progress', label: 'Reco en cours' },
+  { value: 'active', label: 'En cours' },
+  { value: 'urgent', label: 'Urgent' },
+  { value: 'completed', label: 'Terminé' },
+  { value: 'lost', label: 'Perdu' },
+];
+
 
 function TaskBar({ completed, total }: { completed: number; total: number }) {
   if (total === 0) return null;
@@ -53,7 +66,7 @@ function TaskBar({ completed, total }: { completed: number; total: number }) {
   );
 }
 
-export function ProjectCard({ project, onClick }: ProjectCardProps) {
+export function ProjectCard({ project, onClick, onStatusChange }: ProjectCardProps) {
   const client = project.project_clients?.[0]?.clients;
   const clientName = client?.company || 'Sans client';
 
@@ -74,6 +87,28 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
       logoSize="xl"
       status={status}
       onClick={onClick}
+      actions={
+        onStatusChange ? (
+          <>
+            <DropdownMenuLabel className="text-xs">Changer le statut</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {STATUS_OPTIONS.map((opt) => (
+              <DropdownMenuItem
+                key={opt.value}
+                onSelect={(e) => {
+                  e.preventDefault();
+                  if (opt.value !== project.status) void onStatusChange(project.id, opt.value);
+                }}
+                className="text-sm"
+              >
+                <span className="flex-1">{opt.label}</span>
+                {opt.value === project.status && <Check size={14} className="ml-2 opacity-70" />}
+              </DropdownMenuItem>
+            ))}
+          </>
+        ) : undefined
+      }
+
       footerLeft={
         endDate ? (
           <span

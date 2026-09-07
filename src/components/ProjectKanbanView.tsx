@@ -24,11 +24,13 @@ const statusColumns = [
 function DraggableProjectCard({ 
   project, 
   onClick, 
-  isDraggingOver 
+  isDraggingOver,
+  onStatusChange,
 }: { 
   project: any; 
   onClick: () => void;
   isDraggingOver?: boolean;
+  onStatusChange?: (projectId: string, newStatus: string) => Promise<void>;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: project.id,
@@ -62,7 +64,7 @@ function DraggableProjectCard({
         isDraggingOver && "mb-4"
       )}
     >
-      <ProjectCard project={project} onClick={onClick} />
+      <ProjectCard project={project} onClick={onClick} onStatusChange={onStatusChange} />
     </div>
   );
 }
@@ -72,13 +74,15 @@ function DroppableColumn({
   projects, 
   onProjectClick,
   isOver,
-  overId
+  overId,
+  onStatusChange,
 }: { 
   column: { id: string; label: string };
   projects: any[];
   onProjectClick: (id: string) => void;
   isOver: boolean;
   overId: string | null;
+  onStatusChange: (projectId: string, newStatus: string) => Promise<void>;
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -104,6 +108,7 @@ function DroppableColumn({
               project={project}
               onClick={() => onProjectClick(project.id)}
               isDraggingOver={overId === project.id}
+              onStatusChange={onStatusChange}
             />
           ))}
           {projects.length === 0 && (
@@ -187,6 +192,8 @@ export function ProjectKanbanView({ projects, onProjectClick, onStatusChange }: 
               onProjectClick={onProjectClick}
               isOver={overId === column.id}
               overId={overId}
+              onStatusChange={onStatusChange}
+
             />
           );
         })}
