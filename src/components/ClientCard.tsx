@@ -15,6 +15,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { EntityCard } from '@/components/layout';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { EditClientDialog } from '@/components/EditClientDialog';
+import { useQueryClient } from '@tanstack/react-query';
 import { URGENCY_TOKENS } from '@/lib/design-tokens';
 import {
   PROJECT_STATUS_LABELS,
@@ -63,6 +66,8 @@ export function ClientCard({ client, onClick, onMouseEnter }: ClientCardProps) {
   const toggleTarget = useToggleTarget();
   const isStarred = !!targets?.has(client.id);
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleStarClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -139,6 +144,28 @@ export function ClientCard({ client, onClick, onMouseEnter }: ClientCardProps) {
           }
           onClick={onClick}
           onMouseEnter={onMouseEnter}
+          actions={
+            <>
+              <DropdownMenuItem onSelect={() => onClick()}>Voir la fiche</DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setEditOpen(true);
+                }}
+              >
+                Modifier les informations
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault();
+                  if (isStarred) setConfirmRemove(true);
+                  else toggleTarget.mutate({ clientId: client.id, starred: false });
+                }}
+              >
+                {isStarred ? 'Retirer des Targets' : 'Ajouter aux Targets'}
+              </DropdownMenuItem>
+            </>
+          }
           footerLeft={
             client.last_contact ? (
               <>
@@ -188,6 +215,19 @@ export function ClientCard({ client, onClick, onMouseEnter }: ClientCardProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {editOpen && (
+        <EditClientDialog
+          client={client as any}
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          hideTrigger
+          onClientUpdated={() => {
+            queryClient.invalidateQueries({ queryKey: ['clients'] });
+            setEditOpen(false);
+          }}
+        />
+      )}
     </>
   );
 }
