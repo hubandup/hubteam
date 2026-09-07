@@ -545,6 +545,7 @@ export default function Projects() {
                 key={project.id}
                 project={project}
                 onClick={() => navigate(buildProjectNavPath(project))}
+                onStatusChange={handleStatusChange}
               />
             ))}
           </div>
