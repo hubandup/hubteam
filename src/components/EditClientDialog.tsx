@@ -319,168 +319,122 @@ export function EditClientDialog({ client, onClientUpdated, open: controlledOpen
           </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+          {/* Identité */}
+          <section className="space-y-3">
+            <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Identité
+            </h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="first_name">Prénom *</Label>
+                <Input
+                  id="first_name"
+                  {...register('first_name')}
+                  placeholder="Jean"
+                />
+                {errors.first_name && (
+                  <p className="text-sm text-destructive">{errors.first_name.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="last_name">Nom *</Label>
+                <Input
+                  id="last_name"
+                  {...register('last_name')}
+                  placeholder="Dupont"
+                />
+                {errors.last_name && (
+                  <p className="text-sm text-destructive">{errors.last_name.message}</p>
+                )}
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="first_name">Prénom *</Label>
+              <Label htmlFor="company">Entreprise *</Label>
               <Input
-                id="first_name"
-                {...register('first_name')}
-                placeholder="Jean"
+                id="company"
+                {...register('company')}
+                placeholder="Acme Corp"
               />
-              {errors.first_name && (
-                <p className="text-sm text-destructive">{errors.first_name.message}</p>
+              {errors.company && (
+                <p className="text-sm text-destructive">{errors.company.message}</p>
               )}
+            </div>
+          </section>
+
+          {/* Coordonnées */}
+          <section className="space-y-3">
+            <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Coordonnées
+            </h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  {...register('email')}
+                  placeholder="jean.dupont@acme.com"
+                />
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Téléphone</Label>
+                <Input
+                  id="phone"
+                  {...register('phone')}
+                  placeholder="+33 6 12 34 56 78"
+                />
+                {errors.phone && (
+                  <p className="text-sm text-destructive">{errors.phone.message}</p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="last_name">Nom *</Label>
+              <Label htmlFor="address">Adresse de l'entreprise</Label>
               <Input
-                id="last_name"
-                {...register('last_name')}
-                placeholder="Dupont"
+                id="address"
+                {...register('address')}
+                placeholder="12 rue de Paris, 75001 Paris"
               />
-              {errors.last_name && (
-                <p className="text-sm text-destructive">{errors.last_name.message}</p>
+              {errors.address && (
+                <p className="text-sm text-destructive">{errors.address.message}</p>
               )}
             </div>
-          </div>
+          </section>
 
-          <div className="space-y-2">
-            <Label htmlFor="company">Entreprise *</Label>
-            <Input
-              id="company"
-              {...register('company')}
-              placeholder="Acme Corp"
-            />
-            {errors.company && (
-              <p className="text-sm text-destructive">{errors.company.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="address">Adresse de l'entreprise</Label>
-            <Input
-              id="address"
-              {...register('address')}
-              placeholder="12 rue de Paris, 75001 Paris"
-            />
-            {errors.address && (
-              <p className="text-sm text-destructive">{errors.address.message}</p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                {...register('email')}
-                placeholder="jean.dupont@acme.com"
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
-            </div>
+          {/* Suivi commercial — mise en avant de la prochaine échéance */}
+          <section className="space-y-3 rounded-2xl border bg-primary/[0.03] p-4">
+            <h4 className="text-sm font-semibold uppercase tracking-wide text-primary">
+              Suivi commercial
+            </h4>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Téléphone</Label>
-              <Input
-                id="phone"
-                {...register('phone')}
-                placeholder="+33 6 12 34 56 78"
-              />
-              {errors.phone && (
-                <p className="text-sm text-destructive">{errors.phone.message}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="revenue">Chiffre d'affaires (€ HT) *</Label>
-              <Input
-                id="revenue"
-                type="number"
-                step="0.01"
-                {...register('revenue', { valueAsNumber: true })}
-                placeholder="50000"
-              />
-              {errors.revenue && (
-                <p className="text-sm text-destructive">{errors.revenue.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="kanban_stage">Position Kanban *</Label>
-              <Select
-                value={kanbanStage}
-                onValueChange={(value) => setValue('kanban_stage', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner une position" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="prospect">Prospect</SelectItem>
-                  <SelectItem value="rdv_a_prendre">RDV à prendre</SelectItem>
-                  <SelectItem value="a_relancer">À relancer</SelectItem>
-                  <SelectItem value="rdv_hub_date">RDV Hub Date</SelectItem>
-                  <SelectItem value="rdv_pris">RDV Pris</SelectItem>
-                  <SelectItem value="reco_en_cours">Reco en cours</SelectItem>
-                  <SelectItem value="projet_valide">Projet Validé</SelectItem>
-                  <SelectItem value="a_fideliser">À fidéliser</SelectItem>
-                  <SelectItem value="sans_suite">Sans suite</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.kanban_stage && (
-                <p className="text-sm text-destructive">{errors.kanban_stage.message}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="last_contact">Dernier contact</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="follow_up_date" className="font-semibold text-foreground">
+                  Prochaine échéance
+                </Label>
+                {followUpDate && (
+                  <span className="text-xs font-medium text-primary">
+                    {format(followUpDate, "dd/MM/yyyy")}
+                  </span>
+                )}
+              </div>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !lastContact && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {lastContact ? format(lastContact, "dd/MM/yyyy") : "Choisir une date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={lastContact}
-                    onSelect={(date) => setValue('last_contact', date)}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-              {errors.last_contact && (
-                <p className="text-sm text-destructive">{errors.last_contact.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="follow_up_date">Prochaine échéance</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
+                      "w-full justify-start text-left font-normal h-11 border-primary/20 bg-background hover:bg-background hover:border-primary/40",
                       !followUpDate && "text-muted-foreground"
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
                     {followUpDate ? format(followUpDate, "dd/MM/yyyy") : "Choisir une date"}
                   </Button>
                 </PopoverTrigger>
@@ -499,25 +453,158 @@ export function EditClientDialog({ client, onClientUpdated, open: controlledOpen
                 <p className="text-sm text-destructive">{errors.follow_up_date.message}</p>
               )}
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="last_contact">Dernier contact</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !lastContact && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {lastContact ? format(lastContact, "dd/MM/yyyy") : "Choisir une date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={lastContact}
+                      onSelect={(date) => setValue('last_contact', date)}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+                {errors.last_contact && (
+                  <p className="text-sm text-destructive">{errors.last_contact.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="kanban_stage">Position Kanban *</Label>
+                <Select
+                  value={kanbanStage}
+                  onValueChange={(value) => setValue('kanban_stage', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une position" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="prospect">Prospect</SelectItem>
+                    <SelectItem value="rdv_a_prendre">RDV à prendre</SelectItem>
+                    <SelectItem value="a_relancer">À relancer</SelectItem>
+                    <SelectItem value="rdv_hub_date">RDV Hub Date</SelectItem>
+                    <SelectItem value="rdv_pris">RDV Pris</SelectItem>
+                    <SelectItem value="reco_en_cours">Reco en cours</SelectItem>
+                    <SelectItem value="projet_valide">Projet Validé</SelectItem>
+                    <SelectItem value="a_fideliser">À fidéliser</SelectItem>
+                    <SelectItem value="sans_suite">Sans suite</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.kanban_stage && (
+                  <p className="text-sm text-destructive">{errors.kanban_stage.message}</p>
+                )}
+              </div>
+            </div>
+
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="activity_sector_id">Secteur d'activité</Label>
-                <AddActivitySectorDialog onSectorAdded={fetchSectorsAndStatuses} />
+                <Label htmlFor="status_id">Action</Label>
+                <AddClientStatusDialog onStatusAdded={fetchSectorsAndStatuses} />
               </div>
               <Select
-                value={selectedSectorId}
-                onValueChange={(value) => setValue('activity_sector_id', value)}
+                value={selectedStatusId}
+                onValueChange={(value) => setValue('status_id', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un secteur" />
+                  <SelectValue placeholder="Sélectionner une action" />
                 </SelectTrigger>
                 <SelectContent>
-                  {activitySectors.map((sector) => (
-                    <SelectItem key={sector.id} value={sector.id}>
-                      {sector.name}
+                  {clientStatuses.map((status) => (
+                    <SelectItem key={status.id} value={status.id}>
+                      {status.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </section>
+
+          {/* Classification */}
+          <section className="space-y-3">
+            <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Classification
+            </h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="activity_sector_id">Secteur d'activité</Label>
+                  <AddActivitySectorDialog onSectorAdded={fetchSectorsAndStatuses} />
+                </div>
+                <Select
+                  value={selectedSectorId}
+                  onValueChange={(value) => setValue('activity_sector_id', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un secteur" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activitySectors.map((sector) => (
+                      <SelectItem key={sector.id} value={sector.id}>
+                        {sector.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="source_id">Source</Label>
+                  <AddClientSourceDialog onSourceAdded={fetchSectorsAndStatuses} />
+                </div>
+                <Select
+                  value={selectedSourceId}
+                  onValueChange={(value) => setValue('source_id', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clientSources.map((source) => (
+                      <SelectItem key={source.id} value={source.id}>
+                        {source.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </section>
+
+          {/* Pilotage */}
+          <section className="space-y-3">
+            <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Pilotage
+            </h4>
+            <div className="space-y-2">
+              <Label htmlFor="main_contact_id">Interlocuteur Hub & Up</Label>
+              <Select
+                value={mainContactId}
+                onValueChange={(value) => setValue('main_contact_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un interlocuteur" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teamMembers.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.name} ({member.role === 'admin' ? 'Administrateur' : 'Équipe'})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -525,121 +612,78 @@ export function EditClientDialog({ client, onClientUpdated, open: controlledOpen
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="source_id">Source</Label>
-                <AddClientSourceDialog onSourceAdded={fetchSectorsAndStatuses} />
-              </div>
-              <Select
-                value={selectedSourceId}
-                onValueChange={(value) => setValue('source_id', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner une source" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clientSources.map((source) => (
-                    <SelectItem key={source.id} value={source.id}>
-                      {source.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="status_id">Action</Label>
-              <AddClientStatusDialog onStatusAdded={fetchSectorsAndStatuses} />
-            </div>
-            <Select
-              value={selectedStatusId}
-              onValueChange={(value) => setValue('status_id', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner une action" />
-              </SelectTrigger>
-              <SelectContent>
-                {clientStatuses.map((status) => (
-                  <SelectItem key={status.id} value={status.id}>
-                    {status.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="main_contact_id">Interlocuteur Hub & Up</Label>
-            <Select
-              value={mainContactId}
-              onValueChange={(value) => setValue('main_contact_id', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un interlocuteur" />
-              </SelectTrigger>
-              <SelectContent>
-                {teamMembers.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.name} ({member.role === 'admin' ? 'Administrateur' : 'Équipe'})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="logo">Logo de l'entreprise</Label>
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <Input
-                  id="logo"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoChange}
-                  className="cursor-pointer"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  PNG, JPG ou WEBP - Max 5MB
-                </p>
-              </div>
-              {logoPreview && (
-                <img
-                  src={logoPreview}
-                  alt="Aperçu du logo"
-                  className="w-16 h-16 object-cover rounded-lg border"
-                />
+              <Label htmlFor="revenue">Chiffre d'affaires (€ HT) *</Label>
+              <Input
+                id="revenue"
+                type="number"
+                step="0.01"
+                {...register('revenue', { valueAsNumber: true })}
+                placeholder="50000"
+              />
+              {errors.revenue && (
+                <p className="text-sm text-destructive">{errors.revenue.message}</p>
               )}
             </div>
-          </div>
+          </section>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label htmlFor="active">Statut</Label>
-              <p className="text-sm text-muted-foreground">
-                Le client est-il actuellement actif ?
-              </p>
+          {/* Média & paramètres */}
+          <section className="space-y-3">
+            <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Média & paramètres
+            </h4>
+            <div className="space-y-2">
+              <Label htmlFor="logo">Logo de l'entreprise</Label>
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <Input
+                    id="logo"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoChange}
+                    className="cursor-pointer"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    PNG, JPG ou WEBP - Max 5MB
+                  </p>
+                </div>
+                {logoPreview && (
+                  <img
+                    src={logoPreview}
+                    alt="Aperçu du logo"
+                    className="w-16 h-16 object-cover rounded-lg border"
+                  />
+                )}
+              </div>
             </div>
-            <Switch
-              id="active"
-              checked={active}
-              onCheckedChange={(checked) => setValue('active', checked)}
-            />
-          </div>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label htmlFor="linkedin_connected">Connexion LinkedIn</Label>
-              <p className="text-sm text-muted-foreground">
-                Êtes-vous connecté avec ce client sur LinkedIn ?
-              </p>
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="active">Statut</Label>
+                <p className="text-sm text-muted-foreground">
+                  Le client est-il actuellement actif ?
+                </p>
+              </div>
+              <Switch
+                id="active"
+                checked={active}
+                onCheckedChange={(checked) => setValue('active', checked)}
+              />
             </div>
-            <Switch
-              id="linkedin_connected"
-              checked={linkedinConnected ?? false}
-              onCheckedChange={(checked) => setValue('linkedin_connected', checked)}
-            />
-          </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="linkedin_connected">Connexion LinkedIn</Label>
+                <p className="text-sm text-muted-foreground">
+                  Êtes-vous connecté avec ce client sur LinkedIn ?
+                </p>
+              </div>
+              <Switch
+                id="linkedin_connected"
+                checked={linkedinConnected ?? false}
+                onCheckedChange={(checked) => setValue('linkedin_connected', checked)}
+              />
+            </div>
+          </section>
 
           <div className="flex justify-end gap-3 pt-4">
             <Button
