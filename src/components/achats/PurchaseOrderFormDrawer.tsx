@@ -443,11 +443,17 @@ export function PurchaseOrderFormDrawer({ open, onOpenChange, purchaseOrder, onS
                   </p>
                 </div>
               )}
-              {quoteState === "notfound" && (
+              {quoteState === "notfound" && !isNoDossier && (
                 <p className="text-xs text-muted-foreground">
                   Devis introuvable dans facturation.pro
                 </p>
               )}
+              {isNoDossier && (
+                <p className="text-xs text-muted-foreground">
+                  Achat hors dossier client : aucun devis Hub &amp; Up à rattacher.
+                </p>
+              )}
+
             </div>
 
             {/* N° devis fournisseur */}
