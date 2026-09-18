@@ -17,6 +17,12 @@ export interface ExportSheet {
   rows: Record<string, any>[];
 }
 
+export interface ExportAsset {
+  /** Nom de fichier souhaité dans le dossier d'images */
+  name: string;
+  url: string;
+}
+
 interface ExportButtonProps {
   data: any[];
   columns: ExportColumn[];
@@ -26,9 +32,11 @@ interface ExportButtonProps {
   /** Optional loader for related data exported as additional Excel sheets */
   extraSheets?: () => Promise<ExportSheet[]>;
   extraSheetsLabel?: string;
+  /** Optional images (logos…) bundled in a ZIP alongside the workbook */
+  assets?: () => ExportAsset[] | Promise<ExportAsset[]>;
 }
 
-export function ExportButton({ data, columns, filename, label = 'Exporter', renderTrigger, extraSheets, extraSheetsLabel = 'Export complet (Excel)' }: ExportButtonProps) {
+export function ExportButton({ data, columns, filename, label = 'Exporter', renderTrigger, extraSheets, extraSheetsLabel = 'Export complet (Excel)', assets }: ExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
 
   const formatData = () => {
@@ -130,8 +138,50 @@ export function ExportButton({ data, columns, filename, label = 'Exporter', rend
         XLSX.utils.book_append_sheet(workbook, ws, sheet.name.slice(0, 31));
       });
 
-      XLSX.writeFile(workbook, `${filename}-complet-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
-      toast.success('Export complet généré');
+      const stamp = format(new Date(), 'yyyy-MM-dd');
+      const assetList = assets ? await assets() : [];
+
+      if (assetList.length === 0) {
+        XLSX.writeFile(workbook, `${filename}-complet-${stamp}.xlsx`);
+        toast.success('Export complet généré');
+        return;
+      }
+
+      toast.info('Téléchargement des logos…');
+      const { default: JSZip } = await import('jszip');
+      const zip = new JSZip();
+      const xlsxData = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      zip.file(`${filename}-complet-${stamp}.xlsx`, xlsxData);
+
+      const logosFolder = zip.folder('logos')!;
+      const used = new Set<string>();
+      await Promise.all(
+        assetList.map(async (asset) => {
+          try {
+            const res = await fetch(asset.url);
+            if (!res.ok) return;
+            const blob = await res.blob();
+            const ext = (asset.url.split('?')[0].split('.').pop() || 'png').slice(0, 5);
+            let base = asset.name.replace(/[\\/:*?"<>|]/g, '-').slice(0, 80) || 'logo';
+            let name = `${base}.${ext}`;
+            let i = 2;
+            while (used.has(name)) name = `${base}-${i++}.${ext}`;
+            used.add(name);
+            logosFolder.file(name, blob);
+          } catch (e) {
+            console.warn('Logo non téléchargé:', asset.url, e);
+          }
+        }),
+      );
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${filename}-complet-${stamp}.zip`;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success('Export complet généré (Excel + logos)');
     } catch (error) {
       console.error('Full export error:', error);
       toast.error("Erreur lors de l'export complet");
