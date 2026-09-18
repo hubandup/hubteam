@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, LayoutGrid, Columns3, ArrowDownUp, List, Archive, Plus, Download, Upload } from 'lucide-react';
 import { ExportButton } from '@/components/exports/ExportButton';
+import { buildCrmExportSheets } from '@/lib/crm-export';
 import { toast } from 'sonner';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -227,6 +228,8 @@ export default function CRM() {
                 ...(showRevenue ? [{ key: 'revenue_current_year', label: 'CA Année Fiscale', formatter: (v: any) => v ?? 0 }] : []),
               ]}
               filename="clients"
+              extraSheets={() => buildCrmExportSheets(filteredClients)}
+              extraSheetsLabel="Export complet (comptes rendus, contacts, projets)"
               renderTrigger={({ isExporting }) => (
                 <PillButton type="button" disabled={isExporting}>
                   <Download size={16} strokeWidth={1.8} />

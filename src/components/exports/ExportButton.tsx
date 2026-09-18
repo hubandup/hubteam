@@ -12,15 +12,23 @@ interface ExportColumn {
   formatter?: (value: any, row: any) => string | number;
 }
 
+export interface ExportSheet {
+  name: string;
+  rows: Record<string, any>[];
+}
+
 interface ExportButtonProps {
   data: any[];
   columns: ExportColumn[];
   filename: string;
   label?: string;
   renderTrigger?: (opts: { isExporting: boolean }) => React.ReactNode;
+  /** Optional loader for related data exported as additional Excel sheets */
+  extraSheets?: () => Promise<ExportSheet[]>;
+  extraSheetsLabel?: string;
 }
 
-export function ExportButton({ data, columns, filename, label = 'Exporter', renderTrigger }: ExportButtonProps) {
+export function ExportButton({ data, columns, filename, label = 'Exporter', renderTrigger, extraSheets, extraSheetsLabel = 'Export complet (Excel)' }: ExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
 
   const formatData = () => {
@@ -86,6 +94,35 @@ export function ExportButton({ data, columns, filename, label = 'Exporter', rend
     }
   };
 
+  const exportFull = async () => {
+    if (!extraSheets) return;
+    try {
+      setIsExporting(true);
+      toast.info('Préparation de l\'export complet…');
+      const sheets = await extraSheets();
+      const workbook = XLSX.utils.book_new();
+
+      const mainSheet = XLSX.utils.json_to_sheet(formatData());
+      mainSheet['!cols'] = columns.map(col => ({ wch: Math.max(col.label.length + 2, 15) }));
+      XLSX.utils.book_append_sheet(workbook, mainSheet, 'Clients');
+
+      sheets.forEach(sheet => {
+        const rows = sheet.rows.length ? sheet.rows : [{ 'Aucune donnée': '' }];
+        const ws = XLSX.utils.json_to_sheet(rows);
+        ws['!cols'] = Object.keys(rows[0]).map(key => ({ wch: Math.max(key.length + 2, 20) }));
+        XLSX.utils.book_append_sheet(workbook, ws, sheet.name.slice(0, 31));
+      });
+
+      XLSX.writeFile(workbook, `${filename}-complet-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+      toast.success('Export complet généré');
+    } catch (error) {
+      console.error('Full export error:', error);
+      toast.error("Erreur lors de l'export complet");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (data.length === 0) return null;
 
   return (
@@ -109,6 +146,12 @@ export function ExportButton({ data, columns, filename, label = 'Exporter', rend
           <FileSpreadsheet className="h-4 w-4 mr-2" />
           Export Excel
         </DropdownMenuItem>
+        {extraSheets && (
+          <DropdownMenuItem onClick={exportFull}>
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            {extraSheetsLabel}
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
