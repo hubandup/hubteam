@@ -146,6 +146,7 @@ export async function buildCrmExportSheets(clients: any[]): Promise<ExportSheet[
         Client: nameById.get(clientIdByTracking.get(n.tracking_id) || '') ?? '',
         Titre: n.title ?? '',
         'Date de réunion': fmt(n.meeting_date),
+        Auteur: authorById.get(n.author_id) ?? '',
         Contenu: n.content ?? '',
         Privé: n.is_private ? 'Oui' : 'Non',
         'Pièce jointe': n.attachment_url ?? '',
