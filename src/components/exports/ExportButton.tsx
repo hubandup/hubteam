@@ -96,6 +96,21 @@ export function ExportButton({ data, columns, filename, label = 'Exporter', rend
     }
   };
 
+  // Excel limite une cellule à 32767 caractères
+  const CELL_LIMIT = 32000;
+  const sanitizeRows = (rows: Record<string, any>[]) =>
+    rows.map(row => {
+      const out: Record<string, any> = {};
+      Object.entries(row).forEach(([key, value]) => {
+        if (typeof value === 'string' && value.length > CELL_LIMIT) {
+          out[key] = value.slice(0, CELL_LIMIT) + '… [texte tronqué]';
+        } else {
+          out[key] = value;
+        }
+      });
+      return out;
+    });
+
   const exportFull = async () => {
     if (!extraSheets) return;
     try {
@@ -104,12 +119,12 @@ export function ExportButton({ data, columns, filename, label = 'Exporter', rend
       const sheets = await extraSheets();
       const workbook = XLSX.utils.book_new();
 
-      const mainSheet = XLSX.utils.json_to_sheet(formatData());
+      const mainSheet = XLSX.utils.json_to_sheet(sanitizeRows(formatData()));
       mainSheet['!cols'] = columns.map(col => ({ wch: Math.max(col.label.length + 2, 15) }));
       XLSX.utils.book_append_sheet(workbook, mainSheet, 'Clients');
 
       sheets.forEach(sheet => {
-        const rows = sheet.rows.length ? sheet.rows : [{ 'Aucune donnée': '' }];
+        const rows = sanitizeRows(sheet.rows.length ? sheet.rows : [{ 'Aucune donnée': '' }]);
         const ws = XLSX.utils.json_to_sheet(rows);
         ws['!cols'] = Object.keys(rows[0]).map(key => ({ wch: Math.max(key.length + 2, 20) }));
         XLSX.utils.book_append_sheet(workbook, ws, sheet.name.slice(0, 31));
