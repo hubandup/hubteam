@@ -227,6 +227,8 @@ export default function CRM() {
                 ...(showRevenue ? [{ key: 'revenue_current_year', label: 'CA Année Fiscale', formatter: (v: any) => v ?? 0 }] : []),
               ]}
               filename="clients"
+              extraSheets={() => buildCrmExportSheets(filteredClients)}
+              extraSheetsLabel="Export complet (comptes rendus, contacts, projets)"
               renderTrigger={({ isExporting }) => (
                 <PillButton type="button" disabled={isExporting}>
                   <Download size={16} strokeWidth={1.8} />
