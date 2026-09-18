@@ -12,15 +12,23 @@ interface ExportColumn {
   formatter?: (value: any, row: any) => string | number;
 }
 
+export interface ExportSheet {
+  name: string;
+  rows: Record<string, any>[];
+}
+
 interface ExportButtonProps {
   data: any[];
   columns: ExportColumn[];
   filename: string;
   label?: string;
   renderTrigger?: (opts: { isExporting: boolean }) => React.ReactNode;
+  /** Optional loader for related data exported as additional Excel sheets */
+  extraSheets?: () => Promise<ExportSheet[]>;
+  extraSheetsLabel?: string;
 }
 
-export function ExportButton({ data, columns, filename, label = 'Exporter', renderTrigger }: ExportButtonProps) {
+export function ExportButton({ data, columns, filename, label = 'Exporter', renderTrigger, extraSheets, extraSheetsLabel = 'Export complet (Excel)' }: ExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
 
   const formatData = () => {
