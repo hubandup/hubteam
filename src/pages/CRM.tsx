@@ -240,6 +240,14 @@ export default function CRM() {
                     url: c.logo_url as string,
                   }))
               }
+              extraActions={[
+                {
+                  label: 'Transférer vers Project Hub',
+                  run: () => downloadProjectHubTransfer(filteredClients),
+                  pendingMessage: 'Préparation du transfert vers Project Hub…',
+                  successMessage: 'Fichier de transfert généré (fiches, commentaires, logos)',
+                },
+              ]}
               renderTrigger={({ isExporting }) => (
                 <PillButton type="button" disabled={isExporting}>
                   <Download size={16} strokeWidth={1.8} />
