@@ -58,7 +58,7 @@ export async function buildCrmExportSheets(clients: any[]): Promise<ExportSheet[
     ? await Promise.all([
         supabase
           .from('commercial_notes')
-          .select('tracking_id, title, content, meeting_date, is_private, attachment_url, created_at')
+          .select('tracking_id, title, content, meeting_date, is_private, attachment_url, created_at, author_id')
           .in('tracking_id', trackingIds)
           .order('created_at', { ascending: false }),
         supabase
