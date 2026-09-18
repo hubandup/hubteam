@@ -1,33 +1,29 @@
-Apply a consistent design system to the Lagostina page, with the Editorial luxury dashboard direction as reference: a large rounded main container, rounded inner cards, and consistent radius on tables and controls. Use the Hub & Up palette (navy #0C1320, lime #DDF247) and Instrument Sans typography that the user selected.
+# Transférer une fois les données CRM vers Project Hub
 
-Scope: only the Lagostina page and its tab components. No data or route changes.
+Oui, c'est faisable. Les deux applications ont chacune leur propre base de données, et je ne peux pas écrire directement dans celle de Project Hub depuis HubTeam. Le transfert se fait donc en deux temps : HubTeam produit un fichier de transfert, Project Hub le lit et crée les fiches.
 
-Changes:
+## Ce que je fais côté HubTeam
 
-1. `src/pages/Lagostina.tsx`
-   - Wrap the page content in a white rounded card (`rounded-3xl`, 24 px) with a subtle border and shadow, inside the existing app background.
-   - Keep the existing header, tabs, and actions; only adjust spacing and radius.
-   - Use navy/lime tokens for the active tab underline and the weekly badge.
+Ajouter dans le CRM un bouton « Transférer vers Project Hub » qui génère un dossier compressé contenant :
 
-2. `src/components/lagostina/ScorecardRECC.tsx`
-   - Add `rounded-2xl` to the main scorecard table container.
-   - Ensure the current-month highlight stays readable inside the rounded frame.
-   - Keep the sticky first column and existing data logic.
+- un fichier de données au format attendu par Project Hub (fiches clients, contacts, comptes rendus et notes transformés en commentaires) ;
+- un dossier `logos` avec l'image de chaque société.
 
-3. `src/components/lagostina/LagostinaBudget.tsx`
-   - Add `rounded-2xl` to the two KPI cards and the detail tables.
-   - Keep the budget progress bars and warning badges.
+Les données sont déjà mises en forme pour le CRM de Project Hub : une fiche par contact principal, avec société, secteur, nom/prénom, fonction, email, téléphone, chiffre d'affaires, prochaine action et sa date. Les contacts supplémentaires deviennent des fiches rattachées à la même société. Les comptes rendus et notes commerciales deviennent des commentaires datés avec le nom de leur auteur.
 
-4. `src/components/lagostina/LagostinaInfluenceRP.tsx`
-   - Add `rounded-2xl` to KPI cards, chart cards, and tables.
-   - Preserve the conditional left-border color logic.
+## Ce qu'il faudra faire dans Project Hub
 
-5. `src/components/lagostina/LagostinaMediatisation.tsx`
-   - Add `rounded-2xl` to KPI cards and chart/table containers.
+Une fois ce fichier prêt, il faut ouvrir le projet Project Hub et y ajouter un écran d'import qui lit le dossier compressé et crée les fiches, les commentaires et les logos. Je ne peux pas le faire depuis ici : je peux seulement lire le code de Project Hub, pas le modifier. Je vous indiquerai précisément quoi demander là-bas.
 
-6. `src/components/lagostina/LagostinaOverview.tsx`, `LagostinaContenus.tsx`, `ActivationPersonas.tsx`
-   - Apply the same `rounded-2xl` radius to card containers if visible in the tabs.
+## Points d'attention
 
-Verification:
-- Build the app (`bun run build`) to catch TypeScript/Tailwind errors.
-- Capture a desktop screenshot of `/lagostina` to confirm the main container and inner cards have consistent radius and no visual regressions.
+- Les auteurs des comptes rendus n'existent pas forcément dans Project Hub : leur nom sera conservé en texte au début du commentaire.
+- Les étapes du pipeline de Project Hub sont une liste courte et différente des statuts HubTeam : je fais une correspondance par libellé et je crée l'étape manquante si besoin.
+- C'est une action unique : après le transfert, les deux CRM évoluent indépendamment.
+
+## Détails techniques
+
+- Nouveau `src/lib/crm-hub-export.ts` : charge `clients`, `client_contacts`, `meeting_notes`, `commercial_tracking` + `commercial_notes` / `commercial_meetings` / `commercial_contacts`, et les profils auteurs ; produit un JSON aligné sur le schéma de Project Hub (`crm_contacts`, `crm_comments`, `crm_stages`), avec `logo_file` référençant le fichier dans le dossier `logos`.
+- Réutilisation de la logique ZIP déjà présente dans `ExportButton.tsx` (jszip + téléchargement des logos, noms nettoyés, gestion des collisions).
+- Ajout d'une entrée « Transférer vers Project Hub » dans le menu d'export de `CRM.tsx`, sur `filteredClients`.
+- Côté Project Hub (à faire dans ce projet) : écran d'import lisant le ZIP, upsert dans `crm_contacts` / `crm_comments` (RLS admin uniquement), upload des logos dans le bucket utilisé par `crm-logo.tsx`.
