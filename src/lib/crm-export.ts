@@ -72,9 +72,48 @@ export async function buildCrmExportSheets(clients: any[]): Promise<ExportSheet[
       ])
     : [{ data: [] } as any, { data: [] } as any, { data: [] } as any];
 
-  // Auteurs des comptes rendus
+  // Projets liés aux clients : notes de projet et commentaires de tâches
+  const projectIds = Array.from(
+    new Set((projectLinksRes.data || []).map((pl: any) => pl.projects?.id).filter(Boolean)),
+  );
+  const clientIdByProject = new Map<string, string>(
+    (projectLinksRes.data || [])
+      .filter((pl: any) => pl.projects)
+      .map((pl: any) => [pl.projects.id, pl.client_id]),
+  );
+
+  const [projectNotesRes, tasksRes, taskCommentsRes] = projectIds.length
+    ? await Promise.all([
+        supabase
+          .from('project_notes')
+          .select('project_id, content, is_private, created_by, created_at')
+          .in('project_id', projectIds)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('tasks')
+          .select('id, project_id, title, status, priority, end_date, assigned_to, created_at')
+          .in('project_id', projectIds),
+        supabase
+          .from('task_comments')
+          .select('task_id, project_id, user_id, content, attachment_url, created_at')
+          .in('project_id', projectIds)
+          .order('created_at', { ascending: false }),
+      ])
+    : [{ data: [] } as any, { data: [] } as any, { data: [] } as any];
+
+  const taskById = new Map<string, any>((tasksRes.data || []).map((t: any) => [t.id, t]));
+
+  // Auteurs (comptes rendus, notes commerciales, notes projet, commentaires)
   const authorIds = Array.from(
-    new Set((meetingNotesRes.data || []).map((n: any) => n.user_id).filter(Boolean)),
+    new Set(
+      [
+        ...(meetingNotesRes.data || []).map((n: any) => n.user_id),
+        ...(commercialNotesRes.data || []).map((n: any) => n.author_id),
+        ...(projectNotesRes.data || []).map((n: any) => n.created_by),
+        ...(taskCommentsRes.data || []).map((c: any) => c.user_id),
+        ...(tasksRes.data || []).map((t: any) => t.assigned_to),
+      ].filter(Boolean),
+    ),
   );
   const authorById = new Map<string, string>();
   if (authorIds.length) {
