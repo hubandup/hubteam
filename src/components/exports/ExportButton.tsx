@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { Download, FileSpreadsheet, FileText, Send } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -34,9 +34,11 @@ interface ExportButtonProps {
   extraSheetsLabel?: string;
   /** Optional images (logos…) bundled in a ZIP alongside the workbook */
   assets?: () => ExportAsset[] | Promise<ExportAsset[]>;
+  /** Actions supplémentaires (transferts vers un autre outil…) */
+  extraActions?: { label: string; run: () => Promise<void> | void; pendingMessage?: string; successMessage?: string }[];
 }
 
-export function ExportButton({ data, columns, filename, label = 'Exporter', renderTrigger, extraSheets, extraSheetsLabel = 'Export complet (Excel)', assets }: ExportButtonProps) {
+export function ExportButton({ data, columns, filename, label = 'Exporter', renderTrigger, extraSheets, extraSheetsLabel = 'Export complet (Excel)', assets, extraActions }: ExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
 
   const formatData = () => {
@@ -190,6 +192,20 @@ export function ExportButton({ data, columns, filename, label = 'Exporter', rend
     }
   };
 
+  const runExtraAction = async (action: NonNullable<ExportButtonProps['extraActions']>[number]) => {
+    try {
+      setIsExporting(true);
+      toast.info(action.pendingMessage ?? 'Préparation du fichier…');
+      await action.run();
+      toast.success(action.successMessage ?? 'Fichier généré');
+    } catch (error) {
+      console.error('Extra export action error:', error);
+      toast.error('Erreur lors de la génération du fichier');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (data.length === 0) return null;
 
   return (
@@ -219,6 +235,12 @@ export function ExportButton({ data, columns, filename, label = 'Exporter', rend
             {extraSheetsLabel}
           </DropdownMenuItem>
         )}
+        {extraActions?.map((action) => (
+          <DropdownMenuItem key={action.label} onClick={() => runExtraAction(action)}>
+            <Send className="h-4 w-4 mr-2" />
+            {action.label}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );
