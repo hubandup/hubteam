@@ -76,6 +76,8 @@ export function ExportButton({ data, columns, filename, label = 'Exporter', rend
   };
 
   const exportExcel = () => {
+    // Si des données associées existent, on exporte toujours le classeur complet
+    if (extraSheets) return exportFull();
     try {
       setIsExporting(true);
       const formattedData = formatData();

@@ -58,7 +58,7 @@ export async function buildCrmExportSheets(clients: any[]): Promise<ExportSheet[
     ? await Promise.all([
         supabase
           .from('commercial_notes')
-          .select('tracking_id, title, content, meeting_date, is_private, attachment_url, created_at')
+          .select('tracking_id, title, content, meeting_date, is_private, attachment_url, created_at, author_id')
           .in('tracking_id', trackingIds)
           .order('created_at', { ascending: false }),
         supabase
@@ -72,9 +72,48 @@ export async function buildCrmExportSheets(clients: any[]): Promise<ExportSheet[
       ])
     : [{ data: [] } as any, { data: [] } as any, { data: [] } as any];
 
-  // Auteurs des comptes rendus
+  // Projets liés aux clients : notes de projet et commentaires de tâches
+  const projectIds = Array.from(
+    new Set((projectLinksRes.data || []).map((pl: any) => pl.projects?.id).filter(Boolean)),
+  );
+  const clientIdByProject = new Map<string, string>(
+    (projectLinksRes.data || [])
+      .filter((pl: any) => pl.projects)
+      .map((pl: any) => [pl.projects.id, pl.client_id]),
+  );
+
+  const [projectNotesRes, tasksRes, taskCommentsRes] = projectIds.length
+    ? await Promise.all([
+        supabase
+          .from('project_notes')
+          .select('project_id, content, is_private, created_by, created_at')
+          .in('project_id', projectIds)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('tasks')
+          .select('id, project_id, title, status, priority, end_date, assigned_to, created_at')
+          .in('project_id', projectIds),
+        supabase
+          .from('task_comments')
+          .select('task_id, project_id, user_id, content, attachment_url, created_at')
+          .in('project_id', projectIds)
+          .order('created_at', { ascending: false }),
+      ])
+    : [{ data: [] } as any, { data: [] } as any, { data: [] } as any];
+
+  const taskById = new Map<string, any>((tasksRes.data || []).map((t: any) => [t.id, t]));
+
+  // Auteurs (comptes rendus, notes commerciales, notes projet, commentaires)
   const authorIds = Array.from(
-    new Set((meetingNotesRes.data || []).map((n: any) => n.user_id).filter(Boolean)),
+    new Set(
+      [
+        ...(meetingNotesRes.data || []).map((n: any) => n.user_id),
+        ...(commercialNotesRes.data || []).map((n: any) => n.author_id),
+        ...(projectNotesRes.data || []).map((n: any) => n.created_by),
+        ...(taskCommentsRes.data || []).map((c: any) => c.user_id),
+        ...(tasksRes.data || []).map((t: any) => t.assigned_to),
+      ].filter(Boolean),
+    ),
   );
   const authorById = new Map<string, string>();
   if (authorIds.length) {
@@ -107,6 +146,7 @@ export async function buildCrmExportSheets(clients: any[]): Promise<ExportSheet[
         Client: nameById.get(clientIdByTracking.get(n.tracking_id) || '') ?? '',
         Titre: n.title ?? '',
         'Date de réunion': fmt(n.meeting_date),
+        Auteur: authorById.get(n.author_id) ?? '',
         Contenu: n.content ?? '',
         Privé: n.is_private ? 'Oui' : 'Non',
         'Pièce jointe': n.attachment_url ?? '',
@@ -158,6 +198,39 @@ export async function buildCrmExportSheets(clients: any[]): Promise<ExportSheet[
           'Date de fin': fmt(pl.projects.end_date),
           Budget: pl.projects.budget ?? '',
         })),
+    },
+    {
+      name: 'Notes projets',
+      rows: (projectNotesRes.data || []).map((n: any) => ({
+        Client: nameById.get(clientIdByProject.get(n.project_id) || '') ?? '',
+        Contenu: n.content ?? '',
+        Auteur: authorById.get(n.created_by) ?? '',
+        Privé: n.is_private ? 'Oui' : 'Non',
+        'Créé le': fmtDateTime(n.created_at),
+      })),
+    },
+    {
+      name: 'Tâches',
+      rows: (tasksRes.data || []).map((t: any) => ({
+        Client: nameById.get(clientIdByProject.get(t.project_id) || '') ?? '',
+        Tâche: t.title ?? '',
+        Statut: t.status ?? '',
+        Priorité: t.priority ?? '',
+        Échéance: fmt(t.end_date),
+        Assigné: authorById.get(t.assigned_to) ?? '',
+        'Créé le': fmtDateTime(t.created_at),
+      })),
+    },
+    {
+      name: 'Commentaires tâches',
+      rows: (taskCommentsRes.data || []).map((c: any) => ({
+        Client: nameById.get(clientIdByProject.get(c.project_id) || '') ?? '',
+        Tâche: taskById.get(c.task_id)?.title ?? '',
+        Auteur: authorById.get(c.user_id) ?? '',
+        Commentaire: c.content ?? '',
+        'Pièce jointe': c.attachment_url ?? '',
+        'Créé le': fmtDateTime(c.created_at),
+      })),
     },
     {
       name: 'Suivi commercial',
