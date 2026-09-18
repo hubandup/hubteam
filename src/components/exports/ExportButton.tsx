@@ -17,6 +17,12 @@ export interface ExportSheet {
   rows: Record<string, any>[];
 }
 
+export interface ExportAsset {
+  /** Nom de fichier souhaité dans le dossier d'images */
+  name: string;
+  url: string;
+}
+
 interface ExportButtonProps {
   data: any[];
   columns: ExportColumn[];
@@ -26,9 +32,11 @@ interface ExportButtonProps {
   /** Optional loader for related data exported as additional Excel sheets */
   extraSheets?: () => Promise<ExportSheet[]>;
   extraSheetsLabel?: string;
+  /** Optional images (logos…) bundled in a ZIP alongside the workbook */
+  assets?: () => ExportAsset[] | Promise<ExportAsset[]>;
 }
 
-export function ExportButton({ data, columns, filename, label = 'Exporter', renderTrigger, extraSheets, extraSheetsLabel = 'Export complet (Excel)' }: ExportButtonProps) {
+export function ExportButton({ data, columns, filename, label = 'Exporter', renderTrigger, extraSheets, extraSheetsLabel = 'Export complet (Excel)', assets }: ExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
 
   const formatData = () => {
