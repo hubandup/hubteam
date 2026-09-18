@@ -226,10 +226,19 @@ export default function CRM() {
                 { key: 'phone', label: 'Téléphone' },
                 { key: 'kanban_stage', label: 'Étape' },
                 ...(showRevenue ? [{ key: 'revenue_current_year', label: 'CA Année Fiscale', formatter: (v: any) => v ?? 0 }] : []),
+                { key: 'logo_url', label: 'Logo (URL)' },
               ]}
               filename="clients"
               extraSheets={() => buildCrmExportSheets(filteredClients)}
-              extraSheetsLabel="Export complet (comptes rendus, contacts, projets)"
+              extraSheetsLabel="Export complet (comptes rendus, contacts, projets, logos)"
+              assets={() =>
+                filteredClients
+                  .filter((c) => !!c.logo_url)
+                  .map((c) => ({
+                    name: c.company || `${c.first_name ?? ''} ${c.last_name ?? ''}`.trim() || c.id,
+                    url: c.logo_url as string,
+                  }))
+              }
               renderTrigger={({ isExporting }) => (
                 <PillButton type="button" disabled={isExporting}>
                   <Download size={16} strokeWidth={1.8} />
