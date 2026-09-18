@@ -146,6 +146,12 @@ export function ExportButton({ data, columns, filename, label = 'Exporter', rend
           <FileSpreadsheet className="h-4 w-4 mr-2" />
           Export Excel
         </DropdownMenuItem>
+        {extraSheets && (
+          <DropdownMenuItem onClick={exportFull}>
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            {extraSheetsLabel}
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
