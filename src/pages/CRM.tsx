@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, LayoutGrid, Columns3, ArrowDownUp, List, Archive, Plus, Download, Upload } from 'lucide-react';
 import { ExportButton } from '@/components/exports/ExportButton';
+import { buildCrmExportSheets } from '@/lib/crm-export';
 import { toast } from 'sonner';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
