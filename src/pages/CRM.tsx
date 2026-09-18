@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, LayoutGrid, Columns3, ArrowDownUp, List, Archive, Plus, Download, Upload } from 'lucide-react';
 import { ExportButton } from '@/components/exports/ExportButton';
 import { buildCrmExportSheets } from '@/lib/crm-export';
+import { downloadProjectHubTransfer } from '@/lib/crm-hub-export';
 import { toast } from 'sonner';
 import { ProtectedAction } from '@/components/ProtectedAction';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -239,6 +240,14 @@ export default function CRM() {
                     url: c.logo_url as string,
                   }))
               }
+              extraActions={[
+                {
+                  label: 'Transférer vers Project Hub',
+                  run: () => downloadProjectHubTransfer(filteredClients),
+                  pendingMessage: 'Préparation du transfert vers Project Hub…',
+                  successMessage: 'Fichier de transfert généré (fiches, commentaires, logos)',
+                },
+              ]}
               renderTrigger={({ isExporting }) => (
                 <PillButton type="button" disabled={isExporting}>
                   <Download size={16} strokeWidth={1.8} />
