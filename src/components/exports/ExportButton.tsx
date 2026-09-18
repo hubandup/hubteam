@@ -94,6 +94,35 @@ export function ExportButton({ data, columns, filename, label = 'Exporter', rend
     }
   };
 
+  const exportFull = async () => {
+    if (!extraSheets) return;
+    try {
+      setIsExporting(true);
+      toast.info('Préparation de l\'export complet…');
+      const sheets = await extraSheets();
+      const workbook = XLSX.utils.book_new();
+
+      const mainSheet = XLSX.utils.json_to_sheet(formatData());
+      mainSheet['!cols'] = columns.map(col => ({ wch: Math.max(col.label.length + 2, 15) }));
+      XLSX.utils.book_append_sheet(workbook, mainSheet, 'Clients');
+
+      sheets.forEach(sheet => {
+        const rows = sheet.rows.length ? sheet.rows : [{ 'Aucune donnée': '' }];
+        const ws = XLSX.utils.json_to_sheet(rows);
+        ws['!cols'] = Object.keys(rows[0]).map(key => ({ wch: Math.max(key.length + 2, 20) }));
+        XLSX.utils.book_append_sheet(workbook, ws, sheet.name.slice(0, 31));
+      });
+
+      XLSX.writeFile(workbook, `${filename}-complet-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+      toast.success('Export complet généré');
+    } catch (error) {
+      console.error('Full export error:', error);
+      toast.error("Erreur lors de l'export complet");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (data.length === 0) return null;
 
   return (
